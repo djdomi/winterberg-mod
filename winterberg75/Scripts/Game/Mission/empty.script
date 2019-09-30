@@ -1,0 +1,40 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script empty
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+object GenericMission : MissionScript
+{
+	GenericMission()
+	{
+	}
+	
+	~GenericMission()
+	{
+	}
+	
+	void Start()
+	{
+	}
+	
+	MissionState GetMissionState()
+	{
+		if(Mission::IsDefaultLogicNegative())
+			return MISSION_FAILED;
+		
+		if(Mission::IsDefaultLogicPositive())
+			return MISSION_SUCCEEDED;
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		return "UNKNOWN";
+	}	
+};

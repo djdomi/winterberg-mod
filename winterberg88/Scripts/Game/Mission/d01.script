@@ -1,0 +1,2114 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script d01
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+/* TODO
+- Beladen des LKW--
+- Start des Konvoi--
+- Logik Konvoi--
+- Minenfelder--
+- normale Rebellenangriffe--
+- Angriff im Dorf--
+- MG-Logik--
+- Ziel des Konvoi--
+- Abbruchbedingungen--
+- Objectives--
+- Hints--
+- Supervisor--
+- Serialisierung
+- Minicutscene--
+*/
+
+const int CONVOY_MAXSIZE				= 5;
+const int MAX_HINTS						= 12;
+const int HINT7_MAX_SQUAD_DEATHS		= 3;
+const int MAX_SQUAD_DEATHS				= 5;
+const float COUNTDOWN_TIME				= 30.f * 60.f;
+const int MAX_MINEFIELDS				= 10;
+const int MAX_MINES_PER_MINEFIELD		= 3;
+const int MIN_ACTIVE_MINEFIELDS			= 5;
+const int MAX_ACTIVE_MINEFIELDS			= 8;
+const float MINE_RADIUS					= 25.f;
+const float SCOUT_RADIUS				= 1250.f;
+const float MINE_DEFUSE_TIME			= 8.f;
+const int MAX_REBELS_PER_GROUP			= 8;
+const float REBEL1_ACTION_RANGE			= 28.f * 50.f;
+const float REBEL2_ACTION_RANGE			= 28.f * 50.f;
+const float REBEL3_ACTION_RANGE			= 28.f * 50.f;
+const float REBELTOWN_ACTION_RANGE		= 30.f * 50.f;
+const int MAX_MG_SHOOTERS				= 3;
+const float MG_SHOOTER_ACTION_RANGE		= 10.f * 50.f;
+const float MG_SHOOTER_FIRE_RANGE		= 30.f * 50.f;
+const float MG_SHOOTER_PISTOL_POWER		= 15.f;
+const float MG_SHOOTER_PISTOL_FREQUENCY	= 2000.f;
+const int MIN_SQUAD_DEATHS_FOR_EFFICIENCY = 4;
+const float MG_FREQUENCY				= 1500.f;
+const float MG_SPREAD_ANGLE				= 20.f;
+const float SW_DAMAGE_FACTOR			= 0.05f;
+const float CONVOY_MAX_ENERGY			= 3500.f;
+
+const char NAME_PERSON_LOADBOX[]		= "liftguy";
+const char NAME_LOADBOX1[]				= "liftbox1";
+const char NAME_LOADBOX2[]				= "liftbox2";
+const char NAME_ANIMATION_LOADBOX[]		= "liftcarebox01";
+const char NAME_ANIMATION_BOX[]			= "liftcarebox02";
+const char NAME_PREFIX_CONVOY[]			= "convoy";
+const char NAME_CONVOY1[]				= "convoy1";
+const char NAME_CONVOY2[]				= "convoy2";
+const char NAME_CONVOY3[]				= "convoy3";
+const char NAME_CONVOY4[]				= "convoy4";
+const char NAME_CONVOY5[]				= "convoy5";
+const char NAME_GATE1[]					= "gate1";
+const char NAME_GATE2[]					= "gate2";
+const char NAME_GATE3[]					= "gate3";
+const char NAME_ANIMATION_OPEN[]		= "open";
+const char TERRAIN_ROAD[]				= "Road";
+const char NAME_PATH_CONVOY[]			= "p_convoy";
+const char NAME_COMMAND_MOVETO[]		= "MoveTo";
+const char NAME_COMMAND_START[]			= "MD01StartConvoy";
+const char NAME_COMMAND_STOP[]			= "MD01StopConvoy";
+const char NAME_PREFIX_MINE[]			= "mine";
+const char NAME_MINE1[]					= "mine1";
+const char NAME_MINE2[]					= "mine2";
+const char NAME_MINE3[]					= "mine3";
+const char NAME_MINE4[]					= "mine4";
+const char NAME_MINE5[]					= "mine5";
+const char NAME_MINE6[]					= "mine6";
+const char NAME_MINE7[]					= "mine7";
+const char NAME_MINE8[]					= "mine8";
+const char NAME_MINE9[]					= "mine9";
+const char NAME_MINE10[]				= "mine10";
+const char NAME_REBEL1[]				= "rebel1";
+const char NAME_REBEL2[]				= "rebel2";
+const char NAME_REBEL3[]				= "rebel3";
+const char NAME_REBELTOWN[]				= "rebeltown";
+const char NAME_TRIGGER_TOWN_SQUADS[]	= "town_squads";
+const char NAME_TRIGGER_TOWN_CONVOY[]	= "town_convoy";
+const char NAME_LOCATION_CUTSCENE[]		= "l_cutscene";
+const char NAME_MG_SHOOTER1[]			= "mgs1";
+const char NAME_MG_SHOOTER2[]			= "mgs2";
+const char NAME_MG_SHOOTER3[]			= "mgs3";
+const char NAME_MG1[]					= "mg1";
+const char NAME_MG2[]					= "mg2";
+const char NAME_MG3[]					= "mg3";
+const char NAME_TRIGGER_HALFWAY			= "halfway";
+const char NAME_FUGITIVE[]				= "fugitive";
+const char NAME_FUGITIVE_SIT[]			= "fugitive_sit";
+const char NAME_AREA_CONVOYTARGET[]		= "target";
+const char NAME_ANIMATION_STANDUP[]		= "standup02";
+const char NAME_ANIMATION_MG_SHOOT[]	= "mg_shoot01";
+const char NAME_ANIMATION_NONE[]		= "none";
+const char NAME_MG_CHILD[]				= "muzzleflash";
+const char NAME_ANIMATION_MGS_STANDUP[]	= "mg_standup01";
+const char NAME_MINE_FLAG[]				= "mod:Prototypes/Objects/Misc/minesignal01.e4p";
+const char NAME_SCOUTAREA[]				= "ScoutArea";
+const char NAME_SCOUTHOUSE[]			= "ScoutHouse";
+const char NAME_CHILD_MINE[]			= "minefound";
+const char NAME_AREA_TOWNCENTER[]		= "towncenter";
+const char NAME_PREDATOR[]				= "predator";
+const char NAME_AMBIENT1[]				= "refugees01";
+const char NAME_AMBIENT2[]				= "refugees02";
+const char NAME_SOUND_MG[]				= "mod:Audio/FX/misc/mg01.wav";
+const char NAME_SOUND_CONVOY[]			= "mod:Audio/FX/misc/convoy01.wav";
+const char NAME_FLAG[]					= "flag";
+
+const char COUNTER_SQUAD_DEATHS[]		= "Squad deaths";
+const char COUNTER_GANGSTER_DEATHS[]	= "Gangster deaths";
+const char COUNTER_PERSON_DEATHS[]		= "Person deaths";
+const char COUNTER_GANGSTER_INJURIES[]	= "Gangster injuries";
+const char COUNTER_PERSON_INJURIES[]	= "Person injuries";
+
+const char HINT_CONVOY_START[]			= "HINT_D01_CONVOY_START";		//0
+const char HINT_CONVOY_STOP[]			= "HINT_D01_CONVOY_STOP";		//1
+const char HINT_NO_MINES[]				= "HINT_D01_NO_MINES";			//2
+const char HINT_FOUND_MINES[]			= "HINT_D01_FOUND_MINES";		//3
+const char HINT_SQUAD_UNDER_FIRE[]		= "HINT_D01_SQUAD_UNDER_FIRE";	//4
+const char HINT_CONVOY_ATTACK[]			= "HINT_D01_CONVOY_ATTACK";		//5
+const char HINT_PROTECT_CONVOY[]		= "HINT_D01_PROTECT_CONVOY";	//6
+const char HINT_TOO_MANY_VICTIMS[]		= "HINT_D01_TOO_MANY_VICTIMS";	//7
+const char HINT_OPEN_GATE[]				= "SUPERV_HINT_D01_OPEN_GATE";			//8*
+const char HINT_HURRY_UP[]				= "SUPERV_HINT_D01_HURRY_UP";			//9*
+const char HINT_CONVOY_FINISH[]			= "SUPERV_HINT_D01_CONVOY_FINISH";		//10*
+const char HINT_GATE_OPENED[]			= "SUPERV_HINT_D01_OBJ_GATE_OPENED";		//11*
+
+const char OBJECTIVE_OPEN_GATE[]		= "OBJECTIVE_D01_OPEN_GATE";
+const char OBJECTIVE_PROTECT_CONVOY[]	= "OBJECTIVE_D01_PROTECT_CONVOY";
+
+const char TIMER_NAME_UPDATE_LOADBOX[]	= "t_loadbox";
+const float TIMER_TIME_UPDATE_LOADBOX	= 0.5f;
+const char TIMER_NAME_STARTCONVOY[]		= "t_startconvoy";
+const float TIMER_TIME_STARTCONVOY		= 1.f;
+const char TIMER_NAME_UPDATE_CONVOY[]	= "t_convoy";
+const float TIMER_TIME_UPDATE_CONVOY	= 1.4f;
+const char TIMER_NAME_HINT8[]			= "t_hint8";
+const float TIMER_TIME_HINT8			= 5.f * 60.f; // 5 Minuten
+const char TIMER_NAME_HINT9[]			= "t_hint9";
+const float TIMER_TIME_HINT9			= 15.f * 60.f; // 15 Minuten (halber countdown)
+const char TIMER_NAME_ENDMISSION[]		= "t_endmission";
+const float TIMER_TIME_ENDMISSION		= 5.f;
+const char TIMER_NAME_ENDMISSION_FAIL[]	= "t_endmission_fail";
+const float TIMER_TIME_ENDMISSION_FAIL	= 5.f;
+const char TIMER_NAME_UPDATE_MINES[]	= "t_mines";
+const float TIMER_TIME_UPDATE_MINES		= 1.7f;
+const char TIMER_NAME_UPDATE_REBEL1[]	= "t_rebel1";
+const float TIMER_TIME_UPDATE_REBEL1	= 0.8f;
+const char TIMER_NAME_UPDATE_REBEL2[]	= "t_rebel2";
+const float TIMER_TIME_UPDATE_REBEL2	= 0.83f;
+const char TIMER_NAME_UPDATE_REBEL3[]	= "t_rebel3";
+const float TIMER_TIME_UPDATE_REBEL3	= 0.87f;
+const char TIMER_NAME_UPDATE_REBELTOWN[]= "t_rebeltown";
+const float TIMER_TIME_UPDATE_REBELTOWN	= 1.41f;
+const char TIMER_NAME_UPDATE_MGS[]		= "t_mgs";
+const float TIMER_TIME_UPDATE_MGS		= 1.79f;
+const char TIMER_NAME_START_LOADUP[]	= "t_loadup";
+const float TIMER_TIME_START_LOADUP		= 2.f;
+
+struct MineField
+{
+	bool active;
+	bool valid;
+	bool visible;
+	bool flagSpawned;
+	Vector position;
+	GameObject mines[MAX_MINES_PER_MINEFIELD];
+	GameObject flags[MAX_MINES_PER_MINEFIELD];
+};
+
+enum RebelState
+{
+	RS_INVALID,
+	RS_NORMAL,
+	RS_AGGRESSIVE,
+	RS_RETURN,
+};
+
+struct RebelData
+{
+	Person person;
+	int state;
+	Vector startPosition;
+};
+
+enum RebelTownState
+{
+	RTS_INVALID,
+	RTS_WAITING,
+	RTS_NORMAL,
+	RTS_ATTACKCONVOY,
+};
+
+struct RebelTownData
+{
+	Person person;
+	int state;
+};
+
+object MissionD01 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	Person mPersonLoadBox;
+	GameObject mLoadBox1;
+	GameObject mLoadBox2;
+	bool mLoadingFinished;
+	bool mGate1Open;
+	bool mConvoyLost;
+	bool mTooManyVictims;
+	bool mTimeRunOut;
+	bool mConvoy1Stopped;
+	bool mHalfPassed;
+	bool mCutscene;
+	bool mSquadHurtByMine;
+	Vehicle mConvoy[CONVOY_MAXSIZE];
+	GameObject mGate1;
+	Actor mAreaGate1;
+	GameObject mGate2;
+	Actor mAreaGate2;
+	GameObject mGate3;
+	Actor mAreaGate3;
+	MineField mMineFields[MAX_MINEFIELDS];
+	RebelData mRebelGroup1[MAX_REBELS_PER_GROUP];
+	RebelData mRebelGroup2[MAX_REBELS_PER_GROUP];
+	RebelData mRebelGroup3[MAX_REBELS_PER_GROUP];
+	RebelTownData mRebelTown[MAX_REBELS_PER_GROUP];
+	Person mMGShooters[MAX_MG_SHOOTERS];
+	GameObject mMGs[MAX_MG_SHOOTERS];
+	int mSoundRef;
+	
+	MissionD01()
+	{
+		mLoadingFinished = false;
+		mGate1Open = false;
+		mConvoyLost = false;
+		mTooManyVictims = false;
+		mTimeRunOut = false;
+		mConvoy1Stopped = false;
+		mHalfPassed = false;
+		mCutscene = false;
+		mSquadHurtByMine = false;
+
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mSoundRef = -1;
+	}
+	
+	~MissionD01()
+	{
+	}
+	
+	void Start()
+	{
+		ActorList gate1(NAME_GATE1);
+		for(int i = 0; i < gate1.GetNumActors(); i++)
+		{
+			Actor *a = gate1.GetActor(i);
+			if (a->GetType() == ACTOR_VIRTUAL)
+			{
+				mAreaGate1 = *a;
+			}
+			else if (a->GetType() == ACTOR_OBJECT)
+			{
+				mGate1 = GameObject(a);
+				mGate1.SetFlag(OF_USABLE);
+			}
+		}
+		ActorList gate2(NAME_GATE2);
+		for(int i = 0; i < gate2.GetNumActors(); i++)
+		{
+			Actor *a = gate2.GetActor(i);
+			if (a->GetType() == ACTOR_VIRTUAL)
+				mAreaGate2 = *a;
+			else if (a->GetType() == ACTOR_OBJECT)
+				mGate2 = GameObject(a);
+		}
+		ActorList gate3(NAME_GATE3);
+		for(int i = 0; i < gate3.GetNumActors(); i++)
+		{
+			Actor *a = gate3.GetActor(i);
+			if (a->GetType() == ACTOR_VIRTUAL)
+				mAreaGate3 = *a;
+			else if (a->GetType() == ACTOR_OBJECT)
+				mGate3 = GameObject(a);
+		}
+		
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_PERSON_LOADBOX))
+			{
+				mPersonLoadBox = Person(obj);
+				//mPersonLoadBox.SetEffect("Haze", NULL);
+			}
+			else if (obj->HasName(NAME_LOADBOX1))
+			{
+				mLoadBox1 = *obj;
+			}
+			else if (obj->HasName(NAME_LOADBOX2))
+				mLoadBox2 = *obj;
+			else if (obj->HasName(NAME_CONVOY1))
+			{
+				mConvoy[0] = Vehicle(obj);
+				mConvoy[0].SetMaxEnergy(CONVOY_MAX_ENERGY);
+				//mConvoy[0].SetEffect("HazeNoAlpha", "const0=0.8,0.8,0.2,1;");
+				//mConvoy[0].AssignCommand(NAME_COMMAND_START);
+				//mConvoy[0].AssignCommand(NAME_COMMAND_STOP);
+				//mConvoy[0].SetCommandable(true);
+			}
+			else if (obj->HasName(NAME_CONVOY2))
+			{
+				mConvoy[1] = Vehicle(obj);
+				mConvoy[1].SetMaxEnergy(CONVOY_MAX_ENERGY);
+			}
+			else if (obj->HasName(NAME_CONVOY3))
+			{
+				mConvoy[2] = Vehicle(obj);
+				mConvoy[2].SetMaxEnergy(CONVOY_MAX_ENERGY);
+			}
+			else if (obj->HasName(NAME_CONVOY4))
+			{
+				mConvoy[3] = Vehicle(obj);
+				mConvoy[3].SetMaxEnergy(CONVOY_MAX_ENERGY);
+			}
+			else if (obj->HasName(NAME_CONVOY5))
+			{
+				mConvoy[4] = Vehicle(obj);
+				mConvoy[4].SetMaxEnergy(CONVOY_MAX_ENERGY);
+				mConvoy[4].PlayAnimOpenDoor(DAT_SPECIAL, 1.f);
+			}
+			else if (obj->HasName(NAME_MG_SHOOTER1))
+			{
+				System::Log("MD01: mgs1 found");
+				mMGShooters[0] = Person(obj);
+				mMGShooters[0].SetEquipment(EQUIP_DUMMYRIFLE);
+				mMGShooters[0].SetDisableGangsterSymbol(true);
+				mMGShooters[0].SetResistance(INJUREREASON_ENERGY, 3.f);
+				mMGShooters[0].SetShootFrequency(MG_FREQUENCY);
+				//mMGShooters[0].SetSpreadAngle(MG_SPREAD_ANGLE);
+				mMGShooters[0].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+			}
+			else if (obj->HasName(NAME_MG_SHOOTER2))
+			{
+				System::Log("MD01: mgs2 found");
+				mMGShooters[1] = Person(obj);
+				mMGShooters[1].SetEquipment(EQUIP_DUMMYRIFLE);
+				mMGShooters[1].SetDisableGangsterSymbol(true);
+				mMGShooters[1].SetResistance(INJUREREASON_ENERGY, 3.f);
+				mMGShooters[1].SetShootFrequency(MG_FREQUENCY);
+				//mMGShooters[1].SetSpreadAngle(MG_SPREAD_ANGLE);
+				mMGShooters[1].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+			}
+			else if (obj->HasName(NAME_MG_SHOOTER3))
+			{
+				System::Log("MD01: mgs3 found");
+				mMGShooters[2] = Person(obj);
+				mMGShooters[2].SetEquipment(EQUIP_DUMMYRIFLE);
+				mMGShooters[2].SetDisableGangsterSymbol(true);
+				mMGShooters[2].SetResistance(INJUREREASON_ENERGY, 3.f);
+				mMGShooters[2].SetShootFrequency(MG_FREQUENCY);
+				//mMGShooters[2].SetSpreadAngle(MG_SPREAD_ANGLE);
+				mMGShooters[2].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+			}
+			else if (obj->HasName(NAME_MG1))
+				mMGs[0] = *obj;
+			else if (obj->HasName(NAME_MG2))
+				mMGs[1] = *obj;
+			else if (obj->HasName(NAME_MG3))
+				mMGs[2] = *obj;
+			else if (obj->HasName(NAME_PREDATOR))
+			{
+				if (System::GetEnvInt("e4_detaillevel") >= 2)
+					obj->SetEffect("HazeNoAlpha", "const0=0.1,0.1,0.2,1;");
+				Person p(obj);
+				p.SetNeverResort(true);
+			}
+		}
+
+		GameObjectList mines1(NAME_MINE1);
+		mMineFields[0].active = false;
+		mMineFields[0].visible = false;
+		mMineFields[0].valid = false;
+		mMineFields[0].flagSpawned = false;
+		System::Log("MD01: found %d %s", mines1.GetNumObjects(), NAME_MINE1);
+		for(int i = 0; i < mines1.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[0].mines[i] = *mines1.GetObject(i);
+			mines1.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines1.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[0].valid = true;
+		}
+		GameObjectList mines2(NAME_MINE2);
+		mMineFields[1].active = false;
+		mMineFields[1].visible = false;
+		mMineFields[1].valid = false;
+		mMineFields[1].flagSpawned = false;
+		System::Log("MD01: found %d %s", mines2.GetNumObjects(), NAME_MINE2);
+		for(int i = 0; i < mines2.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[1].mines[i] = *mines2.GetObject(i);
+			mines2.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines2.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[1].valid = true;
+		}
+		GameObjectList mines3(NAME_MINE3);
+		mMineFields[2].active = false;
+		mMineFields[2].visible = false;
+		mMineFields[2].valid = false;
+		mMineFields[2].flagSpawned = false;
+		for(int i = 0; i < mines3.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[2].mines[i] = *mines3.GetObject(i);
+			mines3.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines3.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[2].valid = true;
+		}
+		GameObjectList mines4(NAME_MINE4);
+		mMineFields[3].active = false;
+		mMineFields[3].visible = false;
+		mMineFields[3].valid = false;
+		mMineFields[3].flagSpawned = false;
+		for(int i = 0; i < mines4.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[3].mines[i] = *mines4.GetObject(i);
+			mines4.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines4.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[3].valid = true;
+		}
+		GameObjectList mines5(NAME_MINE5);
+		mMineFields[4].active = false;
+		mMineFields[4].visible = false;
+		mMineFields[4].valid = false;
+		mMineFields[4].flagSpawned = false;
+		for(int i = 0; i < mines5.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[4].mines[i] = *mines5.GetObject(i);
+			mines5.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines5.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[4].valid = true;
+		}
+		GameObjectList mines6(NAME_MINE6);
+		mMineFields[5].active = false;
+		mMineFields[5].visible = false;
+		mMineFields[5].valid = false;
+		mMineFields[5].flagSpawned = false;
+		for(int i = 0; i < mines6.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[5].mines[i] = *mines6.GetObject(i);
+			mines6.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines6.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[5].valid = true;
+		}
+		GameObjectList mines7(NAME_MINE7);
+		mMineFields[6].active = false;
+		mMineFields[6].visible = false;
+		mMineFields[6].valid = false;
+		mMineFields[6].flagSpawned = false;
+		for(int i = 0; i < mines7.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[6].mines[i] = *mines7.GetObject(i);
+			mines7.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines7.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[6].valid = true;
+		}
+		GameObjectList mines8(NAME_MINE8);
+		mMineFields[7].active = false;
+		mMineFields[7].visible = false;
+		mMineFields[7].valid = false;
+		mMineFields[7].flagSpawned = false;
+		for(int i = 0; i < mines8.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[7].mines[i] = *mines8.GetObject(i);
+			mines8.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines8.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[7].valid = true;
+		}
+		GameObjectList mines9(NAME_MINE9);
+		mMineFields[8].active = false;
+		mMineFields[8].visible = false;
+		mMineFields[8].valid = false;
+		mMineFields[8].flagSpawned = false;
+		for(int i = 0; i < mines9.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[8].mines[i] = *mines9.GetObject(i);
+			mines9.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines9.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[8].valid = true;
+		}
+		GameObjectList mines10(NAME_MINE10);
+		mMineFields[9].active = false;
+		mMineFields[9].visible = false;
+		mMineFields[9].valid = false;
+		mMineFields[9].flagSpawned = false;
+		for(int i = 0; i < mines10.GetNumObjects() && i < MAX_MINES_PER_MINEFIELD; i++)
+		{
+			mMineFields[9].mines[i] = *mines10.GetObject(i);
+			mines10.GetObject(i)->SetFlag(OF_HIDDEN);
+			mines10.GetObject(i)->SetFlag(OF_USABLE);
+			mMineFields[9].valid = true;
+		}
+
+		int validFields = 0;
+		for(int i = 0; i < MAX_MINEFIELDS; i++)
+		{
+			if (mMineFields[i].valid)
+				validFields++;
+		}
+		int activeFields = 0;
+		int minFields = MIN_ACTIVE_MINEFIELDS < validFields ? MIN_ACTIVE_MINEFIELDS : validFields;
+		int maxFields = MAX_ACTIVE_MINEFIELDS < validFields ? MAX_ACTIVE_MINEFIELDS : validFields;
+		int targetActiveFields = GetRandomValue(minFields, maxFields + 1);
+		while (activeFields < targetActiveFields)
+		{
+			int i = GetRandomValue(0, MAX_MINEFIELDS + 1);
+			if (mMineFields[i].valid && !mMineFields[i].active)
+			{
+				mMineFields[i].active = true;
+				activeFields++;
+			}
+		}
+
+		// Mittelpunkt berechnen und Minesanzahl zufaellig
+		for(int i = 0; i < MAX_MINEFIELDS; i++)
+		{
+			Vector pos(0.f, 0.f, 0.f);
+			if (!mMineFields[i].active)
+				continue;
+			int numDeleted = 0;
+			for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+			{
+				if (mMineFields[i].mines[j].IsValid() && GetRandomValue(0, 2) == 1)
+				{
+					if (numDeleted < MAX_MINES_PER_MINEFIELD - 1)
+					{
+						mMineFields[i].mines[j] = GameObject();
+						numDeleted++;
+					}
+				}
+			}
+			int validMines = 0;
+			for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+			{
+				if (mMineFields[i].mines[j].IsValid())
+				{
+					pos = pos + mMineFields[i].mines[j].GetPosition();
+					validMines++;
+				}
+			}
+			if (validMines > 0)
+				pos = pos * (1.f / validMines);
+			mMineFields[i].position = pos;
+		}
+
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+			mRebelGroup1[i].state = RS_INVALID;
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+			mRebelGroup2[i].state = RS_INVALID;
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+			mRebelGroup3[i].state = RS_INVALID;
+		
+		PersonList rebel1(NAME_REBEL1);
+		for(int i = 0; i < rebel1.GetNumPersons() && i < MAX_REBELS_PER_GROUP; i++)
+		{
+			mRebelGroup1[i].person = *rebel1.GetPerson(i);
+			rebel1.GetPerson(i)->SetDisableGangsterSymbol(true);
+			mRebelGroup1[i].startPosition = rebel1.GetPerson(i)->GetPosition();
+			mRebelGroup1[i].state = RS_NORMAL;
+		}
+		PersonList rebel2(NAME_REBEL2);
+		for(int i = 0; i < rebel2.GetNumPersons() && i < MAX_REBELS_PER_GROUP; i++)
+		{
+			mRebelGroup2[i].person = *rebel2.GetPerson(i);
+			rebel2.GetPerson(i)->SetDisableGangsterSymbol(true);
+			mRebelGroup2[i].startPosition = rebel2.GetPerson(i)->GetPosition();
+			mRebelGroup2[i].state = RS_NORMAL;
+		}
+		PersonList rebel3(NAME_REBEL3);
+		for(int i = 0; i < rebel3.GetNumPersons() && i < MAX_REBELS_PER_GROUP; i++)
+		{
+			mRebelGroup3[i].person = *rebel3.GetPerson(i);
+			rebel3.GetPerson(i)->SetDisableGangsterSymbol(true);
+			mRebelGroup3[i].startPosition = rebel3.GetPerson(i)->GetPosition();
+			mRebelGroup3[i].state = RS_NORMAL;
+		}
+
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+			mRebelTown[i].state = RTS_INVALID;
+		PersonList rebelTown(NAME_REBELTOWN);
+		for(int i = 0; i < rebelTown.GetNumPersons() && i < MAX_REBELS_PER_GROUP; i++)
+		{
+			mRebelTown[i].person = *rebelTown.GetPerson(i);
+			rebelTown.GetPerson(i)->SetDisableGangsterSymbol(true);
+			mRebelTown[i].state = RTS_WAITING;
+		}
+
+		Mission::StartCountDown(COUNTDOWN_TIME);
+		Mission::AddObjective(OBJECTIVE_OPEN_GATE);
+		Mission::AddObjective(OBJECTIVE_PROTECT_CONVOY);
+		Mission::StartSingleTimer(TIMER_NAME_HINT8, TIMER_TIME_HINT8);
+		Mission::StartSingleTimer(TIMER_NAME_HINT9, TIMER_TIME_HINT9);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_MINES, TIMER_TIME_UPDATE_MINES);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_REBEL1, TIMER_TIME_UPDATE_REBEL1);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_REBEL2, TIMER_TIME_UPDATE_REBEL2);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_REBEL3, TIMER_TIME_UPDATE_REBEL3);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_REBELTOWN, TIMER_TIME_UPDATE_REBELTOWN);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_MGS, TIMER_TIME_UPDATE_MGS);
+		Mission::StartSingleTimer(TIMER_NAME_START_LOADUP, TIMER_TIME_START_LOADUP);
+
+		Audio::PlaySoundtrack("23", 0.0f);
+		Game::SetAmbientSoundVolumeByName(NAME_AMBIENT2, 0.f);
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionUse":
+				{
+					Actor act;
+					act = Game::GetActor(Data->Parameters[0].iValue);
+					if (act.HasNamePrefix(NAME_PREFIX_MINE))
+					{
+						float *time = reinterpret_cast<float*>(Data->Parameters[2].pValue);
+						*time = (float) MINE_DEFUSE_TIME;
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionUse":
+				{
+					Actor act;
+					act = Game::GetActor(Data->Parameters[0].iValue);
+					if (act.GetID() == mGate1.GetID())
+					{
+						mGate1.SetAnimation(NAME_ANIMATION_OPEN);
+						mGate1.ClearFlag(OF_USABLE);
+						mGate1Open = true;
+						mAreaGate1.SetVirtualObjectTerrain(TERRAIN_ROAD);
+						Mission::StartIntervalTimer(TIMER_NAME_STARTCONVOY, TIMER_TIME_STARTCONVOY);
+						ShowHint(11);
+						Mission::SetObjectiveAccomplished(OBJECTIVE_OPEN_GATE, true);
+					}
+					else if (act.HasNamePrefix(NAME_PREFIX_MINE))
+					{
+						GameObject mine(&act);
+						mine.ClearFlag(OF_USABLE);
+						for(int i = 0; i < MAX_MINEFIELDS; i++)
+						{
+							if (!mMineFields[i].active || !mMineFields[i].visible)
+								continue;
+							for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+							{
+								if (mMineFields[i].mines[j].GetID() == mine.GetID())
+								{
+									mMineFields[i].mines[j].Hide();
+									if (mMineFields[i].flagSpawned && mMineFields[i].flags[j].IsValid())
+									{
+										mMineFields[i].flags[j].PushActionDeleteOwner(ACTION_NEWLIST);
+										mMineFields[i].flags[j] = GameObject();
+									}
+									mMineFields[i].mines[j] = GameObject();
+									break;
+								}
+							}
+						}
+					}
+				}
+				break;
+			case "EActionScout":
+				{
+					if (Data->Parameters[0].iValue == -2)
+					{
+						bool found = false;
+						Person caller(Data->Owner);
+						for(int i = 0; i < MAX_MINEFIELDS; i++)
+						{
+							if (mMineFields[i].active && !mMineFields[i].visible)
+							{
+								Vector dist = caller.GetPosition() - mMineFields[i].position;
+								float distance = dist.GetLen();
+								if (distance <= SCOUT_RADIUS)
+								{
+									mMineFields[i].visible = true;
+									mMineFields[i].flagSpawned = true;
+									for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+									{
+										if (mMineFields[i].mines[j].IsValid())
+										{
+											found = true;
+											mMineFields[i].mines[j].SetChildEnabled(NAME_CHILD_MINE, true);
+											mMineFields[i].mines[j].ClearFlag(OF_HIDDEN);
+											// TODO: Einfaden
+											mMineFields[i].flags[j] = Game::CreateObject(NAME_MINE_FLAG, NAME_FLAG);
+											mMineFields[i].flags[j].SetPosition(&mMineFields[i].mines[j]);
+										}
+									}
+								}
+								else if (distance < SCOUT_RADIUS + 500.f)
+								{
+									// testen, ob eine der Minen sichtbar ist
+									bool minefound = false;
+									for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+									{
+										if (!mMineFields[i].mines[j].IsValid())
+											continue;
+										Vector dist2 = caller.GetPosition() - mMineFields[i].mines[j].GetPosition();
+										float distance2 = dist2.GetLen();
+										if (distance2 <= SCOUT_RADIUS)
+										{
+											minefound = true;
+											break;
+										}
+									}
+									if (minefound)
+									{
+										mMineFields[i].visible = true;
+										mMineFields[i].flagSpawned = true;
+										for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+										{
+											if (mMineFields[i].mines[j].IsValid())
+											{
+												found = true;
+												mMineFields[i].mines[j].SetChildEnabled(NAME_CHILD_MINE, true);
+												mMineFields[i].mines[j].ClearFlag(OF_HIDDEN);
+												// TODO: Einfaden
+												mMineFields[i].flags[j] = Game::CreateObject(NAME_MINE_FLAG, NAME_FLAG);
+												mMineFields[i].flags[j].SetPosition(&mMineFields[i].mines[j]);
+											}
+										}
+									}
+								}
+							}
+						}
+						if (found)
+							ShowHint(3);
+						else
+							ShowHint(2);
+					}
+				}
+				break;
+			case "EActionShoot":
+				{
+					if (Data->Owner->GetID() == mMGShooters[0].GetID())
+					{
+						mMGs[0].SetAnimation(NAME_ANIMATION_NONE);
+						mMGs[0].SetChildEnabled(NAME_MG_CHILD, false);
+					}
+					else if	(Data->Owner->GetID() == mMGShooters[1].GetID())
+					{
+						mMGs[1].SetAnimation(NAME_ANIMATION_NONE);
+						mMGs[1].SetChildEnabled(NAME_MG_CHILD, false);
+					}
+					else if	(Data->Owner->GetID() == mMGShooters[2].GetID())
+					{
+						mMGs[2].SetAnimation(NAME_ANIMATION_NONE);
+						mMGs[2].SetChildEnabled(NAME_MG_CHILD, false);
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	bool OnDummyRifleShoot(GameObject *shooter, GameObject *target)
+	{
+		if (!shooter || !target)
+			return false;
+		if (shooter->GetID() == mMGShooters[0].GetID())
+		{
+			mMGs[0].SetAnimation(NAME_ANIMATION_NONE);
+			mMGs[0].SetAnimation(NAME_ANIMATION_MG_SHOOT);
+			mMGs[0].SetChildEnabled(NAME_MG_CHILD, false);
+			mMGs[0].SetChildEnabled(NAME_MG_CHILD, true);
+			Audio::PlaySample3D(NAME_SOUND_MG, mMGs[0].GetPosition());
+		}
+		else if	(shooter->GetID() == mMGShooters[1].GetID())
+		{
+			mMGs[1].SetAnimation(NAME_ANIMATION_NONE);
+			mMGs[1].SetAnimation(NAME_ANIMATION_MG_SHOOT);
+			mMGs[1].SetChildEnabled(NAME_MG_CHILD, false);
+			mMGs[1].SetChildEnabled(NAME_MG_CHILD, true);
+			Audio::PlaySample3D(NAME_SOUND_MG, mMGs[1].GetPosition());
+		}
+		else if	(shooter->GetID() == mMGShooters[2].GetID())
+		{
+			mMGs[2].SetAnimation(NAME_ANIMATION_NONE);
+			mMGs[2].SetAnimation(NAME_ANIMATION_MG_SHOOT);
+			mMGs[2].SetChildEnabled(NAME_MG_CHILD, false);
+			mMGs[2].SetChildEnabled(NAME_MG_CHILD, true);
+			Audio::PlaySample3D(NAME_SOUND_MG, mMGs[2].GetPosition());
+		}
+		return true;
+	}
+
+	bool OnExplode(GameObject *Obj)
+	{
+		if (Obj->HasNamePrefix(NAME_PREFIX_CONVOY))
+		{
+			if (!mCutscene)
+			{
+				if (!Mission::IsCutSceneRunning())
+				{
+					mCutscene = true;
+					System::Log("MD01 Start Cutscene");
+					Mission::StartCutScene();
+					Mission::ShowBlackBars(0.8f);
+					Vector pos = Obj->GetPosition(), pos2;
+					float yaw, pitch, roll;
+					Camera::GetTransition(NAME_LOCATION_CUTSCENE, pos2, yaw, pitch, roll);
+					Camera::StartTransition(pos, pos2.z, yaw, pitch, roll, 2.f);
+					return false;
+				}
+				else
+					return true;
+			}
+			else
+				return false;
+		}
+		return true;
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (Mission::IsCutSceneRunning())
+		{
+			if (mCutscene)
+			{
+				//Mission::HideBlackBars(1.f);				
+				Mission::StartSingleTimer(TIMER_NAME_ENDMISSION_FAIL, TIMER_TIME_ENDMISSION_FAIL);
+				mCutscene = false;				
+			}
+		}
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		switch(Timer)
+		{
+			case TIMER_NAME_UPDATE_LOADBOX:
+				{
+					if (mPersonLoadBox.IsValid() && mPersonLoadBox.IsAnimationFinished())
+					{
+						if (!mLoadBox1.IsHidden())
+						{
+							mLoadBox1.Hide();
+							mPersonLoadBox.SetIdleAnimation();
+							mPersonLoadBox.SetAnimation(NAME_ANIMATION_LOADBOX);
+							mLoadBox2.SetAnimation(NAME_ANIMATION_BOX);
+						}
+						else if (!mLoadBox2.IsHidden())
+						{
+							mLoadBox2.Hide();
+							mPersonLoadBox.SetIdleAnimation();
+							mConvoy[4].PlayAnimCloseDoor(DAT_SPECIAL, 1.f);
+							Mission::StopTimer(TIMER_NAME_UPDATE_LOADBOX);
+							mLoadingFinished = true;
+						}
+					}
+				}
+				break;
+			case TIMER_NAME_STARTCONVOY:
+				{
+					if (mLoadingFinished && mGate1Open)
+					{
+						for(int i = 0; i < CONVOY_MAXSIZE; i++)
+							mConvoy[i].SetObjectPath(NAME_PATH_CONVOY);
+						mConvoy[0].AssignCommand(NAME_COMMAND_START);
+						mConvoy[0].AssignCommand(NAME_COMMAND_STOP);
+						mConvoy[0].SetCommandable(true);
+						Mission::StopTimer(TIMER_NAME_STARTCONVOY);
+						Mission::StartIntervalTimer(TIMER_NAME_UPDATE_CONVOY, TIMER_TIME_UPDATE_CONVOY);
+						ShowHint(0);
+						Audio::SetMusicLevel(0.1f);
+					}
+				}
+				break;
+			case TIMER_NAME_UPDATE_CONVOY:
+				{
+					for(int i = 0; i < CONVOY_MAXSIZE; i++)
+					{
+						if (mHintCounter[5] == 0 && mConvoy[i].GetEnergy() < mConvoy[i].GetMaxEnergy())
+							ShowHint(5);
+						else if (mHintCounter[6] == 0 && mConvoy[i].GetEnergy() <= 0.5f * mConvoy[i].GetMaxEnergy())
+							ShowHint(6);
+						else if (mConvoy[i].IsDestroyed())// || mConvoy[i].IsSmoking())
+							mConvoyLost = true;
+					}
+					if (mConvoy[0].IsMoving())
+					{
+						if (mSoundRef == -1)
+							mSoundRef = Audio::PlaySample3D(NAME_SOUND_CONVOY, mConvoy[0].GetPosition(), true);
+						else
+							Audio::UpdatePos(mSoundRef,mConvoy[0].GetPosition());
+						mConvoy1Stopped = false;
+					}
+					else if (mSoundRef > -1)
+					{
+						Audio::StopSample(mSoundRef);
+						mSoundRef = -1;
+					}
+				}
+				break;
+			case TIMER_NAME_HINT8:
+				{
+					if (!mGate1Open)
+						ShowHint(8);
+				}
+				break;
+			case TIMER_NAME_HINT9:
+				{
+					if (!mHalfPassed)
+						ShowHint(9);
+				}
+				break;
+			case TIMER_NAME_ENDMISSION:
+				{
+					Mission::HideBlackBars(0.7f);
+					Mission::EndCutScene();				
+					System::Log("MD01: End Cutscene2");
+					Mission::SetObjectiveAccomplished(OBJECTIVE_PROTECT_CONVOY, true);
+				}
+				break;
+			case TIMER_NAME_ENDMISSION_FAIL:
+				{
+					Mission::HideBlackBars(0.7f);
+					Mission::EndCutScene();				
+					System::Log("MD01: End Cutscene1");
+					mConvoyLost = true;
+				}
+				break;
+			case TIMER_NAME_UPDATE_MINES:
+				{
+					for(int i = 0; i < MAX_MINEFIELDS; i++)
+					{
+						if (mMineFields[i].active)
+						{
+							int filter = ACTOR_PERSON | ACTOR_VEHICLE;
+							if (mMineFields[i].visible)
+								filter = ACTOR_VEHICLE;
+							for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+							{
+								if (mMineFields[i].mines[j].IsValid())
+								{
+									GameObject nearest = mMineFields[i].mines[j].GetClosestObjectInRange(MINE_RADIUS, filter);
+									if (nearest.IsValid())
+									{
+										if (nearest.GetType() == ACTOR_PERSON)
+										{
+											Person p(&nearest);
+											if (!p.IsInjured())
+											{
+												if (p.GetRole() == ROLE_SQUAD)
+													mSquadHurtByMine = true;
+												//p.Injure(INJUREREASON_ENERGY);
+												p.SetLife(0.1f * p.GetMaxLife());
+												mMineFields[i].mines[j].Burn();
+												mMineFields[i].mines[j].ClearFlag(OF_USABLE);
+												if (mMineFields[i].flagSpawned && mMineFields[i].flags[j].IsValid())
+												{
+													mMineFields[i].flags[j].PushActionDeleteOwner(ACTION_NEWLIST);
+													mMineFields[i].flags[j] = GameObject();
+												}
+												mMineFields[i].mines[j] = GameObject();
+											}
+										}
+										else if (nearest.GetType() == ACTOR_VEHICLE)
+										{
+											Vehicle v(&nearest);
+											if (!v.IsCivilCar())
+												mSquadHurtByMine = true;
+											if (v.HasNamePrefix(NAME_PREFIX_CONVOY))
+											{
+												v.SetSmokeLevelDuration(0.05f);
+												v.SetSmoking(true);
+											}
+											else
+												v.Explode();
+											nearest.ClearActions();
+											mMineFields[i].mines[j].Burn();
+											mMineFields[i].mines[j].ClearFlag(OF_USABLE);
+											if (mMineFields[i].flagSpawned && mMineFields[i].flags[j].IsValid())
+											{
+												mMineFields[i].flags[j].PushActionDeleteOwner(ACTION_NEWLIST);
+												mMineFields[i].flags[j] = GameObject();
+											}
+											mMineFields[i].mines[j] = GameObject();
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				break;
+			case TIMER_NAME_UPDATE_REBEL1:
+				{
+					UpdateRebelGroup1();
+				}
+				break;
+			case TIMER_NAME_UPDATE_REBEL2:
+				{
+					UpdateRebelGroup2();
+				}
+				break;
+			case TIMER_NAME_UPDATE_REBEL3:
+				{
+					UpdateRebelGroup3();
+				}
+				break;
+			case TIMER_NAME_UPDATE_REBELTOWN:
+				{
+					UpdateRebelTown();
+				}
+				break;
+			case TIMER_NAME_UPDATE_MGS:
+				{
+					int numValid = 0;
+					for(int i = 0; i < MAX_MG_SHOOTERS; i++)
+					{
+						int id = -1;
+						if (mMGShooters[i].IsValid() && IsValidRebel(&mMGShooters[i]))
+						{
+							numValid++;
+							if (mMGShooters[i].IsSquadInRange(MG_SHOOTER_ACTION_RANGE) || mMGShooters[i].IsResorting())
+							{
+								mMGShooters[i].RemoveEquipment();
+								mMGShooters[i].SetSightAngle(360.f);
+								mMGShooters[i].SetShootRange(MG_SHOOTER_ACTION_RANGE / 50.f);
+								mMGShooters[i].SetShootFrequency(MG_SHOOTER_PISTOL_FREQUENCY);
+								mMGShooters[i].SetShootPower(MG_SHOOTER_PISTOL_POWER);
+								if (mMGShooters[i].IsResorting())
+								{
+									mMGShooters[i].ClearActions();
+									mMGShooters[i].SetIdleAnimation();
+									mMGShooters[i].SetEquipment(EQUIP_PISTOL);
+								}
+								else
+									mMGShooters[i].PushActionSwitchAnim(ACTION_NEWLIST, NAME_ANIMATION_MGS_STANDUP);
+								mMGShooters[i] = Person();
+								numValid--;
+							}
+							else if (mMGShooters[i].IsIdle() && mMGShooters[i].IsCarWithPrefixInRange(MG_SHOOTER_FIRE_RANGE, NAME_PREFIX_CONVOY, id))
+							{
+								if (mMGShooters[i].IsInSight(id))
+									mMGShooters[i].PushActionShoot(ACTION_NEWLIST, id);
+							}
+						}
+					}
+					if (numValid == 0)
+						Mission::StopTimer(TIMER_NAME_UPDATE_MGS);
+				}
+				break;
+			case TIMER_NAME_START_LOADUP:
+				{
+					mPersonLoadBox.SetAnimation(NAME_ANIMATION_LOADBOX);
+					mLoadBox1.SetAnimation(NAME_ANIMATION_BOX);
+					Mission::StartIntervalTimer(TIMER_NAME_UPDATE_LOADBOX, TIMER_TIME_UPDATE_LOADBOX);
+				}
+				break;
+		}
+	}
+
+	void OnSquadArrived(Person *squad)
+	{
+		if (squad && squad->HasCommand(NAME_SCOUTHOUSE))
+		{
+			squad->AssignCommand(NAME_SCOUTAREA);
+		}
+	}
+
+	void OnTrigger(const char *Trigger_, Actor *Collider_)
+	{
+		switch (Trigger_)
+		{
+			case NAME_GATE2:
+				{
+					mGate2.SetAnimation(NAME_ANIMATION_OPEN);
+					mAreaGate2.SetVirtualObjectTerrain(TERRAIN_ROAD);
+					Game::DeactivateTrigger(NAME_GATE2);
+				}
+				break;
+			case NAME_GATE3:
+				{
+					if (Collider_->HasNamePrefix(NAME_PREFIX_CONVOY))
+					{
+						ShowHint(10);
+						Game::DeactivateTrigger(NAME_GATE3);
+						ActorList target(NAME_AREA_CONVOYTARGET);
+						if (target.GetNumActors() > 0)
+						{
+							Actor *ta = target.GetActor(0);
+							GameObjectList fugitives(NAME_FUGITIVE);
+							for(int i = 0; i < fugitives.GetNumObjects(); i++)
+							{
+								fugitives.GetObject(i)->PushActionMove(ACTION_NEWLIST, ta, TARGET_RANDOM);
+							}
+							GameObjectList fugitivessit(NAME_FUGITIVE_SIT);
+							for(int i = 0; i < fugitivessit.GetNumObjects(); i++)
+							{
+								fugitivessit.GetObject(i)->PushActionSwitchAnim(ACTION_NEWLIST, NAME_ANIMATION_STANDUP);
+								fugitivessit.GetObject(i)->PushActionMove(ACTION_APPEND, ta, TARGET_RANDOM);
+							}
+						}
+						Game::SetAmbientSoundVolumeByName(NAME_AMBIENT2, 1.f);
+						Game::StopAmbientSound(NAME_AMBIENT1);
+					}
+					if (!mGate3.IsCurrentAnimation(NAME_ANIMATION_OPEN))
+					{
+						mGate3.SetAnimation(NAME_ANIMATION_OPEN);
+						mAreaGate3.SetVirtualObjectTerrain(TERRAIN_ROAD);
+					}
+				}
+				break;
+			case NAME_TRIGGER_TOWN_SQUADS:
+				{
+					LeaveHouses();
+					Game::DeactivateTrigger(NAME_TRIGGER_TOWN_SQUADS);
+				}
+				break;
+			case NAME_TRIGGER_TOWN_CONVOY:
+				{
+					if (Collider_->HasNamePrefix(NAME_PREFIX_CONVOY))
+					{
+						AttackConvoy();
+						Game::DeactivateTrigger(NAME_TRIGGER_TOWN_CONVOY);
+					}
+				}
+				break;
+				const char NAME_TRIGGER_HALFWAY:
+				{
+					mHalfPassed = true;
+					Game::DeactivateTrigger(NAME_TRIGGER_HALFWAY);
+				}
+				break;
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path_, GameObject *Caller_)
+	{
+		if (Path_ == NAME_PATH_CONVOY && Caller_->HasNamePrefix(NAME_PREFIX_CONVOY))
+		{
+			Mission::StartSingleTimer(TIMER_NAME_ENDMISSION, TIMER_TIME_ENDMISSION);
+			return PATH_STOP;
+		}
+		return PATH_DEFAULT;
+	}
+
+	void OnPostCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		switch(Cmd_)
+		{
+			case NAME_COMMAND_STOP:
+				{
+					if (Caller_->IsMoving())
+						ShowHint(1);
+				}
+				break;
+		}
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int diff = max - min;
+		if (diff <= 0)
+			return min;
+		int res = Math::rand() % diff;
+		return res + min;
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Collider1, Actor *Collider2)
+	{
+		if (Collider2->GetType() != ACTOR_PERSON && Collider2->GetType() != ACTOR_VEHICLE)
+			return MCC_HALT_CONTINUE;
+		GameObject coll2(Collider2);
+		/*if (Collider1->HasNamePrefix(NAME_PREFIX_CONVOY) && !Collider2->HasNamePrefix(NAME_PREFIX_CONVOY)
+			&& (!coll2.HasCommand(NAME_COMMAND_MOVETO) || !coll2.IsCommandable()))
+		{
+			Collider1->PushActionRedirectCar(ACTION_APPEND, true, true);
+			return MCC_HALT_DONE;
+		}
+		else*/ if (Collider1->HasName(NAME_CONVOY1) && !mConvoy1Stopped)
+		{
+			mConvoy1Stopped = true;
+			ShowHint(1);
+		}
+		return MCC_HALT_CONTINUE;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("MD01: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Mission::PlayHint(HINT_CONVOY_START);
+				break;
+			case 1:
+				Mission::PlayHint(HINT_CONVOY_STOP);
+				break;
+			case 2:
+				Mission::PlayHint(HINT_NO_MINES);
+				break;
+			case 3:
+				Mission::PlayHint(HINT_FOUND_MINES);
+				Audio::SetMusicLevel(0.2f);
+				break;
+			case 4:
+				Mission::PlayHint(HINT_SQUAD_UNDER_FIRE);
+				Audio::SetMusicLevel(0.3f);
+				break;
+			case 5:
+				Mission::PlayHint(HINT_CONVOY_ATTACK);
+				Audio::SetMusicLevel(0.3f);
+				break;
+			case 6:
+				Mission::PlayHint(HINT_PROTECT_CONVOY);
+				break;
+			case 7:
+				Mission::PlayHint(HINT_TOO_MANY_VICTIMS);
+				break;
+			case 8:
+				Mission::PlayComment(HINT_OPEN_GATE);
+				break;
+			case 9:
+				Mission::PlayComment(HINT_HURRY_UP);
+				Audio::SetMusicLevel(0.5f);
+				break;
+			case 10:
+				Mission::PlayComment(HINT_CONVOY_FINISH);
+				break;
+			case 11:
+				Mission::PlayComment(HINT_GATE_OPENED);
+				break;
+		}
+	}
+
+	void OnCountDownEnded()
+	{
+		mTimeRunOut = true;
+	}
+
+	bool OnHit(GameObject *shooter_, GameObject *hitObject_, Vector *hitPoint_)
+	{
+		switch(hitObject_->GetType())
+		{
+			case ACTOR_PERSON:
+				{
+					Person p(hitObject_);
+					Person s(shooter_);
+					if (p.GetRole() == ROLE_SQUAD && mHintCounter[4] == 0)
+					{
+						ShowHint(4);
+					}
+					else if (p.HasNamePrefix(NAME_REBEL1) && s.GetRole() == ROLE_SQUAD)
+					{
+						if (!IsRebelTargetAvailable(0))
+						{
+							for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+							{
+								//if (mRebelGroup1[i].person.GetID() == p.GetID())
+								{
+									if (IsValidRebel(&mRebelGroup1[i].person) && mRebelGroup1[i].person.IsIdle())
+									{
+										mRebelGroup1[i].person.SetFleeing(true);
+										mRebelGroup1[i].person.PushActionMove(ACTION_NEWLIST, shooter_->GetID(), TARGET_SHOOT);
+										mRebelGroup1[i].person.PushActionShoot(ACTION_APPEND, shooter_->GetID());
+										mRebelGroup1[i].state = RS_AGGRESSIVE;
+									}
+								}
+								//return true;
+							}
+							return true;
+						}
+					}
+					else if (p.HasNamePrefix(NAME_REBEL2) && s.GetRole() == ROLE_SQUAD)
+					{
+						if (!IsRebelTargetAvailable(1))
+						{
+							for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+							{
+								//if (mRebelGroup2[i].person.GetID() == p.GetID())
+								{
+									if (IsValidRebel(&mRebelGroup2[i].person) && mRebelGroup2[i].person.IsIdle())
+									{
+										mRebelGroup2[i].person.SetFleeing(true);
+										mRebelGroup2[i].person.PushActionMove(ACTION_NEWLIST, shooter_->GetID(), TARGET_SHOOT);
+										mRebelGroup2[i].person.PushActionShoot(ACTION_APPEND, shooter_->GetID());
+										mRebelGroup2[i].state = RS_AGGRESSIVE;
+									}
+								}
+								//return true;
+							}
+							return true;
+						}
+					}
+					else if (p.HasNamePrefix(NAME_REBEL3) && s.GetRole() == ROLE_SQUAD)
+					{
+						if (!IsRebelTargetAvailable(2))
+						{
+							for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+							{
+								//if (mRebelGroup3[i].person.GetID() == p.GetID())
+								{
+									if (IsValidRebel(&mRebelGroup3[i].person) && mRebelGroup3[i].person.IsIdle())
+									{
+										mRebelGroup3[i].person.SetFleeing(true);
+										mRebelGroup3[i].person.PushActionMove(ACTION_NEWLIST, shooter_->GetID(), TARGET_SHOOT);
+										mRebelGroup3[i].person.PushActionShoot(ACTION_APPEND, shooter_->GetID());
+										mRebelGroup3[i].state = RS_AGGRESSIVE;
+									}
+								}
+								//return true;
+							}
+							return true;
+						}
+					}
+				}
+				break;
+			case ACTOR_VEHICLE:
+				{
+					Vehicle v(hitObject_);
+					Person s(shooter_);
+					if (s.GetEquipment() == EQUIP_DUMMYRIFLE && (v.GetVehicleType() == VT_POLICE_SW || v.GetVehicleType() == VT_POLICE_WAW))
+						v.Damage(v.GetMaxEnergy() * SW_DAMAGE_FACTOR);
+				}
+				break;
+		}
+
+		return true;
+	}
+
+	void UpdateRebelGroup1()
+	{
+		if (!RebelGroupAggressive(0))
+		{
+			for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+			{
+				if (mRebelGroup1[i].state != RS_INVALID && mRebelGroup1[i].person.IsResorting())
+				{
+					SetRebelGroupAggressive(0);
+					break;
+				}
+			}
+		}
+		int numValid = 0;
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			if (mRebelGroup1[i].state != RS_INVALID && IsValidRebel(&mRebelGroup1[i].person))
+			{
+				numValid++;
+				switch(mRebelGroup1[i].state)
+				{
+					case RS_NORMAL:
+						{
+							int id = -1;
+							if (IsRebelTargetAvailable(0) || mRebelGroup1[i].person.IsSquadInRange(REBEL1_ACTION_RANGE - 10.f))
+							{
+								mRebelGroup1[i].person.SetFleeing(true);
+								mRebelGroup1[i].state = RS_AGGRESSIVE;
+								break;
+							}
+							else if (mRebelGroup1[i].person.IsCarWithPrefixInRange(REBEL1_ACTION_RANGE, NAME_PREFIX_CONVOY, id))
+							{
+								mRebelGroup1[i].person.SetFleeing(true);
+								mRebelGroup1[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+								mRebelGroup1[i].person.PushActionShoot(ACTION_APPEND, id);
+								mRebelGroup1[i].state = RS_AGGRESSIVE;
+								break;
+							}
+						}
+						break;
+					case RS_AGGRESSIVE:
+						{
+							if (mRebelGroup1[i].person.GetRole()!=ROLE_GANGSTER)
+							{
+								System::Log("MD01: Setting role and behaviour");
+								// Set Gangster Role
+								mRebelGroup1[i].person.SetRole(ROLE_GANGSTER);
+								mRebelGroup1[i].person.SetFleeing(true);
+								mRebelGroup1[i].person.SetCivilsFleeRange(0.f);
+								mRebelGroup1[i].person.SetNeverResort(false);
+								mRebelGroup1[i].person.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+								mRebelGroup1[i].person.SetShootRange(REBEL1_ACTION_RANGE / 50.f);
+							}
+							else if (mRebelGroup1[i].person.GetAimTargetID() == -1 && mRebelGroup1[i].person.IsIdle()) // Falls kein target mehr gefunden, wechsele Zustand
+							{
+								int id = -1;
+								if (IsRebelTargetAvailable(0))
+								{
+									id = GetRebelTargetAvailable(0);
+									System::Log("MD01: target %d", id);
+									if (id != -1)
+									{
+										mRebelGroup1[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+										mRebelGroup1[i].person.PushActionShoot(ACTION_APPEND, id);
+									}
+								}
+								else if (mRebelGroup1[i].person.IsCarWithPrefixInRange(REBEL1_ACTION_RANGE, NAME_PREFIX_CONVOY, id))
+								{
+									mRebelGroup1[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+									mRebelGroup1[i].person.PushActionShoot(ACTION_APPEND, id);
+								}
+								else
+								{
+									System::Log("MD01: Kein Target mehr, wechsle Role, zurück zum Ausgangspunkt! %d",i);
+									mRebelGroup1[i].person.StopMovement();
+									//mRebelGroup1[i].person.SetRole(ROLE_CIVILIAN);
+									mRebelGroup1[i].person.SetFleeing(false);
+									// Goto old Position							
+									mRebelGroup1[i].state = RS_RETURN;
+									mRebelGroup1[i].person.PushActionMove(ACTION_NEWLIST, mRebelGroup1[i].startPosition);
+								}
+							}		
+						}
+						break;
+					case RS_RETURN:
+						{
+							if (mRebelGroup1[i].person.IsIdle())
+								mRebelGroup1[i].state = RS_NORMAL;
+						}
+						break;
+				}
+			}
+		}
+		if (numValid == 0)
+			Mission::StopTimer(TIMER_NAME_UPDATE_REBEL1);	// keine Rebellen mehr in der Gruppe
+	}
+
+	void UpdateRebelGroup2()
+	{
+		if (!RebelGroupAggressive(1))
+		{
+			for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+			{
+				if (mRebelGroup2[i].state != RS_INVALID && mRebelGroup2[i].person.IsResorting())
+				{
+					SetRebelGroupAggressive(1);
+					break;
+				}
+			}
+		}
+		int numValid = 0;
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			if (mRebelGroup2[i].state != RS_INVALID && IsValidRebel(&mRebelGroup2[i].person))
+			{
+				numValid++;
+				switch(mRebelGroup2[i].state)
+				{
+				case RS_NORMAL:
+					{
+						int id = -1;
+						if (IsRebelTargetAvailable(1) || mRebelGroup2[i].person.IsSquadInRange(REBEL2_ACTION_RANGE - 10.f))
+						{
+							mRebelGroup2[i].person.SetFleeing(true);
+							mRebelGroup2[i].state = RS_AGGRESSIVE;
+							break;
+						}
+						else if (mRebelGroup2[i].person.IsCarWithPrefixInRange(REBEL2_ACTION_RANGE, NAME_PREFIX_CONVOY, id))
+						{
+							mRebelGroup2[i].person.SetFleeing(true);
+							mRebelGroup2[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+							mRebelGroup2[i].person.PushActionShoot(ACTION_APPEND, id);
+							mRebelGroup2[i].state = RS_AGGRESSIVE;
+							break;
+						}
+					}
+					break;
+				case RS_AGGRESSIVE:
+					{
+						if (mRebelGroup2[i].person.GetRole()!=ROLE_GANGSTER)
+						{
+							System::Log("MD01: Setting role and behaviour");
+							// Set Gangster Role
+							mRebelGroup2[i].person.SetRole(ROLE_GANGSTER);
+							mRebelGroup2[i].person.SetFleeing(true);
+							mRebelGroup2[i].person.SetCivilsFleeRange(0.f);
+							mRebelGroup2[i].person.SetNeverResort(false);
+							mRebelGroup2[i].person.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+							mRebelGroup2[i].person.SetShootRange(REBEL2_ACTION_RANGE / 50.f);
+						}
+						else if (mRebelGroup2[i].person.GetAimTargetID() == -1 && mRebelGroup2[i].person.IsIdle()) // Falls kein target mehr gefunden, wechsele Zustand
+						{
+							int id = -1;
+							if (IsRebelTargetAvailable(1))
+							{
+								id = GetRebelTargetAvailable(1);
+								if (id != -1)
+								{
+									mRebelGroup2[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+									mRebelGroup2[i].person.PushActionShoot(ACTION_APPEND, id);
+								}
+							}
+							else if (mRebelGroup2[i].person.IsCarWithPrefixInRange(REBEL2_ACTION_RANGE, NAME_PREFIX_CONVOY, id))
+							{
+								mRebelGroup2[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+								mRebelGroup2[i].person.PushActionShoot(ACTION_APPEND, id);
+							}
+							else
+							{
+								System::Log("MD01: Kein Target mehr, wechsle Role, zurück zum Ausgangspunkt! %d",i);
+								mRebelGroup2[i].person.StopMovement();
+								//mRebelGroup2[i].person.SetRole(ROLE_CIVILIAN);
+								mRebelGroup1[i].person.SetFleeing(false);
+								// Goto old Position							
+								mRebelGroup2[i].state = RS_RETURN;
+								mRebelGroup2[i].person.PushActionMove(ACTION_NEWLIST, mRebelGroup2[i].startPosition);
+							}
+						}		
+					}
+					break;
+				case RS_RETURN:
+					{
+						if (mRebelGroup2[i].person.IsIdle())
+							mRebelGroup2[i].state = RS_NORMAL;
+					}
+					break;
+				}
+			}
+		}
+		if (numValid == 0)
+			Mission::StopTimer(TIMER_NAME_UPDATE_REBEL2);	// keine Rebellen mehr in der Gruppe
+	}
+
+	void UpdateRebelGroup3()
+	{
+		if (!RebelGroupAggressive(2))
+		{
+			for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+			{
+				if (mRebelGroup3[i].state != RS_INVALID && mRebelGroup3[i].person.IsResorting())
+				{
+					SetRebelGroupAggressive(2);
+					break;
+				}
+			}
+		}
+		int numValid = 0;
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			if (mRebelGroup3[i].state != RS_INVALID && IsValidRebel(&mRebelGroup3[i].person))
+			{
+				numValid++;
+				switch(mRebelGroup3[i].state)
+				{
+				case RS_NORMAL:
+					{
+						int id = -1;
+						if (IsRebelTargetAvailable(2) || mRebelGroup3[i].person.IsSquadInRange(REBEL3_ACTION_RANGE - 10.f))
+						{
+							mRebelGroup3[i].person.SetFleeing(true);
+							mRebelGroup3[i].state = RS_AGGRESSIVE;
+							break;
+						}
+						else if (mRebelGroup3[i].person.IsCarWithPrefixInRange(REBEL3_ACTION_RANGE, NAME_PREFIX_CONVOY, id))
+						{
+							mRebelGroup3[i].person.SetFleeing(true);
+							mRebelGroup3[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+							mRebelGroup3[i].person.PushActionShoot(ACTION_APPEND, id);
+							mRebelGroup3[i].state = RS_AGGRESSIVE;
+							break;
+						}
+					}
+					break;
+				case RS_AGGRESSIVE:
+					{
+						if (mRebelGroup3[i].person.GetRole()!=ROLE_GANGSTER)
+						{
+							System::Log("MD01: Setting role and behaviour");
+							// Set Gangster Role
+							mRebelGroup3[i].person.SetRole(ROLE_GANGSTER);
+							mRebelGroup3[i].person.SetFleeing(true);
+							mRebelGroup3[i].person.SetCivilsFleeRange(0.f);
+							mRebelGroup3[i].person.SetNeverResort(false);
+							mRebelGroup3[i].person.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+							mRebelGroup3[i].person.SetShootRange(REBEL3_ACTION_RANGE / 50.f);
+						}
+						else if (mRebelGroup3[i].person.GetAimTargetID() == -1 && mRebelGroup3[i].person.IsIdle()) // Falls kein target mehr gefunden, wechsele Zustand
+						{
+							int id = -1;
+							if (IsRebelTargetAvailable(2))
+							{
+								id = GetRebelTargetAvailable(2);
+								if (id != -1)
+								{
+									mRebelGroup3[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+									mRebelGroup3[i].person.PushActionShoot(ACTION_APPEND, id);
+								}
+							}
+							else if (mRebelGroup3[i].person.IsCarWithPrefixInRange(REBEL3_ACTION_RANGE, NAME_PREFIX_CONVOY, id))
+							{
+								mRebelGroup3[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+								mRebelGroup3[i].person.PushActionShoot(ACTION_APPEND, id);
+							}
+							else
+							{
+								System::Log("MD01: Kein Target mehr, wechsle Role, zurück zum Ausgangspunkt! %d",i);
+								mRebelGroup3[i].person.StopMovement();
+								//mRebelGroup3[i].person.SetRole(ROLE_CIVILIAN);
+								mRebelGroup3[i].person.SetFleeing(false);
+								// Goto old Position							
+								mRebelGroup3[i].state = RS_RETURN;
+								mRebelGroup3[i].person.PushActionMove(ACTION_NEWLIST, mRebelGroup3[i].startPosition);
+							}
+						}		
+					}
+					break;
+				case RS_RETURN:
+					{
+						if (mRebelGroup3[i].person.IsIdle())
+							mRebelGroup3[i].state = RS_NORMAL;
+					}
+					break;
+				}
+			}
+		}
+		if (numValid == 0)
+			Mission::StopTimer(TIMER_NAME_UPDATE_REBEL3);	// keine Rebellen mehr in der Gruppe
+	}
+
+	void UpdateRebelTown()
+	{
+		int numValid = 0;
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			if (mRebelTown[i].state != RTS_INVALID && IsValidRebel(&mRebelTown[i].person))
+			{
+				numValid++;
+				switch(mRebelTown[i].state)
+				{
+					case RTS_WAITING:
+						{
+							if (mRebelTown[i].person.IsResorting())
+							{
+								if (!mRebelTown[i].person.GetRole() == ROLE_GANGSTER)
+								{
+									mRebelTown[i].person.SetRole(ROLE_GANGSTER);
+									mRebelTown[i].person.SetCivilsFleeRange(0.f);
+									mRebelTown[i].person.SetNeverResort(false);
+									mRebelTown[i].person.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+									mRebelTown[i].person.SetShootRange(REBELTOWN_ACTION_RANGE / 50.f);
+								}
+								mRebelTown[i].state = RTS_NORMAL;
+							}
+						}
+						break;
+					case RTS_NORMAL:
+					case RTS_ATTACKCONVOY:
+						{
+							if (mRebelTown[i].person.IsIdle())
+							{
+								int id = -1;
+								if (mRebelTown[i].person.IsCarWithPrefixInRange(REBELTOWN_ACTION_RANGE, NAME_PREFIX_CONVOY, id))
+								{
+									mRebelTown[i].person.PushActionMove(ACTION_NEWLIST, id, TARGET_SHOOT);
+									mRebelTown[i].person.PushActionShoot(ACTION_APPEND, id);
+									mRebelTown[i].state = RTS_ATTACKCONVOY;
+								}
+							}
+						}
+						break;
+				}
+			}
+		}
+	}
+
+	bool RebelGroupAggressive(int rebelGroup)
+	{
+		switch(rebelGroup)
+		{
+			case 0:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup1[i].person) && (mRebelGroup1[i].state == RS_AGGRESSIVE)) 
+						return true;
+				}
+				break;
+			case 1:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup2[i].person) && (mRebelGroup2[i].state == RS_AGGRESSIVE)) 
+						return true;
+				}
+				break;
+			case 2:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup3[i].person) && (mRebelGroup3[i].state == RS_AGGRESSIVE)) 
+						return true;
+				}
+				break;
+		}
+		return false;
+	}
+
+	void SetRebelGroupAggressive(int rebelGroup)
+	{
+		switch(rebelGroup)
+		{
+			case 0:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup1[i].person)) 
+					{
+						mRebelGroup1[i].state = RS_AGGRESSIVE;
+					}
+				}
+				break;
+			case 1:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup2[i].person)) 
+					{
+						mRebelGroup2[i].state = RS_AGGRESSIVE;
+					}
+				}
+				break;
+			case 2:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup3[i].person)) 
+					{
+						mRebelGroup3[i].state = RS_AGGRESSIVE;
+					}
+				}
+				break;
+		}
+	}
+
+	bool IsRebelTargetAvailable(int rebelGroup)
+	{
+		// liefert true, falls ein Rebell ein noch gültiges Ziel hat,
+		// das dann alle Rebellen zusammen bekämpfen
+		switch(rebelGroup)
+		{
+			case 0:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup1[i].person) && (mRebelGroup1[i].state == RS_AGGRESSIVE) && (mRebelGroup1[i].person.GetAimTargetID() != -1)) 
+						return true;
+				}
+				break;
+			case 1:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup2[i].person) && (mRebelGroup2[i].state == RS_AGGRESSIVE) && (mRebelGroup2[i].person.GetAimTargetID() != -1)) 
+						return true;
+				}
+				break;
+			case 2:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup3[i].person) && (mRebelGroup3[i].state == RS_AGGRESSIVE) && (mRebelGroup3[i].person.GetAimTargetID() != -1)) 
+						return true;
+				}
+				break;
+		}
+		
+		return false;
+	}
+
+	int GetRebelTargetAvailable(int rebelGroup)
+	{
+		// liefert true, falls ein Rebell ein noch gültiges Ziel hat,
+		// das dann alle Rebellen zusammen bekämpfen
+		switch(rebelGroup)
+		{
+			case 0:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup1[i].person) && (mRebelGroup1[i].state == RS_AGGRESSIVE) && (mRebelGroup1[i].person.GetAimTargetID() != -1)) 
+						return mRebelGroup1[i].person.GetAimTargetID();
+				}
+				break;
+			case 1:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup2[i].person) && (mRebelGroup2[i].state == RS_AGGRESSIVE) && (mRebelGroup2[i].person.GetAimTargetID() != -1)) 
+						return mRebelGroup2[i].person.GetAimTargetID();
+				}
+				break;
+			case 2:
+				for (int i=0; i<MAX_REBELS_PER_GROUP; i++)
+				{
+					if (IsValidRebel(&mRebelGroup3[i].person) && (mRebelGroup3[i].state == RS_AGGRESSIVE) && (mRebelGroup3[i].person.GetAimTargetID() != -1)) 
+						return mRebelGroup3[i].person.GetAimTargetID();
+				}
+				break;
+		}
+
+		return -1;
+	}
+
+	void LeaveHouses()
+	{
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			if (mRebelTown[i].state != RTS_INVALID && IsValidRebel(&mRebelTown[i].person) && mRebelTown[i].person.GetEnteredHouseID() != -1)
+			{
+				if (!mRebelTown[i].person.GetRole() == ROLE_GANGSTER)
+				{
+					mRebelTown[i].person.SetRole(ROLE_GANGSTER);
+					mRebelTown[i].person.SetFleeing(true);
+					mRebelTown[i].person.SetCivilsFleeRange(0.f);
+					mRebelTown[i].person.SetNeverResort(false);
+					mRebelTown[i].person.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+					mRebelTown[i].person.SetShootRange(REBELTOWN_ACTION_RANGE / 50.f);
+				}
+				else
+					mRebelTown[i].person.SetFleeing(true);
+				ActorList target(NAME_AREA_TOWNCENTER);
+				if (target.GetNumActors() > 0)
+				{
+					Actor *ta = target.GetActor(0);
+					mRebelTown[i].person.PushActionMove(ACTION_NEWLIST, ta, TARGET_RANDOM);
+				}
+				else
+				{
+					Vector pos = mRebelTown[i].person.GetEnteredHouseEntrancePosition(true);
+					mRebelTown[i].person.PushActionMove(ACTION_NEWLIST, pos);
+				}
+				mRebelTown[i].state = RTS_NORMAL;
+			}
+		}
+	}
+
+	void AttackConvoy()
+	{
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			if (mRebelTown[i].state != RTS_INVALID && IsValidRebel(&mRebelTown[i].person) && mRebelTown[i].person.GetAimTargetID() == -1)
+			{
+				if (!mRebelTown[i].person.GetRole() == ROLE_GANGSTER)
+				{
+					mRebelTown[i].person.SetRole(ROLE_GANGSTER);
+					mRebelTown[i].person.SetFleeing(true);
+					mRebelTown[i].person.SetCivilsFleeRange(0.f);
+					mRebelTown[i].person.SetNeverResort(false);
+					mRebelTown[i].person.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+					mRebelTown[i].person.SetShootRange(REBELTOWN_ACTION_RANGE / 50.f);
+				}
+				else
+					mRebelTown[i].person.SetFleeing(true);
+				mRebelTown[i].person.PushActionMove(ACTION_NEWLIST, mConvoy[0].GetID(), TARGET_SHOOT);
+				mRebelTown[i].person.PushActionShoot(ACTION_APPEND, mConvoy[0].GetID());
+				mRebelTown[i].state = RTS_ATTACKCONVOY;
+			}
+		}
+	}
+
+	bool IsValidRebel(Person* rebel)
+	{
+		if (!rebel)
+			return false;
+		return (rebel->IsValid() && !rebel->IsInjured() && 
+			!rebel->IsDead() && !rebel->IsLinkedWithPerson() &&
+			!rebel->IsArrested() && (rebel->GetEnteredCarID()==-1) &&
+			!rebel->IsResorting());
+	}
+	
+	MissionState GetMissionState()
+	{
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (mConvoyLost || mTimeRunOut)
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (mHintCounter[7] == 0 && Mission::GetCounter(COUNTER_SQUAD_DEATHS) >= HINT7_MAX_SQUAD_DEATHS)
+			ShowHint(7);
+
+		if (Mission::GetCounter(COUNTER_SQUAD_DEATHS) >= MAX_SQUAD_DEATHS)
+		{
+			mTooManyVictims = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+		
+		if(Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			// Missionsauswertung korrigieren
+			int numPI = Mission::GetCounter(COUNTER_PERSON_INJURIES);
+			int numGI = Mission::GetCounter(COUNTER_GANGSTER_INJURIES);
+			int numPD = Mission::GetCounter(COUNTER_PERSON_DEATHS);
+			int numGD = Mission::GetCounter(COUNTER_GANGSTER_DEATHS);
+			Mission::SetCounter(COUNTER_PERSON_INJURIES, numPI - numGI);
+			Mission::SetCounter(COUNTER_PERSON_DEATHS, numPD - numGD);
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mConvoyLost)
+			return "MD01_CONVOY_LOST";
+		else if (mTooManyVictims)
+			return "MD01_TOO_MANY_VICTIMS";
+		else if (mTimeRunOut)
+			return "MD01_TIME_RUN_OUT";
+		
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyVictims)
+			return "SUPERV_MD01_FAIL01";
+		else if (mConvoyLost)
+			return "SUPERV_MD01_FAIL02";
+		else if (mTimeRunOut)
+			return "SUPERV_MD01_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_MD01_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f && mSquadHurtByMine)
+			return "SUPERV_MD01_RES02";
+		if (scoring->Efficiency < 0.6f && Mission::GetCounter(COUNTER_SQUAD_DEATHS) >= MIN_SQUAD_DEATHS_FOR_EFFICIENCY)
+			return "SUPERV_MD01_RES03";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mPersonLoadBox);
+		serializer_->Write(mLoadBox1);
+		serializer_->Write(mLoadBox2);
+		serializer_->Write(mLoadingFinished);
+		serializer_->Write(mGate1Open);
+		serializer_->Write(mConvoyLost);
+		serializer_->Write(mTooManyVictims);
+		serializer_->Write(mTimeRunOut);
+		serializer_->Write(mConvoy1Stopped);
+		serializer_->Write(mHalfPassed);
+		serializer_->Write(mCutscene);
+		serializer_->Write(mSquadHurtByMine);
+		serializer_->Write(CONVOY_MAXSIZE);
+		for(int i = 0; i < CONVOY_MAXSIZE; i++)
+			serializer_->Write(mConvoy[i]);
+		serializer_->Write(mGate1);
+		serializer_->Write(mAreaGate1);
+		serializer_->Write(mGate2);
+		serializer_->Write(mAreaGate2);
+		serializer_->Write(mGate3);
+		serializer_->Write(mAreaGate3);
+		serializer_->Write(MAX_MINEFIELDS);
+		for(int i = 0; i < MAX_MINEFIELDS; i++)
+		{
+			serializer_->Write(mMineFields[i].active);
+			serializer_->Write(mMineFields[i].flagSpawned);
+			serializer_->Write(MAX_MINES_PER_MINEFIELD);
+			for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+			{
+				serializer_->Write(mMineFields[i].mines[j]);
+				serializer_->Write(mMineFields[i].flags[j]);
+			}
+			serializer_->Write(mMineFields[i].position);
+			serializer_->Write(mMineFields[i].valid);
+			serializer_->Write(mMineFields[i].visible);
+		}
+		serializer_->Write(MAX_REBELS_PER_GROUP);
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			serializer_->Write(mRebelGroup1[i].person);
+			serializer_->Write(mRebelGroup1[i].startPosition);
+			serializer_->Write(mRebelGroup1[i].state);
+			serializer_->Write(mRebelGroup2[i].person);
+			serializer_->Write(mRebelGroup2[i].startPosition);
+			serializer_->Write(mRebelGroup2[i].state);
+			serializer_->Write(mRebelGroup3[i].person);
+			serializer_->Write(mRebelGroup3[i].startPosition);
+			serializer_->Write(mRebelGroup3[i].state);
+			serializer_->Write(mRebelTown[i].person);
+			serializer_->Write(mRebelTown[i].state);
+		}
+		serializer_->Write(MAX_MG_SHOOTERS);
+		for(int i = 0; i < MAX_MG_SHOOTERS; i++)
+		{
+			serializer_->Write(mMGShooters[i]);
+			serializer_->Write(mMGs[i]);
+		}
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		System::Log("MD01: SerializeFrom");
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		serializer_->Read(mPersonLoadBox);
+		serializer_->Read(mLoadBox1);
+		serializer_->Read(mLoadBox2);
+		mLoadingFinished = serializer_->ReadBool();
+		mGate1Open = serializer_->ReadBool();
+		mConvoyLost = serializer_->ReadBool();
+		mTooManyVictims = serializer_->ReadBool();
+		mTimeRunOut = serializer_->ReadBool();
+		mConvoy1Stopped = serializer_->ReadBool();
+		mHalfPassed = serializer_->ReadBool();
+		mCutscene = serializer_->ReadBool();
+		mSquadHurtByMine = serializer_->ReadBool();
+		int temp = -1;
+		serializer_->Read(temp);
+		System::Log("MD01: temp1 = %d", temp);
+		if (temp != CONVOY_MAXSIZE)
+			return false;
+		for(int i = 0; i < CONVOY_MAXSIZE; i++)
+			serializer_->Read(mConvoy[i]);
+		serializer_->Read(mGate1);
+		serializer_->Read(mAreaGate1);
+		serializer_->Read(mGate2);
+		serializer_->Read(mAreaGate2);
+		serializer_->Read(mGate3);
+		serializer_->Read(mAreaGate3);
+		serializer_->Read(temp);
+		System::Log("MD01: temp2 = %d", temp);
+		if (temp != MAX_MINEFIELDS)
+			return false;
+		for(int i = 0; i < MAX_MINEFIELDS; i++)
+		{
+			mMineFields[i].active = serializer_->ReadBool();
+			mMineFields[i].flagSpawned = serializer_->ReadBool();
+			serializer_->Read(temp);
+			System::Log("MD01: temp3 = %d", temp);
+			if (temp != MAX_MINES_PER_MINEFIELD)
+				return false;
+			for(int j = 0; j < MAX_MINES_PER_MINEFIELD; j++)
+			{
+				serializer_->Read(mMineFields[i].mines[j]);
+				serializer_->Read(mMineFields[i].flags[j]);
+			}
+			serializer_->Read(mMineFields[i].position);
+			mMineFields[i].valid = serializer_->ReadBool();
+			mMineFields[i].visible = serializer_->ReadBool();
+		}
+		serializer_->Read(temp);
+		System::Log("MD01: temp4 = %d", temp);
+		if (temp != MAX_REBELS_PER_GROUP)
+			return false;
+		for(int i = 0; i < MAX_REBELS_PER_GROUP; i++)
+		{
+			serializer_->Read(mRebelGroup1[i].person);
+			serializer_->Read(mRebelGroup1[i].startPosition);
+			serializer_->Read(mRebelGroup1[i].state);
+			serializer_->Read(mRebelGroup2[i].person);
+			serializer_->Read(mRebelGroup2[i].startPosition);
+			serializer_->Read(mRebelGroup2[i].state);
+			serializer_->Read(mRebelGroup3[i].person);
+			serializer_->Read(mRebelGroup3[i].startPosition);
+			serializer_->Read(mRebelGroup3[i].state);
+			serializer_->Read(mRebelTown[i].person);
+			serializer_->Read(mRebelTown[i].state);
+		}
+		serializer_->Read(temp);
+		System::Log("MD01: temp5 = %d", temp);
+		if (temp != MAX_MG_SHOOTERS)
+			return false;
+		for(int i = 0; i < MAX_MG_SHOOTERS; i++)
+		{
+			serializer_->Read(mMGShooters[i]);
+			serializer_->Read(mMGs[i]);
+		}
+		return true;
+	}
+};

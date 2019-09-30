@@ -1,0 +1,66 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script dropwithcrane
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+object DropWithCrane : CommandScript
+{
+	Vector TargetPos;
+	
+	DropWithCrane()
+	{
+		SetCursor("drop");
+		SetIcon("drop");
+		SetGroupID(CGROUP_CRANE);
+		SetHighlightingEnabled(false);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		return Caller->GetCarriedObjects().GetNumObjects() > 0;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		//System::Print("DropWithCrane called.");
+	
+		if (!Caller->IsValid())
+			return false;
+
+		GameObjectList l = Caller->GetCarriedObjects();
+		if (l.GetNumObjects() == 0) 
+			return false;
+		
+		// Anvisierter Punkt erreichbar?
+		TargetPos = Game::GetCommandPos();
+		Vehicle vehi(Caller);
+		if (vehi.IsValid() && vehi.CanBeDropped(TargetPos) && !Game::IsWater(TargetPos, false))
+			return true;
+				
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionDropWithCrane(ACTION_NEWLIST,TargetPos);
+		GameObject o(Target);
+		if (o.HasNamePrefix("ehrang") || o.GetType()==ACTOR_VEHICLE)
+			o.SetFlag(OF_TRANSPORTABLE);
+		if (o.HasNamePrefix("emma"))
+			o.SetFlag(OF_CUTABLE);
+	}	
+};

@@ -1,0 +1,508 @@
+//**************************************************************************************************
+// #Version 2.0#										****
+//												****
+// 		Includes: all Sirens								****
+//												****
+//	1.0| VCmdSiren										****
+//	1.1| DUMMYUpdatePos									****
+//	1.2| DUMMYDisableSiren									****
+//	1.3| DUMMYFindPath									****
+//	1.4| DUMMYHasSiren									****
+//												****
+// childID 1 for disabling bluelights.								****
+//												****
+//												****
+//**************************************************************************************************
+
+// Hier kann man den Namen eines Icons für die Commandleiste angeben.
+// Wird automatisch aus den Ordnern UI/Game/Icons/Command/ und UI/Game/Icons/Cursor genommen.
+const char IMG[] = "sosi";
+
+const char EACTION_FINDPATH[] = "EActionFindPath";
+
+const char DUMMY_HASSIREN[] = "DUMMYHasSiren";
+const char DUMMY_UPDATEPOS[] = "DUMMYUpdatePos";
+const char DUMMY_FINDPATH[] = "DUMMYFindPath";
+
+const char CMD_MOVETO[] = "MoveTo";
+
+const char NAME_DUMMYOBJECT[] = "HelpingObjekt_Roger";
+
+ const char PROTO_RW[] = "mod:Prototypes/Vehicles/Fire Department/unimog.e4p";
+ const char PROTO_GTF[] = "mod:Prototypes/Vehicles/Fire Department/lf8442.e4p";
+ const char PROTO_DLK[] = "mod:Prototypes/Vehicles/Fire Department/dlk8331.e4p";
+ const char PROTO_TLF[] = "mod:Prototypes/Vehicles/Fire Department/tlf8231.e4p";
+ const char PROTO_DEKON[] = "mod:Prototypes/Vehicles/Fire Department/dekonp.e4p";
+ const char PROTO_TFMB[] = "mod:Prototypes/Vehicles/Fire Department/tfmb.e4p";
+ const char PROTO_LPF[] = "mod:Prototypes/Vehicles/Fire Department/lpf.e4p";
+ const char PROTO_FLB[] = "mod:Prototypes/Vehicles/Fire Department/flb.e4p";
+
+ const char PROTO_NEF[] = "mod:Prototypes/Vehicles/Ambulance/nef8821.e4p";
+ const char PROTO_RTW[] = "mod:Prototypes/Vehicles/Ambulance/rtw2.e4p";
+ const char PROTO_RTW2[] = "mod:Prototypes/Vehicles/Ambulance/rtw2m.e4p";
+ const char PROTO_ITW[] = "mod:Prototypes/Vehicles/Ambulance/itw.e4p";
+ const char PROTO_RHF[] = "mod:Prototypes/Vehicles/Ambulance/rhf.e4p";
+
+ const char PROTO_STW1[] = "mod:Prototypes/Vehicles/Police/stw1.e4p";
+ const char PROTO_STW2[] = "mod:Prototypes/Vehicles/Police/stw2.e4p";
+ const char PROTO_STW3[] = "mod:Prototypes/Vehicles/Police/stw3.e4p";
+ const char PROTO_MTW[] = "mod:Prototypes/Vehicles/Police/mtw1.e4p";
+ const char PROTO_SW[] = "mod:Prototypes/Vehicles/polizei/sw.e4p";
+ const char PROTO_WAW[] = "mod:Prototypes/Vehicles/polizei/waw.e4p";
+ const char PROTO_GTW[] = "mod:Prototypes/Vehicles/polizei/gtw.e4p";
+
+ const char PROTO_FGRI[] = "mod:Prototypes/Vehicles/TEC/fgri.e4p";
+ const char PROTO_FGRB[] = "mod:Prototypes/Vehicles/TEC/fgrb.e4p";
+ const char PROTO_FGR_RB[] = "mod:Prototypes/Vehicles/TEC/fgr_rb.e4p";
+ const char PROTO_FGR[] = "mod:Prototypes/Vehicles/TEC/fgr.e4p";
+ const char PROTO_ASF[] = "mod:Prototypes/Vehicles/TEC/asf.e4p";
+ const char PROTO_ASF2[] = "mod:Prototypes/Vehicles/TEC/asf2.e4p";
+
+int DummyGroup = 20;
+
+// 01.0
+object VCmdSiren : CommandScript
+{
+	VCmdSiren()
+	{
+		SetIcon(IMG);
+		SetCursor(IMG);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid())
+			return false;
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		if (!Caller->HasCommand(CMD_MOVETO) || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if (!v.HasCommand(DUMMY_HASSIREN) && (childID != 2 && childID != 1))
+		{
+
+			int soundID;
+			int zufall = rand()%3;
+			v.EnableBlueLights(true);
+			Vector CarPos = v.GetPosition();
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_RW) == 0)
+ 			{
+ 					// Hier muss ein valider Link zu einem Sirensound stehen, in 'mono' codiert!
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rw.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_GTF) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/lf16.wav", CarPos, true);
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_DLK) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/dlk.wav", CarPos, true);
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_TLF) == 0)
+ 			{
+				switch(zufall)
+				{
+				case 0:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_land.wav", CarPos, true);
+				break;
+				case 1:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_stadt.wav", CarPos, true);
+				break;
+				case 2:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_mix.wav", CarPos, true);
+				break;
+				}
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_LPF) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/lkw.wav", CarPos, true);
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_DEKON) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/dekon.wav", CarPos, true);
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_TFMB) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/lkw.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_FLB) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/EMsiren05.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_NEF) == 0)
+ 			{
+				switch(zufall)
+				{
+				case 0:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_land.wav", CarPos, true);
+				break;
+				case 1:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_stadt.wav", CarPos, true);
+				break;
+				case 2:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_mix.wav", CarPos, true);
+				break;
+				}
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_RTW) == 0)
+ 			{
+				switch(zufall)
+				{
+				case 0:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_land.wav", CarPos, true);
+				break;
+				case 1:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_stadt.wav", CarPos, true);
+				break;
+				case 2:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_mix.wav", CarPos, true);
+				break;
+				}
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_RTW2) == 0)
+ 			{
+				switch(zufall)
+				{
+				case 0:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_land.wav", CarPos, true);
+				break;
+				case 1:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_stadt.wav", CarPos, true);
+				break;
+				case 2:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_mix.wav", CarPos, true);
+				break;
+				}
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ITW) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/itw.wav", CarPos, true);
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_RHF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stdem04.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_STW1) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stw.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_STW2) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stw.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_STW3) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stw.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_MTW) == 0)
+ 			{
+				switch(zufall)
+				{
+				case 0:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_land.wav", CarPos, true);
+				break;
+				case 1:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_stadt.wav", CarPos, true);
+				break;
+				case 2:
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_mix.wav", CarPos, true);
+				break;
+				}
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_SW) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/ehorn.wav", CarPos, true);
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_WAW) == 0)
+ 			{
+
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/ehorn.wav", CarPos, true);
+ 			}
+ 
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_GTW) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stdem02.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_FGRI) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/bosch.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_FGRB) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/bosch.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_FGR_RB) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/bosch.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_FGR) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/ehorn.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/leer.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASF2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/leer.wav", CarPos, true);
+ 			}
+
+				GameObject mDummy =  Game::CreateObject("mod:Prototypes/Objects/Misc/empty.e4p", NAME_DUMMYOBJECT);
+
+				mDummy.Hide();
+				mDummy.SetPosition(CarPos);
+				mDummy.SetUserData(soundID);
+				mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, &v, soundID, false);
+				v.SetUserData(soundID);
+				v.AssignCommand(DUMMY_HASSIREN);
+
+			return;
+		}
+
+		if (v.HasCommand(DUMMY_HASSIREN))
+		{
+			if (childID == 1)
+			{
+				v.EnableBlueLights(false);
+			}
+
+			if (v.HasCommand(DUMMY_HASSIREN))
+			{
+				int ref = Caller->GetUserData();
+				Audio::StopSample(ref);
+
+				GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+				for(int i=0; i<list.GetNumObjects(); i++)
+				{
+					GameObject *obj = list.GetObject(i);
+					if (obj->GetUserData() == ref)
+					{
+						int mSirTest = i;
+					}
+				}
+
+				GameObject *obj = list.GetObject(mSirTest);
+				obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				v.RemoveCommand(DUMMY_HASSIREN);
+			}
+
+			return;
+		}
+	}
+};
+
+// 01.1
+object DUMMYUpdatePos : CommandScript
+{
+	DUMMYUpdatePos()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		GameObject mDummy(Caller);
+		Vector CarPos = v.GetPosition();
+
+		if (v.IsDestroyed() || !v.IsValid())
+		{
+			int ref = mDummy.GetUserData();
+			Audio::StopSample(ref);
+
+			mDummy.PushActionDeleteOwner(ACTION_NEWLIST);
+		} else
+		  {
+			mDummy.SetPosition(CarPos);
+			Audio::UpdatePos(childID, CarPos, true);
+			if (v.IsCurrentAction(EACTION_FINDPATH))
+			{
+				if (!v.HasCommand(DUMMY_FINDPATH))
+				{
+					v.AssignCommand(DUMMY_FINDPATH);
+				}
+			}
+			mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, Target, childID, false);
+		  }
+
+		if (v.HasCommand(DUMMY_FINDPATH))
+		{
+			if (!v.IsCurrentAction(EACTION_FINDPATH) && v.GetNumActions() == 0)
+			{
+				v.RemoveCommand(DUMMY_HASSIREN);
+				v.RemoveCommand(DUMMY_FINDPATH);
+
+				int ref = Caller->GetUserData();
+				Audio::StopSample(ref);
+
+				GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					GameObject *obj = list.GetObject(i);
+					if (obj->GetUserData() == ref)
+					{
+						int mSirTest = i;
+
+						GameObject *obj = list.GetObject(mSirTest);
+						obj->PushActionDeleteOwner(ACTION_NEWLIST);
+						v.RemoveCommand(DUMMY_HASSIREN);
+						if (v.HasCommand(DUMMY_FINDPATH))
+						{
+							v.RemoveCommand(DUMMY_FINDPATH);
+						}
+					}
+				}
+			}
+		}
+	}
+};
+
+// 01.2
+object DUMMYDisableSiren : CommandScript
+{
+	DUMMYDisableSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		if (childID == 1)
+		{
+			v.EnableBlueLights(false);
+		}
+
+		int ref = Caller->GetUserData();
+		Audio::StopSample(ref);
+
+		GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->GetUserData() == ref)
+			{
+				int mSirTest = i;
+
+				GameObject *obj = list.GetObject(mSirTest);
+				obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				v.RemoveCommand(DUMMY_HASSIREN);
+				if (v.HasCommand(DUMMY_FINDPATH))
+				{
+					v.RemoveCommand(DUMMY_FINDPATH);
+				}
+			}
+		}
+	}
+};
+
+// 01.3
+object DUMMYFindPath : CommandScript
+{
+	DUMMYFindPath()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+// 01.4
+object DUMMYHasSiren : CommandScript
+{
+	DUMMYHasSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return false;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return false;
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};

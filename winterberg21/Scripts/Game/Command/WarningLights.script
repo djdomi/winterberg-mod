@@ -1,0 +1,105 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script WarningLights
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+ const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+ 
+ // Hier muss der Name(!) des Bildes aus dem UI-Ordner stehen.
+ const char IMG[] = "warning";
+ 
+ const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+ 
+ int DummyGroup = 20;
+ 
+ object VCmdWarningLights : CommandScript
+ {
+ 	VCmdWarningLights()
+ 	{
+ 		SetIcon(IMG);
+ 		SetCursor(IMG);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Caller);
+ 
+ 		if (v.HasCommand(DUMMY_HASWARNINGLIGHTS))
+ 		{
+ 			v.EnableBlinker(BLT_NONE);
+//			v.PushActionExecuteCommand(ACTION_INSERT,"Geraet_weg",&v,110,true);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+ 			return;
+ 		}
+  
+ 		if (!v.HasCommand(DUMMY_HASWARNINGLIGHTS))
+ 		{
+ 			v.EnableBlinker(BLT_BOTH);
+ 			v.AssignCommand(DUMMY_HASWARNINGLIGHTS);
+//			v.PushActionExecuteCommand(ACTION_INSERT,"AutoUmleiten",&v,0,true);
+  			return;
+ 		}
+ 	}	
+ };
+ 
+ object DUMMYHasWarningLights : CommandScript
+ {
+ 	DUMMYHasWarningLights()
+ 	{
+ 		SetGroupID(DummyGroup);
+ 	}
+ 
+ 	bool CheckGroupVisibility(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };

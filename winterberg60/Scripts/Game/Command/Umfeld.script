@@ -1,0 +1,156 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script Umfeld
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+ 
+ // Hier muss der Name(!) des Bildes aus dem UI-Ordner stehen.
+ const char IMG[] = "LightOn";
+ 
+ const char DUMMY_HASUMFELD[] = "DUMMYHasUmfeld";
+ 
+ int DummyGroup = 20;
+ 
+ // 1.0
+ object VCmdUmfeld : CommandScript
+ {
+ 	VCmdUmfeld()
+ 	{
+ 		SetIcon(IMG);
+ 		SetCursor(IMG);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Caller);
+ 
+ 		if (v.HasCommand(DUMMY_HASUMFELD))
+ 		{
+ 			v.EnableSpecialLights(false);
+ 			v.RemoveCommand(DUMMY_HASUMFELD);
+ 		} else if (!v.HasCommand(DUMMY_HASUMFELD))
+ 		{
+ 			v.EnableSpecialLights(true);
+ 			v.AssignCommand(DUMMY_HASUMFELD);
+ 		}
+ 	}	
+ };
+ 
+ // 1.1
+ object DUMMYHasUmfeld : CommandScript
+ {
+ 	DUMMYHasUmfeld()
+ 	{
+ 		SetGroupID(DummyGroup);
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };
+
+ object Umfeld_LM : CommandScript
+ {
+ 	Umfeld_LM()
+ 	{
+		SetCursor("LightOn");
+		SetIcon("LightOn");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+  		Vehicle v(Caller);
+
+		if (childID==0)
+			if (v.HasCommand(DUMMY_HASUMFELD))
+				childID=2;
+			else
+ 				childID=1;
+
+		switch(childID)
+		{
+			case 2:
+	 			v.EnableSpecialLights(false);
+ 				v.RemoveCommand(DUMMY_HASUMFELD);
+				v.PlayAnimCloseDoor(DAT_SPECIAL,3.0f);
+				break;
+ 			case 1:
+				v.PlayAnimOpenDoor(DAT_SPECIAL,3.0f);
+	 			v.EnableSpecialLights(true);
+				v.AssignCommand(DUMMY_HASUMFELD);
+				break;
+		}
+ 	}	
+ };
+ 

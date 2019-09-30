@@ -1,0 +1,159 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script Umfeld
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+ 
+ // Hier muss der Name(!) des Bildes aus dem UI-Ordner stehen.
+ const char IMG[] = "LightOn";
+ 
+ int DummyGroup = 20;
+ 
+ // 1.0
+ object VCmdUmfeld : CommandScript
+ {
+ 	VCmdUmfeld()
+ 	{
+ 		SetIcon(IMG);
+ 		SetCursor(IMG);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Caller);
+
+		switch (childID)
+ 		{
+			case 0:
+		 		if (v.IsSpecialLightEnabled())
+ 					v.EnableSpecialLights(false);
+		 		else
+ 					v.EnableSpecialLights(true);
+				break;
+			case 1:
+ 				v.EnableSpecialLights(true);
+				break;
+			case 2:
+ 				v.EnableSpecialLights(false);
+				break;
+		}
+ 	}	
+ };
+ 
+ object Umfeld_LM : CommandScript
+ {
+ 	Umfeld_LM()
+ 	{
+		SetCursor("LightOn");
+		SetIcon("LightOn");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+  		Vehicle v(Caller);
+		
+		bool ischild=v.HasChild("lima");
+		bool isanim=v.HasAnimation("open") && !ischild;
+
+		if (childID==0)
+			if (v.IsSpecialLightEnabled())
+				childID=2;
+			else
+ 				childID=1;
+		
+		System::Log("Lima Bedienung %s : Anim %u Child %u Switch %u",Caller->GetName(), int(isanim), int(ischild),childID);
+
+		switch(childID)
+		{
+			case 2:
+	 			v.EnableSpecialLights(false);
+				if (isanim)
+					v.SetAnimation("close");
+				else if (ischild)
+					v.PlayAnimCloseDoor("lima",3.0f);
+				else
+					v.PlayAnimCloseDoor(DAT_SPECIAL,3.0f);
+				break;
+ 			case 1:
+				if (isanim)
+					v.SetAnimation("open");
+				else if (ischild)
+					v.PlayAnimOpenDoor("lima",3.0f);
+				else
+					v.PlayAnimOpenDoor(DAT_SPECIAL,3.0f);
+	 			v.PushActionWait(ACTION_NEWLIST,2.0);
+				v.PushActionExecuteCommand(ACTION_APPEND,"VCmdUmfeld",Caller,1,false);
+				break;
+		}
+ 	}	
+ };
+ 

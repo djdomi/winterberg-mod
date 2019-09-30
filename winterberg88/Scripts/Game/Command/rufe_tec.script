@@ -1,0 +1,346 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script rufe_tec
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+#pragma compile
+
+
+
+
+
+
+
+
+
+
+bool isdeluxe=false;
+
+object tec_isdeluxe:CommandScript
+{
+
+   tec_isdeluxe()
+   {
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	isdeluxe=childID==11;
+   }
+};
+
+object fw109 : CommandScript
+{
+
+   fw109()
+   {
+	SetIcon("rufe_kran");
+	SetCursor("rufe_kran");
+	SetValidTargets(ACTOR_FLOOR|ACTOR_OBJECT|ACTOR_STREET|ACTOR_VEHICLE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_VEHICLE:
+			Vehicle o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_FLOOR:
+		case ACTOR_STREET:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok || (Caller->IsFlagSet(FLAG_TL));
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(FLAG_TL))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,109,false);
+	else 
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",Target,701,false);
+   }
+};
+
+
+object rufe_siemens : CommandScript
+{
+
+   rufe_siemens()
+   {
+      SetValidTargets(ACTOR_FLOOR|ACTOR_OBJECT);
+      SetIcon("rufe_siemens");
+      SetCursor("rufe_siemens");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_VEHICLE:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+	Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",Target,710,false);
+   }
+};
+
+object rufe_wawe : CommandScript
+{
+
+   rufe_wawe()
+   {
+      SetValidTargets(ACTOR_FLOOR|ACTOR_OBJECT);
+      SetIcon("wasserw");
+      SetCursor("wasserw");
+   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return isdeluxe;
+	}
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_VEHICLE:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+	Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",Target,712,false);
+   }
+};
+
+object rufe_nfm : CommandScript
+{
+
+   rufe_nfm()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL|ACTOR_OBJECT);
+      SetIcon("rufe_nfm");
+      SetCursor("rufe_nfm");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_VEHICLE:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_VIRTUAL:
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+	Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",Target,711,false);
+   }
+};
+
+object rufe_bomber : CommandScript
+{
+
+   rufe_bomber()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL|ACTOR_OBJECT);
+      SetIcon("rufe_bomber");
+      SetCursor("rufe_bomber");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_VEHICLE:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_VIRTUAL:
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+	{
+		GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+		Target=&t;
+	}
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"lst_alarmieren",Target,117,false);
+   }
+};
+
+object rufe_asf : CommandScript
+{
+
+   rufe_asf()
+   {
+	SetValidTargets(ACTOR_FLOOR | ACTOR_VEHICLE|ACTOR_OBJECT);
+	SetIcon("adac");
+	SetCursor("adac");
+	SetPriority(10);
+   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (Input::LCtrlPressed())
+			SetPriority(1000);
+		else
+			SetPriority(10);
+		return true;
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_VEHICLE:
+	 		ok=Caller->GetID() != Target->GetID();
+			if (ok)
+			{
+				Vehicle v(Target);
+				ok = (ok && v.IsFlagSet(OF_TRANSPORTABLE)) || v.HasCommand("lst_estelle");
+			}
+			break;
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int Code=700;
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+			if (Game::IsWater(Target->GetPosition(),true))
+			Code=702;
+		} 
+	
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,Code,false);
+   }
+};
+
+class bungarext : CommandScript
+{
+
+	GameObject hierhin (Vector cp, GameObject *zug)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetUserData(zug->GetUserData());
+		zug->SetUserData(0);
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		obj.PushActionWait(ACTION_NEWLIST,500.0);
+		obj.PushActionDisappear(ACTION_APPEND,7.0,150.0,true);
+		return obj;
+	}
+	
+	void debung (GameObject *bung)
+	{
+		if (bung->HasNamePrefix("bungar"))
+		{
+			GameObject db(bung);		
+			db.PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+	}
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;

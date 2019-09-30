@@ -1,0 +1,378 @@
+Bugfixes/Erweiterungen
+Stand 4.0 vom 12.8.2007
+
+1. Jede Ortsfw / RTW muss gezielt alarmiert werden. 
+
+2. Alarmstichworte werden mittels Button im Menue Fw-Alarmierung umgeschaltet. Folgende steh zur Verfüfung:
+a. örtlich -> LF (o. TSF) +TLF falls vorhanden
+b. Löschzug = örtlich + DLK
+c. Rüstzug = örtlich + RW
+c1 Rüstzug/Kran = Rüstzug + Kranfahrzeug
+d. Gefahrgut = Vollalarm + GW-Mess + GTLF + RW
+e. Waldbrand = Vollalarm + GTLF + GTLF + 4* TLF /TSF-W
+f. EINZELNES Fahrzeug der jeweiligen Wache OHNE ELW :)
+
+ausserdem Alarmierung FAE / Sirene nach Wahl
+
+Bei Alarmierung Sirene ruecken zusaetzlich zur Ortsfeuerwehr ein zweites LF+ TLF /TSF aus
+
+3. Der Zugführer ist noch nicht optimal, kann aber den kompletten Zug am Einsatzende INCL pol heimschicken. ausserdem kann der Zugführer alle Alarmfunktionen der Leitstelle durchführen.
+
+4. Es gibt ein STATUS 0-Notruf-Kommando, das alle freien POL-Fahrzeuge an den Standort des Notrufenden alarmiert (gut v.a. bei ausser kontrolle geratenden Demos)
+
+5. Gruppenführer sollten auch unter CSA/PA zu erkennen sein und ihre kommandosets behalten. das wird behoben.
+
+7. Hab aus einigen Civil-Cars mal Drivercars gemacht. Crashs auf Kreuzungen ohne Verletzte find ich ziemlich doof. jetzt gibts ab und an welche
+
+8. Patienten im RTW verschlechtern sich waehrend des Transportes. Wenn sie bei Abfahrt zu schlecht waren, wird unterwegs ein Notarzt nachgefordert. Das gibt 500 Minuspunkte 
+
+9. Ein Notarzt pflichtiger Pat kann nun nur noch um einen gewissen Betrag verbessert werden. Keinesfalls kann eine langdauernde NA-Behandlung dazu führen, dass der Pat. im KTW oder Taxi transportiert werden kann :D
+
+10. Der Notarzt kann den DLK-Korb betreten. Damit besteht eine gewisse Chance, Infarkte o.  Schlaganfaelle im OpenHouse 1.OG noch zu retten, indem man den NA den Pat erstmal im Haus stabilisieren lässt. :D
+
+11. Wenn eine BMA wg Brand auslöst, werden alle im Gebauede befindlichen Personen verletzt sein. I.d.R bedeutet BMA mit Feuer also auch Menschenrettung mit mehreren Veletzten.
+
+12. Es gibt drei neue Löschgruppen mit TSF, die restlichen folgen im Laufe der Zeit genauso wie eine zweite DLK.
+
+13. KTW + RTW Medebach gehen nun um 17.00 in den wohlverdienten Feierabend bis zum naechsten Morgen und stehen nicht für Einsaetze zur Verfuegung.
+
+14.befiehlt der GF einen Löscheinsatz, so wird eines der drei vorgenommenen Strahlrohre immer ein B-Rohr sein, sofern auf dem Fz vorhanden.
+
+15. Die Alarmierung ist nun auf drei Tische geteilt, wobei der RTW-Tisch eine Fahrzeugzustandsanzeige simuliert, in dem alarmierte RTW ausgestrichen werden und nicht neu alarmiert werden können bis sie wieder in Status 1 gehen.
+
+16. Ausnahme : Befinden sich RTW noch auf der Anfahrt zum Einsatz oder stehen an der Estelle nur bereit, so können sie bei bedarf nach Umschalten auf dem Funktisch für einen anderen Einsatz, für den sie am nächsten stehen neu alarmiert werden.
+
+17. Das NEF folgt dem RTW nach wie vor ohne Sosi ins KH aber mit der Geschwindigkeit des RTW
+
+18. Auf vielfachen Wunsch werden jetzt externe Polizeifahrzeuge alarmiert, wenn die Winterberger nicht ausreichen. D.h. sie kommen wie die Abschleppfahrzeuge aus einer zufaelligen Richtung nach Winterberg gesaust.
+
+19. Für FMS-Freaks : Fz, die Notruf senden oder RTW die unterwegs nen Notarzt nachbestellen, senden einen Status 0 per SMS
+
+20. Es gibt auf der Leitstelle auf dem 4. Tisch eine BMA, die für jede Anlage auf der Map ein Icon enthält. Hat die BMA ausgelöst oder ist nicht zurueckgestellt worden, so kann man den Button druecken und die Kamera auf die entsprechende BMA richten.
+
+21. Auch die NEFs und Hubis können nun einzeln disponiert bzw umdirigiert werden. Dadurch ist auch fuer jedes Fz erkennbar, ob es noch verfügbar ist.
+Selbstverstaendlich kann weiterhin NEF/RTW in Kombi alarmiert werden, dann wird automatisch das naechste freie NEF mitalarmiert.
+
+22. Instabile Patienten koennen nur noch transportiert werden, wenn ein NA im RTW ist (der muss VOR dem Einladen schon drin sein)
+
+23. Zweiter Hubi Chr 7 Kassel Modell Bo105 
+
+24. Für Rettungsdienst STORNO-Alarmierung. Damit kann ein alarmiertes Fz vor Erreichen der EStelle von der Leitstelle aus wieder heimbeordert werden, falls es nicht mehr benötigt wird, ohne dass man am Fz P druecken muss.
+
+25. Neuer Spezialeinsatz
+
+26. Disponent auf der Leitstelle stellt "Alle Feuer Notaus" zur Verfügung ..
+
+27. Die DLK Olsberg steht nur als 2. Drehleiter zur Verfügung
+
+28. Der LKW rückt nun beim Loeschzug-Vollalarm und im Gefahrgutzug mit aus, beladen mit 3 Dichtkissen und 6 B-Schlaeuchen
+
+29. In brennenden Gebaeuden ist PA nun zwingend erforderlich, sonst wirds ungesund für die Einsatzkraefte. Man sollte auch die Verletzten drinnen zuegig retten :D. ACHTUNG: der Gefahrenbereich kann sich auch auf Bereich um das Gebaeude herum erstrecken !!
+
+
+
+Stand 3.31  vom 10.2.2007
+
+- Neue Fz-Models fuer LF 16 WiB, TLF 16/25 WiB, LF 8 Zueschen -> diese Fz parken wieder anstaendig
+- AutoUmleiten der Fz beim Anfahren und Absitzen aktiviert
+- LÖschkanone der TLW werden nicht mehr automatisch aktiviert
+- BUG im Aufsitzen/Geraete-Ruecknahme-Script -> BTD scheint eliminiert
+- BUG im SEG-Script -> KTW sollte nun nach Entladen am KH keinen NA mehr für die Heimfahrt anfordern
+- Ausrueckreihenfolge RTW/NEF geaendert, das NEF faehrt nun zuerst ab
+- RTW, die zur Transportbegleitung einen NA anfordern, zeigen dies nun deutlich durch Tattoo auf dem Dach, damit sie nicht
+  im allgemeinen Durcheinander vergessen werden
+- RA, die ein NEF nachfordern, ueberwachen den Patienten nun kontinuierlich. Sollte er rea-pflichtig werden, so beginnt die
+  Basis-Reanimation bis zum Eintreffen des NA. Auf diese Weise sollte nun kein Pat mehr wg. Warten auf den NA versterben.
+- Der Chemiezug wurde um ein neues Dekon-Fz erweitert. Funktion wird noch ausgebaut
+- Pro Zugalarmierung findet sich jetz ein Techn. EL mit gelbem Koller, auf dem ersten ausgerueckten Löschfahrzeug. Noch machtlos.
+- Gruppenfuehrer sind unter CSA/PA durch einen roten Punkt am Helm gekennzeichnet
+- Nachalarmierung RTW/NEF durch KTW/RTW funzt wieder
+- Löschen mit der Drehleiter ist wieder unkompliziert moeglich
+
+
+
+Stand 3.27  vom 4.2.2007
+
+- Innenangriff mit PA ist moeglich
+- Alle Fwler kuppeln beim Aufsitzen wieder korrekt ab
+- Der SEG-KTW wird nicht mehr zur ewigen Ruhe geschickt beim Abruecken
+- Einsatzfahrzeuge fliegen nicht mehr in die Luft, wenn man ihnen von hand nen Mechaniker schickt
+- SEG überarbeitet, Sanis laden jetzt Pat automatisch im zelt ab, wenn wieder Platz ist
+- SEG-KTW wird am KH entladen (nein, die Pat sieht man nicht zum KH robben wie frueher)
+- FMS wird doppelt gesendet wie von manchen Decodern benötigt
+
+
+Release 3.2 
+
+Stand 29.1.2007
+
+- Polizeifahrzeuge fahren Streife. Der einer EStelle naechste rueckt an
+- San-Team kann abgefuehrte Person von Fw/Pol auf die Trage übernehmen -> Fensterspringer
+  kann im RTW abtransportiert werden
+- SEG-COde überarbeitet -> Patienten werden jetzt problemlos abtransportiert
+- FwGeraete-Code überarbeitet -> BTD beim Umgang mit Schnellangriff o.ä. beseitigt
+- Hubi-Code überarbeitet -> Pat kann jetzt ohne BTD zum KH transportiert werden
+- Heal-Code überarbeitet -> Sanis bleiben bei Reanimationssituation am Patienten bis NEF eintrifft
+			-> Live-Level wird auf dem Stand bei Ankunft festgehalten im Sinne einer
+			Basis-HLW
+- EnterCar/ToHospital-Code überarbeitet und vereinfacht, leider bleibt ab und an immer noch
+  ein Fz ohne neues Personal am KH stehen
+- Autowracks brennen jetzt beim Aufladen nicht mehr.
+- GruFü-Code überarbeitet -> Menschenrettung und Löschangriff sind nun parallel möglich,
+  zur Rettung/Löschen werden nur nicht ausgeruestete Fwler ohne Pat herangezogen
+- GoHome überarbeitet -> beschaedigte NachbarFz werden nun korrekt repariert, der Mechaniker
+  rennt nicht mehr quer durch die Stadt (und die Fz brennen hier auch nicht ab ?? )
+- BUG behoben : Kommt ein Fz mit unvollstaendiger Besatzung an der Wache an, war es nicht mehr einsetzbar, weil nicht als frei gekennzeichnet.
+	-> Jetzt ist es nach dem Aussteigen der Mannschaft und FzInspektion wieder einsatzbereit
+- BUG behoben : BTD beim Aussteigen an der PolStation, wenn im STW 2 Gefangene waren -> Code vereinfacht , kein BTD mehr
+- BUG behoben : beim Aufladen zerstörter Einsatzfahrzeuge wurden alle Einsatzkraefte geloescht -> BTD, falls diese im RTW unterwegs waren 
+		->  im Transport befindliche oder verletzte EKraefte werden nicht mehr geloescht.
+
+
+Winterberger EM4 Version 3.0 Multiplayer
+
+Stand 24.12.2006
+
+- Winterberg laesst sich nun MULTIPLAYER spielen
+  ===============================================
+  Fuer Anregungen oder Kommentare zur bevorzugten Steuerung bin ich fuer Kommentare dankbar
+
+- GW-Mess hat nun 15 CSA, nachdem nach Ausruesten des LF16 nicht mal mehr genug Anzuege für die Mannschaft des GW-Mess da waren
+- BMA ist vollstaendig implementiert. 2 Alarmmodi : 1. Fehlausloesung -> BMA muss durch GF quittiert werden
+   						  2. Feuer -> Feuer loeschen und alle Verletzten retten, erst dann kann die BMA zurueckgestellt werden
+- GF-Befehle wurden um Automatik erweitert.
+  So fuehrt der Befehl Rettung auf ein OpenHouse angewendet bei der DLK zur automatischen Installation des Fahrzeuges, Rettung und technische Rettung auf
+  eine Wasserflaeche angewendet dazu, dass sich ein FWMann mit Tauchanzug ausruestet, falls im Fz
+- Der Funkmast des ELW faehrt beim abruecken automatisch ein
+- Der ELW hat ein neues Sondersignal
+- Der Hubi schmiert beim Enladen eines Verletzten nun definitiv nicht mehr ab
+- Das Aufsitzen-Kommando sollte auch mit einem BSW funktionieren
+
+==> Zugfuehrer mit speziellen ZF-Funktionen, Zugsteuerung durch ELW und Leitstellenfunktionalitaet fuer denselben kommen im naechsten Schritt
+    Ausserdem sollten die Einsatzkraefte truppweise vorgehen, dann kann auch eine LF16-Besatzung keine 6 Rohre mehr vornehmen
+
+Achtung: Die Einsatzfrequenz ist im vorliegenden Mod auch ohne Spezialeinsaetze heavy!! ggf. unbedingt die Parameter runterdrehen, sonst Infarkt :-)
+
+Wem die Spezialaufgaben zu schnell hintereinanderkommen, der moege im Script gohome_winterberg.script die Zeile escalator=-20; suchen und z.B. -50 oder 
+was immer ertraeglich erscheint, einsetzen. Je negativer der Wert um so groesser die Abstaende.
+
+Viel Spass beim Zocken!
+
+Stand 14.12.2006
+
+Der Verteiler wird beim Aufsitzen ENDLICH automatisch zurueckgenommen, nachdem die Schlaeuche abgebaut sind.
+
+Die normgerechte Fahrzeugbeladung ist jetzt vollstaendig implementiert. Zahlenmaessig kontrolliert werden
+PA, CSA, Tauchanzuege, Strahlrohre=Schlaeuche, Rettungsschere, Kettensaege sowie alle Zusatzgeraete, also
+Verteiler, Monitore, Schnellangriffe, Lichtmast, Pylone etc.
+
+Damit unterscheidet sich ein LF16 einsatztaktisch vom LF8 dadurch, dass es 2 Loeschgruppen (2 Verteiler/6 Strahlrohre) unterstuetzt 
+statt nur einer (1 Verteiler/ 3 Rohre) so wie in der Realitaet. Das GTLF hat nun 2 Schnellangriffseinrichtungen.
+Da die Anzahl der PA/CSA auf den Loeschfahrzeugen nun begrenzt ist (4/ max. 2), wurde der GW-Mess zum GW-AS ausgeruestet und führt 32 PA sowie 
+10 CSA mit (ausreichend fuer 2 Loeschzuege).
+Bitte intensiv testen, ggf. kann die Beladung der Fz leicht modifiziert werden. 
+Ausserdem ist es jederzeit moeglich, scriptgesteuert die Fz-Beladung zu modifizieren und so z.B. den LKW an der Wache mit Nachschub zu beladen
+oder ein Wechselcontainersystem zu simulieren
+
+Der Gruppenfuehrer verfuegt nun über folgende Befehle
+1. Loescheinsatz -> zwei Varianten : 1. Wird eine Position auf der Strasse gewaehlt, so wird der Verteiler dort platziert und 3 Rohre werden
+					vom Verteiler aus vorgenommen
+				     2. Wird der Befehl auf ein Fz angewendet, so ruestet sich die Gruppe an diesem Fz mit Verteiler und 
+					Strahlrohren aus und wartet auf weitere Weisung. So kann z.b. die Mannschaft aus dem ELW oder eine LKW/
+					Ruestwagenbesatzung an einem LF16 einen zweiten Verteiler und weitere Rohre vornehmen.
+
+					BUGS: Sitzt der Verteiler bevor sich drei mann mit Strahlrohren ausgeruestet haben, kann es sein, dass nicht
+					      alle Rohre automatisch am Verteiler angeschlossen werden
+					
+						Die Gruppe eines LF16 darf nicht beide Verteiler selber nutzen, da sonst die Programmlogik noch
+						aus dem Tritt kommt :-).
+
+2. Verteiler setzen -> Fortsetzung von 1 - > die ausgeruestete Gruppe setzt nun den Verteiler und nimmt die Rohre vor
+
+3. Meschenrettung -> GF postiert sich im Gefahrenbereich, Gruppe rettet Verletzte und bringt sie zum Fz
+
+4. Technische Rettung -> Lichtmast wird an der bezeichneten Stelle postiert, ein FWMann ruestet sich mit SChere aus und beginnt eingeklemmte aus
+			 den umliegenden Fz zu befreien.
+
+3+4 Am GW-AS ausruesten : Nur gueltig wenn als Ziel ein Fz ausgewaehlt wird. Die komplette Gruppe incl. Gruppenfuehrer ruestet sich am 
+			  gewaehlten Fz mit PA/CSA aus soweit Geraete auf dem Fahrzeug verfuegbar sind
+
+
+Stand 3.12.2006
+
+Hubschrauber koennen nur tagsueber bei klarem Wetter eingesetzt werden
+
+In Vorbereitung auf eine realistische Zugeinsatzsimulation erste Implementation einer normgerechten Fz-Beladung -> deswegen Sprung nach 2.5
+Es werden in der Menge begrenzt 
+- Strahlrohre ("Schlaeuche")
+- PA und Chemieschutzanzuege sowie Taucherausruestungen
+- Rettungsschere, Kettensaege
+
+DAS IST NOCHT NICHT INTENSIV GESTESTET -> bitte Probleme melden :-)
+
+entnommene Geraete werden nach der Nutzung noch nicht wieder aufs Fz verlastet so wie einmal eingesetzte PA, CSA, Schlaeuche auch
+erst auf der Wache wieder gegen einsatzfähige getauscht werden ! Im naechsten Schritt wird es wieder dann möglich sein, sich an jedem 
+Fz mit PA/CSA auszuruesten -> GW-AS ? 
+Ein Löschfahrzeug auf dem Weg zur Wache ist nur sehr bedingt einsatzbereit wie in der Realität
+
+Vorbereitet aber zur Zeit noch nicht genutzt ist Begrenzung des Loeschwassertankes. Hier waere noch die Frage der Loeschwasser
+versorgung zu klaeren, bevor ich das Wasser am Fahrzeug abdrehe :-)
+
+Eine Einsatzzeitbegrenzung für PA ist in Planung -> ist das sinnvoll/gewuenscht ?
+
+Zur einfacheren Pflege wurden alle Listen, die die Fahrzeuge und deren Beladung/SoSi definieren, in das localizer.script ausgelagert.
+Aenderungen koennen unkompliziert hier vorgenommen werden, ohne dass man in allen Scripten wuehlen muss. Auch die Prototypen und 
+Rufnamen werde ich hier noch hin übernehmen
+
+=> hier habe ich tief in den Code eingegriffen, es sind reichlich Fehler möglich -> bitte alle Fz intensiv einsetzen und Fehler am 
+besten mit Log melden -> dafuer sind Erweiterungen/Anpassungen künftig viel einfacher, grade im Hinblick auf die Beladungen
+
+Die Einarbeitung von BMA ist begonnen, die BMA sind aber noch nicht aktiv. Hierzu muss noch eine BMZ gemoddet werden, an der der Alarm
+vom Loeschzug quittiert werden kann. Das konzept sieht folgendermassen aus:
+- BMZ an geeigneten Objekten -> BMZ bekommt Namen des Objektes , z.b. DigiMarkt, Nordchemie, Hafenlager etc.
+  Der Name kann bei Alarmausloesung dann angezeigt werden, an der BMZ Blinkleuchte bei Alarm und Quittungsbutton
+- Im Objekt werden ein oder mehrere Linien verteilt, die zyklisch in der Umgebung nach FireObjects suchen und im Falle eines
+  Feuers Alarm auslösen. Zusaetzlich wird zufallsgesteuert ab und an ein Linienfehler mit Fehlauslösung erzeugt. Es waer doch
+  doof, wenn wir dann an den Gebaeuden BMAs haben, die zwar fehlalarme auslösen, sich aber nicht rühren,wenns wirklich brennt.
+
+Zugfuehrungskonzept:
+- Jedes Fahrzeug bekommt einen Gruppenfuehrer, der die Einsatzaufgabe für das Fz bestimmt und das Einsatzziel festlegt
+- Kommando Brandbekämpfung : 4 Mann unter PA, 1 Verteiler an vom GF markierte Stelle, 1 Monitor falls vorhanden, Rest ruestet sich mit 
+			     Schlaeuchen aus,   Gruppe sammelt sich am Verteiler (Einsatz mit Bereitstellung)
+- Kommando Menschenrettung : je nach Lage Ausruesten mit PA / CSA soweit verfuegbar, ausgeruestete Mannschaft beginnt im Umkreis des GF mit
+				dem Retten der Verletzten und legt sie im vom ELW bestimmten Triagebereich ab
+				kontaminierte Fussgaenger werden eingefangen
+				evtl in den Gefahrenbereich einlaufende Fußgaenger werden weggefuehrt
+- Kommando technische Rettung : Je nach Lage ausruesten mit PA/CSA oder 1 Taucher, eine Rettungsschere, 1 LiMa, LiMa an die vom GF
+				 bezeichnete Stelle, Im Umfeld werden automatisch Eingeklemmte aus den Fahrzeugen befreit
+
+Der ELW soll spater in der Lage sein
+1. eine Liste der an der EStelle aktiven Fahrzeuge zu fuehren, damit ein Kommando Einsatzende am ELW ALLE Fahrzeug an der Estelle ab
+   ruecken lassen kann
+2. soll deswegen kuenftig die Nachforderung nicht primär mitalarmierter Fz übernehmen, alternativ können nachrueckende Fz als Einsatzziel
+   auf den ELW alarmiert werden so wie die RTW beim MANV auf das SEG-Zelt
+3. die ELW-Besatzung wird die E-Stelle strukturieren : Festlegen Triagebereich, an dem Gerettete Personen zur Erstversorgung gesammelt werden
+   2. Festlegen des Sammelpunktes für die mitalarmierten Rettungsmittel
+   3. Festlegen des Sammelpunktes für nachalarmierte Feuerwehren
+   4. (festlegen und sichern hubilandeplatz)
+
+
+Stand 18.11.2006
+
+- Fahrzeugumfeldbeleuchtung wird beim Absitzen automatisch eingeschaltet und beim Abruecken abgeschaltet
+- Neuer Notarzt am KH wird erst erzeugt, wenn der NA aus dem RTW im KH verschwunden ist
+
+- Erster Versuch der MULTIPLAYER-Faehigkeit : 
+	Jeder Leitstellenplatz wird einem Player zugewiesen -> Tisch 1 = Player 1, Tisch 2 = Player 2 etc
+	alarmierte Fz werden automatisch dem Player zugewiesen, der alarmiert hat
+
+Funktionsänderungen Winterberger EM4 2.1
+
+Stand 25.9.2006
+- Anruecken der Nachbarfz wird je nach Standortentfernung verzoegert
+- Fz ruecken erst nach Durchlauf ihrer Schleife aus
+- Lichtmast ist in 15 Grad-Schritten drehbar
+- GGV-Transporte sind zu entschaerfen bzw mit Dichtkissen abzudichten
+- Gasmultimeter/Geigerzaehler funktionieren nur akustisch
+- Alarmstichwort Chemiezug in Lst integriert
+- Versuchsweise Implementation einer Umleit-Funktion fuer Fz
+- NEF auf Person alarmiert rueckt automatisch mit RTW gemeinsam aus, keine KTW-Alarmierung!
+- Fahrzeuge haben eingebaute Umleitfunktion, mit der sie den Gegenverkehr umleiten können
+- Gefahrguttransporter sollen Rauch absondern (funktioniert noch nicht) 
+
+Stand 4.9.2006
+- SEG mit Triage funktional
+- GGV Modul mit vollem Funktionsumfang, noch einzelne Bugs
+- Notarzt kniet sich vors Auto vor Versorgung Eingeklemmter
+
+bis 18.8.2006
+- SEG-Helfer haben Heal-Command
+- GoHome_Winterberg und Loadup deaktiviert ggf. Motorsound/Sosi vor Rueckfahrt/Wrack aufladen, um persistierende
+  Soundeffekte auf der Karte zu vermeiden
+- Gefahrgut-Paket begonnen : Script Kemlerzahl liest Gefahrgutkennzeichen eines angeklickten Fahrzeuges und gibt
+  entsprechende Infos aus -> steht auf dem GW-Mess zur Verfuegung
+  6 Gefahrgueter definiert :
+  33 : leicht brennbare Flüssigkeit -> Schere/LiMa/TS/Autos im Gefahrenbereich ohne Kuehlung führt zu Brand/Explosion
+  x423: Natrium/Kali -> Wasserbeaufschlagung führt zu Brand/Explosion
+  20 : Austreten von Gas -> Aufenthalt ohne PA im Gefahrenbereich führt zu Gesundheitsschaden
+  411 : Munitionstransport -> FzAufprall/Schere/Aufladen/Anheben vor Entschärfung führt zu Explosion
+  86 : Ätzende/giftige Stoffe -> Aufenthalt im Gefahrenbereich ohne CSA führt zu schweren Gesundheitsschäden
+  70 : Radioaktiv -> Aufenthalt im Gefahrenbereich führt zu Gesundheitsschäden
+- GW-Mess erhält Geigerzähler/ GasMultimeter, um Austritt von Gefahrgut zu detektieren
+- Mittels Repair-Befehl können lecke GGV-Transporter abgedichtet werden
+- Über SoSi-Script erfolgt Ein/Ausschalten des Detektorsignals für MM/GZ
+- Random_Vu generiert Gefahrgut beladene Fz 
+
+bis 14.8.2006
+- SEG integriert, kann vom LNA angefordert werden
+- AutoHeal durch Notarzt deaktiviert
+- Random_Vu-Quote nimmt nun mit jedem Gohome zu bis zur definitiven Auslösung eines Ereignisses, Auslösung bei max. einem anderen
+  Verletzen auf der Karte möglich
+
+Funktionsänderungen Winterberger EM4 2.0
+
+bis 10.8.2006
+- GTLF über separaten Button einzeln nachalarmierbar
+- Siemens/DBManager/Kampfmittelraeumer koennen nur fuer sie freigegebene Objekte reparieren
+
+bis 3.8.2006
+
+- Alarmgeber alarmiert nur noch Schleifen für die Wachen, die auch ausruecken
+- Pro Wache wird nur einmal alarmiert, auch wenn mehrere Fz ausruecken
+- Einsatzdurchsagen für NFM/Kampfmittelraeumer hinzugefuegt (Sounds fehlen noch)
+- Umziehkommandos stehen nur dort zur Verfuegung, wo auch die entsprechende Ausruestung vorhanden ist
+
+bis 2.8.2006
+
+- DB-Notfallmanager integriert -> Fahrzeugtyp muss FGRI EKW sein !
+- Ingenieur ist jetzt wieder Siemens-Techniker
+- Kampfmittelraeumdienst integriert -> Fahrzeugtyp muss FGRI EKW sein !
+- Kampfmittelraeumer ist mit 2 Mann besetzt, einer repariert, der andere fuehrt ne Kamera und kann ggf mit Feuerlöscher eingreifen
+- ADAC jetzt mit Mechaniker besetzt
+- Die Techniker koennen zur Zeit noch alles reparieren. Funktionsbeschränkung wird nachgereicht
+
+bis 1.8.2006
+
+- Startscript kann nur einmal gestartet werden
+- Vor Hubiaktion wird auf gelandeten Hubschrauber geprüft
+- Hubi/NEF-personal velässt an der EStelle automatisch das Fz
+
+Stadt
+- einsehbarer Bereich intern markiert, um Zufallseinsätze abseits am Kartenrand zu unterbinden
+- Zufalls-VUs in der Anzahl reduziert. Es dürfen keine Verletzten auf der Map sein, damit einer eintritt
+- VOBS für Tiefgarage/U-Bahn-Stationen
+
+Lst
+- Neue Alarmdurchsagen
+- Alarmierungen werden sicher sequentiell abgespielt und überlagern nicht mehr
+
+RD
+- LNA mit eigenem Fz eingeführt - noch keine Sonderfunktionen
+- Notarzt kann LNA alarmieren
+- Notarzt kann eingeklemmte im PKW vor Rettung stabilisieren
+- Notarzt setzt vor Versorgung Eingeklemmter Helm auf
+- KTW fordert korrekt RTW und ggf NEF nach je nach Verletzungsgrad
+- nachgefordertes NEF parkt nicht mehr neben dem Pat sondern neben dem nachfordernden RTW und damit nicht mehr hinter dem Haus,
+  wenn der Patient im Hinterzimmer liegt
+- NEF/RTH akzeptiert RTWs als Target -> Notarzt steigt dann automatisch in den RTW um zur Transportbegleitung
+- Notarzt steigt durch die Hintertür in den RTW und nicht mehr auf den Beifahrersitz
+- Wenn ein Patient einmal vom Notarzt versorgt wurde, wird kein NEF mehr nachalarmiert, wenn die RAs ihn stabilisieren oder in 
+  den RTW laden.
+- Hubschrauber sucht beim Anflug auf die Klinik automatisch gueltigen Anflugwinkel
+
+FW
+- Fahrzeuge können mit Verteiler, Monitor, Lichtmast, Pylonen, TS, Schnellangriff ausgeruestet werden
+   -> Geraete werden korrekt zurueckgenommen beim Aufsitzen
+- zusaetzliche Fahrzeuge eingeführt
+- Neues TLF Winterberg
+- Schnellangriff kann vom FzMenue aus direkt angefordert werden -> ein FwMann steigt aus und macht sich löschbereit 
+- Fahrzeuge werden an der Wache komplett aufgerüstet, falls Geraet im Einsatz verloren ging
+- TS/Verteiler werden nicht mehr abgebaut, wenn noch Schläuche angeschlossen sind
+- Fahrzeug fährt nicht mehr nach hause, wenn noch Schlauchanschluesse belegt sind
+- Nachrueckfolge fuer TLF im Zug korrigiert
+- nicht verfügbare Zusatzausruestung wird im Menue deaktiviert
+
+
+Pol
+- Streifenwagen verfügen über Pylone + Feuerlöscher
+- Polizisten können mit Feuerlöschern Erstangriff durchführen

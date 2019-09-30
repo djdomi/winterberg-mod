@@ -1,0 +1,102 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script DriveAwayPerson
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+object DriveAwayPerson : CommandScript
+{
+	bool enterHouse;
+
+	DriveAwayPerson()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetGroupID(CGROUP_ARREST);
+		SetGroupLeader(true);
+		SetRestrictions(RESTRICT_NOTARRESTED | RESTRICT_NOTINJURED | RESTRICT_NOTLINKED);
+		SetPossibleEquipment(EQUIP_NONE);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleExists(CPE_NONIJURED_PERSON);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		return !p.IsLinkedWithPerson() && !p.HasCommand("fuehrung");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || Target->GetID() == Caller->GetID() )
+			return false;
+
+		if(Caller->GetType() != ACTOR_PERSON || Target->GetType() != ACTOR_PERSON)
+			return false;
+			
+		Person p(Caller);		
+		if(p.IsLinkedWithPerson() || p.IsCarryingPerson() || p.IsPulling())
+			return false;
+		enterHouse = false;
+		Person t(Target);
+		if (t.GetRole() == ROLE_ANIMAL || t.IsDrowning())
+			return false;
+		if(p.GetEnteredCarID() != -1)
+		{
+			if(!p.CanLeaveDLK())
+				return false;
+			if (!t.IsValid() || t.GetEnteredHouseID() != p.GetEnteredCarTargetID())
+				return false;
+			enterHouse = true;
+		}
+		else if(t.IsValid() && p.GetEnteredHouseID() != t.GetEnteredHouseID())
+		{
+			if(p.GetEnteredHouseID() != -1 && !p.IsInHouseWithGroundEntrance())	
+				return false;
+			if(t.GetEnteredHouseID() != -1 && !t.IsInHouseWithGroundEntrance())
+				return false;
+		}
+
+		Person t(Target);
+		if(t.GetRole()==ROLE_SQUAD || t.IsDrowning() || t.GetState() != PERSONSTATE_NORMAL)
+			return false;
+					
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person ps(Target);
+		bool gangster = (ps.GetRole() == ROLE_GANGSTER);
+		if(enterHouse)
+		{
+			Person p(Caller);
+			Caller->PushActionEnterHouse(ACTION_NEWLIST, p.GetEnteredCarTargetID());
+			Caller->PushActionMove(ACTION_APPEND, Target, TARGET_TOUCHPERSON);			
+			if (gangster)
+				Caller->PushActionFistFight(ACTION_APPEND, Target);
+		}
+		else
+		{
+			Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_TOUCHPERSON);
+			if (gangster)
+				Caller->PushActionFistFight(ACTION_APPEND, Target);
+		}
+		
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		if (!gangster)
+		{
+			Caller->PushActionArrest(ACTION_APPEND, Target);
+		}
+	}	
+};

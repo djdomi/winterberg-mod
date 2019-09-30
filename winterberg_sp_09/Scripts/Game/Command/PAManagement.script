@@ -1,0 +1,36 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script PAManagement
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+object pacheck : CommandScript
+{
+
+   pacheck()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	return;
+	Person p(Caller);
+	p.Hurt(INJUREREASON_UNKNOWN,10.0);
+	p.SetInjuredLifeDrain(3.0);
+   }
+};

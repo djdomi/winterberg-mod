@@ -1,0 +1,63 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script rufe_winterberg
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+object CheckHubiDown : CommandScript
+{
+
+	CheckHubiDown()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		if ((v.GetVehicleType() == VT_AMBULANCE_RHC) || (v.GetVehicleType()==VT_POLICE_PHC))
+			if (!v.IsOnGround())
+			{
+				Caller->PushActionWait(ACTION_NEWLIST,1.0f);		
+				System::Error("Hubi nicht am Boden");
+			} else
+				System::Error("Hubi gelandet");
+	}
+};
+
+object TransportBegleiten : CommandScript
+{
+
+	TransportBegleiten()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle nef(Caller);
+		Vehicle rtw(Target);
+		Person doc;
+
+		if (rtw.GetVehicleType() == VT_AMBULANCE_RTW))
+		{
+			PersonList pl=nef.GetPassengers();
+			for (int i=0; i<pl.GetNumPersons(); i++)
+			{
+				doc=pl.GetPerson(i);
+				if (doc.IsDoctor())
+				{
+					doc.PushActionLeaveCar(ACTION_NEWLIST, Caller);
+					doc.PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,false);
+					i=pl.GetNumPersons();
+				}
+			}				
+		}
+	}
+};

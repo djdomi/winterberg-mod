@@ -1,0 +1,169 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script EnterHouse
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+object EnterHouse : CommandScript
+{
+	Vector EntrancePos;
+
+	bool moveOut, fromDLK;
+	int h0;
+
+
+	EnterHouse()
+	{
+		SetValidTargets(ACTOR_OPEN_HOUSE);
+		SetDeselectCaller(false);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleExists(CPE_ACCESSIBLE_HOUSE);
+		SetPriority(110);
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Caller->GetType()!=ACTOR_PERSON || Target->GetType()!=ACTOR_OPEN_HOUSE)
+			return false;
+
+		OpenHouse targetHouse(Target);
+		Person person(Caller);
+
+		if(person.GetFirehoseID() > 0)
+		{
+			if (person.GetPersonType()!=PT_FIREFIGHTER_MASK)
+				return false;
+		}
+
+		if (person.GetEnteredCarID() != -1 && !targetHouse.HasGroundEntrance() && person.CanEnterHouseFromDLK(&targetHouse))
+		{
+			fromDLK = true;
+			return true;
+		}
+		fromDLK = false;
+		// check if house can be entered
+		if (!targetHouse.IsValid() || targetHouse.IsOpen() || !targetHouse.HasGroundEntrance() || !targetHouse.IsFlagSet(OF_ACCESSIBLE))
+		{
+			if ( !targetHouse.IsValid() )
+				System::Print("EnterHouse: target house is not valid");
+			if ( targetHouse.IsOpen() )
+				System::Print("EnterHouse: door is open");
+			if ( !targetHouse.HasGroundEntrance() )
+				System::Print("EnterHouse: !targetHouse.HasGroundEntrance()");
+			if ( !targetHouse.IsFlagSet(OF_ACCESSIBLE) )
+				System::Print("EnterHouse: !targetHouse.IsFlagSet(OF_ACCESSIBLE)");
+			return false;
+		}
+		if(targetHouse.GetEntranceDoorID() == 0)
+		{
+			System::Print("EnterHouse: target house has no entrance door.");
+			return false;
+		}
+
+		if (person.GetEnteredCarID() != -1 && childID!=112)
+			return false;
+		
+		// if house is locked and caller carries an axe, ignore EnterHouse Command so that UseEquipment is the only available command
+		if (targetHouse.IsLocked() && person.GetEquipment() == EQUIP_FIREAXE)
+			return false;
+
+		// check if inside house
+		if (person.GetEnteredHouseID() != -1)
+		{
+			// check if source house has ground entrance
+			Actor ha = Game::GetActor(person.GetEnteredHouseID());
+			OpenHouse sourceHouse(&ha);
+			if (!sourceHouse.HasGroundEntrance() || sourceHouse.GetEntranceDoorID() == 0)
+			{
+				System::Print("EnterHouse: source house has no ground entrance");
+				return false;
+			}
+
+			moveOut = true;
+			h0 = sourceHouse.GetID();
+			EntrancePos = sourceHouse.GetEntrancePosition(false);
+		}
+		else
+			moveOut = false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		OpenHouse targetHouse(Target);
+		
+		Vector DoorFront = targetHouse.GetEntrancePosition(true);
+		Vector DoorBack = targetHouse.GetEntrancePosition(false);
+		ActionInsertMode doit=ACTION_APPEND;
+
+		if (targetHouse.IsLocked())
+			targetHouse.SetFlag(OF_ACCESSIBLE);
+
+		switch (childID)
+		{
+			case 0:
+				Caller->PushActionWait(ACTION_NEWLIST,0.1);
+				break;
+			case 112:
+				Caller->PushActionWait(ACTION_INSERT,0.1);
+				doit=ACTION_INSERTBEFORELAST;
+				System::Log("Enter Feuerwehrhaus");
+				break;
+		}
+
+		Person p(Caller);
+		if (fromDLK)
+		{
+			Caller->PushActionEnterHouse(doit, Target);
+			if (p.IsEquipped() && (p.GetEquipment()==EQUIP_FIREHOSE))
+			{
+				Vehicle connect=Game::CreateVehicle ("mod:Prototypes/Vehicles/Winterberg/schnella.e4p",Caller->GetName());
+				connect.SetPosition(Caller);
+				connect.SetRotation(Caller);
+				Caller->EnableCommand("RemoveFirehose",false);
+				Caller->PushActionUseEquipment(ACTION_INSERTBEFORELAST,&connect,0,0);
+			} else if (p.IsLinkedWithPerson()) {
+					Person sq=p.GetArrested();
+					if (sq.GetRole()==ROLE_SQUAD) 
+					{
+						Caller->PushActionRelease(ACTION_APPEND);
+						if (Caller->IsSelected())
+						{
+							Caller->Deselect();
+							sq.Select();
+						}
+					}
+			}
+		} else if (moveOut)
+		{
+			Actor house = Game::GetActor(h0);
+			Caller->PushActionMove(doit, EntrancePos, true);
+			Caller->PushActionLeaveHouse(doit, &house);
+			Caller->PushActionMove(doit, DoorFront, true);
+			Caller->PushActionTurnTo(doit, DoorBack);
+			Caller->PushActionEnterHouse(doit, Target);
+		}
+		else
+		{
+			Caller->PushActionMove(doit, DoorFront, true);
+			Caller->PushActionTurnTo(doit, DoorBack);
+			Caller->PushActionEnterHouse(doit, Target);
+		}
+		if (p.GetFirehoseID()>0)
+			p.EnableAutoTarget(false);
+	}
+};

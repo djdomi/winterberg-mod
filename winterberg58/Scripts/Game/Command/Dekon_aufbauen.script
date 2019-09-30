@@ -1,0 +1,722 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script Dekon_aufbauen
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+
+
+
+object installDZeltRechts : CommandScript
+{
+	Vector TargetPos;
+
+	installDZeltRechts()
+	{
+      	SetIcon("dekon_rechts");
+      	SetCursor("dekon_rechts");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_od.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_od_installed.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};
+
+
+object deinstallDZeltRechts : CommandScript
+{
+	Vector TargetPos;
+
+	installDZeltRechts()
+	{
+      	SetIcon("deinstall_dekon");
+      	SetCursor("deinstall_dekon");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+
+ 		Vehicle v(Caller);
+		if (v.GetNumTransported() > 0)
+		return;
+
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_od_installed.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_od.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};
+
+object installDZeltLinks : CommandScript
+{
+	Vector TargetPos;
+
+	installDZeltLinks()
+	{
+      	SetIcon("dekon_links");
+      	SetCursor("dekon_links");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_od.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_od_installed_left.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};
+
+object deinstallDZeltLinks : CommandScript
+{
+	Vector TargetPos;
+
+	deinstallDZeltLinks()
+	{
+      	SetIcon("deinstall_dekon");
+      	SetCursor("deinstall_dekon");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+		Vehicle v(Caller);
+		if (v.GetNumTransported() > 0)
+		return;
+
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_od_installed_left.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_od.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};
+
+object CAinstallDZeltRechts : CommandScript
+{
+	Vector TargetPos;
+
+	CAinstallDZeltRechts()
+	{
+      	SetIcon("dekon_rechts");
+      	SetCursor("dekon_rechts");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_ca.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_ca_r.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};
+
+
+object CAdeinstallDZeltRechts : CommandScript
+{
+	Vector TargetPos;
+
+	CAinstallDZeltRechts()
+	{
+      	SetIcon("deinstall_dekon");
+      	SetCursor("deinstall_dekon");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+
+ 		Vehicle v(Caller);
+		if (v.GetNumTransported() > 0)
+		return;
+
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_ca_r.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_ca.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};
+
+object CAinstallDZeltLinks : CommandScript
+{
+	Vector TargetPos;
+
+	CAinstallDZeltLinks()
+	{
+      	SetIcon("dekon_links");
+      	SetCursor("dekon_links");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_ca.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_ca_l.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};
+
+object CAdeinstallDZeltLinks : CommandScript
+{
+	Vector TargetPos;
+
+	CAdeinstallDZeltLinks()
+	{
+      	SetIcon("deinstall_dekon");
+      	SetCursor("deinstall_dekon");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+		Vehicle v(Caller);
+		if (v.GetNumTransported() > 0)
+		return;
+
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+       		float r[9];
+        	v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+		if (Game::FindFreePosition(Caller, CarPos, 200.f))
+		{
+
+                	Vehicle m;
+                	if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Winterberg/dekon_ca_l.e4p") == 0)
+                 	{
+                       	m = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_ca.e4p", "m");
+                 	}
+                  m.SetPosition(CarPos);
+                	m.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                	m.UpdatePlacement();
+                	m.SetMaxPassengers(6);
+                	m.SetMaxTransports(3);
+			m.SetSpeed(9.0f);
+
+			PersonList passengers = v.GetPassengers();
+			for(int i = 0; i < passengers.GetNumPersons(); i++)
+			{
+				v.RemovePassenger(&passengers.GetPerson(i));
+				m.AddPassenger(&passengers.GetPerson(i));
+			}
+
+			PersonList transports = v.GetTransports();
+			for(int i = 0; i < transports.GetNumPersons(); i++)
+			{
+				v.RemoveTransport(&transports.GetPerson(i));
+				m.AddTransport(&transports.GetPerson(i)); 
+			}   
+
+			Caller->PushActionWait(ACTION_APPEND, 0.01f);
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+            	} else
+		{
+		 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+		}
+	}	
+};

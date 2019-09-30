@@ -1,0 +1,86 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script Funkmast
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+ const char DUMMY_HASUMFELD[] = "DUMMYHasMast";
+ 
+ int DummyGroup = 20;
+ 
+ object Funkmast : CommandScript
+ {
+ 	Funkmast()
+ 	{
+		SetCursor("Funkmast");
+		SetIcon("Funkmast");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Caller);
+ 
+ 		if (v.HasCommand(DUMMY_HASUMFELD))
+ 		{
+ 			v.EnableSpecialLights(false);
+ 			v.RemoveCommand(DUMMY_HASUMFELD);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+ 		} else {
+ 			v.EnableSpecialLights(true);
+ 			v.AssignCommand(DUMMY_HASUMFELD);
+			v.PlayAnimOpenDoor(DAT_SPECIAL, 3.0f);
+ 		}
+ 	}	
+ };
+ 
+ object DUMMYHasMast : CommandScript
+ {
+ 	DUMMYHasMast()
+ 	{
+ 		SetGroupID(DummyGroup);
+ 	}
+ 
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };

@@ -1,0 +1,23 @@
+object Funkfrei : CommandScript
+{
+	Funkfrei()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("funkfrei");
+		SetCursor("funkfrei");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"SoSiOff",Caller,0,false);
+		Mission::PlayHint("FUNKFREI");
+	}
+};

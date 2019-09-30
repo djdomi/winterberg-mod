@@ -1,0 +1,530 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang1031{\fonttbl{\f0\fswiss\fcharset0 Arial;}}
+{\*\generator Msftedit 5.41.21.2510;}\viewkind4\uc1\pard\b\f0\fs20 Bugfix 8.81\par
+- HeckRollos HLF/TSF-W arbeiten wieder einwandfrei\par
+- Bugfix WinterbergMap bzgl Routenf\'fchrung um den Tunnel\par
+- LiMa HLF f\'e4hrt wieder aus\par
+- STW f\'e4hrt auch wieder mit SoSi\par
+\par
+\par
+8.8\par
+- Problem der nach Alarmierung nicht anr\'fcckenden Fz beseitigt :D\par
+- es wird Winter \par
+- KmRD Crash beseitigt (ENDLICH)\par
+- HLF mit animierten Rollos  .. freu\par
+\par
+8.73\par
+- externe Fz wieder mehrfach alarmierbar\par
+- Alarmierungssounds/Sirenen werden nun auch in den Missionen korrekt abgespielt\par
+- externe Fz werden nach dem Abr\'fccken an der Wache wieder korrekt beladen\par
+\par
+8.71\par
+- Mission Play : Mission 3 kann nun nach Festnahme der Gangster abgeschlossen werden\par
+\tab\tab Mission 5 : L\'f6schboot kann nun alarmiert werden, damit ein Motorboot zur Verf\'fcgung steht. Fwler k\'f6nnen mit\par
+\tab\tab\tab      techn. Hilfeleistungssatz im Motorboot zur anderen Br\'fcckenseite \'fcbersetzen\par
+\par
+- SAR41 kann wieder Personal abwinschen oder Pat mit der Winsche raufholen\par
+\par
+8.6. \par
+\par
+Fanmeile deaktvieriert\par
+TSF Elkeringhausen mit animierten Rollos .. more to come\par
+\par
+Kahdeksas 8.5. UEFA EM 2012\par
+\par
+18.6. : \tab Sirenenprobe funzt wieder\par
+\tab Steuerung der Dachmonitore der TLF auf einen Button beschr\'e4nkt\par
+\tab Seilwinde l\'e4sst sich wieder zuruecknehmen und zieht auch kein Fz mehr unters L\'f6schfahrzeug :D\par
+\tab VU mit Radfahrer korrigiert, Fahrrad wird im Moment nicht mehr erzeugt \par
+\par
+14.6. Winterberg NEF r\'fcckt wieder aus, ebenso die externen STW\par
+\par
+MULTI Mapped :\par
+\par
+Winterberg SOMMER , Winterberg Winter, Jurassic, WEMCHEM\par
+Umschaltbar mittels Configurator \par
+\par
+Nachruecke-Codes fuer nur bei Bedarf erstellte Fz (ASF, Wasserwerk, ext RTW,\par
+etc) sind nun ebenfalls komplett in die wibmap.xml ausgelagert. \par
+Dadurch sind einfachst Modifikationen m\'f6glich, zu welchen FzRuf welches Fz von welchem Standort aus nachr\'fccken soll.\par
+\par
+Zugf\'fchrer/TL-Logik neu strukturiert -> ZF (gelbe Weste) erscheinen nur noch auf F\'fchrungsFz, TSF etc werden keine zus\'e4tzlichen ZF mehr erhalten\par
+Die Einsatzf\'fchrungslogik bleibt erhalten\par
+Auch das L\'f6schboot kann nun einem TEL unterstellt werden :)\par
+\par
+Einige Fz wurden von LAMA neu gelightet und freundlicherweise der Mod zur Verf\'fcgung gestellt -> R\'fcckmeldung im Forum erw\'fcnscht, ggf bessert er ja noch weitere Fz auf :)\par
+\par
+Alarmierungslogik ge\'e4ndert -> Alarmcodes sind nun vierstellig und erlauben prinzipiell fuer JEDES Fz eine eigene Alarmierung, sowie f\'fcr jede Feuerwehr eine separate Alarmierung nach Alarmstichwort zu hinterlegen\par
+Alarmdurchsagen sowie die Namen der Soundfiles finden sich jetz in der WIB_AAO.xml und k\'f6nnen ohne Eingriff in den Code angepasst werden...\par
+\par
+Sonderfahrzeuge (DLK, GW-Mess etc) werden wieder ggf mit eigenen Durchsagen alarmiert\par
+\par
+Differenzierte Alarmierung und Alarmsteuerung m\'f6glich :\par
+Erstes Zeichen des Durchsagentext steuert die Alarmart\par
+- => kein FAE Weckton\par
+# => Sirenenalarm f\'fcr diese Alarmierung erzwingen\par
+* => KatS-Sirene fuer diese Alarmierung erzwingen\par
+F\'fcr jede Feuerwehr kann prinzipiell alarmstichwortabh\'e4ngig eine andere Alarmierung hinterlegt werden, z.b. werden die FF Elkeringhsn/Alt- Neu Astenberg und Gr\'f6nebach jetz \'f6rtlich via FAE und nur im L\'f6schzug erzwungen via Sirene alarmiert.\par
+Das Stichwort ist in der 4.Stelle des Alarmcodes hinterlegt \par
+= > Alarmcodes :\par
+1. Stelle => Wache (5) oder EinzelFz (9) alarmieren\par
+f\'fc EinzelFz Stelle 2-4 : FzID, \tab zb. NEF Wib 1 \tab => Code 9001\par
+\tab\tab\tab  \tab z.b. ASF 11\tab => Code 9011\par
+\par
+f\'fcr Wachen : Stelle 2-3 Ortskennung der Wache, z.b. Winterberg 00\par
+\tab\tab\tab\tab\tab\tab\tab Altastenberg 61  \par
+\tab\tab\tab\tab\tab\tab\tab Olsberg 53\par
+\tab\tab\tab\tab\tab\tab\tab SEG ! Olsberg 79 \par
+\tab\tab Stelle 4 : Stichwort  5 = \'f6rtlich\par
+\tab\tab\tab\tab         1 = L\'f6schzug\par
+\tab\tab\tab\tab         2 = TH\par
+\tab\tab\tab\tab         3 = Gefahrgut\par
+\tab\tab\tab\tab         4 = Wasserrettung\par
+\tab\tab\tab\tab         9 = First Responder\par
+\par
+zb. : L\'f6schzug Elkeringhsn  5621\par
+\tab Wasserrettung WiB  5004\par
+\tab Altastenberg \'f6rtlich 5615\par
+\par
+Die Soundfiles sind unter den Tags WBFAExxxx und die Texte unter WBDUSAxxxx in der wib_aao.xml hinterlegt.\par
+\par
+Viel Spass beim Rumspielen\par
+\par
+neu gelightete Versionen NEF Meschede, RTW Fredeburg und Medebach (Vielen Dank an LAMA) .. bei Gefallen ggf, mehr in dieser Richtung\par
+\par
+:D BTD beim SEK /KmRD Alarm beseitigt ;)\par
+\par
+LNA is back :)\par
+\par
+Freiwillige ruecken nun auch bei Melderalarm erst nach Vollbesetzten oder Ablauf der 3min Wartefrist aus. Einruecken funzt wieder korrekt.\par
+\par
+Bitte ansonsten die Alarmierungen genau beobachten und Abweichungen vom erwarteten Alarmverhalten melden. Da sind noch Bugs m\'f6glich.\par
+\par
+Bug beim Bestatter beseitigt -> der auf der Map stationierte Bestatter kann nun wieder problemlos mehrfach eingesetzt werden :S\par
+\par
+- BugFix Person im Wasser wie von taucher93 vorgeschlagen -> im Test hier bei 10 Versuchen ohne weitere Fehler Rettung m\'f6glich -> bitte beobachten\par
+\par
+- FzVerwaltung im Verband neu codiert -> ist jetz schneller und speicher schonender\par
+\par
+RTW/NEF im Zug wird beim Abmarsch nicht mehr nach Hause geschickt, wenn er   einen Patienten behandelt / versorgt hat bzw noch dabei ist !\par
+\par
+Mehrfaches Weitergeben der Einsatzleitung an andere TEL problemlos, Kontrolle \'fcber\par
+die Fz im Zg geht nicht mehr verloren\par
+\par
+Fz koennen nachtraeglich einem Zug zugeordnet werden\par
+\par
+Bsher keine BTDs beim Zugmanagement mehr !\par
+Wsentlich schnelleres Abruecken der Verbaende beim Abmarschbefehl\tab\par
+\par
+\par
+AO-Umschaltung im Fw-Alarmmenu funktioniert wieder\par
+\par
+LNA-RA funzt jetzt als OrgL RD und f\'fchrt alle Rettungsmittel an einer Estelle, diese Funktion bedarf noch des Ausbaus :D\par
+\par
+Nachalarmieren weitere Einheiten ueber die TEL ordnet diese der alarmierenden TEL unter\par
+-> Kommandos zum \'dcbernehmen ausgew\'e4hlter Einheiten unter die F\'fchrung der TEL bzw eines Zugf\'fchrers findet sich am zugeh\'f6rigen ELW\par
+\par
+- Bug im Lageerkunden-Code beseitigt : Erkundung funzt nun auch IM Geb\'e4ude wieder,\par
+z.B. zur Ermittlung der Anzahl verletzer bei Feuer im Gebaeude o.\'e4.\par
+\par
+- Kripo an der Wache f\'e4hrt keine Streife, Zivilstreifen reaktiviert\par
+\par
+- Code f\'fcr Streife fahren umgearbeitet, Streifenziele werden nun auch in der Wibmap.xml definiert. Die Pfade rollen durch unabh\'e4ngig von der Anzahl der STW, die Streife fahren -> keine BTDs mehr f\'fcr Fz, f\'fcr die kein Pfad definiert war\par
+\par
+- TSF laden nun die TS an der EStelle wieder korrekt auf und bleiben nicht f\'fcr den Rest des Spiels pumpenlos :)\par
+\par
+- Verteiler setzender Fw Mann kann jetz jederzeit identifiziert werden und manuell zum Verteiler setzen gesendet werden wie schon bei Bereitstellung \'fcblich\par
+-> n\'fctzlich wenn die Gruppen zuwenig Platz am Fz hat und das Verteiler setzen von der\par
+EM4 Engine abgebrochen wird.\par
+\par
+- TS wird bei WE offenes Gew\'e4sser jetz vor Anschluss der Saugleitung wieder korrekt zum Gew\'e4sser rotiert.\par
+\par
+- Geruempel auf der Strasse kann nun mit dem GW-L entsorgt werden -> Ladeklappe \'f6ffnen, z.b. umgefallene Bake mit dem FWler aufnehmen und dann auf den GW-L ziehen, fertig\par
+\par
+\par
+ToDo :\par
+\par
+1. FzAuswahlcode bei Alarmierung umarbeiten\par
+\par
+2. 3. 4. 5. (Ideen? W\'fcnsche ?)\par
+\par
+WEM 8 Kahdeksas\par
+\par
+11.2.\par
+- RTW fordert keinen Notarzt f\'fcr Patient mehr nach, wenn schon ein Doc im Auto ist\par
+\par
+8.1\par
+\par
+4.2.12\par
+- Person im Wasser steht nich mehr auf der Strasse rum :)\par
+\par
+- KTW r\'fcckt nicht mehr mit einer Person aus\par
+\tab - kleiner Folgebug behoben : BSW rueckt wieder aus\par
+- NEF Winterbeg ruft keinen neuen NA am KH, wenn es im Status 1 alarmiert wird\par
+\par
+- Bug im SEK Code beseitigt -> Kein Script Error mehr beim Erkunden eines Gebaeudes\par
+-Verletzte auf dem Bahnsteige nehmen nicht mehr den Zug :)\par
+\par
+- Map Fixes\par
+- Bug in der PolFz Auswahl beseitigt -> n\'e4chstes Fz wird wieder korrekt ausgew\'e4hlt\par
+\par
+19.1.12\par
+\par
+- kleine Bugfixes\par
+- Lichter an den Chemiewehr Fz \'fcberarbeitet\par
+- Weihnachtsmarkt wurde von der ChemMap genommen\par
+- neuer Confi\par
+\par
+15.1.12\par
+\par
+- Klinik-Notfall-Team kehrt nach Einsatz auf Intensiv zurueck und nicht in den NA-Raum\par
+\par
+\par
+10.1.12\par
+OK WEM special events arrived at Chemical Map -> might be buggy for one or another event, but in the whole it works\par
+Winterberg Hospital ER should now become available again after delivery of Patients\par
+\par
+\par
+Happy New year everybody\par
+\par
+Vehicles can now be lifted out of the water again\par
+In Missions Ambulances etc will leave to outside hospitals correctly now :)\par
+\par
+Fixed Police Heli Bug with Policemen running the map in Classic Winterberg\par
+Speeded up alarm response of professional fire fighting units in WemChem\par
+\par
+Railway traffic reenabled on both maps ... BETA \par
+and Yeah I KNOW the rail barriers dont close for now \par
+\par
+29.12.2011\par
+\par
+New SLF Vehicle with 10000l tender now supports 2 Water Monitors with extra\par
+powerful pump\par
+Aircraft Emergency button is now hidden behind FireFighting Boat button, can be\par
+activated with Left control key -> keep training them, you will need the units soon !\par
+\par
+\par
+26.12.2011\par
+AlarmCodeChanger Button is reactivated\par
+AirCraft Emergency can be activated with left Control Key\par
+New HLF Vehicle\par
+New Water Tender Unit\par
+\par
+Merry Xmas \par
+Forum is closed but Updater keeps working :)\par
+\par
+- WemChem Map updated\par
+\tab - new alarm code "aircraft emergency"\par
+- Some bugs fixed \par
+\tab - Fire ship returns home now without problems,\par
+\tab - ship wrecks get "vaporized" by tugboat\par
+\par
+\par
+5 Jahre Winterberg - Mod , 5 Jahre Winterberg Weihnacht\par
+Wir w\'fcnschen allen eine gesegnete Weihnachtszeit und ein wunschersch\'f6nes \par
+Weihnachtsfest. und h\'e4ngt nicht RUND UMD DIE UHR am PC :D\par
+Liebe Gr\'fc\'dfe und viel Spass \par
+Doc\par
+\par
+- Init-Prozeduren ziehen jetz alle Infos zu den aufbauenden Fz komplett aus XML-Files -> kein Codeeingriff \par
+  zur Anpassung/Erweiterung mehr erforderlich\par
+\par
+- Code laeuft prinzipiell auf JEDER Map, die wenigstens ein Parkobjekt "Anfahrt" enth\'e4lt.\par
+  Jedes Fz, das nicht auf der Map seinen in der Init.XML definierten Standort findet, rueckt hierueber an und ab\par
+  Genauso werden Anfahrten an KH / POL, die nicht auf der Map zu finden sind, hierhin abgewickelt\par
+  Einschr\'e4nkung : Spezialeins\'e4tze, die definierte Objekte auf der Winterberg-Map brauchen, werden auf diesen\par
+                             Maps natuerlich NICHT ausgel\'f6st\par
+\par
+- Neue Map WEMChem als Spinoff -> die Winterberger Fz als WF in einem Chemiewerk. Hier gibts alles\par
+                                                           was ins beschauliche Winterberg nicht so recht passt ...\par
+\tab\tab\tab\tab\tab (z.b. eine Feuerl\'f6schboot oder Containerschiffe :D )\par
+- Feuerl\'f6schboot mit Beiboot und med. Deck -> Verletzte werden an Bord stabilisiert sofern ein NA an Bord ist\par
+- Schlepper zum Bergen verungl\'fcckter Schiffe\par
+- SAR kan nun auch mittels Winde retten/bergen, kann deswegen nun auch prim\'e4r alarmiert werden\par
+\tab ToDo : NA aufs L\'f6schboot abwinschen zur Patientenversorgung :D\par
+\par
+- Neue Spezialeins\'e4tze\par
+- Aufsitzen kann mit linker Strg-Taste erzwungen werden, auch wenn Aufsitzen-Kommando am Fz gesperrt\par
+\par
+WEM 7\par
+\par
+7.83 Endstand\par
+\par
+\b0 - Neue BMA-Meldeanzeige li obere Screenecke\par
+- Neues TSF Altenfeld eingefuegt\par
+- Pol verfuegt ueber Kommando "Personalienkontrolle", das den Namen einer Person/Fz angibt\par
+- Pol/Fw kann Warndurchsage an die Bev\'f6lkerung machen um vor Gefahrstoffen zu warnen\par
+  -> Zivile Bev\'f6lkerung geht dann in die H\'e4user und die Fusswege / Pl\'e4tze leeren sich\par
+  -> Einfach Stw w\'e4hlen und mit Warndurchsage auf einen Punkt klicken \par
+  -> Fz f\'e4hrt dann Pendelverkehr zwischen dem Startpunkt und dem Klick und raeumt\par
+      die Passanten weg :D\par
+\b - OK der POl Hubi f\'e4hrt nun keinen Pendelverkehr mehr zur Bev\'f6lkerungswarnung :)\b0\par
+\par
+- GF meldet keine verunfallten Fz mehr bei BMA Ausl\'f6sung\par
+- Illegal Object Falle im Fuehrung-Script beseitig\par
+- Person im Wasser schwebt nicht mehr in der Luft (bitte Testen ;) )\par
+- BMA am "Hochhaus Wolke" versetzt, weil sie das EInsetzen des Sprungretters behinderte\par
+- Verbringen von Personen ins Fz ist wieder Standard vor Personenkontrolle bei Polizisten\par
+- SoSi von StW ist wieder aktiv bei Alarmierung\par
+\b\par
+\par
+\par
+7.7. Sommerm\'e4rchen (7.72)\par
+\par
+\b0 - FanSommerMap mit Public Viewing\par
+- Marktwache kann mit speziellem Aufsitzen Befehl wieder an den Markt geschickt werden\par
+- Abschleppen beschaedigter Privatfz Freiwilliger Wehrleute sollte keinen BTD mehr verursachen\par
+- Freiwilligen Fz werden nicht mehr als rote Punkte auf der MiniMap sichtbar\par
+\b\par
+\par
+7.6 Joulupukki\par
+\par
+\b0 - Jede Einheit kann nun zur Menschenrettung in den Pool steigen, kein Taucher erforderlich\par
+- Taucher kann nun in den Pool einsteigen\par
+- Mapkorrekturen\par
+- Confi erlaubt zwischen Map mit und ohne Schneespuren umzuschalten\par
+- Hilflose Person (Normale Fahrt) als Sondereinsatz ...\par
+- Mission-Bug beseitigt -> Kampagne laeuft wieder ;)\par
+\b\par
+\b0 - AAO fuer die Stichworte per Confi einstellbar -> Achtung : Unbedingt den neuen Confi 7.6 benutzen, im Mod-Hauptverzeichnis mitgeliefert\par
+- Nachrueckende FeuerwehrFz werden nun bevorzugt aus EINER Wache nachgeordert\par
+- Wenn Umleitung am Fz aktiviert ist, bleibt diese Funktion jetz auch beim Absitzbefehl aktiv \par
+- Verkehr scriptgesteuert DEUTLICH reduziert -> kann sein dass er jetz zu wenig wird, bitte beobachten\par
+- LiMa am TSF-W Elk aktiviert.\par
+\par
+- Fans bilden am Kiosk nun keinen Klumpen mehr, wenn am Spawnpoint ein Verletzter liegt, sondern werden daneben gespawnt\par
+- Bugs bei der WE offenes Gewaesser beseitigt\par
+- Alle RD-Kraefte koennen nun Feuerl\'f6scher nehmen und einsetzen :)\par
+- Person im Wasser ist nun zu retten \par
+- LangsamfahrerWarnung kommt nur noch am Anfang des Spieles\par
+- Mannschaft stellt sich am DekonP wieder korrekt auf beim Zeltaufbau\par
+\par
+- Division by Zero - Fehler im Corazon_siete beseitigt\par
+- Anzahl Messerstecher wieder auf normales Mass runtergesetzt :)\par
+- Kleine Script Bugs\par
+- Fans sollten nicht mehr "Opfer" eines Einsatzes werden, solang sie unsichtbar sind\par
+\par
+\par
+Fr\'f6hliche Weihnachtszeit w\'fcnscht das ganze Team\b\par
+\par
+7.5 Arctico @ 71\'b0 6' N 25\'b0 22.5' E\par
+\par
+\b0 - neues NEF Winterberg\par
+- neues NEF Marsberg\par
+- neues NEF Meschede \par
+- neuer KTW Winterberg \par
+\par
+- Herausforderung iwrd nun auch durch Flugzeugabsturz/S-Bahnungl\'fcck nicht beendet\par
+ACHTUNG : Unter normalem Einsatzbetrieb wird das Spiel im Challenge Modus nun\par
+nicht mehr fehlschlagen ! Wem das zu einfach ist, der muss die Parameter auf Standardwerte\par
+zuruecksetzen\par
+\par
+- ein paar alte EM4 Einsaetze auf der Map wiederbelebt. Bitte vor allem im Deluxe Herausforderungs-Modus testen, da sollte alles eintreten -> laufen die Einsaetze, werden sie korrekt abgeschlossen ?\par
+\par
+- Polizei Verkehrsueberwachung -> Hubi kann Pfade entblockieren oder alle Fz komplett loeschen\par
+- Stadtfest-Button :)\par
+- FZSpeed Regler im Confi stellt den FzSpeed Faktor aller EinsatzFz ein (Standard 1.5, von 0.5 bis 3 (angezogene Handbremse bis Hovercraft) regelbar. Fuer alle denen die Auto zu schnell sind.. ROFL)\par
+- NA kann FWler anweisen, verletzte Person aufzunehmen analog zur Anweisung eine Patienten im RTW abzutransportieren -> Fw nimmt Pat auf und fuehrt den NA mit\par
+-> erleichert Rettung ueber DLK\par
+- FwMann legt Verletzten nach Verlassen des DLK_Korbes automatisch am Zielpunkt ab und gibt gefuehrte Person frei\b\par
+\par
+\b0 - Mapkorrekturen an den Anfahrtpunkten, sollte jetz besser funzen\par
+- Schnellangriffs-Befehl kann mit linker Strg-Taste weggedrueckt werden, falls er andere wichtige Funktionen st\'f6rt, z.B. K\'fchlen mit Dachmonitor bei den TLF oder Aufnehmen von Gegenstaenden. \par
+- Das heisst : Abbauen Jumppad und wegschleppen abgesaegter Baeume mit Fwler sollte jetz problemlos gehen, auch unter PA (siehe Mission 2 z.b.)\par
+- Um versehentliche Falschalarmierungen zu vermeiden, wenn die RTH Status 6 sind, ist eine Alarmierung von Rettungshunden, SEG und ITH bei gedrueckter linker Shif-Taste deaktiviert\par
+- GW-AS / RTW / Pol werden beim Loeschzugalarm nur beim ersten Alarm mitalarmiert, nicht bei Alarmierung zur Verstaerkung. Ein GW-AS / STW pro EStelle reichen :)\b\par
+\b0 - B-Rohr-Bug behoben, k\'f6nnen nun wieder aus Fz entnommen werden\par
+\par
+\b\par
+7.4\par
+\par
+\b0 - Fanmeile ade :)\b\par
+\b0 - Alle Fz koennen nun auf Tisch 6 erscheinen, wenn im entsprechenden Status. Bisher waren nur die ersten 45 implementiert\par
+- Fz OHNE Besatzung werden nicht mehr zur Alarmierung vorgeschlagen (Illegal pointer error)\par
+\b\par
+7.3x Fix\par
+\par
+\b0 - Nebel des Grauens kann mittels aktuellem Config an und abgeschaltet werden\par
+Um neue Spieler nicht zu sehr zu irritieren ist er standardmaessig AUS !!\par
+\b\par
+\b0 - TSF-W Elkeringhausen neu \b  Beladung auf den korrekten Stand gebracht\b0\par
+- Neue Zivil PolizeiFz (chtung werden per Zufallsgenerator eingestreut , also 2 von ingesamt 4 zivilen Streifenfz von ausserhalb)\par
+- English translation updated by Mr. Kaizer \b  Typo in ToolTips fixed\b0\par
+\b\par
+\b0 - Mannschaft legt beim Aufsitzen alle Geraete ab\b\par
+\b0 - "unverbrauchbare Geraete" (Verteiler, Schere, Kettensaege etc) stehen unmittelbar nach dem Aufsitzen wieder zur Verfuegung\par
+. Probleme im Triage Code bereinigt, auch vortriagierte Patienten koennen nun durch den NA retriagiert werden\par
+- Die SEG rettet nicht mehr aus Geb\'e4uden, Dies ist Aufgabe der Feuerwehr (die Jungs verhaken sich immer in der Tuer, das ist sch.... )\b\par
+\par
+\b0 - Testweise automatische Alarmierung RTW im L\'f6schzug und RTW/NEF im Hilfeleistungszug aktiviert, mal sehen.. ueberzeugt mich net wirklich.\par
+- Automatisch alarmierte Rettungsmittel werden bereits bei Auswahl durch das Script fuer manuelle Alarmierung geblockt\par
+- OldieParade :)\par
+\par
+\b\par
+\par
+7.3 Happy Birthday WEM 4 \par
+\b0 - "FanSommer" Map\par
+- Einheiten erkunden an der EStelle automatisch wenn Nebel da -> Nebel verschwindet nach Eintreffen des ersten Fz\par
+- GW-N erhaelt Ladebordwand\par
+- neue Skins DRF ITH und Chr 25\par
+- WM Fans ergaenzt\par
+\par
+\b 7.21\par
+\b0 - "Begradigter" Code zum Objekte aufstellen\par
+- Benzin darf nicht mit Wasser geloescht werden (experimentell)\par
+- Nebel des Grauens\b\par
+\b0 - Gueterzug faehrt wieder korrekt auf die Map (7.211);\b\par
+\par
+7.2\par
+\par
+\b0 - und nach Ruecksprache mit Danny der neue DRF-ITH\b\par
+\b0 - Bestatter ist jetzt wieder merhfach einsetzbar\b\par
+\b0 - MTW rueckt beim SEK-Alarm wieder aus\par
+- Bummler der FF beseitigt\par
+- hoffentlich das Problem der Notarztnachforderung nach Ausladen gehf\'e4higer Pat beseitigt\b\par
+\b0 - Hundestaffel endlich wieder mehrfach einsetzbar ohne zwischendurch abschleppen (DAS war anstrengend ;) ) \par
+- Triblitz leitet Verkehr hinter dem Fz um\par
+- Feldj\'e4ger verhaften jetz auch automatisch\par
+- Zugungluecke wieder aktiviert\par
+- ITH kann nun direkt auf die Map alarmiert werden, die Ausleuchtung bzw Strahlrohr muessen aber wie zuvor bereitstehen. Hilfsweise KANN mittels Zugf\'fchrer die Zielmarkierung nach wie vor platziert werden, muss aber nicht mehr. Diese wird beim Abruecken des Zuges automatisch geloescht. Beim Landen in ungesichtertem Gelaende wird der ITH wie zuvor auch unbrauchbar\par
+- Bug im SAR beseitigt, hat nun ein Wrack, das man abschleppen kann und l\'f6st sich bei Besch\'e4digung nicht mehr in Luft auf\b\par
+\par
+\b0 - FF kommt bei Alarm mit PKW zur Wache\par
+- \'fcberfl\'fcssige Scripts fuers Boothandling gel\'f6scht\par
+- \'fcberfl\'fcssige Code-Bestandteile im Aufsitzen/GoHome Code geloescht\b\par
+\b0 - Map Version in der Winterberg-Flagge vor dem Feuerwehrhaus -> kann ueber Befehl im Disponentenmenue abgefragt werden\par
+- Winterberg ist an den Regionalexpress angebunden :D\par
+\par
+- Pfadkorrekturen zur Stauvermeidung bei Umleitungen und korrigierte Strasse im Suedosten, damit die Fz auch hier zur ESt kommen statt im Kreis zu fahren\b\par
+\par
+\b0 - Ausw\'e4hlen eines Fz auf der FZA (Tisch 6) mit gedr\'fcckter LShift-Taste laesst den Spieler automatisch in ICH Perspektive mit diesem Fz durch Winterberg fahren :)\par
+- Radarfalle, wird durch MTW aufgebaut.\par
+- MTW kann mittels rechter Shift-Taste normale Fahrt mit uniformierten Beamten gerufen werden\b\par
+\b0 - Alarmierbare Feldj\'e4ger\par
+- Zivile Pol kann keine Soldaten mehr festnehmen, Feldj\'e4ger d\'fcrfen nicht gegen Zivilisten taetig werden\par
+\par
+- Ge\'e4ndertes FZA-Verhalten : Anklicken des Fz auf Tisch 6 selektiert das Fz, bei gleichzeitig gehaltener linkter Strg-Taste springt die Kamera auf das Fz.\b\par
+\b0\par
+- MapUpdate und korrigiertes Strassennetz. \par
+\tab Im Nordwesten Gruenstreifen durch korrekte Bruecke ersetzt\par
+\tab RD blockt in der Kaserne nicht mehr den Eingang des n\'f6rdlichen Gebaeudes bei Einsatz\par
+\par
+- DLK geht nach Anschluss an Pumpe automatisch auf Wasser Marsch\par
+- 8-83-2 steht nur noch unregelmaessig zur Verf\'fcgung\par
+\par
+- Gehfaehige Patienten werden nun (fern der Realitaet) durch nen tuerkisfarbenen Marker kenntlich gemacht, damit diese gezielt ausgewaehlt werden koennen. So kann der BW KrKW bei Grossschadenlagen fuer 6 Pat auf einmal genutzt werden.\b\par
+\par
+12.2.10\par
+\b0 KmRD sollte keine BTD mehr verursachen ?\b\par
+\par
+7.1\par
+\par
+\b0 -Fahrzeugkonfiguration in XML-Datei ausgelagert - >kann hier vom erweiterten Konfigurator \'fcber GUI bearbeitet werden\par
+- ITH ist wieder nachts alarmierbar\par
+- Spezialeinsaetze "wiederbelebt"\par
+\b\par
+Fix\par
+\par
+\b0 - RTW 8-83-2 vorerst mal aktiviert\par
+- manueller Status 6-> Fz-Reparatur funzt wieder\b\par
+\par
+Fix 27.12.\par
+\par
+\b0 - ELW Winterberg auch unterbesetzt einsatzbereit auf der R\'fcckfahrt zur Wache\par
+- T\'fcr am SiemensFz wird beim Abruecken wieder brav geschlossen\par
+\b\par
+Fix 22.12.\par
+\b0 - Presslufthorn TLF Niedersfeld aktiviert\par
+- Code fuer Schnellangriff ueberarbeitet -> Auswahl sollte jetz verz\'f6gerungsfrei laufen\b\par
+\par
+Fix 17.12.\par
+\b0 - Map Update\par
+- Fz-Auswahl bei Einzelfz-Alarmierung waehlt nun korrekt aus\par
+- Bugs bei der Fliegerbombe behoben\par
+\par
+\b WEM 7 Release\par
+\b0\par
+- Freeplay auf der Winterberg Map\par
+- Update um die im Standard EM fehlenden MapObjekte ergaenzt, Map sollte nun ok sein\par
+- Alle sinnvollen Missionen spielbar (ohne Bohrinsel und Polarstation)\par
+- An/Abfahrt auf die Mission Maps nun problemlos, alle Fz stehen nach Rueckfahrt Wache wieder wie gewohnt frei zur Verf\'fcgung\par
+- Menu 6 enthaelt die Fz-Zustandsanzeige. Hier erscheinen Fz im Status 1-9 und koennen direkt auf der Map angesprochen werden. Einfach mal experimentieren.\par
+- TEL hat nun auch Kommando zur Nachforderung von Notaerzten\par
+- Einsatzfahrt durch Winterberg in EgoPerspektive m\'f6glich, laeuft jetz rund\par
+- externe Fz werden nun korrekt den Spielern im MP zugewiesen\par
+- neuer Spezialeinsatz ;)\par
+- Unterscheidung zwischen Wasser, Pulver (z.Zt. nur der Feuerl\'f6scher), Schaum (noch nicht aktiv) als L\'f6schmittel\par
+\par
+- LZ Winterberg um HLF ergaenzt, RW und LKW abgeschafft\par
+- TLF Winterberg nach Niedersfeld versetzt, hat Gruppenkabine erhalten\par
+- TSF Niedersfeld nach Silbach, altes TSF Silbach abgeschafft\par
+- Bundeswehr KrankenkraftWagen eingef\'fchrt, kann bis zu 6 gehf\'e4hige Pat transportieren, max 1 liegnden im Moment, Heckt\'fcr geht jetz auf beim Trage holen\par
+- TSF-W haben nur noch EINE Pumpe. Wenn die TS raus ist, sind der Schnellangriff und die FzAnschluesse ausser Betrieb\par
+- Neuer GW-L eingef\'fchrt\par
+- Neue RTW Winterberg / Medebach\par
+- KmRD komplett eingebaut\par
+\par
+- AAO Winterberg angepasst\par
+- Leider keine Freiwilligen Nebenwachen Altastenberg / Enkeringhausen mehr auf der Map ;(\par
+- TEL Funktion verlagert, kann vom Einsatzleitenden ELW aus aufgerufen werden -> schnelleres Abruecken, Einsatzleitung kann problemlos von einem auf ein anderes Fz verlagert werden\par
+- Nachrueckender F\'fchrungsdienst \'fcbernimmt automatisch die Gesamt-EL (z.b. KBM), ELW2 muss vor EL-\'dcbernahme erst installiert werden.\par
+\par
+- Fw-GF k\'f6nnen Tor am Flughafen  und Schranken im Wald \'f6ffnen -> Waldwege nur mit offener Schranke befahrbar :)\par
+- ELW Winterberg kann als First Responder "Rettung" fahren\par
+- Lichtmast wird beim VU immer auf das zu \'f6ffnende Fz gedreht\par
+- Druecken der Linken Strg Taste beim Aufstellen einer Pylone schaltet wieder die AutoUmleiten funktion an\par
+- Not-OP laeuft jetz automatisiert durch : Aufruf im Menue 4 auf einen Pat der sich IN DER KLINIK befinden muss\par
+- FME Sound deaktiviert fuer Alarmierungen ohne Funk\par
+- Aufsitzen bei der Hundestaffel gibt keinen BTD mehr\par
+- RTW mit Patient r\'fccken nun auch in den Missionen automatisch ab\par
+- Personal hat auch in den Missionen automatisch UpgradeLevel 2\par
+- ASF werden wieder korrekt entladen \par
+- Fwler koennen wieder ins Boot einsteigen\par
+- Alarmierung zum Folgeeinsatz funktioniert wieder\par
+- PriorityKey fuer FlyToLanding Befehl der Hubis ist nun WEM Standard Links Strg!\par
+- Polizei verfuegt auch ueber Lagemeldung, Lagemeldung muss jetzt bei JEDER Einsatzkraft mit linker Strg-Taste aktiviert werden und wird dann zum Standardkommando\par
+- Wasserwerfer AUS beim Pol-WaWe wieder eingef\'fchrt\par
+\par
+- BMA sind mit neuen Meldern im Gebaeude verbunden, hier koennen nun auch von aussern NICHT erkennbare Kleinbraende erzeugt werden :)\par
+- Nicht jede BMA Ausl\'f6sung f\'fchrt mehr zu Verletzung aller im Geb\'e4ude befindlichen Personen\par
+  -> Geb\'e4ude FR\'dcH raeumen -> L\'dcFTER !\par
+- Personen raeumen bei BMA Alarm automatisch das Gebaeude, sofern sie nicht verletzt sind\par
+- FlashOver -Simulation :) (zuendet noch net richtig)\par
+- Neue Codierung der BMA -> funzt mit altem FMS-Tool nicht mehr korrekt !\par
+\par
+- Erweiterte Medizinische Diagnose/Versorgungssimulation\par
+  Oberfl\'e4chenfunktionen werden eingebaut, bitte damit spielen. Manches mag unhandlich oder unn\'f6tig sein. Eine med. Verlaufssimulation ist noch nicht hinterlegt.\par
+- NA am Pat kann mit Klick auf freien RTW-RA den Abtransport des von ihm behandelten Pat befehlen, mit linker Ctrl-Taste NA-Begleitung erzwingen -> bitte mal mit spielen\par
+\par
+- Code fuer die Buttons des abgeschafften BMA Tableaus entfernt\par
+- Verf\'fcgbarkeitschecks div. FwBefehle im Menue vereinfacht\par
+- Wb_parms um H\'e4ufigkeiten fuer Sondereins\'e4tze erweitert -> kann jetz ohne Scriptmodifikation ge\'e4ndert werden\par
+- Code fuer RD Alarmierung vereinfacht, sollte nun fixer laufen.\par
+\par
+- Bug in UseAxe beseitigt, der mitunter das \'d6ffnen von T\'fcren verhindert hat\par
+\par
+\b\par
+WEM 7 Baustelle\par
+\par
+Liste der Basteleien. Fett geschriebene \'c4nderungen bed\'fcrfen intensiver Tests. \par
+Kommentare \'fcber Sinnhaftigkeit/Anpassung/ R\'fccknahme von \'c4nderungen jederzeit erw\'fcnscht\par
+\par
+\b0 - Units ausgemistet -> nicht mehr ben\'f6tigte Units entfernt\par
+- Anheben/Senken der Einsatzfrequenz korrgiert, funzt jetz\par
+-> im Hauptverzeichnis Proggi von Chuck, das die WB_Parms.xml einstellen kann. einfach mal ausprobieren\par
+- Kodierung der Ausrueckfolge im Fzcode-String statt Case-Auswertung bei RTH, NEF, (RTW), DLK, GTLF\par
+- Statusabh\'e4ngiges Blockieren der Alarmierung von Hundestaffel, ITH, Ringfunk\b\par
+\b0\par
+\b Kern 7\par
+\b0 FzAuswahl wird auf in Liste hinterlegte Codes umgestellt \par
+- Codeerstellung bei FzAufstellung ok\par
+- FzIDs auf dreistellig umgestellt, maximale FzID 498 -> sollte eine Weile reichen\par
+- Alarmierung auf neues Fz-Code-System umgestellt -> bitte Ausrueckordnung/Nachrueckelogik intensiv testen\par
+- Funkmanagement (FMS/Alarmierung) neu strukturiert\par
+\par
+\b EM4 Missionen\par
+\b0 - Ringfunk, Rufbereitschaft, KatS Alarm in den Missionen deaktiviert\par
+- Kampagne vorerst wg Problemen mit der Alarmierung aussen vor\par
+\par
+\b\par
+}
+ 

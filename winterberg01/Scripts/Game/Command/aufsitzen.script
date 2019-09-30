@@ -1,0 +1,65 @@
+// Winterberger für Em4 
+// aufsitzen v1.0 by WitchDoctor
+//
+// Revision
+// 14.6.06 : Final für Rel 1.0
+
+
+const int MAX_FZ = 15;
+const char * kennung[MAX_FZ];
+
+object aufsitzen : CommandScript
+{
+	aufsitzen()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(90);
+		kennung[1]="lf";
+		kennung[2]="tlf";
+		kennung[3]="rw";
+		kennung[4]="dlk";
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Mission::PlayHint("Zum Abmarsch fertig!");
+		int cid=1; // Keine Automatik
+		if (Caller->HasCommand("ich_bin_ein_hubretter"))
+		{
+			Vector FzP=Game::GetCommandPos();
+			Vehicle Fz(Caller);
+			if (Fz.IsInstalled())
+			{
+				Caller->PushActionBasketDown(ACTION_NEWLIST, FzP);
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",Caller,0,false);
+				return;
+			}
+		}
+		PersonList pl(Caller->GetName());
+		for (int i=pl.GetNumPersons()-1; i > -1; i--)
+		{
+			if (i == 0) 
+				cid=112; // Der letzte löst Status 1 und Rückfahrt Wache aus
+			Person *p=pl.GetPerson(i);
+			GameObject *obj(p);
+			if (!p->IsInjured())
+			{
+				obj->PushActionExecuteCommand(ACTION_NEWLIST,"RemoveFirehose",Caller,cid,false);
+				obj->PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,cid,false);
+			} else {	
+				if (i == 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"await_bording_personal",Caller,1,false);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_fwpoltec",Caller,1,false);
+				}
+			}
+		}	
+	}
+};
+

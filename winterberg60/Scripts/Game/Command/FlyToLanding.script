@@ -1,0 +1,59 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script FlyToLanding
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+object FlyToLanding : CommandScript
+{
+	Vector TargetPos;
+	float landingDirection;
+	
+	FlyToLanding()
+	{
+		SetValidTargets(ACTOR_FLOOR | ACTOR_OBJECT | ACTOR_VIRTUAL);
+		SetHighlightingEnabled(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		return true;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE || Caller->GetID() == Target->GetID())
+			return false;
+
+		Vehicle heli(Caller);
+		if (!heli.IsValid() || /*heli.IsOnGround() ||*/ /*Game::IsWater(x,y,z) || */(heli.GetVehicleType() != VT_THW_FGRT_BH && heli.HasTransportOnStretcher()))
+			return false;
+		TargetPos = Game::GetCommandPos();
+		
+		// check if position is valid landing position
+		GameObject obj(Target);
+		landingDirection = heli.GetValidLandingAngle(&obj, TargetPos);
+		if (landingDirection >= 0.f)
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionFlyTo(ACTION_NEWLIST, TargetPos, true, landingDirection);
+		Vehicle v(Caller); GameObject landing(Target);
+		if (v.HasCommand("isith") && !landing.HasCommand("isith"))
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"EmptyCar",Caller,0,false);
+			Caller->Explode();
+			Mission::PlayHint("WTD_ITH_UNSICHER");
+		}
+	}
+};

@@ -1,0 +1,475 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script kennungen
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+//  Einsatzmittel-Kennzeichen Winterberger Em4 v0.1
+//  
+//  dienst zur Identifizierung von Fahrzeugen/Helfern
+
+int DummyGroup = 20;
+
+object ich_bin_nicht_frei : CommandScript
+{
+	ich_bin_nicht_frei()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object wird_alarmiert : CommandScript
+{
+	wird_alarmiert()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object abwarten : CommandScript
+{
+	abwarten()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object alarm_dummy : CommandScript
+{
+	alarm_dummy()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_kein_fz : CommandScript
+{
+	ich_bin_kein_fz()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_el : CommandScript
+{
+	ich_bin_ein_el()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_lna : CommandScript
+{
+	ich_bin_ein_lna()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+object ich_bin_ein_tsfw : CommandScript
+{
+	ich_bin_ein_tsfw()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_wasser : CommandScript
+{
+	ich_fuehre_wasser()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object monitor_an_bord : CommandScript
+{
+	monitor_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object schnellangriff_an_bord : CommandScript
+{
+	schnellangriff_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object schnellangriff_im_einsatz : CommandScript
+{
+	schnellangriff_im_einsatz()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object verteiler_an_bord : CommandScript
+{
+	verteiler_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ts_an_bord : CommandScript
+{
+	ts_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object zelt_an_bord : CommandScript
+{
+	zelt_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object lima_an_bord : CommandScript
+{
+	lima_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pylone_an_bord : CommandScript
+{
+	pylone_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_zelt : CommandScript
+{
+	mir_fehlt_zelt()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_monitor : CommandScript
+{
+	mir_fehlt_monitor()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_verteiler : CommandScript
+{
+	mir_fehlt_verteiler()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_ts : CommandScript
+{
+	mir_fehlt_ts()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_pylone : CommandScript
+{
+	mir_fehlt_pylone()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_lima : CommandScript
+{
+	mir_fehlt_lima()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_hubretter : CommandScript
+{
+	ich_bin_ein_hubretter()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_bsw : CommandScript
+{
+	ich_bin_ein_bsw()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+object freiwillige : CommandScript
+{
+	freiwillige()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_pa : CommandScript
+{
+	ich_fuehre_pa()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_csa : CommandScript
+{
+	ich_fuehre_csa()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_tauchgeraet : CommandScript
+{
+	ich_fuehre_tauchgeraet()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object auto_umleiten : CommandScript
+{
+	auto_umleiten()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object bedarfs_fz : CommandScript
+{
+	bedarfs_fz()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object siemens_target : CommandScript
+{
+	siemens_target()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object db_target : CommandScript
+{
+	db_target()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object kmrd_target : CommandScript
+{
+	kmrd_target()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object hidden : CommandScript
+{
+	hidden()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+

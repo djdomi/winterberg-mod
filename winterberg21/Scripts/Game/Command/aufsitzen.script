@@ -1,0 +1,83 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script aufsitzen
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// Winterberger für Em4 
+// aufsitzen v1.0 by WitchDoctor
+//
+// Revision
+// 14.6.06 : Final für Rel 1.0
+
+
+object aufsitzen : CommandScript
+{
+	aufsitzen()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetPriority(90);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_NEWLIST,0.5f);
+		int cid=1; // Keine Automatik
+		int free;
+		char * parken[1];
+		parken[0]=Caller->GetName();
+		int fzid=int(parken[0][4])-32;
+
+		Vehicle Fz(Caller);
+		if (Fz.GetVehicleType() == VT_FIREFIGHTERS_DLK)
+		{
+			Vector FzP=Game::GetCommandPos();
+			if (Fz.IsInstalled())
+			{
+				Caller->PushActionBasketDown(ACTION_NEWLIST, FzP);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->AssignCommand("VCmdSiren");
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",Caller,0,false);
+				return;
+			}
+		}			
+		PersonList pl(Caller->GetName());
+		for (int i=pl.GetNumPersons()-1; i > -1; i--)
+		{
+			Person *p=pl.GetPerson(i);
+			GameObject *obj(p);
+			if (!p->IsInjured())
+			{
+				if (p->GetUserData() > 0)
+					obj->PushActionExecuteCommand(ACTION_NEWLIST,"Geraet_abbauen",Caller,cid,false);
+				else
+				{
+					obj->PushActionExecuteCommand(ACTION_NEWLIST,"RemoveFirehose",Caller,cid,false);
+				}
+				if (fzid == 32)
+					obj->PushActionExecuteCommand(ACTION_APPEND,"lna_leichen",Caller,0,false);
+				if ((p->IsCarryingPerson() || p->IsLinkedWithPerson()) && !p->IsParamedicTeam())
+					obj->PushActionExecuteCommand(ACTION_APPEND,"PutInCar",Caller,1,false);
+				obj->PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,cid,false);
+			}
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"await_bording_personal",Caller,1,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",Caller,1,false);
+	}
+};
+

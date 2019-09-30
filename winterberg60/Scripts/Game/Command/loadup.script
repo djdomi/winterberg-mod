@@ -1,0 +1,197 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script loadup
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+//	Aufladen-Script by Danny Homm alias Winterberger
+//	Modifiziertes Aufladen-Script schaltet Heckbeleuchtung des ASF ein
+
+
+object LoadUp_Freeplay : CommandScript
+{
+	Vector  v, tv;
+	Actor asf;
+
+	LoadUp_Freeplay()
+	{
+		SetIcon("liftwithcrane");
+		SetCursor("liftwithcrane");
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetRestrictions(RESTRICT_TRANSPORTABLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		//Freeplay oder nicht?
+		// changed by Bass-ti -> new em4-codec
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			System::Error("not valid");
+//			return false;
+
+		if(Caller->GetObjectType()!=TYPE_VEHICLE)
+			System::Error("Caller not Vehicle");
+//			return false;
+
+		// check if caller already carries an object
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if(ol.GetNumObjects() > 0)
+			System::Error("caller has object");
+//			return false;
+
+		// check if target object can be picked up
+		GameObject obj(Target);
+		if (!obj.IsValid() || obj.IsFlagSet(OF_PERSON_ENCLOSED) || !obj.IsFlagSet(OF_TRANSPORTABLE))
+			System::Error("Person enclosed oder not transportable");
+//			return false;
+
+		if (Target->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.IsSmoking())
+				return false;
+			if (v.HasEnclosedPerson())
+				return false;
+		}
+		
+		if (!Game::IsFreeplay() && !Game::IsMultiplayer())
+			return false;
+		
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//FZG ist nicht verfügbar...
+		if (Caller->GetID() == Target->GetID())
+			return;	// evil, aber wirksam
+		Caller->AssignCommand("ich_bin_nicht_frei");
+		GameObject ggv(Target);
+		Vehicle v(Target);
+		bool can_burn=(v.GetBurningStatus() == OBS_NORMAL) && (!Target->HasNamePrefix("ehrang") && v.GetEnergy()<v.GetMaxEnergy());
+		bool isSquad=false;
+	
+		Caller->PushActionWait(ACTION_NEWLIST,1.0f);
+		if ((v.IsPolice() || v.IsFirefighter() || v.IsThw() || v.IsAmbulance()))
+		{
+			char *name[1];
+			can_burn=false;
+			name[0]=v.GetName();
+			if (!v.HasCommand("bedarfs_fz"))
+			{
+				isSquad=true;
+			}
+			PersonList vap(name[0]);
+			Person va;
+			for (int ix=0;ix<vap.GetNumPersons();ix++)
+			{
+				va=vap.GetPerson(ix);
+				if (!va.IsInjured() && !va.IsLinkedWithPerson() && !va.IsCarried() && (va.GetContainerObjectID() == 0))
+					va.PushActionDeleteOwner(ACTION_NEWLIST);
+			}
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"ActionStopSound",&v);
+			v.PushActionExecuteCommand(ACTION_APPEND,"Geraete_entfernen",&v,0,false);
+		} else 
+			v.PushActionWait(ACTION_NEWLIST,2.0f);
+
+		if ((Math::rand()%10 >7) && can_burn)
+		{
+			Mission::PlayHint("WIB_BRENNT_SPRIT");
+			v.SetSmoking(true);
+			v.SetSmokeLevelDuration(10.0f);
+		} else {
+			System::Log("Objekt aufladen");
+			Caller->PushActionMove(ACTION_APPEND, Target, TARGET_LOADUP);
+			ggv.PushActionExecuteCommand(ACTION_APPEND,"ggv_check",Caller,3,false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionMotorSound",Caller,9,false);
+			Caller->PushActionWait(ACTION_APPEND,1);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",Caller);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+			if (!isSquad)
+				Caller->PushActionLoadUp(ACTION_APPEND, Target);
+			else 
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"kaufen",&v,99999,false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",Caller,0,false);
+		}
+	}
+};
+
+object ActionFreeplayUnload : CommandScript
+{
+
+	ActionFreeplayUnload()
+	{
+	}
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		if(!Caller->IsCarryingAnything())
+			return false;
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//FZG ist verfügbar...
+		GameObjectList ol = Caller->GetCarriedObjects();
+		System::Log("ASF Unload");
+		
+		Caller->PushActionUnload(ACTION_APPEND);
+		for (int i = 0; i < ol.GetNumObjects(); i++)
+		{
+			ol.GetObject(i)->PushActionWait(ACTION_NEWLIST, 5.0f);
+			System::Log(ol.GetObject(i)->GetName());
+			ol.GetObject(i)->PushActionDeleteOwner(ACTION_APPEND);
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		System::Log("ASF Unload fertig");
+	}
+};

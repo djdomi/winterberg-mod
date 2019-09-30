@@ -1,0 +1,50 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.0
+// ## 
+// ## Script rufe_mtw
+// ## 
+// ## Stand : 06.8.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+// Winterberger für Em4 
+// rufe_mtw v1.0 by WitchDoctor
+// 
+//
+// Revision
+// 
+
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object rufe_mtw : CommandScript
+{
+
+	int mtw; //ObjectID des gefundenen MTWs
+	bool kriterien_erfuellt; //Ist dieser MTW gerade frei?
+
+   rufe_mtw()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,100,false);
+   }
+};

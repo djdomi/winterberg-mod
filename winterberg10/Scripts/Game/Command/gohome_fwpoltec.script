@@ -1,0 +1,164 @@
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object gohome_fwpoltec : CommandScript
+{
+	Vector Wache;
+	Actor fz;
+
+	gohome_fwpoltec()
+	{
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(85);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		//Freeplay oder nicht?
+		// changed by Bass-ti -> new em4-codec
+		if (Game::IsFreeplay())
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		if (v.HasCommand("DUMMYHasWarningLights"))
+		{
+ 			v.EnableBlinker(BLT_NONE);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+		}
+		if (v.HasCommand("DUMMYHasUmfeld"))
+		{
+			v.RemoveCommand("DUMMYHasUmfeld");
+		}
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+
+		ActorList l1(Target->GetName());
+		if(l1.GetNumActors() > 0)
+		{
+			fz = *l1.GetActor(0);
+			Mission::PlayHint("Fahrzeug-Standort gefunden");
+		} else {
+			System::Error("Streife CommandScript: Kann Basis nicht finden!");
+		}
+	
+
+		Wache=fz.GetPosition();
+
+		//Fahrzeug kann gerufen werden....
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_DISABLE, Caller, 1, false);
+		Game::FindFreePosition(Caller, Wache);
+		Caller->PushActionLightOn(ACTION_APPEND,false);
+		Caller->PushActionMove(ACTION_APPEND, Wache + Vector(0, -150, 0)); // Fahre zum Wendepunkt
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+		Caller->PushActionTurnTo(ACTION_APPEND, Wache + Vector(0, -300, 0)); // Wende
+		Caller->PushActionMove(ACTION_APPEND, Wache); // Einparken
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+
+		if (Caller->HasName("stw1") || Caller->HasName("stw2") || Caller->HasName("stw3") || Caller->HasName("mtw"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("asf"))
+		{
+			if (Caller->IsCarryingAnything())
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionFreeplayUnload",Caller,0,false);
+				return;
+			}
+		}
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+	}
+};
+
+object ActionCheckPol : CommandScript
+{
+
+	ActionCheckPol()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		PersonList transport = v.GetTransports();
+
+		if (transport.GetNumPersons() > 0)
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"ActionEmptyPol",&v,0,false);
+			Caller->PushActionWait(ACTION_APPEND, 10.f); //bis zum nächsten Durchlauf
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol",&v,0,false);
+		}
+		else
+		{
+			Audio::PlaySample("mod:/Audio/FX/voices/hints/FUNKFREI.wav");
+		}
+
+
+	}
+};
+
+object ActionEmptyPol : CommandScript
+{
+	Vector tv,v;
+
+	ActionEmptyPol()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+        	mPlaceList = Game::GetActors("police_entry");
+        	if (mPlaceList.GetNumActors() > 0)
+        		tv=mPlaceList.GetActor(0)->GetPosition();
+
+		Vehicle v(Caller);
+		PersonList passenger = v.GetPassengers();
+		PersonList transport = v.GetTransports();
+
+		if (passenger.GetNumPersons() > 0 && transport.GetNumPersons() > 0)
+		{
+			//Gangster
+			transport.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			transport.GetPerson(0)->PushActionWait(ACTION_APPEND, 5.f);
+
+			//Polizist
+			passenger.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, transport.GetPerson(0), TARGET_FOLLOW);
+			passenger.GetPerson(0)->PushActionArrest(ACTION_APPEND, transport.GetPerson(0), false);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, tv, true);
+			passenger.GetPerson(0)->PushActionPutInBase(ACTION_APPEND);
+			passenger.GetPerson(0)->PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,true);
+		}
+		else
+		{
+			return;
+		}
+
+
+	}
+};

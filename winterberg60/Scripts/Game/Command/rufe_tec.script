@@ -1,0 +1,319 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script rufe_tec
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+bool isdeluxe=false;
+
+object tec_isdeluxe:CommandScript
+{
+
+   tec_isdeluxe()
+   {
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	isdeluxe=true;
+   }
+};
+
+object rufe_kran : CommandScript
+{
+
+   rufe_kran()
+   {
+      SetValidTargets(ACTOR_FLOOR|ACTOR_OBJECT);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_OBJECT:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector TargetPos=Game::GetCommandPos();
+	Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/engineer_upgraded2.e4p", "anrufer");
+	if (Game::IsMultiplayer)
+		p.SetPlayerMP(Caller->GetPlayerMP());
+	p.SetNeverResort(true);
+	p.Hide();
+	p.PushIgnoreEnergy();
+	Game::FindFreePosition(&p,TargetPos);
+	p.SetPosition(TargetPos);
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,350,false);
+	p.PushActionWait(ACTION_APPEND,10.0f);
+	p.PushActionDeleteOwner(ACTION_APPEND);
+   }
+};
+
+
+object rufe_siemens : CommandScript
+{
+
+   rufe_siemens()
+   {
+      SetValidTargets(ACTOR_FLOOR|ACTOR_OBJECT);
+      SetIcon("rufe_siemens");
+      SetCursor("rufe_siemens");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_OBJECT:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector TargetPos=Game::GetCommandPos();
+	Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/engineer_upgraded2.e4p", "anrufer");
+	if (Game::IsMultiplayer)
+		p.SetPlayerMP(Caller->GetPlayerMP());
+	p.SetNeverResort(true);
+	p.Hide();
+	p.PushIgnoreEnergy();
+	Game::FindFreePosition(&p,TargetPos);
+	p.SetPosition(TargetPos);
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,400,false);
+	p.PushActionWait(ACTION_APPEND,10.0f);
+	p.PushActionDeleteOwner(ACTION_APPEND);
+   }
+};
+
+object rufe_wawe : CommandScript
+{
+
+   rufe_wawe()
+   {
+      SetValidTargets(ACTOR_FLOOR|ACTOR_OBJECT);
+      SetIcon("wasserw");
+      SetCursor("wasserw");
+   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return isdeluxe;
+	}
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_OBJECT:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector TargetPos=Game::GetCommandPos();
+	Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/engineer_upgraded2.e4p", "anrufer");
+	if (Game::IsMultiplayer)
+		p.SetPlayerMP(Caller->GetPlayerMP());
+	p.SetNeverResort(true);
+	p.Hide();
+	p.PushIgnoreEnergy();
+	Game::FindFreePosition(&p,TargetPos);
+	p.SetPosition(TargetPos);
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,480,false);
+	p.PushActionWait(ACTION_APPEND,10.0f);
+	p.PushActionDeleteOwner(ACTION_APPEND);
+   }
+};
+
+object rufe_nfm : CommandScript
+{
+
+   rufe_nfm()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL|ACTOR_OBJECT);
+      SetIcon("rufe_nfm");
+      SetCursor("rufe_nfm");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_OBJECT:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_VIRTUAL:
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector TargetPos=Game::GetCommandPos();
+	Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/engineer_upgraded2.e4p", "anrufer");
+	if (Game::IsMultiplayer)
+		p.SetPlayerMP(Caller->GetPlayerMP());
+	p.SetNeverResort(true);
+	p.Hide();
+	p.PushIgnoreEnergy();
+	Game::FindFreePosition(&p,TargetPos);
+	p.SetPosition(TargetPos);
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,450,false);
+	p.PushActionWait(ACTION_APPEND,10.0f);
+	p.PushActionDeleteOwner(ACTION_APPEND);
+   }
+};
+
+object rufe_bomber : CommandScript
+{
+
+   rufe_bomber()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL|ACTOR_OBJECT);
+      SetIcon("rufe_bomber");
+      SetCursor("rufe_bomber");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_OBJECT:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_VIRTUAL:
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector TargetPos=Game::GetCommandPos();
+	Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/engineer_upgraded2.e4p", "anrufer");
+	p.SetNeverResort(true);
+	p.Hide();
+	p.PushIgnoreEnergy();
+	Game::FindFreePosition(&p,TargetPos);
+	p.SetPosition(TargetPos);
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,475,false);
+	p.PushActionWait(ACTION_APPEND,10.0f);
+	p.PushActionDeleteOwner(ACTION_APPEND);
+   }
+};
+
+object rufe_asf : CommandScript
+{
+
+   rufe_asf()
+   {
+	SetValidTargets(ACTOR_FLOOR | ACTOR_VEHICLE|ACTOR_OBJECT);
+	SetIcon("adac");
+	SetCursor("adac");
+	SetPriority(10);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	switch (Target->GetType())
+	{
+		case ACTOR_OBJECT:
+			GameObject o(Target);
+			ok=o.HasCommand("lst_estelle");
+			break;
+		case ACTOR_VEHICLE:
+	 		ok=Caller->GetID() != Target->GetID();
+			if (ok)
+			{
+				Vehicle v(Target);
+				ok = ok && v.IsFlagSet(OF_TRANSPORTABLE);
+			}
+			break;
+		case ACTOR_FLOOR:
+			ok=true;
+			break;
+		default:
+			ok=false;
+			break;
+	}
+	ok=ok && Caller->GetID()!=Target->GetID();
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,300,false);
+   }
+};

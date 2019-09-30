@@ -1,0 +1,168 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script emptycar
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+//**************************************************************************************************
+// #Version 2.0#										****
+//												****
+// 		Changes: - Disables Sirens after emptying car.					****
+//												****
+//												****
+// 		DO NEVER REPLACE ORIGINAL SCRIPTS USED BY EM4 IN YOUR DATA-FOLDER!		****
+//**************************************************************************************************
+
+object EmptyCar : CommandScript
+{
+
+	EmptyCar()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetPriority(100);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		Vehicle v(Caller);
+		if (v.HasCommand("FlyTo") && !v.IsOnGround())
+			return false;
+
+		return v.GetNumPassengers() > 0;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid())
+			return false;
+		
+		if (Caller->GetType()==ACTOR_VEHICLE && Target->GetType()==ACTOR_VEHICLE && Caller->GetID()==Target->GetID())
+		{
+			Vehicle v(Caller);
+			if (!v.IsValid() ||  v.IsDestroyed())
+			        return false;
+			if(v.HasCommand("FlyTo") && !v.IsOnGround())
+				return false;		
+			if(v.GetNumPassengers() > 0)
+				return true;
+		}
+				
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.AssignCommand("ich_bin_nicht_frei");
+
+		bool select_gf=Caller->GetID()==Target->GetID() && Caller->IsSelected();
+		bool irswitch=v.GetVehicleType()==VT_AMBULANCE_RTW;
+
+		bool canon=(v.IsCurrentAction("EActionCool") || v.IsCurrentAction("EActionExtinguish"));
+
+		if (!v.HasCommand("DUMMYHasWarningLights"))
+			v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 0, false);
+		
+
+		if (!v.IsCurrentAction("EActionCool") && !v.IsCurrentAction("EActionExtinguish"))
+			v.PushActionWait(ACTION_APPEND, 0.05f);
+
+		PersonList l = v.GetPassengers();
+		Person p;
+
+		for(int i=l.GetNumPersons()-1;i>=0; i--)
+		{
+			p=l.GetPerson(i);
+			if (!p.HasAnimation("bark"))
+			{
+				p.PushActionLeaveCar(ACTION_APPEND, &v);
+				if (irswitch)
+				{
+					if (p.IsCarryingPerson())
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"IRLeuchte",Target,2,false);
+					else if (!p.IsDoctor())
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"IRLeuchte",Target,1,false);
+				}
+				if (select_gf && (p.IsDoctor() || p.HasCommand("gf") || p.IsEngineer() || l.GetNumPersons()==1))
+					p.PushActionExecuteCommand(ACTION_APPEND,"Select_GF",Caller,0,false);
+				if (p.IsDoctor() && !p.IsEquipped())
+					p.PushActionExecuteCommand(ACTION_APPEND,"Hole_NEF_Equip",&v,0,false);
+				if (p.GetPersonType()==PT_SHARPSHOOTER)
+					p.PushActionExecuteCommand(ACTION_APPEND,"GewehrHolen",&v,0,false);
+
+			}
+		}
+
+		if (v.GetVehicleType() == VT_THW_FGRT_BH)
+		{
+			PersonList l2 = v.GetTransports();
+			for(int i = 0; i < l2.GetNumPersons(); i++)
+				if (!l2.GetPerson(i)->HasAnimation("bark"))
+					l2.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Target);
+		}
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+			if (v.HasCommand("VCmdUmfeld"))
+				v.PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Caller);
+			switch (v.GetVehicleType())
+			{
+				case VT_FIREFIGHTERS_DLK:
+					break;
+				case VT_FIREFIGHTERS_TLF:
+					if (canon)
+						v.PushActionWaterOn(ACTION_APPEND);
+					else
+						v.PushActionRedirect(ACTION_APPEND);
+					break;
+				default:
+					v.PushActionRedirect(ACTION_APPEND);
+					break;
+			}
+		}
+	}	
+};
+
+object Select_GF : CommandScript
+{
+
+   Select_GF()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	System::Log("Select GF");
+	Caller->Select();
+	Vehicle v(Target);
+	v.Deselect();
+	v.SetUserData(Caller->GetUserData());
+	System::Log("Select GF Ende");
+   }
+};
+

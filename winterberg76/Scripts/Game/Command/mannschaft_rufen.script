@@ -1,0 +1,285 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script mannschaft_rufen
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+// Winterberger für Em4 
+// Mannschaft aufs Fahrzeug rufen v1.0 by WitchDoctor
+// 
+//
+// Revision
+// 15.6.06 : erster Versuch
+
+float wartezeit=10.0;
+
+object mannschaft_rufen : CommandScript
+{
+	
+	bool ignore_pull=false;
+
+	mannschaft_rufen()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ignore_pull=true;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Caller->GetType()==ACTOR_VEHICLE)
+			Vehicle fz(Caller);
+		else
+			Vehicle fz(Target);
+
+
+		bool rufen=!fz.IsFlagSet(OF_PULLABLE) || ignore_pull;
+		ignore_pull=false;
+
+		if (fz.HasCommand("wird_alarmiert"))
+		{
+			Caller->PushActionWait(ACTION_INSERT,1.0);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"mannschaft_rufen",Target,ChildID,false);
+		} else if (rufen)  // hidden setzt nicht OF_PULLABLE ausser Kraft !, mal sehen
+		{
+			ActorList place;
+			int n,free;
+			int ptype=0;
+			bool freiwillige=false;
+								
+			fz.AssignCommand("ich_bin_nicht_frei");
+			fz.PushActionWait(ACTION_INSERT,1000.0);
+					
+			free=fz.GetFreePassengers();
+			n=free;
+			
+			System::Log("Mannschaft rufen %u %s",ChildID,fz.GetName());
+
+			// Zuordnung des Personals zu den Codes
+			// Codes in Anlehnung an die Alarmcodes aus RufeWinterberg
+
+			switch (ChildID)
+			{	
+				case 0:
+					break;
+				// Feuerwehr
+				case 501:	// freiwillige
+					ptype=50;
+					freiwillige=true;
+					n=n+n/2;
+					break;
+				case 502:
+					ptype=51;
+					n=2;
+					break;
+				case 301:
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Target,191,false);
+					ptype=90;
+					n=1;
+					break;
+
+				// Rettungsdienst
+				case 603:
+					ptype=9;
+					n=1;
+					if (free>0)
+						fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,112,false);			
+					break;
+				case 619:
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,197,false);			
+				case 610:
+					if (fz.IsFlagSet(OF_USABLE_WITH_MEGAPHONE) && free>0)
+						fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,181,false);			
+				case 611:
+					ptype=91;
+					if (fz.GetVehicleType()!=VT_AMBULANCE_NEF)
+						n=2;
+					else	
+						n=1;
+					break;
+				case 621:
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,108,false);
+					ptype=35;
+					n=1;
+					break;			
+				case 630:
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,n*100+21,false);
+					ptype=32;
+					n=fz.GetFreeTransports();
+					break;			
+				case 651:
+					ptype=18;
+					if (fz.GetVehicleType()==VT_AMBULANCE_RTW)
+					{
+						n=n-1;
+						ptype=34;
+					}
+					break;
+				case 84060:
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Target,188,false);
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Target,185,false);
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Target,284,false);
+					ptype=0;
+					n=0;
+					break;			
+				case 84064:
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Target,189,false);
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Target,186,false);
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Target,187,false);
+					ptype=0;
+					n=0;
+					break;			
+
+				// Polizei
+				case 101:
+				case 102:
+					PersonList pl(fz.GetName());
+					switch (fz.GetVehicleType())
+					{
+						case VT_POLICE_MTW:
+							if (fz.IsFlagSet(OF_USABLE_WITH_MEGAPHONE))
+								ptype=3;
+							else
+								ptype=4;
+							break;
+						case VT_POLICE_WAW:
+							ptype=4;
+							break;
+						case VT_POLICE_STW:
+							if (ChildID==101)
+								n=2;
+							ptype=3;
+							break;
+						case VT_POLICE_PHC:
+							ptype=4;
+							break;
+						default:
+							ptype=3;
+							break;
+					}
+					n=n-pl.GetNumPersons();
+					break;
+				case 103:
+					PersonList pl(fz.GetName());
+					n=2;
+					n=n-pl.GetNumPersons();
+					ptype=33;
+					break;
+
+				// TEC
+
+				// alte Codes;
+				case 19297:
+					ptype=12;
+					n=1001;
+					break;
+				case 19223:
+					ptype=34;
+					n=1;
+					break;
+				case 19296:
+					ptype=8;
+					n=1001;
+					fz.SetFlag(OF_USABLE_WITH_MEGAPHONE);
+					break;
+				case 19292:
+					ptype=81;
+					n=1;
+					fz.SetFlag(OF_USABLE_WITH_MEGAPHONE);
+					break;
+				case 19293:
+					ptype=12;
+					n=1;
+					break;
+				default:
+					if (ChildID>59900)
+					{
+						ptype=ChildID-59900;
+						n=1;
+					} else
+						ptype=ChildID;
+					break;
+			}
+			if ((ptype>0) && (n>0))
+			{
+				fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,n*100+ptype,false);
+				fz.SetFlag(OF_USABLE);			
+				if (fz.HasCommand("abwarten"))
+					fz.PushActionWait(ACTION_INSERT,wartezeit*(fz.GetUserData()-1));
+			}
+		} 
+	}
+};
+
+
+object rufe_pers : CommandScript
+{
+
+	rufe_pers()
+	{
+		SetPriority(500);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int pc)
+	{
+		ActorList place;
+		int n;
+		int alarm=100;
+		Vehicle fz(Caller);
+	
+		n=pc/100;
+		pc=pc%100;
+		if (n>999)
+		{
+			n-=1000;
+			alarm=300;
+		}
+
+		if (n==0)
+			n=fz.GetFreePassengers();
+					
+		for (int i=0; i<n; i++)
+		{
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"CreateNewPerson",Target,alarm+pc,false);			
+			Caller->PushActionWait(ACTION_INSERT,0.5f);
+		}
+	}
+};
+
+object set_wartezeit : CommandScript
+{
+
+	set_wartezeit()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		wartezeit=1.0*ChildID;
+	}
+};

@@ -1,0 +1,209 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script leitstelle
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+// Leitstellenroutine -> legt die E-Stelle fest und alarmiert die Kraefte
+
+object lst_estelle : CommandScript
+{
+	lst_estelle()
+	{
+		SetIcon("faz");
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+object lst_alarmieren : CommandScript
+{
+
+	lst_alarmieren()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Log("Leitstelle Start");
+		Vector TargetPos=Target->GetPosition();
+		GameObject ziel(Target);
+		bool neue_estelle=true;
+		int TargetID;
+		int ecode;
+
+		if (childID < 99)
+		{
+			ecode=(Caller->GetUserData() & 15);
+			if (Input::LShiftPressed())
+				ecode=1;
+			else if (Input::RShiftPressed())
+				ecode=6;
+			else if (Input::RCtrlPressed() && ecode!=15)
+				ecode=7;
+		} else 
+			ecode=childID;
+
+
+		bool fuenfton=((Caller->GetUserData() & 16)==0) && !Input::LCtrlPressed();
+
+		switch (Target->GetType())
+		{
+			case ACTOR_OBJECT:
+				GameObject p(Target);
+				neue_estelle=!p.HasCommand("lst_estelle");
+				TargetID=p.GetID();
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				if (v.HasCommand("lst_estelle"))
+					TargetID=v.GetID();
+				else
+					TargetID=v.GetUserData();
+				neue_estelle=v.IsFirefighter() && TargetID==0 && !v.HasCommand("lst_estelle");
+				break;
+			case ACTOR_PERSON:
+				GameObject p(Target);
+				neue_estelle=!p.HasCommand("fuehrung");
+				TargetID=p.GetUserData();
+				break;
+		}
+				
+		if (neue_estelle)
+		{
+			System::Log("Leitstelle Neue Estelle");
+			Vehicle pv= Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/fsammel.e4p", "estelle");
+			GameObject p(&pv);
+			if (Target->HasNamePrefix("wm_"))
+				p.SetRotation(&ziel);
+			p.ClearFlags();
+			p.AssignCommand("lst_estelle");
+			if (Game::IsMultiplayer())
+				p.SetPlayerMP(Caller->GetPlayerMP());
+			System::Log("Leitstelle Estelle platzieren");
+			Game::FindFreePosition(&p,TargetPos);
+			p.SetPosition(TargetPos);
+			p.SetCommandable(true);
+			p.SetSelectable(false);
+			p.SetUserData(0);			// noch kein Zugfuehrer zugeordnet
+			System::Log("Leitstelle EStelle Debung");
+			bungarext::debung (Target);
+		} else {
+			Actor a=Game::GetActor(TargetID);
+			GameObject p(&a);
+		}
+		
+		System::Log("Leitstelle Alarm");
+		switch (ecode)
+		{	
+			case 0:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_lf",&p,childID,!fuenfton);
+				break;
+			case 1:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_loeschzug",&p,childID,!fuenfton);
+				break;
+			case 2:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestzug",&p,childID,!fuenfton);
+				break;
+			case 3:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestzug",&p,1000+childID,!fuenfton);
+				break;
+			case 4:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_chemiezug",&p,childID,!fuenfton);
+				break;
+			case 5:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_wald",&p,childID,true);
+				break;
+			case 6:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_einzelfz",&p,childID,false);
+				break;
+			case 7:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestfz",&p,childID,false);
+				break;
+			case 15:
+				p.PushActionExecuteCommand(ACTION_INSERT,"alarmfueralle",&p,childID,false);
+				break;
+			case 110:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_demo",&p,childID,false);
+				break;
+			case 111:
+				p.PushActionExecuteCommand(ACTION_INSERT,"sek_alarm",&p,childID,false);
+				break;
+			case 112:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_vk",&p,childID,false);
+				break;
+			case 113:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_dlk",&p,childID,false);
+				break;
+			case 114:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_gwas",&p,childID,false);
+				break;
+			case 115:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_gtlf",&p,childID,false);
+				break;
+			case 116:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_gwl",&p,childID,false);
+				break;
+			case 117:
+				p.PushActionExecuteCommand(ACTION_INSERT,"kmrd_alarm",&p,childID,false);
+				break;
+			case 118:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_simba",&p,childID,false);
+				break;
+			case 305:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",&p,305,false); 
+				break;
+			case 306:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",&p,306,false); 
+				break;
+			case 19222:
+				p.PushActionExecuteCommand(ACTION_INSERT,"manv_alarm",&p,childID,false);
+				break;
+		}
+		Caller->SetUserData(0);
+		System::Log("Leitstelle Ende %s",p.GetName());
+   	}
+};
+
+
+class bungarext : CommandScript
+{
+
+	GameObject hierhin (Vector cp)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		//obj.Hide();
+		return obj;
+	}
+	
+	void debung (Actor *bung)
+	{
+		System::Log("Bungar Debung Modul Leitstelle %s",bung->GetName());
+		if (bung->HasNamePrefix("bungar"))
+		{
+			GameObject db(bung);
+			db.PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+		System::Log("Debunged");
+	}
+};

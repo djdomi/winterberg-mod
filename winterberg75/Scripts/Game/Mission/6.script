@@ -1,0 +1,1736 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script 6
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+// mission 6 script
+
+const int MAX_TERRORIST_GROUPS = 7;
+const int MAX_TOWN_BUILDINGS_BURN = 0;
+const int NUMBER_ATTACKING_TERRORISTS = 4;
+const int MIN_TERRORISTS_FOR_FOREST_ARSON = 4;
+const int MAX_SPARK_OBJECTS = 10;
+const int MAX_DEAD = 6;
+const int BURN_OBJECTS_FOG = 50;
+
+const float TERRORIST_SHOOT_POWER = 100.0f; // shoot power of all terrorists except snipers
+const float TERRORIST_SHOOT_RANGE = 10.0f; // shoot range of all terrorists except snipers
+const float TERRORIST_SHOOT_RESISTANCE = 100.0f; // shoot resistance of all terrorists except snipers
+const float GUARDS_SHOOT_FREQUENCY = 2000.0f; // shooting frequency in milliseconds for the guards
+const float TIME_WARP_HOUR = 8;
+const float TIME_WARP_MINUTE = 00;
+const int TIME_TILL_MORNING = 3; // minutes till TIME_WARP
+const float TIMER_TIME_MORNING = 5.f;
+
+const float TIME_VAN_ATTACK_A = 2*60.0f; // terrorist vans start attack
+const float TIME_VAN_ATTACK_A_TO_B = 1.0f;
+const float TIME_VAN_ATTACK_B_TO_C = 120.0f;
+const float TIME_VAN_ATTACK_C_TO_D = 80.0f;
+const float TIME_TERRORISTS_BURN_FOREST = 10*60.0f; // terrorist bomber attack
+const float TIME_ATTACK_VAN_EXPLODES = 10.0f; // timer after terrorist van explodes in case of blocked bomber
+const float TIME_TERRORIST_GROUP_WAITING = 10.0f; // time terrorists are waiting for group members
+const float DISTANCE_INFORMANT_HOUSE = 100.0f; // distance informant from house at which the bomber vans are triggered
+
+const float TIME_TERRORISTCAR_BLOCKED = 3.0f;
+const float TIME_CHECK_MISSION_STATE_INTERVAL = 1.0f;
+const float TIME_SNIPER_SHOOT_PHASE = 4.0f;
+const float TIME_TRANSITION_CAREXPLODE = 4.0f;
+const float TIME_CUTSCENE_CAREXPLODE = 3.0f;
+const float TIME_TRANSITION_ENDCUTSCENE = 4.0f;
+const float TIME_START_CHANGE_WEATHER = 10.0f;
+const float TIME_FADE_IN_WEATHER = 30.0f; // Zeit, in der der Nebel anfängt
+const float TIME_CHANGE_WEATHER = 1.0f; // Zeit von einer Intensitäts-Stufe zur nächsten
+const float FOG_MAX_INTENSITY = 0.5f; // Maximale Fog Intensität von 0 bis 1
+const float GANGSTER_INFORMANT_ACTIVATION_DISTANCE = 700.0f;
+
+const float TIME_SPARK_1 = 10.0f;
+const float TIME_SPARK_2 = 10.0f;
+const float TIME_SPARK_3 = 10.0f;
+const float TIME_SPARK_4 = 10.0f;
+const float TIME_SPARK_5 = 10.0f;
+const float TIME_SPARK_6 = 10.0f;
+const float TIME_SPARK_7 = 10.0f;
+const float TIME_SPARK_8 = 10.0f;
+const float TIME_SPARK_9 = 10.0f;
+const float TIME_SPARK_10 = 10.0f;
+
+const char NAME_SAFE_HOUSE[] = "safehouse";
+const char NAME_INFORMANT[] = "informant";
+const char NAME_TRIGGER_ALARM[] = "alarm_terrorists";
+const char NAME_HINT_TREE[] = "hint_tree";
+const char NAME_HINT_FIRE[] = "fire_hint";
+const char NAME_TOWN_BUILDING[] = "town";
+const char NAME_FLIGHT_PATH1[] = "flight_path_01";
+const char NAME_FLIGHT_PATH2[] = "flight_path_02";
+const char NAME_CS1_TRANSITION[] = "cs1";
+
+const char NAME_TERRORIST_GROUPSNIPER[] = "terrorist_group_sniper";
+
+const char NAME_GUARD_GROUP1[] = "guard_group1";
+
+const char NAME_TERRORIST_GROUP1[] = "terrorist_group_a";
+const char NAME_TERRORIST_PATH1[] = "path_terrorist_group_a";
+const char NAME_TERRORIST_VAN1[] = "terrorist_van_a";
+const char NAME_TERRORIST_PATH_VAN1[] = "path_terrorist_van_a";
+
+const char NAME_TERRORIST_GROUP2[] = "terrorist_group_b";
+const char NAME_TERRORIST_PATH2[] = "path_terrorist_group_b";
+const char NAME_TERRORIST_VAN2[] = "terrorist_van_b";
+const char NAME_TERRORIST_PATH_VAN2[] = "path_terrorist_van_b";
+
+const char NAME_TERRORIST_GROUP3[] = "terrorist_group_c";
+const char NAME_TERRORIST_PATH3[] = "path_terrorist_group_c";
+const char NAME_TERRORIST_VAN3[] = "terrorist_van_c";
+const char NAME_TERRORIST_PATH_VAN3[] = "path_terrorist_van_c";
+
+const char NAME_TERRORIST_GROUP4[] = "terrorist_group_d";
+const char NAME_TERRORIST_PATH4[] = "path_terrorist_group_d";
+const char NAME_TERRORIST_VAN4[] = "terrorist_van_d";
+const char NAME_TERRORIST_PATH_VAN4[] = "path_terrorist_van_d";
+
+//const char NAME_TERRORIST_GROUP5[] = "terrorist_group_w1";
+//const char NAME_TERRORIST_PATH5[] = "path_terrorist_group_w1";
+const char NAME_TERRORIST_VAN5[] = "terrorist_van_w1";
+const char NAME_TERRORIST_PATH_VAN5[] = "path_terrorist_van_w1";
+
+//const char NAME_TERRORIST_GROUP6[] = "terrorist_group_w2";
+//const char NAME_TERRORIST_PATH6[] = "path_terrorist_group_w2";
+const char NAME_TERRORIST_VAN6[] = "terrorist_van_w2";
+const char NAME_TERRORIST_PATH_VAN6[] = "path_terrorist_van_w2";
+
+//const char NAME_TERRORIST_GROUP7[] = "terrorist_group_w3";
+//const char NAME_TERRORIST_PATH7[] = "path_terrorist_group_w3";
+const char NAME_TERRORIST_VAN7[] = "terrorist_van_w3";
+const char NAME_TERRORIST_PATH_VAN7[] = "path_terrorist_van_w3";
+
+const char NAME_SPARK_OBJECT1[] = "spark_object1";
+const char NAME_SPARK_EMIT1[] = "spark_emit1";
+const char NAME_SPARK_DEST1[] = "spark_dest1";
+const char NAME_SPARK_OBJECT2[] = "spark_object2";
+const char NAME_SPARK_EMIT2[] = "spark_emit2";
+const char NAME_SPARK_DEST2[] = "spark_dest2";
+const char NAME_SPARK_OBJECT3[] = "spark_object3";
+const char NAME_SPARK_EMIT3[] = "spark_emit3";
+const char NAME_SPARK_DEST3[] = "spark_dest3";
+const char NAME_SPARK_OBJECT4[] = "spark_object4";
+const char NAME_SPARK_EMIT4[] = "spark_emit4";
+const char NAME_SPARK_DEST4[] = "spark_dest4";
+const char NAME_SPARK_OBJECT5[] = "spark_object5";
+const char NAME_SPARK_EMIT5[] = "spark_emit5";
+const char NAME_SPARK_DEST5[] = "spark_dest5";
+const char NAME_SPARK_OBJECT6[] = "spark_object6";
+const char NAME_SPARK_EMIT6[] = "spark_emit6";
+const char NAME_SPARK_DEST6[] = "spark_dest6";
+const char NAME_SPARK_OBJECT7[] = "spark_object7";
+const char NAME_SPARK_EMIT7[] = "spark_emit7";
+const char NAME_SPARK_DEST7[] = "spark_dest7";
+const char NAME_SPARK_OBJECT8[] = "spark_object8";
+const char NAME_SPARK_EMIT8[] = "spark_emit8";
+const char NAME_SPARK_DEST8[] = "spark_dest8";
+const char NAME_SPARK_OBJECT9[] = "spark_object9";
+const char NAME_SPARK_EMIT9[] = "spark_emit9";
+const char NAME_SPARK_DEST9[] = "spark_dest9";
+const char NAME_SPARK_OBJECT10[] = "spark_object10";
+const char NAME_SPARK_EMIT10[] = "spark_emit10";
+const char NAME_SPARK_DEST10[] = "spark_dest10";
+
+
+enum TransitionState
+{
+	TRANSITION_NONE,
+	TRANSITION_CAREXPLODE,
+	TRANSITION_END_CUTSCENE_CAREXPLODE,
+	TRANSITION_INFORMANT
+};
+
+enum TerroristsState
+{
+	STATE_TERRORISTS_NONE,
+	STATE_TERRORISTS_DRIVE,
+	STATE_TERRORISTS_WALK,
+	STATE_TERRORISTS_ENTER_HOUSE,
+	STATE_TERRORISTS_SHOOT_ON_INFORMANT,
+	STATE_TERRORISTS_VAN_EXPLODED,
+	STATE_TERRORISTS_FLEEING
+};
+
+object Mission6 : MissionScript
+{
+	PersonList mTerroristGroupSniper;
+	PersonList mGuardGroup;
+	PersonList mTerroristGroupLists[MAX_TERRORIST_GROUPS];
+	Path mTerroristPathLists[MAX_TERRORIST_GROUPS][6];
+	Vehicle mTerroristVans[MAX_TERRORIST_GROUPS];
+	Path mTerroristVanPaths[MAX_TERRORIST_GROUPS][1];
+	Person mInformant;
+	OpenHouse mSafeHouse;
+	Vehicle mExplodingVehicle;
+	int mCurrentTransition;
+	GameObject mSparkObj[MAX_SPARK_OBJECTS];
+	GameObject mSparkEmit[MAX_SPARK_OBJECTS];
+	GameObjectList mSparkDestList[MAX_SPARK_OBJECTS];
+
+	int mTimeTerroristCarNotMoving[MAX_TERRORIST_GROUPS];
+	int mTerroristCarLastPoints[MAX_TERRORIST_GROUPS];
+	TerroristsState mTerroristStates[MAX_TERRORIST_GROUPS];
+	int mNumberTerroristsWaiting[MAX_TERRORIST_GROUPS];
+	float mTerroristsWaitingTime[MAX_TERRORIST_GROUPS];
+
+	int mTownBuildingBurnCount;
+	int mTimeIndexSniper;
+	int mTerroristNum;
+	int mInformantEnteredHouse;
+	int mTagActive;
+	float mFogIntensity;
+
+	bool mAlreadyFiresExt;
+	bool mAlreadyInjuredSaved;
+	bool mFailedInformantInjured;
+	bool mFailedTooManyDeadPersons;
+	bool mVansAlarmed;
+	bool mInformantSaved;
+	bool mHintVan;
+	bool mHintAttackStarts;
+	bool mHintTownBuildingsBurn;
+	bool mFailedTooManyTownBuildingsBurn;
+	bool mForestArson;
+	bool mFirstBomberExploded;
+	bool mFirstSquadExploded;
+	bool mHintTreeBurns;
+	bool mSniperHint;
+	bool mInformantCutsceneShowed;
+
+	Mission6()
+	{
+	}
+	
+	~Mission6()
+	{
+	}
+
+	void FillArrayByPrefix(const char* prefix, Path *pathList, int &count)
+	{
+		count = 0;
+		ActorList actList1 = Game::GetActors(ACTOR_PATH);
+		for (int i = 0; i < actList1.GetNumActors(); i++)
+		{
+			Actor *ac = actList1.GetActor(i);
+			if (ac->HasNamePrefix(prefix))
+			{
+				pathList[count] = Path(ac);
+				count++;
+				//if (count > MAX)
+				//	System::Error("M06: Too many pathes");
+			}
+		}
+	}
+
+	void Start()
+	{
+		PersonList list1(NAME_TERRORIST_GROUP1);
+		mTerroristGroupLists[0] = list1;
+
+		PersonList list4(NAME_TERRORIST_GROUP2);
+		mTerroristGroupLists[1] = list4;
+
+		PersonList list7(NAME_TERRORIST_GROUP3);
+		mTerroristGroupLists[2] = list7;
+
+		PersonList list10(NAME_TERRORIST_GROUP4);
+		mTerroristGroupLists[3] = list10;
+
+		int count;
+		FillArrayByPrefix(NAME_TERRORIST_PATH1, mTerroristPathLists[0], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH_VAN1, mTerroristVanPaths[0], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH2, mTerroristPathLists[1], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH_VAN2, mTerroristVanPaths[1], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH3, mTerroristPathLists[2], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH_VAN3, mTerroristVanPaths[2], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH4, mTerroristPathLists[3], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH_VAN4, mTerroristVanPaths[3], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH_VAN5, mTerroristVanPaths[4], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH_VAN6, mTerroristVanPaths[5], count);
+		FillArrayByPrefix(NAME_TERRORIST_PATH_VAN7, mTerroristVanPaths[6], count);
+
+		PersonList list16(NAME_TERRORIST_GROUPSNIPER);
+		mTerroristGroupSniper = list16;
+
+		PersonList list17(NAME_GUARD_GROUP1);
+		mGuardGroup = list17;
+
+		for (int i = 0; i < mGuardGroup.GetNumPersons(); i++)
+		{
+			mGuardGroup.GetPerson(i)->AssignCommand("Shoot");
+			mGuardGroup.GetPerson(i)->EnableCommand("Shoot", false);
+			mGuardGroup.GetPerson(i)->SetCommandable(false);
+			mGuardGroup.GetPerson(i)->SetSelectable(false);
+			mGuardGroup.GetPerson(i)->SetShootFrequency(GUARDS_SHOOT_FREQUENCY);
+		}
+
+		mSparkDestList[0] = Game::GetGameObjects(NAME_SPARK_DEST1);
+		mSparkDestList[1] = Game::GetGameObjects(NAME_SPARK_DEST2);
+		mSparkDestList[2] = Game::GetGameObjects(NAME_SPARK_DEST3);
+		mSparkDestList[3] = Game::GetGameObjects(NAME_SPARK_DEST4);
+		mSparkDestList[4] = Game::GetGameObjects(NAME_SPARK_DEST5);
+		mSparkDestList[5] = Game::GetGameObjects(NAME_SPARK_DEST6);
+		mSparkDestList[6] = Game::GetGameObjects(NAME_SPARK_DEST7);
+		mSparkDestList[7] = Game::GetGameObjects(NAME_SPARK_DEST8);
+		mSparkDestList[8] = Game::GetGameObjects(NAME_SPARK_DEST9);
+		mSparkDestList[9] = Game::GetGameObjects(NAME_SPARK_DEST10);
+
+		GameObjectList listAll = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",listAll.GetObject(0));
+		for(int i = 0; i < listAll.GetNumObjects(); i++)
+		{
+			GameObject *obj = listAll.GetObject(i);
+			if (obj->HasName(NAME_TERRORIST_VAN1))
+			{
+				mTerroristVans[0] = Vehicle(obj);
+				mTerroristVans[0].SetVehicleRole(VT_GANGSTER_GETAWAY);
+				mTerroristVans[0].SetAutoShoot(false);
+			}
+			else if (obj->HasName(NAME_TERRORIST_VAN2))
+			{
+				mTerroristVans[1] = Vehicle(obj);
+				mTerroristVans[1].SetVehicleRole(VT_GANGSTER_GETAWAY);
+				mTerroristVans[1].SetAutoShoot(false);
+			}
+			else if (obj->HasName(NAME_TERRORIST_VAN3))
+			{
+				mTerroristVans[2] = Vehicle(obj);
+				mTerroristVans[2].SetVehicleRole(VT_GANGSTER_GETAWAY);
+				mTerroristVans[2].SetAutoShoot(false);
+			}
+			else if (obj->HasName(NAME_TERRORIST_VAN4))
+			{
+				mTerroristVans[3] = Vehicle(obj);
+				mTerroristVans[3].SetVehicleRole(VT_GANGSTER_GETAWAY);
+				mTerroristVans[3].SetAutoShoot(false);
+			}
+			else if (obj->HasName(NAME_TERRORIST_VAN5))
+			{
+				mTerroristVans[4] = Vehicle(obj);
+				mTerroristVans[4].SetVehicleRole(VT_GANGSTER_GETAWAY);
+				mTerroristVans[4].SetAutoShoot(false);
+			}
+			else if (obj->HasName(NAME_TERRORIST_VAN6))
+			{
+				mTerroristVans[5] = Vehicle(obj);
+				mTerroristVans[5].SetVehicleRole(VT_GANGSTER_GETAWAY);
+				mTerroristVans[5].SetAutoShoot(false);
+			}
+			else if (obj->HasName(NAME_TERRORIST_VAN7))
+			{
+				mTerroristVans[6] = Vehicle(obj);
+				mTerroristVans[6].SetVehicleRole(VT_GANGSTER_GETAWAY);
+				mTerroristVans[6].SetAutoShoot(false);
+			}
+			else if (obj->HasName(NAME_SAFE_HOUSE))
+				mSafeHouse = OpenHouse(obj);
+			else if (obj->HasName(NAME_INFORMANT))
+			{
+				mInformant = Person(obj);
+				mInformant.SetNeverResort(true);
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT1))
+				mSparkObj[0] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT1))
+			{
+				mSparkEmit[0] = obj;
+				mSparkEmit[0].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT2))
+				mSparkObj[1] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT2))
+			{
+				mSparkEmit[1] = obj;
+				mSparkEmit[1].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT3))
+				mSparkObj[2] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT3))
+			{
+				mSparkEmit[2] = obj;
+				mSparkEmit[2].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT4))
+				mSparkObj[3] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT4))
+			{
+				mSparkEmit[3] = obj;
+				mSparkEmit[3].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT5))
+				mSparkObj[4] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT5))
+			{
+				mSparkEmit[4] = obj;
+				mSparkEmit[4].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT6))
+				mSparkObj[5] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT6))
+			{
+				mSparkEmit[5] = obj;
+				mSparkEmit[5].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT7))
+				mSparkObj[6] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT7))
+			{
+				mSparkEmit[6] = obj;
+				mSparkEmit[6].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT8))
+				mSparkObj[7] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT8))
+			{
+				mSparkEmit[7] = obj;
+				mSparkEmit[7].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT9))
+				mSparkObj[8] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT9))
+			{
+				mSparkEmit[8] = obj;
+				mSparkEmit[8].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT10))
+				mSparkObj[9] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT10))
+			{
+				mSparkEmit[9] = obj;
+				mSparkEmit[9].StopParticleEffect();
+			}
+		}
+
+		mTerroristNum = 0;
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			mTimeTerroristCarNotMoving[i] = 0;
+			mTerroristVans[i].SetMaxTransports(10);
+			for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+			{
+				mTerroristGroupLists[i].GetPerson(j)->SetRole(ROLE_GANGSTER);
+				mTerroristGroupLists[i].GetPerson(j)->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+				mTerroristGroupLists[i].GetPerson(j)->SetEquipment(EQUIP_RIFLE);
+				mTerroristGroupLists[i].GetPerson(j)->SetPrimaryTarget(&mInformant);
+				mTerroristGroupLists[i].GetPerson(j)->SetShootPower(TERRORIST_SHOOT_POWER);
+				mTerroristGroupLists[i].GetPerson(j)->SetShootRange(TERRORIST_SHOOT_RANGE);
+				mTerroristGroupLists[i].GetPerson(j)->SetResistance(INJUREREASON_SHOT, TERRORIST_SHOOT_RESISTANCE);
+				mTerroristGroupLists[i].GetPerson(j)->SetFleeing(true);
+				//mTerroristGroupLists[i].GetPerson(j)->SetAnimation("run");// Fleeing(true);
+				mTerroristVans[i].AddTransport(mTerroristGroupLists[i].GetPerson(j));
+			}
+			mTerroristNum += mTerroristGroupLists[i].GetNumPersons();
+			mTerroristVans[i].Hide();
+			mTerroristStates[i] = STATE_TERRORISTS_NONE;
+			mNumberTerroristsWaiting[i] = 0;
+			mTerroristsWaitingTime[i] = -1.0f;
+		}
+
+		mTerroristNum += mTerroristGroupSniper.GetNumPersons();
+
+		mAlreadyFiresExt = false;
+		mAlreadyInjuredSaved = false;
+		mFailedInformantInjured = false;
+		mFailedTooManyDeadPersons = false;
+		mInformantSaved = false;
+		mHintVan = false;
+		mHintAttackStarts = false;
+		mHintTownBuildingsBurn = false;
+		mVansAlarmed = false;
+		mFailedTooManyTownBuildingsBurn = false;
+		mForestArson = false;
+		mFirstBomberExploded = false;
+		mFirstSquadExploded = false;
+		mHintTreeBurns = false;
+		mSniperHint = false;
+		mInformantCutsceneShowed = false;
+
+		mInformantEnteredHouse = -1;
+		mTagActive = 0;
+		mCurrentTransition = STATE_TERRORISTS_NONE;
+		Mission::StartIntervalTimer("morning", TIMER_TIME_MORNING);
+
+		int hour, minute, second;
+		Game::GetTime( hour, minute, second );
+		System::Log("Time: %d %d %d", hour, minute, second );
+		int hoursLeft = TIME_WARP_HOUR - hour;
+		int minutesLeft = 60 * hoursLeft - minute + TIME_WARP_MINUTE;
+		Game::SetTimeSpeed(minutesLeft/TIME_TILL_MORNING);
+		System::Log("minutes left: %d ", minutesLeft );
+		System::Log("timespeed: %d ", minutesLeft/TIME_TILL_MORNING );
+
+		Mission::AddObjective("M06_SAVE_INFORMANT");
+		Mission::SetObjectiveAccomplished("M06_SAVE_INFORMANT", false);
+
+		Mission::StartIntervalTimer("CheckMissionState", TIME_CHECK_MISSION_STATE_INTERVAL);
+		mTimeIndexSniper = 0;
+		mTownBuildingBurnCount = 0;
+
+		Mission::StartSingleTimer("VanAttack_A", TIME_VAN_ATTACK_A);
+		//Mission::StartSingleTimer("AttackVanExplodes", 20.0f);
+		//Mission::StartSingleTimer("TerroristsBurnForest", 1.0f);
+
+		//mInformant.Injure(INJUREREASON_ENERGY);
+
+		Audio::PlaySoundtrack("6", 0.0f);
+		mFogIntensity = FOG_MAX_INTENSITY;
+		Weather::SetFogColor(0, 115);
+		Weather::SetFogColor(1, 115);
+		Weather::SetFogColor(2, 120);
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+	}
+
+	void RunCutscene()
+	{
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		mSafeHouse.ShowCeiling(false, true, false);
+		mCurrentTransition = TRANSITION_INFORMANT;
+		Camera::StartTransition(NAME_CS1_TRANSITION, 3.f);
+		Audio::SetMusicLevel(0.3f);
+	}
+
+	void CutsceneFirstPhase()
+	{
+		Mission::StartSingleTimer("cs_end", 4.0f);
+	}
+
+	void CutsceneEnding()
+	{
+		mInformantCutsceneShowed = true;
+		//Mission::HideBlackBars();
+		Mission::EndCutScene();
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_CAREXPLODE:
+				if (mExplodingVehicle.IsValid())
+				{
+					mCurrentTransition = TRANSITION_NONE;
+					mExplodingVehicle.Explode();
+					Mission::StartSingleTimer("endcutscene", TIME_CUTSCENE_CAREXPLODE);
+				}
+				break;
+			case TRANSITION_END_CUTSCENE_CAREXPLODE:
+				if (mExplodingVehicle.IsCivilCar())
+				{
+					Mission::PlayHint("HINT_M06_VEHICLE_EXPLODED");					
+				}
+				break;
+			case TRANSITION_INFORMANT:
+				CutsceneFirstPhase();
+				break;
+		}
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	void OnMissionLeft(GameObject *obj)
+	{
+		if (obj->GetID() == mInformant.GetID())
+		{
+			mInformantSaved = true;
+			Mission::SetObjectiveAccomplished("M06_SAVE_INFORMANT", true);
+			Mission::PlayComment("SUPERV_M06_OBJ01");
+		}
+	}
+
+	bool OnStartBurning(GameObject *burningObject)
+	{
+		if (burningObject->IsValid())
+		{
+			if (burningObject->HasName(NAME_TOWN_BUILDING))
+			{
+				mTownBuildingBurnCount++;
+				System::Log("town building burns");				
+			}
+			else if (!mHintTreeBurns && burningObject->HasName(NAME_HINT_TREE))
+			{
+				Mission::PlayHint("HINT_M06_FIRE_DANGER");
+				Audio::SetMusicLevel(0.4f);
+				mHintTreeBurns = true;
+			}
+			else if (!mHintTownBuildingsBurn && burningObject->HasName(NAME_HINT_FIRE))
+			{
+				Mission::PlayHint("HINT_M06_FIRE_OUT_OF_CONTROL");
+				Audio::SetMusicLevel(0.4f);
+				mHintTownBuildingsBurn = true;
+			}
+		}
+		for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+		{
+			if (burningObject->GetID() == mSparkObj[i].GetID())
+			{
+				mSparkEmit[i].StartParticleEffect();
+				if (i == 0)
+					Mission::StartSingleTimer("spark_timer1", TIME_SPARK_1);
+				else if (i == 1)
+					Mission::StartSingleTimer("spark_timer2", TIME_SPARK_2);
+				else if (i == 2)
+					Mission::StartSingleTimer("spark_timer3", TIME_SPARK_3);
+				else if (i == 3)
+					Mission::StartSingleTimer("spark_timer4", TIME_SPARK_4);
+				else if (i == 4)
+					Mission::StartSingleTimer("spark_timer5", TIME_SPARK_5);
+				else if (i == 5)
+					Mission::StartSingleTimer("spark_timer6", TIME_SPARK_6);
+				else if (i == 6)
+					Mission::StartSingleTimer("spark_timer7", TIME_SPARK_7);
+				else if (i == 7)
+					Mission::StartSingleTimer("spark_timer8", TIME_SPARK_8);
+				else if (i == 8)
+					Mission::StartSingleTimer("spark_timer9", TIME_SPARK_9);
+				else if (i == 9)
+					Mission::StartSingleTimer("spark_timer10", TIME_SPARK_10);
+			}
+		}
+		return true;
+	}
+
+	bool OnStopBurning(GameObject *burningObject)
+	{
+		if (burningObject->IsValid())
+		{
+			for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+			{
+				if (burningObject->GetID() == mSparkObj[i].GetID())
+				{
+					mSparkEmit[i].StopParticleEffect();
+					if (i == 0)
+						Mission::StopTimer("spark_timer1");
+					else if (i == 1)
+						Mission::StopTimer("spark_timer2");
+					else if (i == 2)
+						Mission::StopTimer("spark_timer3");
+					else if (i == 3)
+						Mission::StopTimer("spark_timer4");
+					else if (i == 4)
+						Mission::StopTimer("spark_timer5");
+					else if (i == 5)
+						Mission::StopTimer("spark_timer6");
+					else if (i == 6)
+						Mission::StopTimer("spark_timer7");
+					else if (i == 7)
+						Mission::StopTimer("spark_timer8");
+					else if (i == 8)
+						Mission::StopTimer("spark_timer9");
+					else if (i == 9)
+						Mission::StopTimer("spark_timer10");
+				}
+			}
+		}
+		return true;
+	}
+
+	bool OnHit(GameObject *Shooter, GameObject *HitObject, Vector *hitPoint_)
+	{
+		if (!HitObject)
+			return false;
+		if (HitObject->GetType() == ACTOR_PERSON)
+		{
+			Person person(HitObject);
+			if (person.GetRole() == ROLE_SQUAD)
+			{
+				if (Shooter->HasName(NAME_TERRORIST_GROUPSNIPER))
+				{
+					if (!mVansAlarmed)
+					{
+						mVansAlarmed = true;
+						Audio::SetMusicLevel(0.1f);
+						Mission::PlayHint("HINT_M06_SNIPER_SHOOTS");
+						mSniperHint = true;
+						Mission::StopTimer("VanAttack_A");
+						System::Log("StartVanAttack because of hit squad.");
+						StartVanAttack(mTerroristVans[0]);
+						Mission::StartSingleTimer("VanAttack_B", TIME_VAN_ATTACK_A_TO_B);
+						System::Log("Van attack A");
+					}
+				}
+				else if (!mHintAttackStarts &&
+						(  Shooter->HasName(NAME_TERRORIST_GROUP1)
+						|| Shooter->HasName(NAME_TERRORIST_GROUP2)
+						|| Shooter->HasName(NAME_TERRORIST_GROUP3)
+						|| Shooter->HasName(NAME_TERRORIST_GROUP4)))
+				{
+					Mission::PlayHint("HINT_M06_SHOOTING");
+					mHintAttackStarts = true;
+				}
+			}
+		}
+		return true;
+	}
+
+	void RunCutsceneExplosion(Vehicle *vehicle)
+	{		
+		if (!mFirstBomberExploded)
+		{
+			mFirstBomberExploded = true;
+			mExplodingVehicle = *vehicle;
+			mCurrentTransition = TRANSITION_CAREXPLODE;
+			Vector pos, dir;
+			float yaw, pitch, roll;
+			pos = Camera::Get();
+			Camera::GetRotation(yaw, pitch, roll);
+			Camera::StartTransition(mExplodingVehicle.GetPosition(), pos.z, yaw, pitch, roll, TIME_TRANSITION_CAREXPLODE);
+			Mission::StartCutScene();
+			Mission::ShowBlackBars();			
+		}
+	}
+
+	bool OnExplode(GameObject *obj)
+	{
+		if (obj->GetType() == ACTOR_VEHICLE)
+		{
+			bool terroristVan = false;
+			for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+			{				
+				if (mTerroristVans[i].GetID() == obj->GetID())
+				{
+					terroristVan = true;
+					break;
+				}
+			}
+			Vehicle vc = (Vehicle*)obj;
+			if (!vc.IsCivilCar() || terroristVan)
+			{				
+				if ((terroristVan && !mFirstBomberExploded) || (!vc.IsCivilCar() && !mFirstSquadExploded))
+				{
+					//if (Mission::IsCutSceneRunning())
+					//	return false;
+					if (!mFirstBomberExploded)
+						mFirstBomberExploded = true;
+					if (!mFirstSquadExploded)
+						mFirstSquadExploded = true;
+					Vector pos, dir;
+					float yaw, pitch, roll;
+					pos = Camera::Get();
+					Camera::GetRotation(yaw, pitch, roll);
+					Camera::StartTransition(vc.GetPosition(), pos.z, yaw, pitch, roll, TIME_TRANSITION_CAREXPLODE);
+					mCurrentTransition = TRANSITION_CAREXPLODE;
+					mExplodingVehicle = vc;
+					Mission::StartCutScene();
+					Mission::ShowBlackBars();
+					Mission::StartSingleTimer("endcutscene", TIME_CUTSCENE_CAREXPLODE);
+				}
+			}
+		}
+		if (mCurrentTransition == TRANSITION_CAREXPLODE)
+			return false;
+		return true;
+	}
+
+	int GetVan(Vehicle car)
+	{
+		int index = 0;
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			if (mTerroristVans[i].IsValid() && mTerroristVans[i].GetID() == car.GetID())
+			{
+				index = i;
+				break;
+			}
+		}
+		return index;
+	}
+
+	void StartVanAttack(Vehicle car)
+	{
+		System::Log("StartVanAttack called");
+		if (!mHintVan)
+		{
+			Mission::PlayHint("HINT_M06_VEHICLES");
+			mHintVan = true;
+		}
+		int index = GetVan(car);
+		car.Show();
+		car.SetObjectPath(&mTerroristVanPaths[index][0]);
+		mTimeTerroristCarNotMoving[index] = 0;
+		mTerroristStates[index] = STATE_TERRORISTS_DRIVE;
+	}
+
+	void StartAttackOnFoot(Vehicle car)
+	{
+		int index = GetVan(car);
+		System::Log("Start flight on foot.");
+		car.RemoveObjectPath();
+		car.PushActionWait(ACTION_NEWLIST, 0.1f);
+		for (int i = 0; i < mTerroristGroupLists[index].GetNumPersons(); i++)
+		{
+			Person pers(mTerroristGroupLists[index].GetPerson(i));
+			if (pers.GetEnteredCarID() == car.GetID())
+			{
+				System::Log("Terrorist gets out of car.");
+				pers.SetStandardPath(mTerroristPathLists[index][i].GetName());
+				pers.PushActionWait(ACTION_NEWLIST, 0.3f);
+				pers.PushActionLeaveCar(ACTION_APPEND, &car);
+				pers.PushActionUsePath(ACTION_APPEND, &mTerroristPathLists[index][i], true, 4.0f);				
+				pers.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+			}
+		}
+		if (mTerroristStates[index] == STATE_TERRORISTS_FLEEING)
+			StartTerroristFleeing(index);
+		//else
+		//	mTerroristStates[index] = STATE_TERRORISTS_WALK;
+	}
+
+	void TerroristKillInformant(Person terrorist)
+	{
+		if (!terrorist.IsInjured() && terrorist.GetEnteredHouseID() != mSafeHouse.GetID())
+		{
+			Vector DoorFront = mSafeHouse.GetEntrancePosition(true);
+			Vector DoorBack = mSafeHouse.GetEntrancePosition(false);
+
+			terrorist.SetObjectPath("");
+			terrorist.SetStandardPath("");
+			if (mInformant.GetEnteredHouseID() == mSafeHouse.GetID())
+			{
+				terrorist.PushActionMove(ACTION_NEWLIST, DoorFront, true);
+				terrorist.PushActionTurnTo(ACTION_APPEND, DoorBack);
+				terrorist.PushActionEnterHouse(ACTION_APPEND, &mSafeHouse);
+				terrorist.PushActionTag(ACTION_APPEND, "tag_t1");
+				terrorist.PushActionMove(ACTION_APPEND, &mInformant, TARGET_TOUCHPERSON);
+				terrorist.PushActionTag(ACTION_APPEND, "tag_t2");
+			}
+			else
+			{
+				terrorist.PushActionMove(ACTION_NEWLIST, &mInformant, TARGET_TOUCHPERSON);
+			}
+			//System::Log("Terrorist attempts to enter safe house!");
+		}
+	}
+
+	void StartTerroristFleeing(int index)
+	{
+		for (int j = 0; j < mTerroristGroupLists[index].GetNumPersons(); j++)
+		{
+			if (!mTerroristGroupLists[index].GetPerson(j)->IsInjured()
+				&& !mTerroristGroupLists[index].GetPerson(j)->IsArrested())
+			{
+				mTerroristGroupLists[index].GetPerson(j)->ClearActions();
+				int r = Math::rand();
+				if (r > Math::RANDMAX/2)
+					mTerroristGroupLists[index].GetPerson(j)->SetObjectPath(NAME_FLIGHT_PATH1);
+				else
+					mTerroristGroupLists[index].GetPerson(j)->SetObjectPath(NAME_FLIGHT_PATH2);
+				mTerroristGroupLists[index].GetPerson(j)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+			}
+		}
+		mTerroristStates[index] = STATE_TERRORISTS_FLEEING;
+		System::Log("Terrorist group is fleeing.");
+	}
+
+	void StartBombers()
+	{
+		if (mTerroristStates[4] != STATE_TERRORISTS_NONE)
+			return;
+		if (mForestArson)
+			return;
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			StartTerroristFleeing(i);
+		}
+		for (int i = 0; i < mTerroristGroupSniper.GetNumPersons(); i++)
+		{
+			if (!mTerroristGroupSniper.GetPerson(i)->IsInjured()
+				&& !mTerroristGroupSniper.GetPerson(i)->IsArrested())
+			{
+				int r = Math::rand();
+				if (r > Math::RANDMAX/2)
+					mTerroristGroupSniper.GetPerson(i)->SetObjectPath(NAME_FLIGHT_PATH1);
+				else
+					mTerroristGroupSniper.GetPerson(i)->SetObjectPath(NAME_FLIGHT_PATH2);
+				mTerroristGroupSniper.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+			}
+		}
+		if (Mission::TimerIsStarted("TerroristsBurnForest"))
+			Mission::StopTimer("TerroristsBurnForest");
+		if (Mission::TimerIsStarted("VanAttack_A"))
+			Mission::StopTimer("VanAttack_A");
+		if (Mission::TimerIsStarted("VanAttack_B"))
+			Mission::StopTimer("VanAttack_B");
+		if (Mission::TimerIsStarted("VanAttack_C"))
+			Mission::StopTimer("VanAttack_C");
+		if (Mission::TimerIsStarted("VanAttack_D"))
+			Mission::StopTimer("VanAttack_D");
+
+		StartVanAttack(mTerroristVans[4]);
+		StartVanAttack(mTerroristVans[5]);
+		StartVanAttack(mTerroristVans[6]);
+
+		mForestArson = true;
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		int sparkIndex = -1;
+		if (Timer == "spark_timer1")
+			sparkIndex = 0;
+		if (Timer == "spark_timer2")
+			sparkIndex = 1;
+		if (Timer == "spark_timer3")
+			sparkIndex = 2;
+		if (Timer == "spark_timer4")
+			sparkIndex = 3;
+		if (Timer == "spark_timer5")
+			sparkIndex = 4;
+		if (Timer == "spark_timer6")
+			sparkIndex = 5;
+		if (Timer == "spark_timer7")
+			sparkIndex = 6;
+		if (Timer == "spark_timer8")
+			sparkIndex = 7;
+		if (Timer == "spark_timer9")
+			sparkIndex = 8;
+		if (Timer == "spark_timer10")
+			sparkIndex = 9;
+
+		if (sparkIndex > -1)
+		{
+			for (int i = 0; i < mSparkDestList[sparkIndex].GetNumObjects(); i++)
+				mSparkDestList[sparkIndex].GetObject(i)->Burn();
+		}
+
+		switch(Timer)
+		{
+			case "cs_end":
+			{
+				CutsceneEnding();
+			}
+			break;
+			case "FadeInWeather":
+			{
+				float fogIntensity = Weather::GetFogIntensity();
+				//System::Log("M06: Fog intensity: %d", (int)(fogIntensity*10.0f));
+				fogIntensity += TIME_CHANGE_WEATHER/TIME_FADE_IN_WEATHER * mFogIntensity;
+				if (fogIntensity > mFogIntensity)
+				{
+					fogIntensity = FOG_MAX_INTENSITY;
+					Mission::StopTimer("FadeInWeather");
+				}
+				Weather::SetFogIntensity(fogIntensity);
+				break;
+			}
+			case "FadeOutWeather":
+			{
+				float fogIntensity = Weather::GetFogIntensity();
+				System::Log("M06: Fog intensity: %d", (int)(fogIntensity*10.0f));
+				fogIntensity -= TIME_CHANGE_WEATHER/TIME_FADE_IN_WEATHER * mFogIntensity;
+				if (fogIntensity < 0.0f)
+				{
+					fogIntensity = 0.0f;
+					Weather::SetFogVisible(false);
+					Mission::StopTimer("FadeOutWeather");
+				}
+				Weather::SetFogIntensity(fogIntensity);
+				break;
+			}
+			case "morning":
+				int hour, minute, second;
+				Game::GetTime( hour, minute, second );
+				if (hour >= TIME_WARP_HOUR && minute >= TIME_WARP_MINUTE)
+				{					
+					System::Log("Stop morning");
+					Game::SetTimeSpeed(0);
+					Mission::StopTimer("morning");
+				}
+				break;
+			case "AttackVanExplodes":
+				int i = 0;
+				while (mTerroristVans[i].IsDestroyed() && (i < NUMBER_ATTACKING_TERRORISTS))
+				{
+					i++;
+				}
+				if (i < NUMBER_ATTACKING_TERRORISTS)
+				{
+					mTerroristStates[i] = STATE_TERRORISTS_VAN_EXPLODED;
+					//GameObjectList list = mTerroristVans[i].GetObjectsInRange(300.0f, ACTOR_OBJECT);
+					//int objectsBurn = 0;
+					//for (int j = 0; j < list.GetNumObjects(); j++)
+					//{
+					//	if (list.GetObject(j)->GetNumFireChilds() > 0)
+					//	{
+					//		for (int k = 0; k < list.GetObject(i)->GetNumFireChilds(); k++)
+					//		{
+					//			list.GetObject(j)->GetFireChild(k).Burn();
+					//			list.GetObject(j)->GetFireChild(k).SetTemperature(list.GetObject(j)->GetFireChild(k).GetMaxMaterialTemperature());
+					//		}
+					//		objectsBurn++;
+					//	}
+					//	if (objectsBurn == 3)
+					//		break;
+					//}
+					if (!mFirstBomberExploded)
+						RunCutsceneExplosion(&mTerroristVans[i]);
+					else
+						mTerroristVans[i].Explode();
+					//Mission::PlayHint("HINT_M06_VEHICLE_EXPLODED");
+					//Audio::SetMusicLevel(0.3f);
+				}
+				break;
+			case "VanAttack_A":
+				System::Log("StartVanAttack because of timer.");
+				mVansAlarmed = true;
+				StartVanAttack(mTerroristVans[0]);
+				Mission::StartSingleTimer("VanAttack_B", TIME_VAN_ATTACK_A_TO_B);
+				System::Log("Van attack A");
+				break;
+			case "VanAttack_B":
+				//if (mSniperHint)
+				//	Audio::SetMusicLevel(0.2f);
+				StartVanAttack(mTerroristVans[1]);
+				Mission::StartSingleTimer("VanAttack_C", TIME_VAN_ATTACK_B_TO_C);
+				System::Log("Van attack B");
+				break;
+			case "VanAttack_C":
+				StartVanAttack(mTerroristVans[2]);
+				Mission::StartSingleTimer("VanAttack_D", TIME_VAN_ATTACK_C_TO_D);
+				System::Log("Van attack C");
+				break;
+			case "VanAttack_D":
+				StartVanAttack(mTerroristVans[3]);
+				System::Log("Van attack D");
+				break;
+			case "TerroristsBurnForest":
+				System::Log("start bombers because of timer");
+				StartBombers();
+				break;
+			case "endcutscene":
+				mCurrentTransition = TRANSITION_END_CUTSCENE_CAREXPLODE;
+				Mission::HideBlackBars();
+				Mission::EndCutScene(true, TIME_TRANSITION_ENDCUTSCENE);				
+				break;
+			case "CheckMissionState":
+				bool remote = false;
+				if (mInformant.GetEnteredCarID() != -1)
+				{
+					Actor t = Game::GetActor(mInformant.GetEnteredCarID());
+					GameObject target(&t);
+					if ((target.GetPosition() - mSafeHouse.GetPosition()).GetLen() > DISTANCE_INFORMANT_HOUSE*50.0f)
+					{
+						System::Log("informant is in car");
+						remote = true;
+					}
+				}
+				if ((mInformant.GetPosition() - mSafeHouse.GetPosition()).GetLen() > DISTANCE_INFORMANT_HOUSE*50.0f)
+					remote = true;
+				if (!mForestArson && remote)
+				{
+					if (mVansAlarmed)
+					{
+						System::Log("start bombers because of distance");
+						StartBombers();
+					}
+				}
+				if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") == 0)
+				{
+					if (Mission::HasObjective("EXTINGUISH_FIRES") && !Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+						Mission::PlayComment("SUPERV_M06_OBJ02");
+						Audio::SetMusicLevel(0.5f);
+						mAlreadyFiresExt = true;
+					}
+				}
+				else
+				{
+					if (Mission::HasObjective("EXTINGUISH_FIRES"))
+					{
+						if (Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+						{
+							if (mAlreadyFiresExt)
+							{
+								Mission::PlayComment("SUPERV_OBJ_FIRESAGAIN");
+							}
+						}
+					}
+					else
+					{
+						Mission::AddObjective("EXTINGUISH_FIRES");
+						Audio::SetMusicLevel(0.3f);
+					}
+					Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", false);
+				}
+				if (Mission::GetCounter("Injured Civils") + Mission::GetCounter("Injured Squads") == 0)
+				{
+					if (Mission::HasObjective("TRANSPORT_INJURED") && !Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", true);
+						Mission::PlayComment("SUPERV_M06_OBJ03");
+						mAlreadyInjuredSaved = true;
+					}
+				}
+				else
+				{
+					if (Mission::HasObjective("TRANSPORT_INJURED"))
+					{
+						if (Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+						{
+							if (mAlreadyInjuredSaved)
+							{
+								Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+							}
+						}
+					}
+					else
+						Mission::AddObjective("TRANSPORT_INJURED");
+					Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+				}
+				if (!mInformantSaved && Mission::GetCounter("Injured Gangsters") == mTerroristNum)
+				{
+					mInformantSaved = true;
+					Mission::SetObjectiveAccomplished("M06_SAVE_INFORMANT", true);
+					Mission::PlayComment("SUPERV_M06_OBJ01");
+				}
+
+				int attacking = 0;
+				int dead = 0;
+				int number = 0;				
+				for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+				{
+					if (mTerroristStates[i] == STATE_TERRORISTS_FLEEING)
+						continue;
+					for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+					{
+						if (mTerroristGroupLists[i].GetPerson(j)->IsInjured())
+							dead++;
+						number++;
+					}
+					if (mTerroristsWaitingTime[i] >= 0.0f)
+					{
+						if (mTerroristsWaitingTime[i] > TIME_TERRORIST_GROUP_WAITING)
+						{
+							for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+							{
+								//System::Log("terrorist trying to kill informant after waiting");								
+								TerroristKillInformant(mTerroristGroupLists[i].GetPerson(j));
+							}
+							mTerroristsWaitingTime[i] = -1.0f;
+							mTerroristStates[i] = STATE_TERRORISTS_ENTER_HOUSE;
+						}
+						else
+							mTerroristsWaitingTime[i] += 1.0f;
+					}
+					if (mTerroristStates[i] == STATE_TERRORISTS_ENTER_HOUSE)
+					{
+						for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+						{
+							if (mTerroristGroupLists[i].GetPerson(j)->IsIdle()
+								&& !mTerroristGroupLists[i].GetPerson(j)->IsInjured()
+								&& !mTerroristGroupLists[i].GetPerson(j)->IsArrested())
+							{
+								//System::Log("idle terrorist retrying to kill informant");
+								TerroristKillInformant(mTerroristGroupLists[i].GetPerson(j));
+							}
+						}
+					}
+					else if (mTerroristStates[i] == STATE_TERRORISTS_DRIVE)
+					{						
+						if (mTerroristVans[i].IsDestroyed())
+						{
+							System::Log("terrorist van nr %d destroyed", i);
+							mTerroristStates[i] = STATE_TERRORISTS_VAN_EXPLODED;
+							continue;
+						}
+						else if (mTerroristVans[i].IsMoving())
+						{
+							mTimeTerroristCarNotMoving[i] = 0;
+						}
+						else if (mTerroristVans[i].WasStoppedByRoadblock())
+						{
+							System::Log("terrorist van nr %d was stopped by roadblock", i);
+							StartAttackOnFoot(mTerroristVans[i]);
+						}
+						else
+						{						
+							if (mTimeTerroristCarNotMoving[i] > TIME_TERRORISTCAR_BLOCKED)
+							{
+								System::Log("terrorist van nr %d blocked", i);
+								if (i >= NUMBER_ATTACKING_TERRORISTS)
+								{
+									mTerroristStates[i] = STATE_TERRORISTS_VAN_EXPLODED;
+									System::Log("Let AttackVanExplodes explode");
+									Mission::StartSingleTimer("AttackVanExplodes", TIME_ATTACK_VAN_EXPLODES);
+									if (!mFirstBomberExploded)
+										RunCutsceneExplosion(&mTerroristVans[i]);
+									else
+										mTerroristVans[i].Explode();									
+								}
+								else
+								{
+									int pi = mTerroristVanPaths[i][0].GetNearestPointIndex(mTerroristVans[i].GetPosition());
+									// take the next point to prohibit driving in the opposite direction of the flight path
+									if (pi < mTerroristVanPaths[i][0].GetNumPoints() - 1)
+										pi++;
+									if (pi > mTerroristCarLastPoints[i])
+									{
+										if (mTerroristVans[i].GetEnergy()/mTerroristVans[i].GetMaxEnergy() > 0.1f)
+										{
+											Vector p = mTerroristVanPaths[i][0].GetPoint(pi);
+											mTerroristVans[i].PushActionMove(ACTION_NEWLIST, p, true);
+											mTerroristVans[i].PushActionUsePath(ACTION_APPEND, &mTerroristVanPaths[i][0], true, 0.0f);
+											mTerroristCarLastPoints[i] = pi;
+											mTimeTerroristCarNotMoving[i] = 0;
+										}
+									}
+									else
+									{
+										StartAttackOnFoot(mTerroristVans[i]);
+									}
+								}
+							}
+							else
+							{
+								System::Log("Car not moving: %d", mTimeTerroristCarNotMoving[i]);
+								mTimeTerroristCarNotMoving[i]++;
+							}
+						}
+					}
+					if (mTerroristStates[i] != STATE_TERRORISTS_NONE)
+					{
+						attacking++;						
+					}
+				}
+				dead = 0;
+				int number = 0;
+				if (!mForestArson && attacking == NUMBER_ATTACKING_TERRORISTS)
+				{
+					if ((mTerroristNum - Mission::GetCounter("Injured Gangsters")) <= MIN_TERRORISTS_FOR_FOREST_ARSON)
+					{
+						System::Log("start bombers because of injured");
+						StartBombers();						
+					}
+				}
+				for (int i = 0; i < mTerroristGroupSniper.GetNumPersons(); i++)
+				{
+					if (mTerroristGroupSniper.GetPerson(i)->IsInjured())
+						dead++;
+					if (!mVansAlarmed && mTerroristGroupSniper.GetPerson(i)->IsInjured())
+					{
+						Mission::StopTimer("VanAttack_A");
+						mVansAlarmed = true;
+						System::Log("StartVanAttack because of dead sniper.");
+						StartVanAttack(mTerroristVans[0]);
+						Mission::StartSingleTimer("VanAttack_B", TIME_VAN_ATTACK_A_TO_B);
+						System::Log("Van attack A");
+					}
+					else if (mTerroristGroupSniper.GetPerson(i)->IsIdle()
+						&& !mTerroristGroupSniper.GetPerson(i)->IsArrested()
+						&& !mTerroristGroupSniper.GetPerson(i)->IsInjured()
+						&& !mInformant.IsInjured())
+					{
+						//System::Log("Sniper shoot on informant after interruption.");
+						mTerroristGroupSniper.GetPerson(i)->SetEquipment(EQUIP_RIFLE);
+						mTerroristGroupSniper.GetPerson(i)->SetPrimaryTarget(&mInformant);
+						mTerroristGroupSniper.GetPerson(i)->PushActionShoot(ACTION_APPEND, &mInformant);
+					}
+				}
+				if (dead == number + mTerroristGroupSniper.GetNumPersons())
+				{
+					if (mVansAlarmed)
+					{
+						//StartBombers();
+					}
+				}
+				// informant has changed location from in house to outside or the other way round
+				if (mInformantEnteredHouse != mInformant.GetEnteredHouseID())
+				{
+					mInformantEnteredHouse = mInformant.GetEnteredHouseID();
+					if (mInformantEnteredHouse == -1)
+					{
+						mInformant.SetNeverResort(false);
+						for (int i = 0; i < mTerroristGroupSniper.GetNumPersons(); i++)
+						{
+							if (!mTerroristGroupSniper.GetPerson(i)->IsArrested())
+								mTerroristGroupSniper.GetPerson(i)->SetPrimaryTarget(&mInformant);							
+						}
+						//System::Log("Snipers have informant as target.");
+					}
+					else
+					{
+						mInformant.SetNeverResort(true);
+						for (int i = 0; i < mTerroristGroupSniper.GetNumPersons(); i++)
+						{
+							if (!mTerroristGroupSniper.GetPerson(i)->IsArrested()
+								&& !mTerroristGroupSniper.GetPerson(i)->IsInjured())
+							{
+								mTerroristGroupSniper.GetPerson(i)->SetPrimaryTarget(&mSafeHouse);
+								mTerroristGroupSniper.GetPerson(i)->PushActionWait(ACTION_NEWLIST, i*2.0f);
+								mTerroristGroupSniper.GetPerson(i)->PushActionShoot(ACTION_APPEND, &mInformant);
+							}
+						}						
+						//System::Log("Snipers have safehouse as target.");
+					}
+				}
+				if (mSafeHouse.NumNonSquadPersonsInside() > 1)
+				{
+					for (int i = 0; i < mSafeHouse.GetNonSquadPersonsInside().GetNumPersons(); i++)
+					{
+						Person ps = mSafeHouse.GetNonSquadPersonsInside().GetPerson(i);
+						if (ps.IsInjured())
+						{
+							ps.RemoveRouterObject();
+						}
+						else if (ps.GetRole() == ROLE_GANGSTER && !ps.IsInjured() && !ps.IsArrested() && ps.GetID() != mInformant.GetID())
+						{
+							for (int j = 0; j < mGuardGroup.GetNumPersons(); j++)
+							{
+								//mGuardGroup.GetPerson(j)->SetPrimaryTarget(&ps);
+								if (!mGuardGroup.GetPerson(j)->IsInjured())
+									mGuardGroup.GetPerson(j)->PushActionShoot(ACTION_APPEND, &ps);
+							}
+						}
+					}
+				}
+
+				break;
+			case "terrorists_check_run":
+				for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+				{
+					if (mTerroristStates[i] == STATE_TERRORISTS_WALK && mTerroristsWaitingTime[i] < 0.0f)
+					{
+						for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+						{
+							if (mTerroristGroupLists[i].GetPerson(j)->IsInjured())
+								continue;
+							if (!mTerroristGroupLists[i].GetPerson(j)->IsMoving())
+							{
+								//System::Log("M6: Terrorist resumes to path.");
+								mTerroristGroupLists[i].GetPerson(j)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+								mTerroristGroupLists[i].GetPerson(j)->PushActionUsePath(ACTION_NEWLIST, &mTerroristPathLists[i][j], true, 4.0f);
+							}
+							else
+							{
+								mTerroristGroupLists[i].GetPerson(j)->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+							}
+						}
+					}
+				}
+				break;
+		}
+	}
+	
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		bool squad = false;
+		Vehicle vc;
+		Person ps;
+		if (Collider->GetType() == ACTOR_VEHICLE)
+		{
+			vc = Vehicle(Collider);
+			if (vc.GetVehicleType() != VT_NOSQUAD && vc.GetVehicleType() != VT_GANGSTER_GETAWAY)
+				squad = true;
+		}
+		else if (Collider->GetType() == ACTOR_PERSON)
+		{
+			ps = Person(Collider);
+			if (ps.GetRole() == ROLE_SQUAD)
+				squad = true;
+		}		
+
+		if (squad)
+		{
+			switch(Trigger)
+			{
+			case NAME_TRIGGER_ALARM:
+				if (!mVansAlarmed)
+				{
+					mVansAlarmed = true;
+					Mission::StopTimer("VanAttack_A");
+					System::Log("StartVanAttack because of trigger.");
+					StartVanAttack(mTerroristVans[0]);
+					Mission::StartSingleTimer("VanAttack_B", TIME_VAN_ATTACK_A_TO_B);
+					Game::DeactivateTrigger(NAME_TRIGGER_ALARM);
+				}
+				break;
+			}
+		}
+	}
+	
+	bool OnCheckCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		//if (Cmd && Cmd == "EnterHouse" && Target && Target->HasName(NAME_VIRTUAL_HOUSE))
+		//	return false;
+		return true;
+	}
+
+	void OnActionTag(const char* Tag)
+	{
+		switch(Tag)
+		{
+			case "tag_t1":
+				mTagActive = 1;
+				break;
+			case "tag_t2":
+				mTagActive = 2;
+				break;
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionTag":
+				Person ps(Data->Owner);
+				if (mTagActive == 1)					
+					ps.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+				else if (mTagActive == 2)
+					ps.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+				mTagActive = 0;
+				break;
+			case "EActionPutInCar":
+			case "EActionEnterCar":
+				if (Data->Owner->GetID() == mInformant.GetID());
+				{
+					for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+					{
+						for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+						{
+							if (!mTerroristGroupLists[i].GetPerson(j)->IsInjured())
+							{
+								Actor t = Game::GetActor(Data->Parameters[0].iValue);
+								GameObject target(&t);
+								mTerroristGroupLists[i].GetPerson(j)->SetPrimaryTarget(&target);
+							}
+						}
+					}
+				}
+				break;
+			case "EActionLeaveCar":
+				if (Data->Owner->GetID() == mInformant.GetID());
+				{
+					for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+					{
+						for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+						{
+							if (!mTerroristGroupLists[i].GetPerson(j)->IsInjured())
+							{
+								mTerroristGroupLists[i].GetPerson(j)->SetPrimaryTarget(&mInformant);
+								mTerroristStates[i] = STATE_TERRORISTS_WALK;
+							}
+						}
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+	
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		return ACTION_CONTINUE;
+	}	
+
+	ActionCallbackResult OnAbortAction(const char *Action, ActionCallback* Data)
+	{		
+		return ACTION_CONTINUE;
+	}	
+		
+	PathFinishedAction OnPathFinished(const char *PathName, GameObject *Obj)
+	{
+		// terrorist vans
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			if (mTerroristVans[i].IsValid() && mTerroristVans[i].GetID() == Obj->GetID())
+			{
+				if (i < NUMBER_ATTACKING_TERRORISTS)
+				{
+					StartAttackOnFoot(mTerroristVans[i]);
+				}
+				else
+				{
+					mTerroristStates[i] = STATE_TERRORISTS_VAN_EXPLODED;
+					if (!mFirstBomberExploded)
+						RunCutsceneExplosion(&mTerroristVans[i]);
+					else
+						mTerroristVans[i].Explode();
+					System::Log("M06: Terrorist van exploded!");
+				}
+				return PATH_STOP;
+			}
+		}
+		// terrorists
+		if (Obj->GetType() == ACTOR_PERSON)
+		{
+			Person pers(Obj);
+			if (pers.GetRole() == ROLE_GANGSTER)
+			{
+				for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+				{
+					if (mTerroristStates[i] == STATE_TERRORISTS_WALK)
+					{
+						if (mTerroristsWaitingTime[i] < 0.0f)
+							mTerroristsWaitingTime[i] = 0.0f;
+						for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+						{
+							if (!mTerroristGroupLists[i].GetPerson(j)->IsWaiting() && mTerroristGroupLists[i].GetPerson(j)->GetID() == Obj->GetID())
+							{
+								mNumberTerroristsWaiting[i]++;
+								//System::Log("terrorist is waiting");
+								mTerroristGroupLists[i].GetPerson(j)->PushActionWait(ACTION_NEWLIST, 1000000.0f);
+								break;
+							}
+						}
+						if (mNumberTerroristsWaiting[i] == mTerroristGroupLists[i].GetNumPersons())
+						{
+							for (int j = 0; j < mTerroristGroupLists[i].GetNumPersons(); j++)
+							{
+								//System::Log("terrorist trying to kill informant after finish path");
+								TerroristKillInformant(mTerroristGroupLists[i].GetPerson(j));
+							}
+							mTerroristsWaitingTime[i] = -1.0f;
+							mTerroristStates[i] = STATE_TERRORISTS_ENTER_HOUSE;
+						}
+					}
+				}
+				return PATH_STOP;
+			}			
+		}
+		return PATH_DEFAULT;
+	}
+	
+	void Update()
+	{		
+	}
+	
+	MissionState GetMissionState()
+	{
+		if (Mission::IsCutSceneRunning())
+			return MISSION_RUNNING;
+		// only for debugging
+		//return MISSION_RUNNING;
+
+		if (Mission::GetCounter("Dead Persons") - Mission::GetCounter("Dead Gangsters") > MAX_DEAD)
+		{
+			mFailedTooManyDeadPersons = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Burning Objects") > BURN_OBJECTS_FOG)
+		{
+			//System::Log("fog intesity: %d", (int)(Weather::GetFogIntensity()*10.0f));
+			if (Weather::GetFogIntensity() == 0.0f && !Mission::TimerIsStarted("FadeInWeather"))
+			{
+				System::Log("M06: Fade in fog.");
+				Weather::SetFogVisible(true);
+				Weather::SetFogIntensity(0.0f);
+				Mission::StartIntervalTimer("FadeInWeather", TIME_CHANGE_WEATHER);
+			}
+		}
+		else
+		{
+			if (Weather::GetFogIntensity() == 1.0f && !Mission::TimerIsStarted("FadeOutWeather"))
+			{
+				System::Log("M06: Fade out fog.");
+				Mission::StartIntervalTimer("FadeOutWeather", TIME_CHANGE_WEATHER);
+			}
+		}
+
+		if (mInformantCutsceneShowed)
+			return MISSION_FAILED;
+
+		if (mInformant.IsInjured() && mInformant.GetEnteredHouseID() != -1)
+		{
+			mFailedInformantInjured = true;
+			RunCutscene();
+			Audio::SetMusicLevel(0.6f);
+		}
+
+		if (mTownBuildingBurnCount > MAX_TOWN_BUILDINGS_BURN)
+		{
+			mFailedTooManyTownBuildingsBurn = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+		
+		if (Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_SUCCEEDED;
+		}
+			
+		return MISSION_RUNNING;
+	}
+	
+	const char *GetFailReason()
+	{
+		if (mFailedInformantInjured)
+		{
+			return "M06_INFORMANT_NOT_SAVED";
+		}
+		else if (mFailedTooManyTownBuildingsBurn)
+		{
+			return "TOO_MANY_FIRES";
+		}
+		else if (mFailedTooManyDeadPersons)
+		{
+			return "TOO_MANY_DIED";
+		}
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailedInformantInjured)
+			return "SUPERV_M06_FAIL01";
+		if (mFailedTooManyTownBuildingsBurn)
+			return "SUPERV_M06_FAIL02";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M06_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f
+			&& mTownBuildingBurnCount >= 1)
+			return "SUPERV_M06_RES02";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		Serializer->Write(mTerroristGroupSniper);
+		Serializer->Write(mGuardGroup);
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			Serializer->Write(mTerroristGroupLists[i]);
+			for (int j = 0; j < 6; j++)
+				Serializer->Write(mTerroristPathLists[i][j]);
+			Serializer->Write(mTerroristVans[i]);
+			Serializer->Write(mTerroristVanPaths[i][0]);
+		}
+		Serializer->Write(mInformant);
+		Serializer->Write(mSafeHouse);
+		Serializer->Write(mExplodingVehicle);
+		Serializer->Write(mCurrentTransition);
+		for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+		{
+			Serializer->Write(mSparkObj[i]);
+			Serializer->Write(mSparkEmit[i]);
+			Serializer->Write(mSparkDestList[i]);
+		}
+
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			Serializer->Write(mTimeTerroristCarNotMoving[i]);
+			Serializer->Write(mTerroristCarLastPoints[i]);
+			Serializer->Write((int)mTerroristStates[i]);
+			Serializer->Write(mNumberTerroristsWaiting[i]);
+			Serializer->Write(mTerroristsWaitingTime[i]);
+		}
+
+		Serializer->Write(mTownBuildingBurnCount);
+		Serializer->Write(mTimeIndexSniper);
+		Serializer->Write(mTerroristNum);
+		Serializer->Write(mInformantEnteredHouse);
+		Serializer->Write(mTagActive);
+		Serializer->Write(mFogIntensity);
+
+		Serializer->Write(mAlreadyFiresExt);
+		Serializer->Write(mAlreadyInjuredSaved);
+		Serializer->Write(mFailedInformantInjured);
+		Serializer->Write(mFailedTooManyDeadPersons);
+		Serializer->Write(mVansAlarmed);
+		Serializer->Write(mInformantSaved);
+		Serializer->Write(mHintVan);
+		Serializer->Write(mHintAttackStarts);
+		Serializer->Write(mHintTownBuildingsBurn);
+		Serializer->Write(mFailedTooManyTownBuildingsBurn);
+		Serializer->Write(mForestArson);
+		Serializer->Write(mFirstBomberExploded);
+		Serializer->Write(mFirstSquadExploded);
+		Serializer->Write(mHintTreeBurns);
+		Serializer->Write(mSniperHint);
+		Serializer->Write(mInformantCutsceneShowed);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+		Serializer->Read(mTerroristGroupSniper);
+		Serializer->Read(mGuardGroup);
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			Serializer->Read(mTerroristGroupLists[i]);
+			for (int j = 0; j < 6; j++)
+				Serializer->Read(mTerroristPathLists[i][j]);
+			Serializer->Read(mTerroristVans[i]);
+			Serializer->Read(mTerroristVanPaths[i][0]);
+		}
+		Serializer->Read(mInformant);
+		Serializer->Read(mSafeHouse);
+		Serializer->Read(mExplodingVehicle);
+		Serializer->Read(mCurrentTransition);
+		for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+		{
+			Serializer->Read(mSparkObj[i]);
+			Serializer->Read(mSparkEmit[i]);
+			Serializer->Read(mSparkDestList[i]);
+		}
+		for (int i = 0; i < MAX_TERRORIST_GROUPS; i++)
+		{
+			Serializer->Read(mTimeTerroristCarNotMoving[i]);
+			Serializer->Read(mTerroristCarLastPoints[i]);
+			int state;
+			Serializer->Read(state);
+			mTerroristStates[i] = (TerroristsState)state;
+			Serializer->Read(mNumberTerroristsWaiting[i]);
+			Serializer->Read(mTerroristsWaitingTime[i]);
+		}
+
+		Serializer->Read(mTownBuildingBurnCount);
+		Serializer->Read(mTimeIndexSniper);
+		Serializer->Read(mTerroristNum);
+		Serializer->Read(mInformantEnteredHouse);
+		Serializer->Read(mTagActive);
+		Serializer->Read(mFogIntensity);
+
+		mAlreadyFiresExt = Serializer->ReadBool();
+		mAlreadyInjuredSaved = Serializer->ReadBool();
+		mFailedInformantInjured = Serializer->ReadBool();
+		mFailedTooManyDeadPersons = Serializer->ReadBool();
+		mVansAlarmed = Serializer->ReadBool();
+		mInformantSaved = Serializer->ReadBool();
+		mHintVan = Serializer->ReadBool();
+		mHintAttackStarts = Serializer->ReadBool();
+		mHintTownBuildingsBurn = Serializer->ReadBool();
+		mFailedTooManyTownBuildingsBurn = Serializer->ReadBool();
+		mForestArson = Serializer->ReadBool();
+		mFirstBomberExploded = Serializer->ReadBool();
+		mFirstSquadExploded = Serializer->ReadBool();
+		mHintTreeBurns = Serializer->ReadBool();
+		mSniperHint = Serializer->ReadBool();
+		mInformantCutsceneShowed = Serializer->ReadBool();
+
+		return true;
+	}
+};

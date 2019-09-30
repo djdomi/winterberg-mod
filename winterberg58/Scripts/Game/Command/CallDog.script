@@ -1,0 +1,71 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script CallDog
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+object CallDog : CommandScript
+{
+	CallDog()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetGroupID(CGROUP_DOG);
+		SetRestrictions(RESTRICT_NOTARRESTED | RESTRICT_NOTINJURED | RESTRICT_SELFEXECUTE);
+		SetDeselectCaller(false);
+		SetPriority(300);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		return !p.IsLinkedWithPerson();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		return !p.IsLinkedWithPerson() && Game::ExistsFreeRescueDog();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() ||  Caller->IsEquipped() || !Target->IsValid() || Caller->GetID() != Target->GetID())
+			return false;
+
+		Person t(Target);
+		Person p(Caller);
+		if (p.GetEnteredCarID() != -1)
+			return false;
+
+		bool onself = (Caller->GetID() == Target->GetID()) && !p.IsLinkedWithPerson();
+		
+		bool targ = t.IsValid() && t.HasAnimation("bark") && t.GetState() == PERSONSTATE_NORMAL;
+
+		bool call = p.IsValid() && !p.IsCarryingPerson();
+
+		if((targ && call) || onself)
+		{
+			return true;
+		}		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (childID>0)
+			Caller->PushActionCallDog(ACTION_INSERT, Target);	
+		else
+			Caller->PushActionCallDog(ACTION_NEWLIST, Target);	
+	}
+};

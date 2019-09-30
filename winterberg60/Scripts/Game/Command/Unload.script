@@ -1,0 +1,81 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script Unload
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+object Unload : CommandScript
+{
+	Unload()
+	{
+		SetIcon("drop");
+		SetCursor("drop");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetPriority(-10);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		if(!Caller->IsCarryingAnything())
+			return false;
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionMotorSound",Caller,9,false);
+		Caller->PushActionWait(ACTION_APPEND,1);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",Caller);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+		Caller->PushActionUnload(ACTION_APPEND);
+     		Caller->RemoveCommand("DUMMYHasUmfeld");
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+	}
+};

@@ -1,0 +1,138 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script mannschaft_rufen
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+// Winterberger für Em4 
+// Mannschaft aufs Fahrzeug rufen v1.0 by WitchDoctor
+// 
+//
+// Revision
+// 15.6.06 : erster Versuch
+
+float wartezeit=10.0;
+
+object mannschaft_rufen : CommandScript
+{
+
+	mannschaft_rufen()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList place;
+		int n;
+		int ptype;
+		Vehicle fz(Caller);
+					
+		if (Caller->HasCommand("wird_alarmiert"))
+		{
+			Caller->PushActionWait(ACTION_INSERT,1.0);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"mannschaft_rufen",Caller,ChildID,false);
+			return;	
+		}
+		Caller->AssignCommand("ich_bin_nicht_frei");
+		n=fz.GetFreePassengers();
+		
+		switch (ChildID)
+		{	
+			case 0:
+				break;
+			case 112:
+				ptype=102;
+				break;
+			case 110:
+				if (fz.GetVehicleType() == VT_POLICE_MTW)
+				{
+					ptype=104;
+				} else {
+					ptype=103;
+				}
+				break;
+			case 19222:
+				ptype=109;
+				n=1;
+				break;
+			case 19292:
+				ptype=108;
+				n=1;
+				break;
+			case 19293:
+				ptype=112;
+				n=1;
+				break;
+			case 11880:
+				ptype=105;
+				break;
+		}
+		if (Caller->HasCommand("abwarten"))
+			Caller->PushActionWait(ACTION_INSERT,5.0f);
+		if (ChildID > 0)
+		{
+			for (int i=0; i<n; i++)
+			{
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"CreateNewPerson",Caller,ptype,false);			
+			}
+		}
+		if (Caller->HasCommand("abwarten"))
+		{
+			Caller->PushActionWait(ACTION_INSERT,wartezeit*(Caller->GetUserData()-1));
+			Caller->RemoveCommand("abwarten");
+		}
+	}
+};
+
+object set_wartezeit : CommandScript
+{
+
+	set_wartezeit()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		wartezeit=1.0*ChildID;
+	}
+};
+
+object ms_wird_gerufen : CommandScript
+{
+
+	ms_wird_gerufen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+	}
+};
+
+
+

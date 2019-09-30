@@ -1,0 +1,776 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script emv
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+object Superdoc : CommandScript
+{
+	Superdoc()
+	{
+		SetValidTargets(ACTOR_PERSON | ACTOR_VEHICLE);
+		SetGroupID(1);
+		SetPriority(1000);
+		SetGroupLeader(false);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		if(Target->GetType()==ACTOR_PERSON)
+		{
+			Person p(Target);
+			if (p.HasCommand("manv_schwarz") && p.IsDead())
+				ok = false;
+			else
+				ok=(!p.IsFlagSet(OF_USABLE) && !p.IsDrowning() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried());
+		} 
+
+		if(Target->GetType()==ACTOR_VEHICLE)
+		{
+			GameObject obj(Target);
+			Person p(Caller);
+			ok=obj.IsFlagSet(OF_PERSON_ENCLOSED) && p.IsDoctor();
+		}
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		PersonList pl(Caller->GetName());
+		Caller->RemoveEquipment();
+		bool got_case=false;
+		Person p;
+		for (int i=0;i<pl.GetNumPersons();i++)
+		{
+			p=pl.GetPerson(i);
+			if (p.IsDoctor())
+			{
+				medfunc::zum_pat(&p,Target,-1);
+				p.SetAutoHealDistance(0.0);
+			} else {
+				medfunc::zum_pat(&p,Target,-2);
+				if (!got_case)
+				{
+					got_case=true;
+					p.PushActionExecuteCommand(ACTION_INSERT,"Hole_NEF_Equip",&p,0,false);
+				}
+			}
+		}
+	}
+};
+
+object DocBasis : CommandScript
+{
+	DocBasis()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("untersuch");
+		SetCursor("untersuch");
+		SetGroupID(2);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		if (p.HasCommand("manv_schwarz") && p.IsDead())
+			ok = false;
+		else
+			ok=  (!p.IsDrowning()  && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad())  && !p.IsCarried());
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		Caller->SetUserData(Target->GetID());
+		medfunc::zum_pat(Caller,Target,2);
+	}
+};
+
+object stetho : CommandScript
+{
+	stetho()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("abhoer");
+		SetCursor("abhoer");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetGroupID(3);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,3);
+	}
+};
+
+object Vitalparm : CommandScript
+{
+	Vitalparm()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("blutdr");
+		SetCursor("blutdr");
+		SetGroupID(4);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		ok=  p.HasCommand("raheal") && !p.HasAnyAction() && !p.IsWoundedSquad() && !p.IsDead();
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,4);
+	}
+};
+
+
+object DocEKG : CommandScript
+{
+	DocEKG()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("ekgm");
+		SetCursor("ekgm");
+		SetGroupID(7);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		ok=  p.HasCommand("raheal") && !p.HasAnyAction() && !p.IsWoundedSquad() && !p.IsDead();
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,7);
+	}
+};
+
+object FAST : CommandScript
+{
+	FAST()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("sonog");
+		SetCursor("sonog");
+		SetGroupID(8);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		if (play)
+			Audio::PlayVideo("mod:emv/milz.mpg");
+		else
+			medfunc::zum_pat(Caller,Target,8);
+	}
+};
+
+object DocNuele : CommandScript
+{
+	DocNuele()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("vzugang");
+		SetCursor("vzugang");
+		SetGroupID(6);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		ok=  !p.HasAnyAction() && !p.IsWoundedSquad() && !p.IsDead() && !p.IsInjured();
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,6);
+	}
+};
+
+object DocMed : CommandScript
+{
+	DocMed()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("medik");
+		SetCursor("medik");
+		SetGroupID(9);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		if (!p.IsFlagSet (OF_USABLE) || (p.HasCommand("manv_schwarz") && p.IsDead()))
+			ok = false;
+		else
+			ok=  (!p.IsDrowning() && !p.IsHealing() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried());
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,99);
+	}
+};
+
+object Doctub : CommandScript
+{
+	Doctub()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("intub");
+		SetCursor("intub");
+		SetGroupID(11);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		ok=  p.HasCommand("raheal") && !p.HasAnyAction() && !p.IsWoundedSquad() && !p.IsDead();
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,99);
+	}
+};
+
+object DocDrain : CommandScript
+{
+	DocDrain()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("pleuradr");
+		SetCursor("pleuradr");
+		SetGroupID(12);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		ok=  p.HasCommand("raheal") && !p.HasAnyAction() && !p.IsWoundedSquad() && !p.IsDead();
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,99);
+	}
+};
+
+object DocInj : CommandScript
+{
+	DocInj()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("injekt");
+		SetCursor("injekt");
+		SetGroupID(10);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		if (!p.IsFlagSet (OF_USABLE) || (p.HasCommand("manv_schwarz") && p.IsDead()))
+			ok = false;
+		else
+			ok=  (!p.IsDrowning() && !p.IsHealing() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried());
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,99);
+	}
+};
+
+object DocHLW : CommandScript
+{
+	DocHLW()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("ekgm");
+		SetCursor("ekgm");
+		SetGroupID(13);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		if (p.IsInjured() || p.IsDead())
+			ok = false;
+		else
+			ok=  (!p.IsDrowning()  && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && !p.IsWoundedSquad() && p.GetEnteredCarID() == -1 && !p.IsCarried());
+		return ok && Caller->IsAnimationFinished();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		medfunc::zum_pat(Caller,Target,13);
+	}
+};
+
+object DocTransport : CommandScript
+{
+	DocTransport()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("pat_rtw");
+		SetCursor("pat_rtw");
+		SetGroupID(14);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv")  && !Input::LCtrlPressed();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		ok=  (p.HasCommand("ratransport") || p.HasCommand("EnterBasket")) && !p.IsWoundedSquad() && !p.IsDead();
+		return ok;
+	}
+
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		int func=14;
+		medfunc::zum_pat(Caller,Target,func);
+	}
+};
+
+object DocTransNA : CommandScript
+{
+	DocTransNA()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetIcon("pat_naw");
+		SetCursor("pat_naw");
+		SetGroupID(14);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return Caller->HasCommand("emv") && Input::LCtrlPressed();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		Person p(Target);
+		ok=  p.HasCommand("ratransport") && !p.IsWoundedSquad() && !p.IsDead();
+		return ok;
+	}
+
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		int func=15;
+		Mission::PlayHint("WIB_EMV_NAGEHTMIT");
+		medfunc::zum_pat(Caller,Target,func);
+	}
+};
+
+object DocDoIt : CommandScript
+{
+	DocDoIt()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int play)
+	{
+		int func=play;
+		Person obj(Target);
+
+		if (func<0)
+			medfunc::zum_pat(&obj,Caller,-func);
+		else
+			medfunc::zum_pat(Caller,Target,func);
+	}
+};
+
+
+object emv : CommandScript
+{
+	emv()
+	{
+		SetGroupID(35);
+	}
+
+};
+
+object emv_medisim : CommandScript
+{
+	emv_medisim()
+	{
+		SetGroupID(35);
+	}
+
+	GameObject medigen(Actor *Target)
+	{
+		Person pat(Target);
+		System::Log ("MediSim : Verletzung generieren fuer %s %u",pat.GetName(),pat.GetID());
+		char *id="          ";
+		snprintf(id,10,"MD%u",pat.GetID());
+		GameObject sim=Game::CreateObject("mod:Prototypes/Objects/Misc/empty.e4p",id);
+		return sim;
+	}
+
+	void medisim (GameObject *Caller, Actor *Target, int simcode)
+	{
+		Person pat(Target);
+		Caller->PushActionWait(ACTION_NEWLIST,1.0);
+		System::Log ("MediSim : %s Status aktualisieren  %s %u",Caller->GetName(),pat.GetName(),pat.GetID());
+	}
+
+	void medi_status (GameObject *Caller, Actor *Target)
+	{
+		char *meldung="                                                                                                                                                                                                            ";
+		Person pat(Target);
+		snprintf(meldung,200,"Patientenstatus von %s : Dummy %s",Caller->GetName(),pat.GetName());
+		Game::ShowHelpTextWindow(meldung);
+	}
+
+	void medi_stetho (GameObject *Caller, Actor *Target)
+	{
+		char *meldung="                                                                                                                                                                                                            ";
+		Person pat(Target);
+		snprintf(meldung,200,"Auskultation von %s : Dummy %s",Caller->GetName(),pat.GetName());
+		Game::ShowHelpTextWindow(meldung);
+	}
+
+	void medi_vital (GameObject *Caller, Actor *Target)
+	{
+		char *meldung="                                                                                                                                                                                                            ";
+		Person pat(Target);
+		snprintf(meldung,200,"Vitalparameter von %s : Dummy %s",Caller->GetName(),pat.GetName());
+		Game::ShowHelpTextWindow(meldung);
+	}
+
+	void medi_ekg (GameObject *Caller, Actor *Target)
+	{
+		char *meldung="                                                                                                                                                                                                            ";
+		Person pat(Target);
+		snprintf(meldung,200,"Patientenstatus von %s : Dummy %s",Caller->GetName(),pat.GetName());
+		Game::ShowHelpTextWindow(meldung);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int simcode)
+	{
+		if (Target->IsValid())
+		{
+			if (!simcode)
+			{
+				GameObject o=medigen(Target);
+				Caller=&o;
+				o.PushActionWait(ACTION_NEWLIST,1.0);
+			} else switch (simcode) {
+				case -1:
+					medisim (Caller,Target,simcode);
+					break;
+				case 2 :
+					medi_status(Caller,Target);
+					break;
+				case 3 :
+					medi_stetho(Caller,Target);
+					break;
+				case 4 :
+					medi_vital(Caller,Target);
+					break;
+			}
+			Caller->PushActionWait(ACTION_APPEND,1.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"emv_medisim",Target,-1);
+		} else {
+			System:.Log("MediSim beendet fuer Patient %s",Caller->GetName());		
+			Caller->PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+	}
+};
+
+class medfunc : CommandScript
+{
+
+	void an_den_kopf (GameObject *doc, Person p)
+	{
+			Vector l,r,pos;
+			p.GetOrientedBBoxPoint(1,l.x,l.y,l.z);
+			p.GetOrientedBBoxPoint(2,r.x,r.y,r.z);
+			pos.x=(l.x+r.x)/2;
+			pos.y=(l.y+r.y)/2;
+			pos.z=(l.z+r.z)/2;
+			doc->PushActionMove(ACTION_NEWLIST,pos);
+	}
+	
+	void pat_lagern (Person pat)
+	{
+		pat.PushActionSwitchAnim(ACTION_INSERT,"layingwounded03");
+	}
+
+	void GetInHouse (Person a, Person b)
+	{
+		Actor oh=Game::GetActor(b.GetEnteredHouseID());
+		a.PushActionExecuteCommand(ACTION_INSERT,"EnterHouse",&oh,112,true);
+	}
+
+	Person der_Patient(GameObject *doc, Actor *pat, int com)
+	{
+		Actor ziel=Game::GetActor(doc->GetUserData());
+		bool goon=true;
+		Person p;
+		switch (com)
+		{
+			case 13:
+			case 8:
+			case 11:	
+			case 14:
+			case 15:
+			case 2:
+			case 6:
+			case 4:
+			case 7:
+				goon=ziel.IsValid();
+				if (goon)
+					Person p(&ziel);
+				else
+					Mission::PlayHint("wib_emv_nopat");
+				break;
+			default:
+				Person p(pat);
+				break;
+		};
+		return p;
+	}
+
+	void zum_pat (GameObject *doc,Actor *pat, int com)
+	{
+		Person p=der_Patient(doc,pat,com);
+		bool goon=p.IsValid();
+		if (goon)
+		{
+			Person d(doc);
+			if (d.IsDoctor())
+				an_den_kopf(doc,p);
+			else
+				doc->PushActionMove(ACTION_NEWLIST,&p,TARGET_TREATMENT);
+			doc->PushActionTurnTo(ACTION_APPEND,&p);
+			if (com!=0)
+				if (doc->IsEquipped()) {
+					doc->PushActionSwitchAnim(ACTION_APPEND,"kneeldown");
+					doc->PushActionSwitchAnim(ACTION_APPEND,"treatment1");
+				} else
+					doc->PushActionSwitchAnim(ACTION_APPEND,"disarm_mine");
+			if (d.GetEnteredHouseID()!=p.GetEnteredHouseID())
+				GetInHouse(d,p);
+			switch (com)
+			{
+				case 0:	// No Op
+					break;
+				case -1:	// Generate Medical Emergency
+					p.SetFlag(OF_USABLE);
+					doc->PushActionExecuteCommand(ACTION_APPEND,"emv_medisim",&p,0,false);
+					doc->PushActionExecuteCommand(ACTION_APPEND,"DocBasis",&p,0,false);
+					break;
+				case 2:
+					doc->PushActionExecuteCommand(ACTION_APPEND,"lna_categorize",&p,1,false);
+					doc->PushActionExecuteCommand(ACTION_APPEND,"FirstCheck",&p,0,false);
+				case 3:
+				case 4:
+					doc->PushActionExecuteCommand(ACTION_APPEND,"emv_medisim",&p,com,false);
+					// PatStatus beschreiben
+					break;
+				case 8:
+					break;
+				case -2:
+					d.PushActionSwitchAnim(ACTION_APPEND,"treatinjured1");
+					break;
+				case 11:
+					pat_lagern(p);
+					break;
+				case 6:
+					Person d(pat);
+					zum_pat(&d,&p,0);
+					d.RemoveEquipment();
+					d.PushActionSwitchAnim(ACTION_APPEND,"arrestidle");
+					d.PlaceObjectInRightHand("mod:Models/Objects/Equipment/bottle.v3o");
+					break;
+				case 13:
+					Person d(pat);
+					zum_pat(&d,&p,0);
+					d.RemoveEquipment();
+					d.PushActionHeal(ACTION_APPEND,&p);
+					break;
+				case 14:
+				case 15:
+					Person d(pat);
+					if (com==15)
+						p.SetFlag(OF_RECOVERABLE);
+					if (d.HasCommand("ratransport")) 
+						d.PushActionExecuteCommand(ACTION_NEWLIST,"ratransport",&p,0,true);
+					else {
+						d.PushActionMove(ACTION_NEWLIST,&p,TARGET_TOUCHPERSON);
+						d.PushActionTurnTo(ACTION_APPEND,&p);
+						d.PushActionLift(ACTION_APPEND,&p);
+						d.PushActionExecuteCommand(ACTION_APPEND,"DocDoIt",doc,-101,false);
+					}
+					doc->PushActionHeal(ACTION_APPEND,&p);
+					if (d.IsEquipped())
+						d.RemoveEquipment();
+					break;
+				case 101:
+					doc->PushActionMove(ACTION_NEWLIST,pat,TARGET_TOUCHPERSON);
+					doc->PushActionTurnTo(ACTION_APPEND,pat);
+					doc->PushActionArrest(ACTION_APPEND,pat);
+					break;
+				default:
+					dummy_treat(doc,pat);
+					break;
+			}
+		}	
+	}
+
+	void dummy_treat (GameObject *doc, Actor *pat)
+	{
+	}
+};
+

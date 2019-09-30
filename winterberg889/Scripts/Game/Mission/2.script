@@ -1,0 +1,745 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script 2
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+// mission 2 script
+
+const float CHECK_MISSION_STATE_INTERVAL = 1.0f;
+const int HINT_NUMBER_DEAD_CIVILIANS = 1;
+const int MAX_DEAD_CIVILIANS = 2;
+const int MAX_SMOKEEMITTERS = 30;
+const int MAX_CHOKINGAREAS = 10;
+const int MAX_GASBOTTLES = 10;
+const float VAL_FIRERESISTANCE_FIREFIGHTER_MASK		= 6000.f;
+const float VAL_FIRERESISTANCE_FIREFIGHTER_ABC		= 3000.f;
+const float SMOKE_HEALTH_DRAIN = 1;
+const char NAME_COUNTER_INJURED_SQUADS[] = "Injured Squads";
+const char NAME_SOUND_GAS_BOTTLES[]	= "mod:Audio/FX/Explosion02.wav";
+const char NAME_SOUND_COUGH_M[]	= "mod:Audio/FX/voices/man/0/contamination01.wav";
+const char NAME_SOUND_COUGH_F[]	= "mod:Audio/FX/voices/woman/0/contamination01.wav";
+const char NAME_SOUND_COUGH_C[]	= "mod:Audio/FX/voices/child/0/contamination01.wav";
+
+object Mission2 : MissionScript
+{
+	enum TutorialState
+	{
+		STATE_REQUEST_GTF,
+		STATE_WAITING_FOR_FIREDEPARTMENT_BUTTON,
+		STATE_WAITING_FOR_GTF_SELECTED,
+		STATE_WAITING_FOR_FIREFIGHTER_GETOUT,
+		STATE_FIREFIGHTER_GOTOUT,
+		STATE_WAITING_FOR_FIREFIGHTER_EQUIP,
+		STATE_FIREFIGHTER_EQUIPPED,
+	};
+
+	int mTutorialState;
+	int mCSPhaseNr;
+	int mCSPhaseNr2;
+	bool mHintOneCivilDead;
+	bool mAlreadyFiresExt;
+	bool mAlreadyInjuredSaved;
+	bool mExplodingWindows;
+
+	GameObject mSmokeEmitters[MAX_SMOKEEMITTERS];
+	Actor mChokingAreas[MAX_CHOKINGAREAS];
+	GameObject mGasBottles[MAX_GASBOTTLES];
+	OpenHouse mTiresHall;
+
+	int mSmokeEmittersCount;
+	int mChokingAreasCount;
+	int mGasBottlesCount;
+	float mSmokeStrength;
+	bool mHallCleared;
+	bool mPersonAsked;
+	bool mFailedOtherBuildingBurns;
+	bool mFailedTooManyDeadCivils;
+	bool mCriticalBurnHint;
+	bool mBreakDoorHint;
+	bool mHintManyFires;
+	bool mNearGasWarning;
+	bool mPersonHelpGotOut;
+
+	Mission2()
+	{
+	}
+	
+	~Mission2()
+	{
+	}
+	
+	void Start()
+	{
+		// init vars
+		mHallCleared = false;
+		mCSPhaseNr = 0;
+		mCSPhaseNr2 = 0;
+		mHintOneCivilDead = false;
+		mHintManyFires = false;
+		mAlreadyFiresExt = false;
+		mAlreadyInjuredSaved = false;		
+		mSmokeEmittersCount = 0;
+		mChokingAreasCount = 0;
+		mSmokeStrength = 1.0f;
+		mPersonAsked = false;
+		mFailedOtherBuildingBurns = false;
+		mFailedTooManyDeadCivils = false;
+		mCriticalBurnHint = false;
+		mBreakDoorHint = false;
+		mNearGasWarning = false;
+		mPersonHelpGotOut = false;
+		mExplodingWindows = false;
+
+		// read game objects
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+
+			// uncomment for debugging cutscene
+			//if (!obj->HasName("cs_gasbottle"))
+			//{
+			//	for (int j = 0; j < obj->GetNumFireChilds(); j++)
+			//	{
+			//		obj->GetFireChild(j).Burn();
+			//		obj->GetFireChild(j).SetTemperature(obj->GetFireChild(j).GetMaxMaterialTemperature());
+			//	}
+			//}
+
+			if (obj->HasName("cs_gasbottle"))
+			{
+				if (mGasBottlesCount < MAX_GASBOTTLES)
+				{
+					mGasBottles[mGasBottlesCount] = *obj;
+					mGasBottlesCount++;
+				}
+			}
+			else if (obj->HasName("tireshall"))
+				mTiresHall = (OpenHouse*)obj;
+			else if (obj->HasName("smoke"))
+			{
+				if (mSmokeEmittersCount < MAX_SMOKEEMITTERS)
+				{
+					mSmokeEmitters[mSmokeEmittersCount] = *obj;
+					mSmokeEmitters[mSmokeEmittersCount].SetParticleEffectStrength(mSmokeStrength);
+					mSmokeEmittersCount++;
+				}
+			}
+			else if (obj->HasName("chokingarea"))
+			{
+				if (mChokingAreasCount < MAX_CHOKINGAREAS)
+				{
+					mChokingAreas[mChokingAreasCount] = *obj;
+					mChokingAreasCount++;
+				}
+			}
+		}
+
+		// add initial mission objectives
+		Mission::AddObjective("EXTINGUISH_FIRES");
+		Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", false);
+		Mission::AddObjective("TRANSPORT_INJURED");
+		Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+		
+		// set initial timers
+		Mission::StartIntervalTimer("CheckMissionState", CHECK_MISSION_STATE_INTERVAL);
+		Mission::StartIntervalTimer("CheckTutorialState", 0.5f);
+
+		Audio::PlaySoundtrack("2", 0.0f);
+	}
+
+	void PlayHint(const char* hint)
+	{
+		Mission::PlayHint(hint);
+		System::Log("Hint: %s", hint);
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+	}
+
+	void CutSceneFirstPhase()
+	{
+		mCSPhaseNr = 1;
+		for (int i = 0; i < mGasBottlesCount; i++)
+		{
+			mGasBottles[i].EnablePhysicsSimulation();
+			//mGasBottles[i].Explode();
+
+			Audio::PlaySample(NAME_SOUND_GAS_BOTTLES);
+			Vector dir;
+			dir.x = 0.0f;
+			dir.y = 100.0f;
+			dir.z = 400.0f;
+			mGasBottles[i].ApplyForce(0, mGasBottles[i].GetPosition(), dir);
+			Game::PlayEmitter("carexplosion01", mGasBottles[i].GetPosition());
+		}
+		Mission::StartSingleTimer("CutsceneEnd", 4.0f);
+	}
+
+	void CutScene2FirstPhase()
+	{
+		mCSPhaseNr2 = 1;
+		Mission::StartSingleTimer("CutsceneEnd2", 3.0f);
+	}
+
+	void CutSceneSecondPhase()
+	{
+	}
+
+	void CutSceneEnding()
+	{
+		Mission::HideBlackBars();
+		Mission::EndCutScene(true, 4.0f);
+		Mission::StartSingleTimer("HideCeiling", 5.5f);
+	}
+
+	void CutSceneEnding2()
+	{
+		Mission::HideBlackBars();
+		Mission::EndCutScene(true, 4.0f);
+		Mission::StartSingleTimer("HideCeiling", 5.5f);
+	}
+
+	void RunCutscene()
+	{
+		Audio::SetMusicLevel(0.3f);
+		mTiresHall.ShowCeiling(false);
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		mCSPhaseNr = 0;
+		Camera::StartTransition("Cutscene1", 4.0f);
+	}
+
+	void RunCutscene2()
+	{
+		if (!Mission::IsCutSceneRunning())
+		{
+			//Audio::SetMusicLevel(0.3f);
+			mTiresHall.ShowCeiling(false);
+			Mission::StartCutScene();
+			Mission::ShowBlackBars();
+			mExplodingWindows = true;
+			mCSPhaseNr2 = 0;
+			Camera::StartTransition("Cutscene2", 3.0f);
+		}
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (mExplodingWindows && Mission::IsCutSceneRunning() && mCSPhaseNr2 == 0)
+			CutScene2FirstPhase();
+		if (Mission::IsCutSceneRunning() && mCSPhaseNr == 0)
+			CutSceneFirstPhase();
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Collider1, Actor *Collider2)
+	{
+		//return MCC_IGNORE_CONTINUE;
+		return MCC_HALT_CONTINUE; 
+	}
+
+	bool OnStartBurning(GameObject *burningObject)
+	{
+		if (burningObject->IsValid())
+		{
+			if (!mCriticalBurnHint && burningObject->HasName("criticalburn"))
+			{
+				PlayHint("HINT_M02_MANY_FIRES");
+				Audio::SetMusicLevel(0.1f);
+				mCriticalBurnHint = true;
+			}
+			if (!mNearGasWarning && burningObject->HasName("neargas"))
+			{
+				PlayHint("HINT_M02_EXPLODE_WARNING");
+				mNearGasWarning = true;
+			}
+			if ((burningObject->GetType() == ACTOR_OPEN_HOUSE
+				|| burningObject->GetType() == ACTOR_HOUSE) && (burningObject->GetID() != mTiresHall.GetID()))
+			{
+				mFailedOtherBuildingBurns = true;
+			}
+			if (burningObject->HasName("tires"))
+			{
+				mSmokeStrength += 0.5f;
+				for (int i = 0; i < mSmokeEmittersCount; i++)
+					mSmokeEmitters[i].SetParticleEffectStrength(mSmokeStrength);
+			}
+		}
+		return true;
+	}
+	
+	void CheckTutorialState()
+	{
+		switch(mTutorialState)
+		{
+			case STATE_REQUEST_GTF:
+			{
+				Game::ShowHelpTextWindow("M02_HELP_GTF");
+				ScriptInterface::EnableNavigatorFireDepartmentButton(true);
+				ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+				mTutorialState = STATE_WAITING_FOR_FIREDEPARTMENT_BUTTON;
+			}
+			break;
+			case STATE_WAITING_FOR_FIREDEPARTMENT_BUTTON:
+			{
+				if (ScriptInterface::IsFireDepartmentWindowOpen())
+				{
+					ScriptInterface::BlinkFireDepartmentVehicle("GTF", true);
+					mTutorialState = STATE_WAITING_FOR_GTF_SELECTED;
+				}				
+			}
+			break;
+			case STATE_WAITING_FOR_GTF_SELECTED:
+			{
+				if (ScriptInterface::IsFireDepartmentVehicleSelected("GTF"))
+				{
+					ScriptInterface::BlinkFireDepartmentVehicle("GTF", false);
+					mTutorialState = STATE_WAITING_FOR_FIREFIGHTER_GETOUT;
+				}
+			}
+			break;
+			case STATE_FIREFIGHTER_GOTOUT:
+			{
+				Game::ShowHelpTextWindow("M02_HELP_GTF_GETOUT");
+				mTutorialState = STATE_WAITING_FOR_FIREFIGHTER_EQUIP;
+			}
+			break;
+			case STATE_FIREFIGHTER_EQUIPPED:
+			{
+				Game::ShowHelpTextWindow("M02_HELP_GTF_HOSE");				
+				Mission::StopTimer("CheckTutorialState");
+			}
+			break;
+		}
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		switch(Timer)
+		{
+			case "CheckTutorialState":
+			{
+				CheckTutorialState();
+			}
+			break;
+			case "CheckMissionState":
+			{
+				if (!mExplodingWindows && mTiresHall.GetBurningStatus() == OBS_HALFBURNED)
+					RunCutscene2();
+				if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+						Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+						System::Log("Comment: M02_FIRES_EXTINGIUSHED");
+						Audio::SetMusicLevel(0.4f);
+						mAlreadyFiresExt = true;
+					}
+				}
+				else
+				{
+					if (Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::RemoveObjective("EXTINGUISH_FIRES");
+						Mission::AddObjective("EXTINGUISH_FIRES");
+						if (mAlreadyFiresExt)
+						{
+							Mission::PlayComment("SUPERV_OBJ_FIRE2");
+							System::Log("Comment: M02_FIRES_AGAIN");
+						}
+					}
+				}
+				if (Mission::GetCounter("Injured Persons") == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", true);
+						Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+						System::Log("Comment: M02_INJURED_TRANSPORTED");
+						mAlreadyInjuredSaved = true;
+					}
+				}
+				else
+				{
+					if (Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+						if (mAlreadyInjuredSaved)
+						{
+							Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+							System::Log("Comment: M02_INJURED_AGAIN");
+						}
+					}
+				}
+				if (!mHintOneCivilDead && Mission::GetCounter("Dead Civils") >= 1)
+				{
+					PlayHint("HINT_M02_ONE_CIVIL_DEAD");
+					Audio::SetMusicLevel(0.2f);
+					mHintOneCivilDead = true;
+				}
+				break;
+			}
+			case "CutsceneEnd":
+			{
+				CutSceneEnding();
+				break;
+			}
+			case "CutsceneEnd2":
+			{
+				CutSceneEnding2();
+				break;
+			}
+			case "HideCeiling":
+			{
+				PersonList list = mTiresHall.GetSquadPersonsInside();
+				bool healthySquad = false;
+				for(int i = 0; i < list.GetNumPersons(); i++)
+				{
+					if (!list.GetPerson(i)->IsInjured())
+						healthySquad = true;
+				}
+				if (!healthySquad)
+					mTiresHall.ShowCeiling(true);
+				break;
+			}
+		}
+	}
+	
+	void UpdateCutScene()
+	{
+	}
+
+	bool IsSpecialFireFighter(Person *person_)
+	{
+		if(person_->GetRole() == ROLE_SQUAD)
+		{
+			if (person_->GetPersonType() == PT_FIREFIGHTER_MASK)
+				return true;
+		}
+		return false;
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		switch (Trigger)
+		{
+			case "hintbreakdoor":
+			{
+				if (!mBreakDoorHint && !mPersonAsked)
+				{
+					if (Collider->GetType() == ACTOR_PERSON)
+					{
+						Person pers(Collider);
+						if (pers.GetEquipment() != EQUIP_FIREAXE)
+						{
+							PlayHint("HINT_M02_BREAK_DOOR");
+							mBreakDoorHint = true;
+						}
+					}
+				}
+				break;
+			}
+			case "chokingarea":
+			{
+				if(Collider->GetType() == ACTOR_PERSON)
+				{
+					Person person(Collider);
+					if(!IsSpecialFireFighter(&person) && !person.IsInjured())
+					{
+						person.Hurt(INJUREREASON_ENERGY, SMOKE_HEALTH_DRAIN);
+						int r = Math::rand();
+						if (r % 4 == 0)
+						{
+							if (!person.IsCurrentAction("EActionSwitchAnim")
+								&& ((int)person.GetHealth() % 50 == 0))
+							{
+								/*if(person.IsCurrentAction("EActionMove") || person.IsCurrentAction("EActionFindPath"))
+									person.PushActionInterruptAnim(ACTION_INSERTAFTERFIRST, "cough");
+								else*/ if (!person.IsPulling() && (person.IsIdle() || person.IsWaiting()))
+								person.PushActionInterruptAnim(ACTION_INSERT, "cough");
+									if (person.GetGender() == GENDER_MALE)
+										Audio::PlaySample3D(NAME_SOUND_COUGH_M, person.GetPosition());
+									else if (person.GetGender() == GENDER_FEMALE)
+										Audio::PlaySample3D(NAME_SOUND_COUGH_F, person.GetPosition());
+									else if (person.GetGender() == GENDER_CHILD)
+										Audio::PlaySample3D(NAME_SOUND_COUGH_C, person.GetPosition());
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	bool OnExplode(GameObject *obj)
+	{
+		if (mCSPhaseNr == 0 && obj->HasName("cs_gasbottle"))
+		{
+			if (!Mission::IsCutSceneRunning())
+				RunCutscene();
+			return false;
+		}
+		return true;
+	}
+	
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionUseEquipment":
+			{
+				Person pers(Data->Owner);
+				if (pers.IsValid())
+				{
+					if (pers.GetEquipment() == EQUIP_FIREAXE)
+					{
+						if (pers.GetEnteredHouseID() == mTiresHall.GetID())
+						{
+							System::Log("Axe used");
+							mBreakDoorHint = true;
+						}
+					}
+				}
+				break;
+			}
+			case "EActionLeaveCar":
+			{
+				if (mTutorialState == STATE_WAITING_FOR_FIREFIGHTER_GETOUT)
+				{
+					Actor act;
+					act = Game::GetActor(Data->Parameters[0].iValue);
+					GameObject obj(&act);
+					if (obj.GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle vc = &obj;
+						if (vc.GetVehicleType() == VT_FIREFIGHTERS_GTF)
+						{
+							mTutorialState = STATE_FIREFIGHTER_GOTOUT;
+						}
+					}
+				}
+				else if (!mPersonHelpGotOut)
+				{
+					mPersonHelpGotOut = true;
+					Game::ShowHelpTextWindow("M02_ENTER_BUILDING");
+				}
+			}
+			case "EActionGetEquipment":
+			{
+				if (mTutorialState == STATE_WAITING_FOR_FIREFIGHTER_EQUIP)
+				{
+					if (Data->Parameters[1].iValue == (int)EQUIP_FIREHOSE)
+					{
+						mTutorialState = STATE_FIREFIGHTER_EQUIPPED;
+					}
+				}
+			}
+			break;
+			case "EActionPull":
+			{
+				bool isGas = false;
+				for (int i = 0; i < mGasBottlesCount; i++)
+				{
+					if (Data->Parameters[0].iValue == mGasBottles[i].GetID())
+					{
+						isGas = true;
+						break;
+					}
+				}
+				if (isGas)
+				{
+					// don't show hint anymore
+					mNearGasWarning = true;
+				}
+			}
+			break;
+		}
+		return ACTION_CONTINUE;
+	}
+	
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionAskPerson":
+			{
+				if (Game::GetActor(Data->Parameters[0].iValue).HasName("askworker"))
+					mPersonAsked = true;
+			}
+		}
+		return ACTION_CONTINUE;
+	}	
+
+	ActionCallbackResult OnAbortAction(const char *Action, ActionCallback* Data)
+	{		
+		return ACTION_CONTINUE;
+	}	
+		
+	PathFinishedAction OnPathFinished(const char *PathName, GameObject *Obj)
+	{		
+		return PATH_DEFAULT;
+	}
+	
+	void OnCollision(GameObject *Collider1, GameObject *Collider2)
+	{
+		if (!Mission::IsCutSceneRunning())
+			return;
+	}
+
+
+	
+	void Update()
+	{		
+	}
+	
+	MissionState GetMissionState()
+	{
+		if (Mission::IsCutSceneRunning())
+			MISSION_RUNNING;
+		// only for debugging
+		//return MISSION_RUNNING;
+
+		if (Mission::GetCounter("Dead Civils") >= MAX_DEAD_CIVILIANS)
+		{
+			mFailedTooManyDeadCivils = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (mFailedOtherBuildingBurns)
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+			
+		return MISSION_RUNNING;
+	}
+	
+	const char *GetFailReason()
+	{
+		if (mFailedTooManyDeadCivils)
+			return "TOO_MANY_DIED";
+		if (mFailedOtherBuildingBurns)
+			return "TOO_MANY_FIRES";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailedTooManyDeadCivils)
+			return "SUPERV_M02_FAIL01";
+		if (mFailedOtherBuildingBurns)
+			return "SUPERV_M02_FAIL02";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M02_RES01";
+		if (scoring->Efficiency < 0.75f && scoring->Efficiency >= 0.45f
+			&& mCSPhaseNr > 0)
+			return "SUPERV_M02_RES02";
+		if (scoring->Efficiency < 0.4f && Mission::GetCounter(NAME_COUNTER_INJURED_SQUADS) >= 2
+			&& mCSPhaseNr > 0)
+			return "SUPERV_M02_RES03";
+
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		Serializer->Write(mCSPhaseNr);
+		Serializer->Write(mCSPhaseNr2);
+		Serializer->Write(mHintOneCivilDead);
+		Serializer->Write(mAlreadyFiresExt);
+		Serializer->Write(mAlreadyInjuredSaved);
+
+		Serializer->Write(mSmokeEmittersCount);
+		for (int i = 0; i < mSmokeEmittersCount; i++)
+			Serializer->Write(mSmokeEmitters[i]);
+		Serializer->Write(mChokingAreasCount);
+		for (int i = 0; i < mChokingAreasCount; i++)
+			Serializer->Write(mChokingAreas[i]);
+		Serializer->Write(mGasBottlesCount);
+		for (int i = 0; i < mGasBottlesCount; i++)
+			Serializer->Write(mGasBottles[i]);
+		Serializer->Write(mTiresHall);
+						
+		Serializer->Write(mSmokeStrength);
+		Serializer->Write(mHallCleared);
+		Serializer->Write(mPersonAsked);
+		Serializer->Write(mFailedOtherBuildingBurns);
+		Serializer->Write(mFailedTooManyDeadCivils);
+		Serializer->Write(mCriticalBurnHint);
+		Serializer->Write(mBreakDoorHint);
+		Serializer->Write(mHintManyFires);
+		Serializer->Write(mNearGasWarning);
+		Serializer->Write(mPersonHelpGotOut);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		Serializer->Read(mCSPhaseNr);
+		Serializer->Read(mCSPhaseNr2);
+		Serializer->Read(mHintOneCivilDead);
+		Serializer->Read(mAlreadyFiresExt);
+		Serializer->Read(mAlreadyInjuredSaved);
+
+		Serializer->Read(mSmokeEmittersCount);
+		for (int i = 0; i < mSmokeEmittersCount; i++)
+			Serializer->Read(mSmokeEmitters[i]);
+		Serializer->Read(mChokingAreasCount);
+		for (int i = 0; i < mChokingAreasCount; i++)
+			Serializer->Read(mChokingAreas[i]);
+		Serializer->Read(mGasBottlesCount);
+		for (int i = 0; i < mGasBottlesCount; i++)
+			Serializer->Read(mGasBottles[i]);
+		Serializer->Read(mTiresHall);
+						
+		Serializer->Read(mSmokeStrength);
+
+		mHallCleared = Serializer->ReadBool();
+		mPersonAsked = Serializer->ReadBool();
+		mFailedOtherBuildingBurns = Serializer->ReadBool();
+		mFailedTooManyDeadCivils = Serializer->ReadBool();
+		mCriticalBurnHint = Serializer->ReadBool();
+		mBreakDoorHint = Serializer->ReadBool();
+		mHintManyFires = Serializer->ReadBool();
+		mNearGasWarning = Serializer->ReadBool();
+		mPersonHelpGotOut = Serializer->ReadBool();
+
+		return true;
+	}
+};

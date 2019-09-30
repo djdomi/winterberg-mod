@@ -1,0 +1,50 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script smite
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+// rufe_bsw.script V0.2 by manuelt
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freies Bestattungsunternehmen...
+
+// Ein freies ASF:
+// steht an der Basis oder
+// wurde gerade alamiert oder
+// wurde vom Spieler nicht per Hand an einen Ort geschickt
+
+// To-Do: Nicht irgendeiner, sondern das nächste ASF wird gerufen...
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+object smite : CommandScript
+{
+
+   smite()
+   {
+      SetValidTargets(ACTOR_VEHICLE);
+      SetIcon("heal");   // Bitte nen Blitz oder sowas 8-)
+      SetCursor("heal");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle v(Target);
+	return !v.HasCommand("gefahrgut");
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle v(Target);
+	v.PushActionExecuteCommand(ACTION_NEWLIST,"setggv",Target,0,false);
+	System::Error("Smite : GGV-Transport erzeugen ");
+   }
+};

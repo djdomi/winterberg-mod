@@ -1,0 +1,1204 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script FwGeraete
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+GameObject dev;
+
+const int maxdev = 25;
+const char * devname[maxdev];
+
+const devname[0]="mod:Prototypes/Vehicles/Winterberg/Verteiler.e4p";
+const devname[1]="mod:Prototypes/Vehicles/Winterberg/Monitor.e4p";
+const devname[2]="mod:Prototypes/Vehicles/Winterberg/ts.e4p";
+const devname[3]="mod:Prototypes/Vehicles/Winterberg/pylone.e4p";
+const devname[4]="mod:Prototypes/Vehicles/Winterberg/lichtmast.e4p";
+const devname[5]="mod:Prototypes/Vehicles/Winterberg/schnella.e4p";
+const devname[6]="mod:";
+const devname[7]="mod:";
+const devname[8]="mod:Prototypes/Vehicles/Winterberg/tent.e4p";
+const devname[9]="mod:";
+const devname[10]="mod:Prototypes/Objects/Misc/empty.e4p";
+const devname[12]="mod:Prototypes/Vehicles/Winterberg/luefter.e4p";
+const devname[13]="mod:Prototypes/Objects/Equipment/saugleitung.e4p";
+const devname[15]="mod:Prototypes/Vehicles/Fire Department/winde.e4p";
+const devname[16]="mod:";
+const devname[20]=devname[5];
+const devname[23]="mod:Prototypes/Objects/Road Signs/movesign_uml.e4p";
+
+
+object FwGeraet_raus : CommandScript
+{
+	// entnimmt ein Einsatzmittel und installiert es im Gelände
+	// childID = 100	Verteiler
+	//	     101	Monitor
+	//	     102	TS
+	//	     103	Pylone
+	//	     104	Lichtmast
+	//	     105	Schnellangriff
+	//	     106	Gas-Multimeter
+	//	     107	Geigerzähler
+	//	     108	SEG-Zelt
+	//	     109	Dichtkissen
+	//	     110	AutoUmleiten
+	//	     111	B-Rohr
+	//	     112	TempestLüfter
+	//	     120	Wasserentnahme FP
+	//	     121	Wasserentnahme TS
+	//	     122	Verteiler ueber TS
+	//	     113	offenes Gewaesser FP
+	//	     114	offenes Gewaesser TS
+	//	     115	Winde	
+	//	     116	Hebekissen
+	//	     123	Umleitung
+	//
+	//	Code 200 .. 210 entnimmt Geraet nur ohne es aufzubauen
+	//	Code 0 	baut entnommenes Geraet auf
+
+	FwGeraet_raus()
+	{
+	}
+		
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector Pos=Target->GetPosition();
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Log("Fw Geraete Start");
+		Vector EinsatzPos;
+		bool nur_entnehmen=false;
+		bool nur_aufbauen=false;
+		bool wafoe=false;
+		int LCtrl=childID&1024;
+		int LShift=childID&2048;
+		childID=childID & 1023;
+
+
+		if ((Target->GetType() == ACTOR_VEHICLE) && (childID>199) && (childID<1000))
+		{
+			Vehicle v(Target);
+			int cid=childID-200;
+			nur_entnehmen=true;
+		} else {
+			VehicleList vl(Caller->GetName());
+			Vehicle v=vl.GetVehicle(0);
+			if (childID == 0)
+			{
+				nur_aufbauen=true;
+				int cid=Caller->GetUserData()-200;
+				childID=cid+100;
+			} else {
+				int cid=childID-100;
+			}
+		}
+
+		if (cid<0)
+		{
+			System::Log("Fw Geraete Illegal code %u %s",cid,Caller->GetName());
+			return;
+		}
+
+		Vehicle fz=v;
+		bool ts=false;
+
+		switch (childID)
+		{
+			case 112:
+				OpenHouse oh(Target);
+				EinsatzPos=oh.GetEntrancePosition(true,0.0);
+				break;			
+			case 121:
+			case 122:
+				for (int i=1;i<vl.GetNumVehicles();i++)
+					if (vl.GetVehicle(i)->GetUserData()==102)
+						v=vl.GetVehicle(i);
+				if (cid==22)
+				{
+					cid=0;
+					childID=100;
+				} else if (cid==21) {
+					cid=20;
+					childID=120;
+				}
+				ts=v.IsValid() && v.GetUserData()==102;
+			case 120:
+				if (childID!=100)
+					wafoe=true;
+			case 100:
+			case 101:
+				if (nur_aufbauen)
+				{
+					// System::Log("Steh ich neben ner Pumpe ?");
+					GameObjectList objl=Caller->GetObjectsInRange(75.0,ACTOR_VEHICLE);
+					for (int vi=0;vi<objl.GetNumObjects();vi++)
+					{
+						// System::Log("fz %s %s",v.GetName(),v.GetUserData());
+						if (objl.GetObject(vi)->HasChild("pumpe") || objl.GetObject(vi)->HasCommand("wasser"))
+							Vehicle v=objl.GetObject(vi);
+					}
+				} 
+				// System::Log("WE/Verteiler ueber Pumpe %s %u %u",v.GetName(),v.GetUserData(),int(ts));
+				if (v.IsValid() && (v.HasChild("pumpe") || v.HasCommand("wasser")))
+					if (childID==120)
+						EinsatzPos=v.GetChildPosition("pumpe");
+					else
+						EinsatzPos=Target->GetPosition();
+				else
+				{
+					Mission::PlayHint("WIB_FWDV_KEINEPUMPE");
+					return;  // unsauber aber praktisch
+				}
+				if (childID==101)
+					Target=&v;
+				break;
+			case 115:
+				nur_aufbauen=true;
+				break;
+			case 123:
+			case 124:
+				EinsatzPos=Caller->GetPosition();
+				break;
+			case 103:
+				nur_aufbauen=Caller->GetUserData()==103;
+			case 111:
+				if (childID==111)
+					nur_entnehmen=true;
+			case 105:
+			default:
+				EinsatzPos = Target->GetPosition();
+				break;
+		}
+
+
+		if (!nur_aufbauen) 
+		{		
+			System::Log("Geraet entnehmen %u %s",cid,Caller->GetName());
+			switch (cid)
+			{
+				case 13:
+				case 10:
+				case 23:
+				case 24:
+					break;
+				case 8:
+				case 2:
+					Caller->PushActionMove(ACTION_INSERT, &fz, TARGET_REARDOOR);
+					break;
+				case 5:
+					Caller->PushActionMove(ACTION_INSERT, fz.GetChildPosition("schnella"));
+					break;	
+				default:	
+					Caller->PushActionMove(ACTION_INSERT, &fz, TARGET_EQUIPMENTDOOR);
+					break;
+			}
+			if (cid<23)
+				Caller->PushActionTurnTo(ACTION_INSERTBEFORELAST, &fz);
+			switch (cid)
+			{
+				case 14:
+					v.PushActionExecuteCommand(ACTION_INSERT,"geraet_entnehmen",Caller,2,nur_entnehmen);
+					v.PushActionExecuteCommand(ACTION_INSERT,"geraet_entnehmen",Caller,13,nur_entnehmen);
+				case 2:
+				case 3:
+				case 4:
+				case 8:
+				case 9:
+				case 16:
+				case 12:
+					Caller->PushActionGetEquipment(ACTION_INSERTBEFORELAST, &fz, EQUIP_THW_CASE);
+					break;
+				case 0:
+				case 1:
+					// Caller->PushActionExecuteCommand(ACTION_INSERT,"FwObjInHand",Caller,0,false);					
+				case 5:
+				case 11:
+				case 20:
+					Caller->PushActionGetEquipment(ACTION_INSERTBEFORELAST, &fz, EQUIP_FIREHOSE);
+					break;
+				case 6:
+					Caller->PushActionGetEquipment(ACTION_INSERTBEFORELAST, &fz, EQUIP_TVCAMERA);
+					Caller->AssignCommand("DUMMYHasSiren");
+					break;
+				case 7:
+					Caller->PushActionGetEquipment(ACTION_INSERTBEFORELAST, &fz, EQUIP_LAPTOP);
+					Caller->AssignCommand("DUMMYHasSiren");
+					break;
+			}
+			
+			if (cid<14)
+				v.PushActionExecuteCommand(ACTION_INSERT,"geraet_entnehmen",Caller,cid,nur_entnehmen);
+		}	// Ende entnehmen -> wird bei nur_aufbauen uebersprungen
+
+		
+
+		if (!nur_entnehmen)
+		{
+			Vehicle b;
+			Person p(Caller);
+			switch (cid)
+			{
+				case 5:
+					Caller->PushActionMoveWithHose(ACTION_APPEND,EinsatzPos);
+					Target=&v;
+					Caller->PushActionExecuteCommand(ACTION_INSERT,"tank_anschluss",&v,0,false);
+					break;
+				case 0:
+				case 20:
+				case 1:
+					if (((wafoe && v.GetVehicleType()==VT_FIREFIGHTERS_DLK) || cid==1) && Target->GetType()==ACTOR_OBJECT)
+					{
+						Mission::PlayHint("DLK/Monitor müssen von einer Pumpe gespeist werden!!");
+						Caller->ClearActions();
+						Caller->RemoveCommand("ich_bin_nicht_frei");
+						return;
+					}
+					if (v.HasChild("pumpe"))
+					{
+						Vector ppos=v.GetChildPosition("pumpe");
+						// Caller->PushActionMove(ACTION_INSERTBEFORELAST,ppos);
+					}
+					if (!v.IsConnectorFree()) // ist es ein Loeschfz oder ne TS ?
+					{
+							b = Game::CreateVehicle(devname[20], Caller->GetName());
+							b.SetUserData(150+int(wafoe));
+							b.ClearFlag(OF_HAS_FIRE_EXTINGUISHER);
+							b.SetPosition(ppos); // Loeschfahrzeug -> B-Abgang fuer Verteiler erzeugen
+							if (v.HasCommand("wama"))
+								b.AssignCommand("wama");
+					} else 
+						b=v;	// ist ne TS mit eigenen B-Abgaengen
+					if (b.HasCommand("wama"))
+					{
+						Caller->AssignCommand("wama");
+						// System::Log("WF : %u -> Pumpe %s verbunden mit Gruppe %s",int(wafoe),b.GetName(),Caller->GetName());
+					}
+					else
+						Caller->RemoveCommand("wama");
+					Caller->PushActionMove(ACTION_INSERTBEFORELAST,&b,TARGET_FREE_CONNECTOR);
+					Caller->PushActionUseEquipment(ACTION_INSERTBEFORELAST,&b,0,0);
+				case 13:
+				case 14:
+					p.EnableAutoTarget(false);					
+					if (cid==13 || cid==1)
+						Target=&v;
+				case 2:
+				case 3:
+				case 4:
+				case 8:
+				case 9:
+				case 12:
+					Caller->PushActionMove(ACTION_INSERTBEFORELAST,EinsatzPos);
+					if (cid==12)
+						Caller->PushActionTurnTo(ACTION_INSERTBEFORELAST,oh.GetEntrancePosition(false));
+					if (cid==14)
+						Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"Geraet_setzen",Target,102,false);
+					break;
+				case 15:
+					Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"goaside",Target,-1,false);
+					Caller->PushActionTurnTo(ACTION_INSERTBEFORELAST,Target);
+					Caller->PushActionSwitchAnim(ACTION_INSERTBEFORELAST,"useobjmid");
+					Caller->PushActionWait(ACTION_INSERTBEFORELAST,3.0);
+					break;
+				case 23:
+				case 24:
+					// Caller->PushActionMove(ACTION_INSERTBEFORELAST,EinsatzPos);
+					// Caller->PushActionTurnTo(ACTION_INSERTBEFORELAST,Target);
+					break;
+
+			}
+			System::Log("Geraet aufbauen %u %s %u",cid,Caller->GetName(),Caller->GetUserData());
+			if (cid==8)
+				Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"zugliste_zugid",Caller,0,false);
+			Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"Geraet_setzen",Target,childID|LCtrl|LShift,false);
+			if (wafoe)
+				Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"wasser_anschliessen",&v,1,false);
+		}	// Ende aufbauen, wird bei nur_entnehmen uebersprungen
+	}
+};
+
+object Geraet_setzen : CommandScript
+{
+	Geraet_setzen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)	
+	{
+		return true;
+	}
+
+	void Saugleitung_aufbauen(GameObject *Caller,GameObject *leitung, Actor *Target)
+	{
+		//System::Log("Saugleitung bauen %s",Target->GetName());
+		Vehicle lf(Target);
+		bool via_ts=!lf.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER);
+		Vector rand=Caller->GetPosition();
+		leitung->Hide();
+		if (via_ts)
+			lf.PushActionTurnTo(ACTION_APPEND,Caller);
+		else {
+			lf.PushActionMove(ACTION_NEWLIST,rand,false);
+			lf.PushActionTurnTo(ACTION_APPEND,Caller);
+		}
+		lf.PushActionExecuteCommand(ACTION_APPEND,"saugleitung_ankoppeln",leitung,0,false);
+			
+	}
+
+	void pumpenstand_anlegen(Vehicle v)
+	{
+		char *id="          ";
+		snprintf(id,10,"PU%u",v.GetID());
+		PersonList pl(id);
+		if (pl.GetNumPersons()==0)
+		{
+			// System::Log("Pumpenstand erzeugen %s",v.GetName());
+			Person tank=Game::CreatePerson("mod:Prototypes/Persons/Fire Department/manoman.e4p",id);
+			tank.SetCommandable(true);
+			tank.AssignCommand("ma_wasser");
+			tank.SetUserData(v.GetID());
+			tank.SetMaxHealth(160.0);tank.SetHealth(80.0);
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		bool LCtrl=ChildID&1024;
+		bool LShift=ChildID&2048;
+		ChildID=ChildID & 1023;
+
+		Vector pos=Caller->GetPosition();
+		int idx=ChildID-100;
+		bool same=Caller->GetUserData()==ChildID;
+
+		GameObject dev;
+		Vehicle v;
+
+		if (idx != 13)
+			Vehicle fz(Target);
+
+		//System::Log("Geraet setzen %u %s ",idx,Target->GetName());	
+
+
+		float rot[9];
+		float childRot[9];
+		Caller->GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		float dx = 35.f, dy = 0.f, dz = 0.f;
+		Math::RotateVector(dx, dy, dz, rot);
+		pos=pos+Vector(dx,dy,0);
+
+
+		switch (idx)
+		{
+			case 6:
+			case 7:
+				Caller->AssignCommand("Geraet_abbauen");
+				Caller->EnableCommand("drop",false);
+				Caller->SetUserData(ChildID);
+				Mission::PlayHint("WIB_MULTIMESS");
+				break;
+			case 9:
+				Caller->PushActionMove(ACTION_INSERTBEFORELAST,Target,TARGET_ANY);
+				v.PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"ggv_check",Caller,4,false);			
+				Caller->PushActionRepair(ACTION_INSERTBEFORELAST,Target);
+				break;
+			case 16:
+				Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"heben",Target,-20,false);
+				break;				
+			case 1:
+			case 0:
+			default:
+				if (Game::FindFreePosition(Caller, pos, 35.f) || (idx==5) || (idx==14))
+				{
+					//System::Log("Geraet als Object erzeugen %u",idx);
+
+					switch (idx)
+					{
+						case 13:
+						case 14:
+							dev = Game::CreateObject(devname[13], Caller->GetName());
+							dev.SetUserData(113);
+							break;
+						case 23:
+						case 24:
+							dev = Game::CreateObject(devname[23], Caller->GetName());
+							dev.SetUserData(123);
+							break;
+						case 20:
+							break;
+						default:
+							v = Game::CreateVehicle(devname[idx], Caller->GetName());
+							v.ClearFlags();
+							v.SetFlags(OF_COOLABLE);
+							if (Game::IsMultiplayer())
+								v.SetPlayerMP(Caller->GetPlayerMP());
+							v.AssignCommand("ich_bin_nicht_frei");
+							if (idx==0 || idx==2)
+								v.AssignCommand("wasser");
+							break;
+					}
+
+					if (v.IsValid() || dev.IsValid() || idx==20)
+					{
+						switch (idx) 
+						{	
+							case 5:
+								v.SetPosition(fz.GetChildPosition("schnella"));
+								v.SetRotation(&fz);
+								if (fz.HasCommand("wama"))
+								{
+									v.AssignCommand("wama");
+									Caller->AssignCommand("wama");
+								}
+								break;
+							case 20:
+								break;
+							case 8:
+								v.SetRotation(Caller);
+								Game::FindFreePosition(&v, pos, 50.f);
+								v.SetPosition(pos);
+								v.SetFlag(OF_CARRYABLE_BY_BULLDOZER);
+								break;
+							case 14:
+								VehicleList vl(Caller->GetName());
+								bool found=false;
+								for (int i=0;!found;i++)
+								{
+									found=(i==vl.GetNumVehicles() || vl.GetVehicle(i)->GetUserData()==102);
+									if (vl.GetVehicle(i)->GetUserData()==102)
+										Target=*vl.GetVehicle(i);
+								}
+							case 13:
+								//System::Log("Ne leitung schmeissen ");
+								Saugleitung_aufbauen(Caller,&dev,Target);
+								break;
+							case 10:
+								v.SetPosition(Caller);
+								v.SetRotation(Caller);
+								break;
+							case 12:
+								v.SetRotation(Caller);
+								v.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+								Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+								Math::MultiplyMatrices(childRot, rot);
+								v.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+								v.SetPosition(pos);
+								break;
+							case 15:
+								Math::EulerToMatrix(180.0f, 0.f, 0.f, childRot);
+								Math::MultiplyMatrices(childRot, rot);
+								v.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+								Vehicle tg(Target);
+								Vector dist=Caller->GetPosition();
+								Vector l,r;
+								tg.GetOrientedBBoxPoint(0,l.x,l.y,l.z);
+								tg.GetOrientedBBoxPoint(2,r.x,r.y,r.z);
+								if (Math::dist(l.x,l.y,dist.x,dist.y)>Math::dist(dist.x,dist.y,r.x,r.y))
+									tg.GetOrientedBBoxPoint(1,l.x,l.y,l.z);
+								else
+									tg.GetOrientedBBoxPoint(3,r.x,r.y,r.z);
+								pos.x=(l.x+r.x)/2;
+								pos.y=(l.y+r.y)/2;
+								v.SetPosition(pos);
+								break;
+							case 23:
+							case 24:
+								dev.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+								dev.SetPosition(pos);
+								dev.UpdatePlacement();
+								break;
+							case 0:
+								v.AssignCommand("wasser");
+							case 1:
+								if (Caller->HasCommand("wama"))
+								{
+									v.AssignCommand("wama");
+									v.EnableAutoTarget(true);
+								}								
+							default:
+								v.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+								v.SetPosition(pos);
+								v.UpdatePlacement();
+								break;
+						}
+						if (idx != 10 && idx!=13 && idx!=14)
+						{
+							if (idx != 5 && idx!=20 && idx!=0 && idx!=1)
+							{
+								if (Caller->IsEquipped())
+									Caller->PushActionRemoveEquipment(ACTION_INSERTBEFORELAST);
+								if (idx != 8)				
+									Caller->PushActionSwitchAnim(ACTION_INSERTBEFORELAST,"kneeldown");
+							} else if (idx!=0)
+								v.PushActionTurnTo(ACTION_NEWLIST,Caller,0.0);
+							if (idx==1)						
+								v.PushActionExecuteCommand(ACTION_APPEND,"tank_anschluss",&fz,0,false);		
+							Caller->AssignCommand("Geraet_abbauen");
+						}
+						if (v.IsValid())
+							v.SetUserData(ChildID);
+						switch (idx)
+						{
+							case 0:
+							case 1:
+								Person p(Caller);
+								p.EnableAutoTarget(false);
+								p.PushActionSwitchAnim(ACTION_INSERTBEFORELAST,"kneeldown");
+								Caller->SetCommandable(false);
+								break;
+							case 2:
+								Caller->RemoveCommand("fuehrung");
+								v.AssignCommand("ma_wasser");
+								pumpenstand_anlegen(v);
+								Caller->PushActionExecuteCommand(ACTION_APPEND,"ma_pumpe",&v,2,false);
+								break;
+							case 3:
+								if (LCtrl) {
+									v.PushActionRedirect(ACTION_NEWLIST);
+									v.EnableBlueLights(true);
+								}
+								v.AssignCommand("Geraet_drehen");
+								break;
+							case 4:
+								v.EnableSpecialLights(true);
+								v.AssignCommand("Geraet_drehen");
+								break;
+							case 5:
+								Caller->EnableCommand("RemoveFirehose",false);
+								Caller->PushActionUseEquipment(ACTION_INSERTBEFORELAST,&v,0,0);
+								break;
+							case 8:
+								v.SetCommandable(true);
+								v.SetMaxPassengers(10);
+								v.SetMaxTransports(10);
+								v.PushActionExecuteCommand(ACTION_NEWLIST,"seg_start_triage",&v,Caller->GetUserData(),false);
+								break;
+							case 10:
+								v.PushActionRedirect(ACTION_NEWLIST);
+								break;
+							case 12:
+								v.SetChildEnabled("luefterstaub",true);
+								v.PushActionEvacuate(ACTION_NEWLIST,Target);
+								v.AssignCommand("Geraet_drehen");
+								v.PushActionHalt(ACTION_APPEND,250,HALT_PERSONS);
+								break;
+							case 14:
+							case 13:
+								break;
+							case 20:
+								GameObject h(Target);
+								Person p(Caller);
+								p.EnableAutoTarget(false);
+								Caller->SetCommandable(false);
+								if (h.IsHydrant())
+								{
+									Caller->PushActionMove(ACTION_INSERTBEFORELAST,Target, TARGET_FREE_CONNECTOR);
+									Caller->PushActionWait(ACTION_APPEND,1000.f);
+									// Caller->PushActionUseEquipment(ACTION_INSERTBEFORELAST, Target, 0, 0);
+								} else 
+									Caller->PushActionMove(ACTION_INSERTBEFORELAST,h.GetChildPosition("pumpe"));
+								break;
+							case 15:
+								VehicleList vl(Caller->GetName());
+								Vehicle tag(Target);
+								v.PushActionTurnTo(ACTION_APPEND,vl.GetVehicle(0));
+								vl.GetVehicle(0)->SetUserData(v.GetID());
+								v.PushActionExecuteCommand(ACTION_APPEND,"anhaengen",Target,0,false);
+								Caller->PushActionSwitchAnim(ACTION_APPEND,"wavehelp");							
+								break;
+							case 23:
+							case 24:
+								dev.PushActionExecuteCommand(ACTION_NEWLIST,"vk_um_do",Target,idx-23,false);
+								break;
+								
+						}
+						if (idx != 10 && idx!=13 && idx!=14)
+							Caller->SetUserData(ChildID);
+					}
+				}
+				else
+				{
+					Mission::PlayHint("HINT_LIGHT_NOSPACE");
+				}
+				break;
+		}
+		GameObject bung(Target);
+		if (bung.HasNamePrefix("bungar"))
+			bung.PushActionDeleteOwner(ACTION_NEWLIST);
+	}
+};
+
+object Geraet_weg : CommandScript
+{
+	Geraet_weg()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (childID != 110)
+			return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int cid)
+	{
+		Person p(Caller);
+		System::Error("Geraeteobjekt loeschen %u",cid);
+		bool found=false;
+		
+		Vehicle v(Target);
+		switch (cid)
+		{
+			case 106:
+			case 107:
+			case 109:
+			case 116:
+				break;
+			default:
+				found=true;
+		}
+
+		if (!found)
+			return;		
+
+		// Hier noch auf angeschlossene Schlaeuche pruefen
+		
+		switch (cid)
+		{
+			case 100:
+			case 102:
+			case 105:
+			case 101:
+				PersonList pl(ROLE_SQUAD);
+				bool SchlauchDran=false;
+				Person fw;
+				for (int i=0; (i<pl.GetNumPersons()) && (!SchlauchDran);i++)
+				{
+					fw=pl.GetPerson(i);
+					if (fw.GetFirehoseID()!=0)
+						SchlauchDran=v.IsUsingConnector(&fw);
+				}
+				if (SchlauchDran)
+				{
+					Caller->PushActionWait(ACTION_INSERT,2.0);
+					Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Geraet_weg",Target,cid,false);
+					return;
+				}
+				break;
+
+			case 104:
+				v.EnableSpecialLights(false);
+				break;
+
+			case 112:
+				v.PushActionWait(ACTION_NEWLIST,0.1f);
+				break;
+
+			case 108:
+				if (v.GetNumTransported() > 0)
+				{
+					Mission::PlayHint("WIB_ZELT_NIXWEG");
+					v.PushActionExecuteCommand(ACTION_NEWLIST,"SEG_Zelt_auschecken",&v,0,false);
+					v.PushActionExecuteCommand(ACTION_APPEND,"seg_start_triage",&v,0,false);
+					Caller->PushActionWait(ACTION_NEWLIST,1.0);
+					return;
+				}
+				break;
+
+			default:
+				break;
+		}
+
+		// System::Error("Geraet wird abgebaut");
+
+		Caller->EnableCommand("MoveTo",true);
+		Caller->RemoveCommand("Geraet_abbauen");
+		Caller->EnableCommand("drop",true);
+		Caller->SetUserData(0);
+		bool handy=true;
+
+		switch (cid)
+		{
+			case 100:
+				System::Error("Verteiler");
+				//Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_FIREHOSE);
+				break;
+			case 102:
+				System::Error("TS");
+				//Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_FIREHOSE);
+				break;
+		
+			case 101:
+				System::Error("Monitor");
+				//Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+		
+			case 103:
+				System::Error("Pylone");
+				// Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+		
+			case 104:
+				System::Error("LiMa");
+				// Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+		
+			case 105:
+				System::Error("Schnellangriff");
+				handy=false;
+				break;
+			case 106:
+			case 107:
+				System::Error("Messgeraet");
+				return;
+				break;
+			case 108:
+				System::Error("SEG-Zelt");
+				Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				handy=false;
+				break;
+			case 109:
+				System::Error("Dichtkissen");
+				return;
+				break;
+			case 110:
+				System::Error("AutoUmleiten");
+				handy=false;
+				break;
+			case 111:
+				System::Error("B-Rohr");
+				return;
+				break;
+			case 112:
+				System::Error("Lüfter");
+				// Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+			case 113:
+				System::Error("Saugleitung");
+				break;	
+			case 115:
+				System::Error("Winde");
+				break;
+			case 116:
+				System::Error("Hebekissen");
+				break;
+			case 120:
+			case 121:
+				System::Error("Wasserentnahme");
+				break;
+			default:
+				System::Error("Ungueltiger Code bei Geraeteruecknahme %u",cid);
+				return;
+				break;
+		}
+		//System::Log("Loeschen ausgefuehrt");
+		if (handy)
+			p.PlaceObjectInRightHand(v.GetModelFileName());
+		v.PushActionDeleteOwner(ACTION_NEWLIST);
+	}
+};
+
+object Geraet_ins_Auto : CommandScript
+{
+	Geraet_ins_Auto()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int cid)
+	{
+		Vehicle v(Target);
+
+		cid=cid-100;
+
+		if (cid > 20)
+		{
+			System::Error("ungueltiges geraet beim einraeumen");
+			System::Error(Caller->GetName());
+			return;
+		}
+
+		// System::Error("Gehe zum Fahrzeug zurueck Geraet %u",cid);
+		if ((cid == 2) || (cid == 8))
+			Caller->PushActionMove(ACTION_INSERT, &v, TARGET_REARDOOR);
+		else if (cid==15)
+		{
+			Vector pos=v.GetChildPosition("winde");
+			Caller->PushActionMove(ACTION_INSERT,pos);
+		} else
+		{
+			Caller->PushActionMove(ACTION_INSERT,&v,TARGET_EQUIPMENTDOOR);
+		}
+		// System::Error("geraet verstaut");
+		Person p(Caller);
+		// if (p.IsEquipped())
+		// 	p.PushActionRemoveEquipment(ACTION_INSERTAFTERFIRST);
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST, &v);
+		Caller->SetUserData(0);
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		if (cid != 9 && cid != 20)
+		{
+			// System::Log("Geraet auf Fz verlasten %u",cid);
+			if (cid==8)
+				v.SetFlag(OF_CARRYABLE_BY_BULLDOZER);
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"geraet_einladen",&v,cid,false);
+			if (cid==15)
+			{
+				v.SetChildEnabled("winde1",true);
+				v.SetChildEnabled("winde",true);
+				v.SetChildEnabled("winde2",true);
+			}
+		}		
+		// System::Error("Feddisch");
+	}
+};
+
+object zum_geraet_gehen : CommandScript
+{
+	zum_geraet_gehen()
+	{
+	}
+
+
+	void PushActions(GameObject *Caller, Actor *Target, int geraet)
+	{
+		bool found=false;
+		System::Log("Zum Geraet gehen %u %u %s",geraet,Caller->GetUserData(),Caller->GetName());
+		switch (geraet)
+		{
+			case 106:
+			case 107:
+			case 109:
+			case 110:
+			case 111:
+			case 116:
+				break;
+			case 105:
+			case 120:
+				Person p(Caller);
+				if (p.GetFirehoseID()!=0)
+				{
+					GameObject hydrant(Caller->GetHydrant());
+					Vehicle v(&hydrant);
+					Vector TargetPos;
+					v.GetUsedConnectorPosition(Caller, TargetPos);
+					Caller->PushActionUseEquipment(ACTION_INSERT, &hydrant, 0, 10.0f);
+					Caller->PushActionMoveWithHose(ACTION_INSERT,TargetPos);
+				}
+				break;
+			default:
+				Vehicle v(Target);
+				Caller->PushActionMove(ACTION_INSERT, &v, TARGET_ANY);
+				//System::Log("Zum Geraet gehen");
+				break;
+		}
+	}
+};
+
+object Geraet_abbauen : CommandScript
+{
+	Geraet_abbauen()
+	{
+		SetCursor("deinstall");
+		SetIcon("deinstall");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	
+		//System::Log("Geraet abbauen %u %s",Caller->GetUserData(),Caller->GetName());
+		VehicleList vl(Caller->GetName());
+		Vehicle v(Target);
+		bool found=false;
+		int geraet=Caller->GetUserData();
+		switch (geraet)
+		{
+			case 111:
+				found=true;
+				break;
+			case 121:
+			case 120:
+				// Caller->PushActionRemoveEquipment(ACTION_INSERT);
+			default:
+				for (int i=0; (i<vl.GetNumVehicles()) && !found; i++)
+				{
+					v=vl.GetVehicle(i);
+					if (geraet==108)
+						found=v.IsFlagSet(OF_CARRYABLE_BY_BULLDOZER) && !v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER);
+					else
+						found=(v.GetUserData() == geraet) && !v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER);
+				}
+				break;
+		}
+
+		if (found)
+		{
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"zum_geraet_gehen",&v,geraet,false);		
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Geraet_ins_Auto",Target,geraet,false);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Geraet_weg",&v,geraet,false);
+		}
+	}
+};
+
+
+object Geraete_entfernen : CommandScript
+{
+
+	// löscht alle evtl. vergessenen Geraete auf der Karte, wenn das Fz am Standort einrueckt oder
+	// abgeschleppt wird
+
+	Geraete_entfernen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObjectList vl(Caller->GetName());
+		// System::Error("Geraete von der Strasse entfernen %s %u",Caller->GetName(),vl.GetNumObjects());
+		GameObject v;
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"wasser_anschliessen",Caller,0,false);
+		for (int i=0; i<vl.GetNumObjects(); i++)
+		{
+			v=vl.GetObject(i);
+			switch (v.GetType())
+			{
+				case ACTOR_VEHICLE:
+					if (!v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER) && Caller->GetID()!=v.GetID())
+					{
+						Vehicle vh(&v);
+						if (vh.GetNumTransported()==0)
+							v.PushActionDeleteOwner(ACTION_NEWLIST);
+						// System::Error("Ein vergessenes Geraet geloescht %s %u",v.GetName(),v.GetUserData());
+					}
+					break;
+				case ACTOR_OBJECT:
+					if (v.GetUserData()==113 || v.GetUserData()==114 || v.GetUserData()==123 || v.GetUserData()==124)
+						v.PushActionDeleteOwner(ACTION_NEWLIST);
+					break;
+			}
+		}
+		char * obname="                    ";
+		char * obmask="FB%s";
+		int j=snprintf(obname,20,obmask,Caller->GetName());
+		GameObjectList ol(obname);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			//System::Log("Objekte löschen %s %u",obname,i);
+			ol.GetObject(i)->PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+		// System::Error("Geraetesammeln beendet");
+	}
+};
+
+object Geraet_drehen : CommandScript
+{
+
+	Geraet_drehen()
+	{
+		SetIcon("LimaDrehen");
+		SetCursor("LimaDrehen");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return (Caller->GetID() == Target->GetID());
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		float rot[9];
+		float winkel;
+		float childRot[9];
+
+		if (childID == 0)
+		{
+			Vehicle car(Caller);	
+			car.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+			winkel = 15.0;
+			Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+			Math::MultiplyMatrices(childRot, rot);
+			car.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+			if (car.IsFlagSet(OF_CARRYABLE_BY_BULLDOZER))
+			{
+				// System::Log("ROTATE ZugID erneuern");
+				car.PushActionExecuteCommand(ACTION_NEWLIST,"zugliste_zugid",&car,0,false);
+				car.PushActionExecuteCommand(ACTION_APPEND,"seg_start_triage",&car,car.GetUserData(),false);
+				car.SetUserData(108);
+			}
+		} else {
+			Vehicle dev(Target);
+			dev.SetRotation(Caller);
+		}
+	}
+};
+
+object anhaengen : CommandScript
+{
+	anhaengen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)	
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle vec(Target);
+		vec.SetFlag(OF_PULLABLE);
+		vec.AssignCommand("ich_bin_nicht_frei");
+		Vehicle v(Caller);
+		v.PushActionPull(ACTION_INSERT,Target);
+		v.PushActionTurnTo(ACTION_INSERT,Target);
+		// System::Log("Vehicle Type Haken %u",int(v.GetVehicleType()));
+	}
+};
+
+object heben : CommandScript
+{
+	heben()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)	
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int winkel)
+	{
+		Vehicle vec(Target);
+		vec.SetPlacement(PLACEMENT_BOXALIGNED);
+		vec.UpdatePlacement();
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"goaside",&vec,-2,false);
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"hebe_es",&vec,winkel,false);
+		//System::Log("Fz anheben %s",Target->GetName());
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST,Target);
+		if (Target->GetUserData()>1000)
+		{
+			Actor a=Game::GetActor(Target->GetUserData());
+			GameObject o(&a);
+			if (o.IsValid())
+				o.ClearFlag(OF_BLOCKED);
+			Caller->ClearFlag(OF_TRANSPORTABLE);
+		}
+	}
+};
+
+object hebe_es : CommandScript
+{
+	hebe_es()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int winkel)
+	{
+		GameObject vec(Target);
+		Caller->PushActionRotateTarget(ACTION_INSERT,&vec,winkel*vec.GetUserData(),0.0,0.0,6.0);
+	}
+};
+
+object wasser_anschliessen : CommandScript
+{
+	wasser_anschliessen()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int onoff)
+	{
+		System::Log("Wasser anschliessen %s %s",Target->GetName(),Caller->GetName());
+		Vehicle v(Target);
+		if (v.GetUserData()==151)
+		{
+			VehicleList vl(Caller->GetName());
+			v=vl.GetVehicle(0);
+		}
+		if (onoff)
+		{
+			v.AssignCommand("wama");
+			v.AssignCommand("haswe");
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"tank_anschluss",Target,0,false);
+		} else {
+			v.RemoveCommand("wama");
+			v.RemoveCommand("haswe");
+		}
+
+		if (v.HasChild("pumpe"))
+		{
+			char *id="          ";
+			snprintf(id,10,"PU%u",v.GetID());
+			PersonList pl(id);
+			if (onoff)
+				pl.GetPerson(0)->AssignCommand("haswe");
+			else
+				pl.GetPerson(0)->RemoveCommand("haswe");
+
+		}
+		if (v.GetVehicleType()==VT_FIREFIGHTERS_DLK && !v.IsBasketEmpty())
+		{
+			PersonList pl(v.GetName());
+			for (int i=0;i<pl.GetNumPersons();i++)
+				if (pl.GetPerson(i)->IsInDLKBasket())
+					pl.GetPerson(i)->AssignCommand("wama");
+		}
+	}
+};
+
+object saugleitung_ankoppeln : CommandScript
+{
+	saugleitung_ankoppeln()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)	
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		//System::Log("Leitung ankoppeln %s %s",Caller->GetName(),Target->GetName());
+
+		GameObject leitung(Target);
+		if (ChildID==0)
+		{
+			Caller->PushActionTurnTo(ACTION_NEWLIST,&leitung);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"saugleitung_ankoppeln",Target,1,false);
+		} else {
+			leitung.SetRotation(Caller);
+			leitung.SetPosition(Caller->GetChildPosition("pumpe"));
+			leitung.Show();
+			leitung.SetUserData(113);
+			leitung.PushActionExecuteCommand(ACTION_INSERT,"wasser_anschliessen",Caller,1,false);
+		}
+	}
+};
+
+const devname[11]="8483";

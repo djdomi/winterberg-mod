@@ -1,0 +1,229 @@
+//	MT_mod_Heal V2.0 by manuelt
+//	Modifiziertes Heal-Skript für Freeplay
+//	Die Verwendung in anderen Emergency3-Modifikationen ist gestattet,
+//	wenn dieser Kommentar im Skript erhalten bleibt.
+
+object Heal : CommandScript
+{
+	Heal()
+	{
+		SetValidTargets(ACTOR_PERSON);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		if(Target->GetType()==ACTOR_PERSON)
+		{
+			Person p(Target);
+			if(!p.IsDrowning() && !p.IsHealing() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried())
+				return true;
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		Person p(Target);
+		bool carriedClassified = false;
+		if (p.IsClassified())
+			carriedClassified = true;
+
+		//Unterscheidung zwischen Freeplay / Kampagne -> siehe Readme
+		//Ab hier nur im Freeplay...
+
+        	if (!carriedClassified && p.GetUserData() != 42 && p.GetUserData() != 43 && p.GetLife() > 0) //Noch nicht von NA, RA oder mit EH behandelt bzw ist noch am Leben
+		{
+            		Actor ReinforcementArea1;
+            		ActorList l1("krankenhaus");
+            		if(l1.GetNumActors() > 0)
+            		{
+                		int chance;
+                		chance = rand()%15;
+                		if (chance == 1)
+                		{
+                    			p.SetLife(-1500.0f);
+                		} elseif (chance >= 14)
+                		{
+                    			p.SetLife(15.0f);
+                		} else
+                		{
+                    			//Life?
+                    			int Life;
+                    			int maxLife = p.GetLife();
+                    			Life = rand()%maxLife;
+                    			p.SetLife(Life);
+                		}
+            		}
+		}
+		//Bis hierher nur im Freeplay
+
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_TREATMENT);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+
+		//Stabilisiert - Simuliert die Anwesendheit eines Notarzts im RTW, RHC...
+		//Auskommentieren, wenn nicht gewünscht
+		//p.SetInjuredLifeDrain(0.0f);
+
+		//Damit andere Skripte erkennen, das der Patient bereits von einem NA behandelt worden ist...
+		p.SetUserData(42); // Nur für den Zufallsgenerator
+
+		//Für EH-Skript, Patient wird übernommen
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionPatientIsTreated",Target,0,true);
+
+		Caller->PushActionHeal(ACTION_APPEND, Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"check_life",Target);
+
+	}
+};
+
+object check_life : CommandScript
+{
+
+
+	check_life()
+	{
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return true;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+   		Person p(Target);
+   		if (p.GetLife() < 1)
+   		{
+   			//Mission::PlayHint("BSW_ANGEFORDERT");
+   			//Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_bsw_heal",Target);
+   		}
+	}
+};
+
+object rufe_bsw_heal : CommandScript
+{
+
+	Vector TargetPos;
+	int bsw; //ObjectID des gefundenen bsws
+	bool kriterien_erfuellt; //Ist dieser bsw gerade frei?
+
+   rufe_bsw_heal()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+      MoveResult mr;
+      GameObject Called;
+      //Suche alle GameObjects auf der Karte
+      GameObjectList l0 = Game::GetGameObjects();
+      //Welche davon sind bsws ?
+      bsw = -1;
+      for(int i=0; i<l0.GetNumObjects(); i++)
+      {
+      	//Aktuelles Objekt
+		GameObject *Obj = l0.GetObject(i);
+		if (Obj->HasCommand("ich_bin_ein_bsw") && !Obj->HasCommand("ich_bin_nicht_frei"))
+		{
+
+			kriterien_erfuellt = false;
+
+			Vehicle v(Obj);
+
+			//Ist mind. ein Bestatter-Paar an Bord?
+			PersonList bst = v.GetPassengers();
+			if (bst.GetNumPersons() >= 1)
+				kriterien_erfuellt = true;
+
+			//Nur ohne Patient möglich...
+			PersonList pat = v.GetTransports();
+			if (pat.GetNumPersons() > 0)
+				kriterien_erfuellt = false;
+
+			if (kriterien_erfuellt == true)
+			{
+				//Ein bsw ist gefunden
+				bsw = i;
+			}
+		}
+
+	}
+
+	//Ab hier gehts nur mit einem weiter...
+	if (bsw < 0)
+	{
+		Mission::PlayHint("KEIN_BSW");
+	  	return;
+	}
+
+	GameObject *Obj = l0.GetObject(bsw);
+
+	//Finde Position
+	Target->GetPosition(TargetPos);
+	Game::FindAvailablePosition(Caller, TargetPos);
+
+	Obj->EnableSpecialLights(false);
+	Obj->EnableBreakLights(false);
+   	Obj->EnableCommand("WarningLightOn", true);
+   	Obj->RemoveCommand("WarningLightOff");
+	//bsw ist nicht mehr verfügbar.
+	Obj->AssignCommand("ich_bin_nicht_frei");
+	Obj->EnableBlueLights(true);//Einsatzfahrt beim Leichenwagen ??
+	Obj->PushActionMove(ACTION_NEWLIST, x,y,z);
+
+   }
+};
+
+
+object ActionPatientIsTreated : CommandScript
+{
+	ActionPatientIsTreated()
+	{
+		SetValidTargets(ACTOR_PERSON);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		if(Target->GetType()==ACTOR_PERSON)
+		{
+			Person p(Target);
+			if(!p.IsDrowning() && !p.IsHealing() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried() )
+				return true;
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Target);
+		p.AssignCommand("isTreated");
+	}
+};
+
+object isTreated : CommandScript
+{
+	isTreated()
+	{
+		// Das ErsteHilfe-Skript erkennt daran, das der Patient von einem NA/RA übernommen worden ist
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};

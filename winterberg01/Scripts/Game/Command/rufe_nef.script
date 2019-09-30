@@ -1,0 +1,197 @@
+// rufe_nef.script V0.2 by manuelt
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freien NEF ...
+
+// Ein freier NEF:
+// steht am KH oder
+// wurde gerade alamiert oder
+// hat einen NA an Bord und
+// wurde vom Spieler nicht per Hand an einen Ort geschickt
+
+// To-Do: Nicht irgendeiner, sondern der nächste NEF wird gerufen...
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object rufe_nef : CommandScript
+{
+
+	int nef; //ObjectID des gefundenen NEFs
+	bool kriterien_erfuellt; //Ist dieser NEF gerade frei?
+
+   rufe_nef()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON);
+      SetIcon("nef");
+      SetCursor("nef");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+      MoveResult mr;
+      GameObject Called;
+      //Suche alle GameObjects auf der Karte
+      GameObjectList l0 = Game::GetGameObjects();
+      //Welche davon sind NEFs ?
+      nef = -1;
+      for(int i=0; i<l0.GetNumObjects(); i++)
+      {
+      	//Aktuelles Objekt
+		GameObject *Obj = l0.GetObject(i);
+		if (Obj->HasCommand("ich_bin_ein_nef") && !Obj->HasCommand("ich_bin_nicht_frei"))
+		{
+
+			kriterien_erfuellt = false;
+
+			Vehicle v(Obj);
+
+			//Ist mind. ein NA an Bord?
+			PersonList na = v.GetPassengers();
+			for(int j=0; j<na.GetNumPersons(); j++)
+			{
+				if (na.GetPerson(j)->HasCommand("ich_bin_ein_notarzt"))
+					kriterien_erfuellt = true;
+			}
+
+
+			if (kriterien_erfuellt == true)
+			{
+				//Ein NEF ist gefunden
+				nef = i;
+			}
+		}
+
+	  }
+
+
+	  //Kein NEF gefunden, Versuche RTH
+	  bool rth_angefordert = false;
+	  if (nef < 0)
+	  {
+
+	Mission::PlayHint("Kein NEF verfügbar, es kommt der Christoph 25");
+
+	  	for(int i=0; i<l0.GetNumObjects(); i++)
+      		{
+      		//Aktuelles Objekt
+			GameObject *Obj = l0.GetObject(i);
+			if (Obj->HasCommand("ich_bin_ein_rth") && !Obj->HasCommand("ich_bin_nicht_frei"))
+			{
+				kriterien_erfuellt = false;
+
+				Vehicle v(Obj);
+
+				//Sind 1 NA und 1 RA an Bord?
+				PersonList passengers = v.GetPassengers();
+				int anzahl_ra = 0;
+				int anzahl_na = 0;
+				for(int j=0; j<passengers.GetNumPersons(); j++)
+				{
+					if (passengers.GetPerson(j)->HasCommand("ich_bin_ein_ra"))
+						anzahl_ra++;
+					if (passengers.GetPerson(j)->HasCommand("ich_bin_ein_notarzt"))
+						anzahl_na++;
+				}
+
+				if (anzahl_na >= 1 && anzahl_ra >= 1)
+					kriterien_erfuellt = true;
+
+				//Nur ohne Patient möglich...
+				PersonList pat = v.GetTransports();
+				if (pat.GetNumPersons() > 0)
+					kriterien_erfuellt = false;
+
+				if (kriterien_erfuellt == true)
+				{
+					//Ein rth ist gefunden
+					nef = i;
+					rth_angefordert = true;
+				}
+			}
+	  	}
+	  }
+
+	  //Ab hier gehts nur mit einem weiter...
+	  if (nef < 0)
+	  {
+	  	Mission::PlayHint("KEIN_NEF2");
+	  	return;
+	  }
+
+	  GameObject *Obj = l0.GetObject(nef);
+
+	  Vector TargetPos;
+	  TargetPos=Game::GetCommandPos();
+	  if (Target->GetType()==ACTOR_PERSON) 
+	  {
+		TargetPos=TargetPos+Vector(50,50,0);
+	  }
+	  Game::FindFreePosition(Obj, TargetPos, 50);
+
+	  if (rth_angefordert)
+	  {
+      	     	Obj->PushActionFlyTo(ACTION_NEWLIST, TargetPos, false, -1.0f);
+	  	Obj->AssignCommand("ich_bin_nicht_frei");
+	  }
+	  else
+	  {
+		  Obj->EnableSpecialLights(false);
+		  //FZG ist nicht mehr verfügbar.
+		  Obj->AssignCommand("ich_bin_nicht_frei");
+		Obj->PushActionExecuteCommand(ACTION_NEWLIST,"VCmdSiren",Obj,0,false);//Einsatzfahrt
+		Obj->PushActionMove(ACTION_APPEND, TargetPos);
+		Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false); //childID 1: Blaulichter bleiben an...
+	  }
+
+	if (Target->GetType() == ACTOR_PERSON) 
+      	{
+		Obj->PushActionExecuteCommand(ACTION_APPEND,"NEF_examine",Target,0,false); // Mannschaft absitzen lassen, NA versorgt Pat
+											   
+   	}
+
+   }
+};
+
+object NEF_examine : CommandScript
+{
+
+	NEF_examine()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetDoubleClickable(true);
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		PersonList l = v.GetPassengers();
+		for(int i=0; i<l.GetNumPersons(); i++)
+		{
+			l.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Caller);
+			if (l.GetPerson(i)->GetEquipment() == EQUIP_EMERGENCY_CASE)
+				l.GetPerson(i)->PushActionExecuteCommand(ACTION_APPEND,"Heal",Target,0,false);
+		}
+	}
+};

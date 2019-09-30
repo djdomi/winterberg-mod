@@ -1,0 +1,27 @@
+<strings>
+  <string name="DOC_FMS">1</string>
+  <string name="DOC_FAE">1</string>
+  <string name="DOC_WIBCAM">1</string>
+  <string name="DOC_SNOW">1</string>
+  <string name="DOC_COUNTER">0</string>
+  <string name="DOC_MISSION100">10</string>
+  <string name="DOC_MISSION101">1</string>
+  <string name="DOC_MISSION102">1</string>
+  <string name="DOC_MISSION103">1</string>
+  <string name="DOC_MISSION104">25</string>
+  <string name="DOC_MISSION105">1</string>
+  <string name="DOC_MISSION106">1</string>
+  <string name="DOC_MISSION107">3</string>
+  <string name="DOC_MISSION108">1</string>
+  <string name="DOC_MISSION109">7</string>
+  <string name="DOC_MISSION110">15</string>
+  <string name="DOC_MISSION111">3</string>
+  <string name="DOC_MISSION112">5</string>
+  <string name="DOC_MISSION113">5</string>
+  <string name="DOC_MISSION114">15</string>
+  <string name="DOC_MISSION200">5</string>
+  <string name="WEMEVENT">0000</string>
+  <string name="FZSPEED">15</string>
+  <string name="WIB_SPENDERNAME">lukas</string>
+  <string name="FZLADFIX">0000011001111111111010111</string>
+</strings>

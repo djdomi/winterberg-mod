@@ -1,0 +1,387 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script SoSi
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+//**************************************************************************************************
+// #Version 2.0#										****
+//												****
+// 		Includes: all Sirens								****
+//												****
+//	1.0| VCmdSiren										****
+//	1.1| DUMMYUpdatePos									****
+//	1.2| DUMMYDisableSiren									****
+//	1.3| DUMMYFindPath									****
+//	1.4| DUMMYHasSiren									****
+//												****
+// childID 1 for disabling bluelights.								****
+//												****
+//												****
+//**************************************************************************************************
+//
+// Revision 
+// 9.7.2006 : 	Das Fahrzeug wird anhand der fzid, die beim erstellen vergeben wird, eindeutig identifziert.
+//		Das gewuenschte Sondersignal kann anhand der fzid zugewiesen werden, aufwendige Abfragen auf
+//		Prototypenfiles entfallen.
+//		-> auch bei Änderung des Prototypen bleibt das SoSi erhalten
+
+// Hier kann man den Namen eines Icons für die Commandleiste angeben.
+// Wird automatisch aus den Ordnern UI/Game/Icons/Command/ und UI/Game/Icons/Cursor genommen.
+const char IMG[] = "sosi";
+
+const char EACTION_FINDPATH[] = "EActionFindPath";
+
+const char DUMMY_HASSIREN[] = "DUMMYHasSiren";
+const char DUMMY_UPDATEPOS[] = "DUMMYUpdatePos";
+const char DUMMY_FINDPATH[] = "DUMMYFindPath";
+
+const char CMD_MOVETO[] = "MoveTo";
+
+const char NAME_DUMMYOBJECT[] = "HelpingObjekt_Roger";
+
+		const int MAX_FZ = 50;
+		const char * Signal[MAX_FZ];
+		Signal[1]="MULTI";
+		Signal[2]="MULTI";
+		Signal[3]="mod:Audio/FX/Sirens/lf16.wav";
+		Signal[4]="MULTI";
+		Signal[5]="mod:Audio/FX/Sirens/rw.wav";
+		Signal[6]="mod:Audio/FX/Sirens/dlk.wav";
+		Signal[7]="mod:Audio/FX/Sirens/stw.wav";
+		Signal[8]="mod:Audio/FX/Sirens/stw.wav";
+		Signal[9]="mod:Audio/FX/Sirens/stw.wav";
+		Signal[10]="MULTI";
+		Signal[11]="NULL";
+		Signal[12]="NULL";
+		Signal[13]="NULL";
+		Signal[14]="MULTI";
+		Signal[15]="mod:Audio/FX/Sirens/dekon.wav";
+		Signal[16]="mod:Audio/FX/Sirens/ehorn.wav";
+		Signal[17]="NULL";
+		Signal[18]="NULL";
+		Signal[19]="mod:Audio/FX/Sirens/lfz.wav";
+		Signal[20]="mod:Audio/FX/Sirens/gtlf.wav";
+		Signal[21]="MULTI";
+		Signal[22]="mod:Audio/FX/Sirens/rtwbb.wav";
+		Signal[23] ="MULTI";
+		Signal[24]="MULTI";
+		Signal[25]="MULTI";
+		Signal[26]="MULTI";
+		Signal[27]="mod:Audio/FX/Sirens/itw.wav";
+		Signal[28]="mod:Audio/FX/Sirens/rw.wav";
+		Signal[29]="mod:Audio/FX/Sirens/dlk.wav";
+		Signal[30]="mod:Audio/FX/Sirens/tlf818.wav";
+		Signal[31]="mod:Audio/FX/Sirens/tlf818.wav";
+		Signal[32]="mod:Audio/FX/Sirens/JeepLNA.wav";
+		Signal[33]="MULTI";
+		Signal[34]="mod:Audio/FX/Sirens/bosch.wav";
+		Signal[35]="mod:Audio/FX/Sirens/stw.wav";
+		Signal[36]="mod:Audio/FX/Sirens/stw.wav";
+		Signal[37]="mod:Audio/FX/Sirens/gtlf.wav";
+		Signal[38]="mod:Audio/FX/Sirens/lfz.wav";
+		Signal[39]="mod:Audio/FX/Sirens/lfz.wav";
+		Signal[40]="mod:Audio/FX/Sirens/stdem02.wav";
+
+ 
+int DummyGroup = 20;
+
+// 01.0
+object VCmdSiren : CommandScript
+{
+	VCmdSiren()
+	{
+		SetIcon(IMG);
+		SetCursor(IMG);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid())
+			return false;
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		if (!Caller->HasCommand(CMD_MOVETO) || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if (!v.HasCommand(DUMMY_HASSIREN) && (childID != 2 && childID != 1))
+		{
+
+			System::Error("Sosi : Signal einschalten");
+			int soundID;
+			int zufall = rand()%3;
+			v.EnableBlueLights(true);
+			Vector CarPos = v.GetPosition();
+			char * parken[1];
+
+			parken[0]=Caller->GetName();
+			int fzid=int(parken[0][4])-32;
+			if (fzid > 50)
+				System::Error(parken[0]);
+
+			if (StrCompare(Signal[fzid],"NULL") == 0)	// Fz ohne Sosi -> raus hier
+				return;
+
+			if (StrCompare(Signal[fzid],"MULTI") == 0)	// Fz mit wechselndem Signalhorn
+			{
+				if (fzid == 4)				// TLF -> separates Hornset
+				{
+					switch(zufall)
+					{
+						case 0:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_land.wav", CarPos, true);
+							break;
+						case 1:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_stadt.wav", CarPos, true);
+							break;
+						case 2:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_mix.wav", CarPos, true);
+							break;
+					}
+				} else {
+					switch(zufall)
+					{
+						case 0:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_land.wav", CarPos, true);
+							break;
+						case 1:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_stadt.wav", CarPos, true);
+							break;
+						case 2:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_mix.wav", CarPos, true);
+							break;
+					}
+				}
+			} else {
+				soundID = Audio::PlaySample3D(Signal[fzid], CarPos, true);	// Signal spielen
+			}					
+				
+			GameObject mDummy =  Game::CreateObject("mod:Prototypes/Objects/Misc/empty.e4p", NAME_DUMMYOBJECT);
+			mDummy.Hide();
+			mDummy.SetPosition(CarPos);
+			mDummy.SetUserData(soundID);
+			mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, &v, soundID, false);
+			v.SetUserData(soundID);
+			v.AssignCommand(DUMMY_HASSIREN);
+			return;
+		}
+
+		int mSirTest;	
+
+		if (v.HasCommand(DUMMY_HASSIREN))
+		{
+			if (childID == 1)
+			{
+				v.EnableBlueLights(false);
+			}
+
+			int ref = Caller->GetUserData();
+			Audio::StopSample(ref);
+			GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+			for(int i=0; i<list.GetNumObjects(); i++)
+			{
+				GameObject *obj = list.GetObject(i);
+				if (obj->GetUserData() == ref)
+				{
+					mSirTest = i;
+				}
+			}
+			GameObject *obj = list.GetObject(mSirTest);
+			obj->PushActionDeleteOwner(ACTION_NEWLIST);
+			v.RemoveCommand(DUMMY_HASSIREN);
+			return;
+		}
+	}
+};
+
+// 01.1
+object DUMMYUpdatePos : CommandScript
+{
+	DUMMYUpdatePos()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		GameObject mDummy(Caller);
+		Vector CarPos = v.GetPosition();
+		
+		if (!v.HasCommand(DUMMY_HASSIREN))
+			return;
+
+		if (v.IsDestroyed() || !v.IsValid())
+		{
+			int ref = mDummy.GetUserData();
+			Audio::StopSample(ref);
+
+			mDummy.PushActionDeleteOwner(ACTION_NEWLIST);
+		} else
+		  {
+			mDummy.SetPosition(CarPos);
+			Audio::UpdatePos(childID, CarPos, true);
+			if (v.IsCurrentAction(EACTION_FINDPATH))
+			{
+				if (!v.HasCommand(DUMMY_FINDPATH))
+				{
+					v.AssignCommand(DUMMY_FINDPATH);
+				}
+			}
+			mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, Target, childID, false);
+		  }
+
+		if (v.HasCommand(DUMMY_FINDPATH))
+		{
+			if (!v.IsCurrentAction(EACTION_FINDPATH) && v.GetNumActions() == 0)
+			{
+				v.RemoveCommand(DUMMY_HASSIREN);
+				v.RemoveCommand(DUMMY_FINDPATH);
+
+				int ref = Caller->GetUserData();
+				Audio::StopSample(ref);
+
+				GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					GameObject *obj = list.GetObject(i);
+					if (obj->GetUserData() == ref)
+					{
+						int mSirTest = i;
+
+						GameObject *obj = list.GetObject(mSirTest);
+						obj->PushActionDeleteOwner(ACTION_NEWLIST);
+						v.RemoveCommand(DUMMY_HASSIREN);
+						if (v.HasCommand(DUMMY_FINDPATH))
+						{
+							v.RemoveCommand(DUMMY_FINDPATH);
+						}
+					}
+				}
+			}
+		}
+	}
+};
+
+// 01.2
+object DUMMYDisableSiren : CommandScript
+{
+	DUMMYDisableSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		if (childID == 1)
+		{
+			v.EnableBlueLights(false);
+		}
+
+		if (!v.HasCommand(DUMMY_HASSIREN))
+			return;
+
+		int ref = Caller->GetUserData();
+		Audio::StopSample(ref);
+
+		GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->GetUserData() == ref)
+			{
+				int mSirTest = i;
+
+				GameObject *obj = list.GetObject(mSirTest);
+				obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				v.RemoveCommand(DUMMY_HASSIREN);
+				if (v.HasCommand(DUMMY_FINDPATH))
+				{
+					v.RemoveCommand(DUMMY_FINDPATH);
+				}
+			}
+		}
+	}
+};
+
+// 01.3
+object DUMMYFindPath : CommandScript
+{
+	DUMMYFindPath()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+// 01.4
+object DUMMYHasSiren : CommandScript
+{
+	DUMMYHasSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return false;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return false;
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};

@@ -1,0 +1,245 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script emptycar
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+object EmptyCar : CommandScript
+{
+
+	EmptyCar()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetPriority(1100);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		Vehicle v(Caller);
+		if (v.HasCommand("FlyTo") && !v.IsOnGround())
+			return false;
+
+		return v.GetNumPassengers() > 0;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid())
+			return false;
+		
+		if (Caller->GetType()==ACTOR_VEHICLE && Target->GetType()==ACTOR_VEHICLE && Caller->GetID()==Target->GetID())
+		{
+			Vehicle v(Caller);
+			if (!v.IsValid() ||  v.IsDestroyed())
+			        return false;
+			if(v.HasCommand("FlyTo") && !v.IsOnGround())
+				return false;		
+			if(v.GetNumPassengers() > 0)
+				return true;
+		}
+				
+		return false;
+	}
+
+	void gf_absitzen(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		PersonList pl=v.GetPassengers();
+		for (int i=0;i<pl.GetNumPersons();i++)
+			if (pl.GetPerson(i)->HasCommand("fuehrung") && !pl.GetPerson(i)->HasCommand("ma"))
+			{
+				pl.GetPerson(i)->PushActionLeaveCar(ACTION_NEWLIST,Caller);
+				System::Log("GF Absitzen %s %u",Caller->GetName(),i);
+				pl.GetPerson(i)->PushActionExecuteCommand(ACTION_APPEND,"Select_GF",Caller,0,false);
+			}
+	}
+
+	void alle_absitzen(GameObject *Caller,Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		bool nur_absitzen=Caller->GetID()==Target->GetID();
+		bool rd=(v.IsAmbulance() || (v.IsFirefighter() && !nur_absitzen)) && childID!=111;
+		bool versorgen=rd && !nur_absitzen;
+		bool mitNA=rd && v.IsFlagSet(FLAG_NA) && !v.IsFirefighter();
+
+		bool reachable=childID>9999 && rd;
+		bool polkontrolle=childID==110;
+		bool turnto=childID==111;
+		bool fw=v.IsFirefighter() && childID==0;
+		bool SanD=childID==983;
+
+		if (reachable)
+		{
+			Actor a=Game::GetActor(childID);
+			reachable=a.GetType()==ACTOR_OPEN_HOUSE;
+			OpenHouse oh(&a);
+		}
+
+		if (versorgen)
+		{
+			Person pat(Target);
+			System::Log("Versorgen C %s T %s",Caller->GetName(),Target->GetName());
+		}
+
+		bool select_gf=Caller->GetID()==Target->GetID() && !v.IsCivilCar();
+		bool irswitch=v.GetVehicleType()==VT_AMBULANCE_RTW;
+
+		PersonList l = v.GetPassengers();
+		Person p;
+		bool koffer=false;
+		bool got_koffer=(mitNA || !rd) && v.GetVehicleType()!=VT_THW_FGRI_EKW;
+
+		System::Log("EmptyCar %s %u GF %u Koff %u RD %u Verso %u mitNA %u",Caller->GetName(),childID,int(select_gf),int(got_koffer),int(rd),int(versorgen),int(mitNA));
+		
+		for (int i=l.GetNumPersons()-1;i>-1; i--)
+		{
+			p=l.GetPerson(i);
+			if (SanD)
+				p.SetUserData(44);
+			// System::Log("Empty Car %s %u %u",p.GetName(),p.GetID(),p.GetUserData());
+			if (polkontrolle && p.GetUserData()!=v.GetID())
+				break;
+			koffer=((p.IsEquipped() && p.GetEquipment()==EQUIP_EMERGENCY_CASE) || (p.IsEquipped() && p.GetEquipment()==EQUIP_THW_CASE));
+			got_koffer=got_koffer||koffer;
+			if (!p.HasAnimation("bark"))
+			{
+				p.PushActionLeaveCar(ACTION_NEWLIST, &v);
+				if (irswitch)
+				{
+					if (p.IsCarryingPerson())
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"IRLeuchte",Target,2,false);
+					else if (!p.IsDoctor())
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"IRLeuchte",Target,1,false);
+				}
+				if ((p.IsDoctor() || (!got_koffer && i==0)) && !p.IsEquipped() && !p.IsParamedicTeam())
+				{
+					p.PushActionExecuteCommand(ACTION_APPEND,"Hole_NEF_Equip",&v,1,false);
+					koffer=true;
+				}
+				if (select_gf && (koffer || p.HasCommand("gf") || p.IsEngineer() || l.GetNumPersons()==1))
+					p.PushActionExecuteCommand(ACTION_APPEND,"Select_GF",Caller,0,false);
+				if (p.GetPersonType()==PT_SHARPSHOOTER)
+					p.PushActionExecuteCommand(ACTION_APPEND,"GewehrHolen",&v,0,false);
+				if (reachable)
+					p.PushActionExecuteCommand(ACTION_APPEND,"EnterHouse",&a,112,false);	
+				if (versorgen)
+					if (!pat.IsBeingHealed() && pat.IsInjured())
+						if (koffer)
+							p.PushActionExecuteCommand(ACTION_APPEND,"Heal",&pat,0,false);
+				if (polkontrolle)
+					p.SetUserData(Target->GetID());
+				if (turnto)
+					p.PushActionTurnTo(ACTION_APPEND,Target);
+				if (fw)
+					p.PushActionExecuteCommand(ACTION_APPEND,"goaside",Caller,2+i%2,false);
+			}
+		}
+
+		if (v.GetVehicleType() == VT_THW_FGRT_BH)
+		{
+			PersonList l2 = v.GetTransports();
+			for(int i = 0; i < l2.GetNumPersons(); i++)
+				if (!l2.GetPerson(i)->HasAnimation("bark"))
+					l2.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Target);
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.AssignCommand("ich_bin_nicht_frei");
+
+		bool canon=(v.IsCurrentAction("EActionCool") || v.IsCurrentAction("EActionExtinguish"));
+		bool fw=v.IsFirefighter() && childID==0;
+		bool nur_gf=fw && !Input::LShiftPressed() && !Game::IsMultiplayer();
+		bool redir=v.IsCurrentAction("EActionRedirect");
+
+		if (v.IsCurrentAction("EActionFindPath"))
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",Caller,4,false);
+		else 
+			v.PushActionWait(ACTION_NEWLIST,0.1);
+
+		if (!v.HasCommand("DUMMYHasWarningLights"))
+			v.PushActionExecuteCommand(ACTION_INSERT, "VCmdWarningLights", Caller, 0, false);
+
+
+		if (!v.IsCurrentAction("EActionCool") && !v.IsCurrentAction("EActionExtinguish"))
+			v.PushActionWait(ACTION_APPEND, 0.05f);
+
+		if (nur_gf)
+			gf_absitzen(Caller);
+		else
+			alle_absitzen(Caller,Target,childID);
+
+		if (Caller->GetType() == ACTOR_VEHICLE && !v.IsCivilCar())
+		{
+			if (v.IsFlagSet(FLAG_SOSI))
+				v.PushActionExecuteCommand(ACTION_APPEND, "WT_SoSi", Caller, 2, false);
+			if (v.HasCommand("VCmdUmfeld"))
+				v.PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Caller,1,false);
+
+			switch (v.GetVehicleType())
+			{
+				case VT_FIREFIGHTERS_DLK:
+					break;
+				case VT_FIREFIGHTERS_TLF:
+					if (canon)
+						v.PushActionWaterOn(ACTION_APPEND);
+					break;
+				default:
+					if (fw && v.IsFlagSet(FLAG_TL))
+						if (v.HasCommand("Funkmast"))
+							v.PushActionExecuteCommand(ACTION_APPEND,"Funkmast",&v,0,false); 	
+					break;
+			}
+		}
+		if (redir)
+			v.PushActionRedirect(ACTION_APPEND);
+	}	
+};
+
+object Select_GF : CommandScript
+{
+
+   Select_GF()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle v(Target);
+	if (v.IsSelected())
+	{
+		Caller->Select();
+		v.Deselect();
+	}
+	v.SetUserData(Caller->GetUserData());
+   }
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;

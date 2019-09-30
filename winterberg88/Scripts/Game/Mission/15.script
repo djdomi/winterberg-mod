@@ -1,0 +1,1044 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script 15
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+// mission 15 script
+
+const int MAX_DEAD_CIVILS = 8; // fail
+const int MAX_INJURED = 30; // fail
+const int HINT_MAX_DEAD_PERSONS = 6;
+const float TERRORISTCAR_SPEED = 5.0f; // speed of terrorist flight car
+const int TIME_TERRORISTCAR_BLOCKED = 3; // time terrorist car waiting before using route finder
+const float FRACTION_OF_MAX_INJURED = 0.5f; // terrorists start to flee when number of transported injured civils
+												// = maximum number of ever injured civils * FRACTION_OF_MAX_INJURED
+const float TIME_TERRORISTS_FLEE = 25.0f*60.0f; // terrorists start to flee (second trigger for terrorists)
+
+const float TIME_CHECK_MISSION_STATE_INTERVAL = 1.0f;
+const float TIME_CHECK_BURN_MISSION_STATE_INTERVAL = 1.5f;
+const int MAX_TERRORISTS_AT_WINDOW = 5;
+const float TIME_CS1_TRANSITION = 3.0f;
+const float TIME_CS1_END_TRANSITION = 4.0f;
+
+const char NAME_TERRORIST[] = "terrorist";
+const char NAME_TERRORIST_CAR[] = "terroristcar";
+const char NAME_TERRORIST_HOUSE[] = "terroristhouse";
+const char NAME_HINT_TREEEASTCASTLE[] = "treecastle";
+const char NAME_HINT_TREEAVENUE[] = "treeavenue";
+const char NAME_TRIGGER_TERRORIST[] = "trigger_terroristhouse";
+const char NAME_TRIGGER_ASF[] = "trigger_asf";
+const char NAME_TRIGGER_LIMOUSINE[] = "trigger_limousine";
+const char NAME_VIRTUALOBJECT_NEARWINDOW[] = "vo_nearwindow";
+const char NAME_TERRORIST_CAR_PATH[] = "path_terroristcar";
+const char NAME_TERRORIST_ONFOOT_PATH[] = "path_terroristonfoot";
+const char NAME_TERRORIST_HELP_PATH[] = "path_leavehouse";
+const char NAME_BREAKABLE_WINDOW[] = "wbreak";
+const char NAME_DAMAGE_WINDOW1[] = "wbreak1";
+const char NAME_DAMAGE_WINDOW2[] = "wbreak2";
+const char NAME_DAMAGE_PARTICLE1[] = "particle_break1";
+const char NAME_DAMAGE_PARTICLE2[] = "particle_break2";
+const char NAME_CASTLE_EAST[] = "castle_east";
+const char NAME_CASTLE_WEST[] = "castle_west";
+const char NAME_TOWN_NORTH[] = "town_north";
+const char NAME_BROKEN_WINDOW_FILE[] = "mod:Models/OpenHouses/apartmentbuilding_i/apartmentbuilding_i_wall_window  broken";
+const char NAME_BROKEN_WINDOW01_FILE[] = "mod:Models/OpenHouses/apartmentbuilding_i/apartmentbuilding_i_wall_window01broken";
+const char NAME_BROKEN_WINDOW02_FILE[] = "mod:Models/OpenHouses/apartmentbuilding_i/apartmentbuilding_i_wall_window13broken";
+const char NAME_WINDOW_PATH[] = "path_window";
+const char NAME_CS1_TRANSITION[] = "cutscene1";
+
+enum TransitionState
+{
+	TRANSITION_FLIGHT,
+	TRANSITION_NONE
+};
+
+enum TerroristsState
+{
+	STATE_TERRORISTS_NONE,
+	STATE_TERRORISTS_SOME_ENTERCAR,
+	STATE_TERRORISTS_ALL_ENTERCAR,
+	STATE_TERRORISTS_FLEE_BYCAR,
+	STATE_TERRORISTS_FLEE_ONFOOT,
+	STATE_TERRORISTS_ESCAPED
+};
+
+object Mission15 : MissionScript
+{
+	PersonList mTerroristList;
+	Vehicle mTerroristCar;
+	OpenHouse mTerroristHouse;
+	GameObjectList mHintEastCastleTreeList;
+	GameObjectList mHintAvenueTreeList;
+	GameObject mCastleEast;
+	GameObjectList mTownHouseList;
+	Path mTerroristCarPath;
+	Path mWindowPath[MAX_TERRORISTS_AT_WINDOW];
+	GameObject mDamageWindow[MAX_TERRORISTS_AT_WINDOW];
+	GameObject mParticleWindowSplints[MAX_TERRORISTS_AT_WINDOW];
+	int mTerroristsAtWindow[MAX_TERRORISTS_AT_WINDOW];
+	int mTerroristsAtWindowCount;
+
+	bool mFailedTooManyDeadCivils;
+	bool mFailedTooManyInjuredPersons;
+	bool mFailedTerroristEscaped;
+	bool mFailedCityBuildingBurns;
+	bool mHintTreeEastCastleBurns;
+	bool mHintTreeAvenueBurns;
+	bool mHintSquadHit;
+	bool mHintManyVictims;
+	bool mAlreadyFiresExt;
+	bool mAlreadyInjuredSaved;
+	bool mCheckMissionStateFirst;
+	bool mRunCutscene;
+	int mMaxInjuredCount;
+	int mTerroristsState;
+	int mTimeTerroristCarNotMoving;
+	int mTerroristCarLastPoint;
+	int mCurrentTransition;
+
+	Mission15()
+	{
+	}
+	
+	~Mission15()
+	{
+	}
+	
+	void Start()
+	{
+		mFailedTooManyDeadCivils = false;
+		mFailedTooManyInjuredPersons = false;
+		mFailedTerroristEscaped = false;
+		mFailedCityBuildingBurns = false;
+		mHintTreeEastCastleBurns = false;
+		mHintTreeAvenueBurns = false;
+		mHintSquadHit = false;
+		mHintManyVictims = false;
+		mAlreadyFiresExt = false;
+		mAlreadyInjuredSaved = false;
+		mCheckMissionStateFirst = true;
+		mRunCutscene = false;
+
+		mTerroristsState = STATE_TERRORISTS_NONE;
+		mTerroristsAtWindowCount = 0;
+		mTimeTerroristCarNotMoving = 0;
+		mTerroristCarLastPoint = -1;
+		mCurrentTransition = TRANSITION_NONE;
+		mMaxInjuredCount = 0;
+
+		PersonList list1(NAME_TERRORIST);
+		mTerroristList = list1;
+		//if (list.GetNumPersons() > MAX_ROWDIES)
+		//	System::Error("Too many rowdies!");
+		GameObjectList list2(NAME_HINT_TREEEASTCASTLE);
+		mHintEastCastleTreeList = list2;
+		GameObjectList list3(NAME_HINT_TREEAVENUE);
+		mHintAvenueTreeList = list3;
+		mTownHouseList = Game::GetGameObjects(NAME_TOWN_NORTH);
+
+		PathList pathList1(NAME_TERRORIST_CAR_PATH);
+		mTerroristCarPath = pathList1.GetPath(0);
+		ActorList actList1 = Game::GetActors(ACTOR_PATH);
+		int j = 0;
+		for (int i = 0; i < actList1.GetNumActors(); i++)
+		{
+			Actor *ac = actList1.GetActor(i);
+			if (ac->HasNamePrefix(NAME_WINDOW_PATH))
+			{
+				mWindowPath[j] = Path(ac);
+				j++;
+			}
+		}
+		System::Log("Number of window pathes found: %d", j);
+
+		GameObjectList listAll = Game::GetGameObjects();
+		for(int i = 0; i < listAll.GetNumObjects(); i++)
+		{
+			GameObject *obj = listAll.GetObject(i);
+			if (obj->HasName(NAME_TERRORIST_CAR))
+			{
+				mTerroristCar = Vehicle(obj);
+				mTerroristCar.SetCollisionResponseByForces(5.0f);
+			}
+			else if (obj->HasName(NAME_TERRORIST_HOUSE))
+				mTerroristHouse = OpenHouse(obj);
+			else if (obj->HasName(NAME_CASTLE_EAST))
+			{
+				mCastleEast = obj;
+			}
+			else if (obj->HasName(NAME_DAMAGE_WINDOW1))
+			{
+				mDamageWindow[0] = obj;
+			}
+			else if (obj->HasName(NAME_DAMAGE_WINDOW2))
+			{
+				mDamageWindow[1] = obj;
+			}
+			else if (obj->HasName(NAME_DAMAGE_PARTICLE1))
+			{
+				mParticleWindowSplints[0] = obj;
+				mParticleWindowSplints[0].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_DAMAGE_PARTICLE2))
+			{
+				mParticleWindowSplints[1] = obj;
+				mParticleWindowSplints[1].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_CASTLE_WEST))
+			{
+				//obj->Burn();
+				for (int j = 0; j < obj->GetNumFireChilds(); j++)
+				{
+					if (obj->GetFireChild(j).IsBurning())
+						obj->GetFireChild(j).SetTemperature(obj->GetFireChild(j).GetMaxMaterialTemperature());
+				}
+			}
+		}
+
+		GameObjectList list;
+		Game::CollectObstaclesOnVirtualObject(NAME_VIRTUALOBJECT_NEARWINDOW, list);
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			for (int j = 0; j < mTerroristList.GetNumPersons(); j++)
+			{
+				if (list.GetObject(i)->GetID() == mTerroristList.GetPerson(j)->GetID())
+				{
+					mTerroristsAtWindow[mTerroristsAtWindowCount] = j;
+					mTerroristsAtWindowCount++;
+					break;
+				}				
+			}
+			if (mTerroristsAtWindowCount == MAX_TERRORISTS_AT_WINDOW)
+				break;
+		}
+		for (int i = 0; i < mTerroristList.GetNumPersons(); i++)
+		{
+			//mTerroristList.GetPerson(i)->SetShootPower(10000.0f);
+			mTerroristList.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+			mTerroristList.GetPerson(i)->SetEnteredHouseID(mTerroristHouse.GetID());
+		}
+
+		Mission::AddObjective("EXTINGUISH_FIRES");
+		Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", false);
+		Mission::AddObjective("TRANSPORT_INJURED");
+		Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+		Mission::AddObjective("M15_TERRORISTS_DISARMED");
+		Mission::SetObjectiveAccomplished("M15_TERRORISTS_DISARMED", false);
+
+		Mission::StartIntervalTimer("CheckMissionState", TIME_CHECK_MISSION_STATE_INTERVAL);
+		Mission::StartIntervalTimer("CheckBurnStatus", TIME_CHECK_BURN_MISSION_STATE_INTERVAL);
+		Mission::StartSingleTimer("TerroristsFlee", TIME_TERRORISTS_FLEE);
+		// uncomment to debug cutscene
+		//Mission::StartSingleTimer("test", 3.0f);
+
+		Audio::PlaySoundtrack("15", 0.0f);
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+	}
+
+	void OnCameraTransitionFinished()
+	{			
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_FLIGHT:
+				CutsceneFirstPhase();
+				break;
+		}
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	void OnSquadVehicleArrived(Vehicle *vehicle)
+	{
+		if (vehicle->HasCommand("LiftWithRope"))
+		{
+			System::Log("M15: Assigned command M15LiftWithRope.");
+			vehicle->RemoveCommand("LiftWithRope");
+			vehicle->AssignCommand("M15LiftWithRope");
+		}
+	}
+
+	void OnPersonInjured(Person *person)
+	{
+		if (person->HasName(NAME_TERRORIST) || person->GetEnteredHouseID() == mTerroristHouse.GetID())
+		{
+			//System::Log("Set gangster to freely accessible.");
+			//person->RemoveFromRouter();
+		}
+	}
+
+	bool OnHit(GameObject *Shooter, GameObject *HitObject, Vector *hitPoint_)
+	{
+		if (!HitObject)
+			return true;
+		if (HitObject->HasName(NAME_BREAKABLE_WINDOW))
+		{
+			const char* name = HitObject->GetPrototypeName();
+			char modelName[512];
+			strcpy(modelName, NAME_BROKEN_WINDOW_FILE);
+			modelName[strlen(NAME_BROKEN_WINDOW_FILE) - 8] = name[strlen(name) - 2];
+			modelName[strlen(NAME_BROKEN_WINDOW_FILE) - 7] = name[strlen(name) - 1];
+			HitObject->ChangeModel(modelName);
+			HitObject->SetTraceAccuracy_NoCollision();
+			Game::PlayEmitter("windowsplints01", *hitPoint_);
+			System::Log("M15: Window hit");
+		}
+		if (!mHintSquadHit && Shooter->HasName(NAME_TERRORIST) && HitObject->GetType() == ACTOR_PERSON)
+		{
+			System::Log("Squad was hit by gangster!");
+			Person ps(HitObject);
+			if (ps.GetRole() == ROLE_SQUAD)
+			{				
+				Mission::PlayHint("HINT_M15_SQUADHIT");
+				Audio::SetMusicLevel(0.3f);
+				mHintSquadHit = true;
+			}
+		}
+		else if (HitObject->HasName(NAME_TERRORIST) && Shooter->GetType() == ACTOR_PERSON)
+		{
+			System::Log("Gangster was hit!");
+			Person gangster(HitObject);
+			Person shooter(Shooter);
+			if (shooter.GetRole() == ROLE_SQUAD && gangster.GetBehaviour() == BEHAVIOUR_GANGSTER_CIVILARMED)
+			{
+				System::Log("Set new gangster behaviour!");
+				gangster->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART)
+			}
+		}
+		return true;
+	}
+
+	bool OnStartBurning(GameObject *burningObject)
+	{
+		if (burningObject->IsValid())
+		{
+			for (int i = 0; i < mHintEastCastleTreeList.GetNumObjects(); i++)
+				if (!mHintTreeEastCastleBurns && burningObject->GetID() == mHintEastCastleTreeList.GetObject(i)->GetID())
+				{
+					Mission::PlayHint("HINT_M15_TREEEASTCASTLE_BURNING");
+					Audio::SetMusicLevel(0.1f);
+					mHintTreeEastCastleBurns = true;
+				}
+			for (int i = 0; i < mHintAvenueTreeList.GetNumObjects(); i++)
+				if (!mHintTreeAvenueBurns && burningObject->GetID() == mHintAvenueTreeList.GetObject(i)->GetID())
+				{
+					Mission::PlayHint("HINT_M15_TREEAVENUE_BURNING");
+					Audio::SetMusicLevel(0.1f);
+					mHintTreeAvenueBurns = true;
+				}
+			int numFireObjects = 0;
+			for (int j = 0; j < burningObject->GetNumFireChilds(); j++)
+			{
+				if (burningObject->GetFireChild(j).IsBurning())
+					numFireObjects++;
+			}
+			bool fullBurning = false;
+			if (numFireObjects >= burningObject->GetNumFireChilds() - 1)
+			{
+				fullBurning = true;
+			}
+			if (burningObject->HasName(NAME_TOWN_NORTH) && fullBurning)
+				mFailedCityBuildingBurns = true;
+			else if (burningObject->HasName(NAME_CASTLE_EAST) && fullBurning)
+			{
+				mFailedCityBuildingBurns = true;
+				if (burningObject->HasName(NAME_CASTLE_EAST))
+					System::Log("Fireobjects burning: %d", numFireObjects);
+			}
+		}
+		return true;
+	}
+
+	void OnMissionLeft(GameObject *obj)
+	{
+		if (!obj->IsValid())
+			return;
+	}
+
+	bool TerroristEnterCar(int i, bool silently)
+	{
+		//mTerroristList.GetPerson(i)->PushActionMove(ACTION_NEWLIST, mTerroristHouse.GetEntrancePosition(false), true);
+		if (mTerroristList.GetPerson(i)->IsValid() && !mTerroristList.GetPerson(i)->IsInjured())
+		{
+			if (silently)
+				mTerroristList.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+			else
+				mTerroristList.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+			//mTerroristList.GetPerson(i)->PushActionLeaveHouse(ACTION_NEWLIST, &mTerroristHouse);
+			System::Log("Entered House ID: %d", mTerroristList.GetPerson(i)->GetEnteredHouseID());
+			//mTerroristList.GetPerson(i)->PushActionUsePath(ACTION_NEWLIST, NAME_TERRORIST_HELP_PATH, 4.0f);
+			mTerroristList.GetPerson(i)->PushActionMove(ACTION_NEWLIST, &mTerroristCar, TARGET_PASSENGERDOOR);
+			mTerroristList.GetPerson(i)->PushActionTurnTo(ACTION_APPEND, &mTerroristCar);
+			mTerroristList.GetPerson(i)->PushActionEnterCar(ACTION_APPEND, &mTerroristCar);
+			System::Log("Terrorist %d tries to enter car", i);
+			return true;
+		}
+		else return false;
+	}
+
+	void StartFlight(bool retardTerroristsAtWindow)
+	{
+		System::Log("M15: Start terrorist flight");
+		mTerroristCar.SetVehicleRole(VT_GANGSTER_GETAWAY);
+		mTerroristCar.SetAutoShoot(false);
+		mTerroristCar.SetMaxPassengers(20);
+		for (int i = 0; i < mTerroristList.GetNumPersons(); i++)
+		{
+			if (!mTerroristList.GetPerson(i)->IsValid())
+				continue;
+			mTerroristList.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+			bool windowTerrorist = false;
+			for (int j = 0; j < mTerroristsAtWindowCount; j++)
+			{				
+				if (i == mTerroristsAtWindow[j])
+				{
+					System::Log("M15: Terrorist stay nr.%d", i);
+					float minLen = 1e38f;
+					Vector moveToPoint;
+					int amin = 0;
+					for (int a = 0; a < mTerroristsAtWindowCount; a++)
+					{
+						Vector p = mWindowPath[a].GetPoint(1);
+						Vector l = p - mTerroristList.GetPerson(i)->GetPosition();
+						if (l.GetLen() < minLen)
+						{
+							amin = a;
+							minLen = l.GetLen();
+							moveToPoint = p;
+						}
+
+					}
+					//System::Log("terrorist at window moves to: %d %d %d", (int)moveToPoint.x, (int)moveToPoint.y, (int)moveToPoint.z);
+					mTerroristList.GetPerson(i)->SetObjectPath(&mWindowPath[amin]);
+					windowTerrorist = true;
+					break;
+				}
+			}
+			if (!retardTerroristsAtWindow || !windowTerrorist)
+			{
+				bool silently;
+				if (retardTerroristsAtWindow)
+					silently = false;
+				else
+					silently = true;
+				TerroristEnterCar(i, silently);
+			}
+		}
+		if (retardTerroristsAtWindow)
+			mTerroristsState = STATE_TERRORISTS_SOME_ENTERCAR;
+		else
+			mTerroristsState = STATE_TERRORISTS_ALL_ENTERCAR;
+		Game::DeactivateTrigger(NAME_TRIGGER_TERRORIST);
+		Game::DeactivateTrigger(NAME_TRIGGER_ASF);
+	}
+
+	void DamageWindow(int i)
+	{
+		Vector pos;
+		pos.x = mDamageWindow[i].GetPosition().x;
+		pos.y = mDamageWindow[i].GetPosition().y;
+		pos.z = mParticleWindowSplints[0].GetPosition().z;
+		System::Log("M15: Window damaged %d", i);
+		mParticleWindowSplints[i].StartParticleEffect();
+		//Game::PlayEmitter("smokingpipe", pos);
+		mDamageWindow[i].SetTraceAccuracy_NoCollision();
+	}
+
+	void StartFlightOnFoot()
+	{
+		System::Log("M15: Start flight on foot.");
+		mTerroristCar.RemoveObjectPath();
+		mTerroristCar.PushActionWait(ACTION_NEWLIST, 0.1f);
+		for (int i = 0; i < mTerroristList.GetNumPersons(); i++)
+		{
+			if (!mTerroristList.GetPerson(i)->IsValid())
+				continue;
+			if (mTerroristList.GetPerson(i)->GetEnteredCarID() == mTerroristCar.GetID())
+			{				
+				mTerroristList.GetPerson(i)->SetStandardPath(NAME_TERRORIST_ONFOOT_PATH);
+				mTerroristList.GetPerson(i)->SetEscapePath(NAME_TERRORIST_ONFOOT_PATH);
+				mTerroristList.GetPerson(i)->SetFleeing(true);
+				if (mTerroristList.GetPerson(i)->GetEnteredCarID() != -1)
+				{
+					mTerroristList.GetPerson(i)->PushActionWait(ACTION_NEWLIST, 0.3f);
+					mTerroristList.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, &mTerroristCar);
+				}
+				mTerroristList.GetPerson(i)->PushActionUsePath(ACTION_APPEND, NAME_TERRORIST_ONFOOT_PATH, 4.0f);
+				mTerroristList.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+			}
+		}
+		mTerroristsState = STATE_TERRORISTS_FLEE_ONFOOT;
+	}
+
+	void RunCutscene()
+	{
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		Camera::StartTransition(NAME_CS1_TRANSITION, TIME_CS1_TRANSITION);
+		mCurrentTransition = TRANSITION_FLIGHT;
+	}
+
+	void CutsceneFirstPhase()
+	{
+		mTerroristCar.SetObjectPath(NAME_TERRORIST_CAR_PATH, TERRORISTCAR_SPEED);
+		mTerroristsState = STATE_TERRORISTS_FLEE_BYCAR;
+		Mission::PlayHint("HINT_M15_FLIGHTCARGOES");
+		Audio::SetMusicLevel(0.3f);
+		Mission::StartSingleTimer("endcutscene", TIME_CS1_END_TRANSITION);
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		switch(Timer)
+		{
+			case "TerroristsFlee":
+				System::Log("M15: Start flight because of time");
+				mRunCutscene = true;
+				StartFlight(false);
+				break;
+			case "test":
+				mRunCutscene = true;
+				StartFlight(false);
+				break;
+			case "endcutscene":
+				Mission::HideBlackBars();
+				Mission::EndCutScene();//true, 3.0f);
+				break;
+			case "CheckBurnStatus":
+				//for(int i = 0; i < mTownHouseList.GetNumObjects(); i++)
+				//{
+				//	if (mTownHouseList.GetObject(i)->GetBurningStatus() == OBS_FULLBURNED)
+				//	{
+				//		mFailedCityBuildingBurns = true;
+				//		System::Log("M15: Building of town is full burned");
+				//		break;
+				//	}
+				//}
+				//if (mCastleEast.GetBurningStatus() == OBS_FULLBURNED)
+				//{
+				//	mFailedCityBuildingBurns = true;
+				//	System::Log("M15: East win of town is full burned");
+				//}
+				break;
+			case "CheckMissionState":
+				if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+						Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED2");
+						mAlreadyFiresExt = true;
+					}
+				}
+				else
+				{
+					if (Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::RemoveObjective("EXTINGUISH_FIRES");
+						Mission::AddObjective("EXTINGUISH_FIRES");
+						Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", false);
+						if (mAlreadyFiresExt)
+						{
+							Mission::PlayComment("SUPERV_OBJ_FIRE1");
+						}
+					}
+				}
+				if (Mission::GetCounter("Injured Persons") == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", true);
+						Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+						mAlreadyInjuredSaved = true;
+					}
+				}
+				else
+				{
+					if (Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+						if (mAlreadyInjuredSaved)
+						{
+							Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+						}
+					}
+				}
+				bool disarmed = true;
+				int numberOfDisarmed = 0;
+				int numberOfDisarmedNotAtWindow = 0;
+				for (int i = 0; i < mTerroristList.GetNumPersons(); i++)
+				{
+					if (!mFailedTerroristEscaped
+						&& mTerroristList.GetPerson(i)->IsValid()
+						&& !mTerroristList.GetPerson(i)->IsInjured()
+						&& !mTerroristList.GetPerson(i)->IsArrested()
+						&& !mTerroristList.GetPerson(i)->IsInsideMap()
+						&& mTerroristList.GetPerson(i)->GetEnteredCarID() == -1)
+					{
+						System::Log("M15: Terrorist has escaped!");
+						mTerroristsState == STATE_TERRORISTS_ESCAPED;
+						mFailedTerroristEscaped = true;
+						continue;
+					}
+					bool atWindow = false;
+					for (int j = 0; j < mTerroristsAtWindowCount; j++)
+					{
+						if (i == mTerroristsAtWindow[j])
+						{
+							atWindow = true;
+							break;
+						}
+					}
+					if (!mTerroristList.GetPerson(i)->IsValid()
+						|| mTerroristList.GetPerson(i)->IsInjured()
+						|| mTerroristList.GetPerson(i)->IsArrested())
+					{
+						numberOfDisarmed++;
+						if (!atWindow)
+							numberOfDisarmedNotAtWindow++;
+					}
+					else
+					{
+						if (mTerroristsState == STATE_TERRORISTS_ALL_ENTERCAR
+							|| (mTerroristsState == STATE_TERRORISTS_SOME_ENTERCAR && !atWindow))
+						{
+							if (mTerroristList.GetPerson(i)->IsIdle() && !mTerroristList.GetPerson(i)->IsHidden())
+							{
+								System::Log("M15: Terrorist %d is idle", i);
+								TerroristEnterCar(i, false);
+							}
+						}
+					}
+				}
+				//System::Log("Number of disarmed terrorists: %d", numberOfDisarmed);
+				//System::Log("Number of terrorists: %d", mTerroristList.GetNumPersons());
+				if (numberOfDisarmed == mTerroristList.GetNumPersons())
+				{
+					if (!Mission::IsObjectiveAccomplished("M15_TERRORISTS_DISARMED"))
+					{
+						Mission::SetObjectiveAccomplished("M15_TERRORISTS_DISARMED", true);
+						Mission::PlayComment("SUPERV_M15_OBJ03");
+					}
+				}
+				else
+				{
+					if (!mCheckMissionStateFirst && mTerroristsState == STATE_TERRORISTS_NONE
+						&& Mission::GetCounter("Injured Civils") <= (int)((float)mMaxInjuredCount*FRACTION_OF_MAX_INJURED))
+					{
+						System::Log("M15: Start flight because of %d injured civils", Mission::GetCounter("Injured Civils"));
+						mRunCutscene = true;
+						StartFlight(false);
+					}
+				}
+				if (mTerroristsState == STATE_TERRORISTS_SOME_ENTERCAR)
+				{
+					if (mTerroristCar.GetNumPassengers() >= mTerroristList.GetNumPersons() - mTerroristsAtWindowCount - numberOfDisarmedNotAtWindow)
+					{
+						for (int j = 0; j < mTerroristsAtWindowCount; j++)
+						{
+							System::Log("M15: Terrorists at window get in flight car");
+							mTerroristList.GetPerson(mTerroristsAtWindow[j])->SetEnteredHouseID(mTerroristHouse.GetID());
+							TerroristEnterCar(mTerroristsAtWindow[j], false);
+						}
+						mTerroristsState = STATE_TERRORISTS_ALL_ENTERCAR;
+					}
+				}
+				else if (mTerroristsState == STATE_TERRORISTS_ALL_ENTERCAR)
+				{
+					if (mTerroristCar.GetNumPassengers() > 0
+						&& mTerroristCar.GetNumPassengers() >= mTerroristList.GetNumPersons() - numberOfDisarmed)
+					{
+						if (mRunCutscene)
+							RunCutscene();
+						else
+						{
+							mTerroristCar.SetObjectPath(NAME_TERRORIST_CAR_PATH, TERRORISTCAR_SPEED);
+							mTerroristsState = STATE_TERRORISTS_FLEE_BYCAR;
+							Mission::PlayHint("HINT_M15_FLIGHTCARGOES");
+							Audio::SetMusicLevel(0.3f);
+						}
+					}
+				}
+				else if (mTerroristsState == STATE_TERRORISTS_FLEE_BYCAR)
+				{
+					if (!mFailedTerroristEscaped && !mTerroristCar.IsDestroyed() && !mTerroristCar.IsInsideMap())
+					{
+						System::Log("M15: Terrorist car has escaped!");
+						mTerroristsState == STATE_TERRORISTS_ESCAPED;
+						mFailedTerroristEscaped = true;
+					}
+					else if (mTerroristCar.IsMoving())
+					{
+						mTimeTerroristCarNotMoving = 0;
+					}
+				    else if (mTerroristCar.WasStoppedByRoadblock())
+					{
+						StartFlightOnFoot();
+					}
+					else
+					{						
+						if (mTimeTerroristCarNotMoving > TIME_TERRORISTCAR_BLOCKED)
+						{
+							int pi = mTerroristCarPath.GetNearestPointIndex(mTerroristCar.GetPosition());
+							//System::Log("index of nearest point: %d", pi);
+							// take the next point to prohibit driving in the opposite direction of the flight path
+							if (pi < mTerroristCarPath.GetNumPoints() - 1)
+								pi++;
+							if (pi > mTerroristCarLastPoint)
+							{
+								Vector p = mTerroristCarPath.GetPoint(pi);
+								mTerroristCar.PushActionMove(ACTION_NEWLIST, p, true);
+								mTerroristCar.PushActionUsePath(ACTION_APPEND, NAME_TERRORIST_CAR_PATH, TERRORISTCAR_SPEED);
+								mTerroristCarLastPoint = pi;
+								mTimeTerroristCarNotMoving = 0;
+							}
+							else
+							{
+								StartFlightOnFoot();
+							}
+						}
+						else
+						{
+							mTimeTerroristCarNotMoving++;
+							System::Log("M15: car waiting: %d", mTimeTerroristCarNotMoving);
+						}
+					}
+				}
+
+				if (mTerroristsState == STATE_TERRORISTS_NONE)
+				{
+					int injured = Mission::GetCounter("Injured Civils");
+					if (injured > mMaxInjuredCount)
+					{
+						mMaxInjuredCount = injured;
+						System::Log("M15: Maximum injured civils ever: %d", mMaxInjuredCount);
+					}
+				}
+				mCheckMissionStateFirst = false;
+				break;
+		}
+	}
+	
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		bool squad = false;
+		bool scout = false;
+		bool asf = false;
+		Vehicle vc;
+		Person ps;
+		if (Collider->GetType() == ACTOR_VEHICLE)
+		{
+			vc = Vehicle(Collider);
+			if (vc.GetVehicleType() != VT_NOSQUAD && vc.GetVehicleType() != VT_GANGSTER_GETAWAY)
+			{
+				if (vc.GetVehicleType() == VT_FIREFIGHTERS_ASF)
+					asf = true;
+				squad = true;
+			}
+		}
+		else if (Collider->GetType() == ACTOR_PERSON)
+		{
+			ps = Person(Collider);
+			if (ps.GetRole() == ROLE_SQUAD)
+			{
+				if (ps.GetPersonType() == PT_SCOUT)
+					scout = true;
+				squad = true;
+			}
+		}		
+
+		if (squad)
+		{
+			switch(Trigger)
+			{
+				case NAME_TRIGGER_TERRORIST:
+					if (!scout)
+					{
+						System::Log("M15: Terrorists start flight because of trigger.");
+						StartFlight(true);
+					}
+					break;
+				case NAME_TRIGGER_LIMOUSINE:
+					Mission::PlayHint("HINT_M15_LIMOUSINE");
+					Game::DeactivateTrigger(NAME_TRIGGER_LIMOUSINE);
+					break;
+				case NAME_TRIGGER_ASF:
+					if (asf)
+					{
+						System::Log("M15: Terrorists start flight because of ASF.");
+						StartFlight(true);
+					}
+					break;
+			}
+		}
+	}
+	
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		return ACTION_CONTINUE;
+	}
+	
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionShoot":
+				Actor target = Game::GetActor(Data->Parameters[0].iValue);
+				if (target.IsValid() && Data->Owner->HasName(NAME_TERRORIST))
+				{
+					if (target.GetType() == ACTOR_PERSON)
+					{
+						Person ps(&target);
+						if (mTerroristsState == STATE_TERRORISTS_NONE
+							&& ps.GetPersonType() == PT_SCOUT
+							&& ps.GetEnteredHouseID() != mTerroristHouse.GetID())
+							return ACTION_SKIP;
+					}
+				}
+				break;
+			case "EActionLiftWithRope":
+				int *ignoreHouse = reinterpret_cast<int*>(Data->Parameters[1].pValue);
+				*ignoreHouse = 1;
+				break;
+		}
+		return ACTION_CONTINUE;
+	}	
+
+	ActionCallbackResult OnAbortAction(const char *Action, ActionCallback* Data)
+	{		
+		return ACTION_CONTINUE;
+	}	
+		
+	PathFinishedAction OnPathFinished(const char *PathName, GameObject *Obj)
+	{
+		if (Game::HasNamePrefix(PathName, NAME_WINDOW_PATH))
+		{
+			bool found = false;
+			for (int i = 0; i < mTerroristList.GetNumPersons(); i++)
+			{
+				for (int j = 0; j < mTerroristsAtWindowCount; j++)
+				{				
+					if (i == mTerroristsAtWindow[j])
+					{
+						if (mTerroristList.GetPerson(i)->GetID() == Obj->GetID())
+						{
+							mTerroristList.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+							mTerroristList.GetPerson(i)->SetEnteredHouseID(-1);
+							if (j == 0)
+							{
+								mDamageWindow[0].ChangeModel(NAME_BROKEN_WINDOW01_FILE);
+								DamageWindow(0);
+							}
+							else
+							{
+								mDamageWindow[1].ChangeModel(NAME_BROKEN_WINDOW02_FILE);
+								DamageWindow(1);
+							}
+							found = true;
+							break;
+						}
+					}
+				}
+				if (found)
+					break;
+			}
+		}
+		return PATH_DEFAULT;
+	}
+	
+	void Update()
+	{		
+	}
+	
+	MissionState GetMissionState()
+	{
+		if (Mission::IsCutSceneRunning())
+			MISSION_RUNNING;
+		// only for debugging
+		//return MISSION_RUNNING;
+
+		if (Mission::GetCounter("Dead Persons") > HINT_MAX_DEAD_PERSONS && !mHintManyVictims)
+		{
+			Mission::PlayHint("HINT_M15_MANY_VICTIMS");
+			Audio::SetMusicLevel(0.2f);
+			mHintManyVictims = true;
+		}
+
+		if (Mission::GetCounter("Dead Civils") > MAX_DEAD_CIVILS)
+		{
+			mFailedTooManyDeadCivils = true;
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Injured Persons") > MAX_INJURED)
+		{
+			mFailedTooManyInjuredPersons = true;
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (mFailedTerroristEscaped)
+		{
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (mFailedCityBuildingBurns)
+		{
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+		
+		if (Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_SUCCEEDED;
+		}
+			
+		return MISSION_RUNNING;
+	}
+	
+	const char *GetFailReason()
+	{
+		if (mFailedTooManyDeadCivils || mFailedTooManyInjuredPersons)
+		{
+			return "TOO_MANY_DIED";
+		}
+		else if (mFailedCityBuildingBurns)
+		{
+			return "TOO_MANY_FIRES";
+		}
+		else if (mFailedTerroristEscaped)
+		{
+			return "M15_TERRORISTS_ESCAPED";
+		}
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailedTooManyDeadCivils || mFailedTooManyInjuredPersons)
+			return "SUPERV_M15_FAIL01";
+		if (mFailedCityBuildingBurns)
+			return "SUPERV_M15_FAIL02";
+		if (mFailedTerroristEscaped)
+			return "SUPERV_M15_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M15_RES01";
+		if (Mission::GetCounter("Person deaths") >= 5)
+			return "SUPERV_M15_RES02";
+		if (scoring->Efficiency > 0.75f && (mHintTreeEastCastleBurns || mHintTreeAvenueBurns))
+			return "SUPERV_M15_RES03";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		Serializer->Write(mTerroristList);
+		Serializer->Write(mTerroristCar);
+		Serializer->Write(mTerroristHouse);
+		Serializer->Write(mHintEastCastleTreeList);
+		Serializer->Write(mHintAvenueTreeList);
+		Serializer->Write(mCastleEast);
+		Serializer->Write(mTownHouseList);
+		Serializer->Write(mTerroristCarPath);		
+		Serializer->Write(mTerroristsAtWindowCount);
+		for (int i = 0; i < MAX_TERRORISTS_AT_WINDOW; i++)
+		{
+			Serializer->Write(mTerroristsAtWindow[i]);
+			Serializer->Write(mWindowPath[i]);
+			Serializer->Write(mDamageWindow[i]);
+			Serializer->Write(mParticleWindowSplints[i]);
+		}		
+
+		Serializer->Write(mFailedTooManyDeadCivils);
+		Serializer->Write(mFailedTooManyInjuredPersons);
+		Serializer->Write(mFailedTerroristEscaped);
+		Serializer->Write(mFailedCityBuildingBurns);
+		Serializer->Write(mHintTreeEastCastleBurns);
+		Serializer->Write(mHintTreeAvenueBurns);
+		Serializer->Write(mHintSquadHit);
+		Serializer->Write(mHintManyVictims);
+		Serializer->Write(mAlreadyFiresExt);
+		Serializer->Write(mAlreadyInjuredSaved);
+		Serializer->Write(mCheckMissionStateFirst);
+		Serializer->Write(mRunCutscene);
+
+		Serializer->Write(mMaxInjuredCount);
+		Serializer->Write(mTerroristsState);
+		Serializer->Write(mTimeTerroristCarNotMoving);
+		Serializer->Write(mTerroristCarLastPoint);
+		Serializer->Write(mCurrentTransition);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		Serializer->Read(mTerroristList);
+		Serializer->Read(mTerroristCar);
+		Serializer->Read(mTerroristHouse);
+		Serializer->Read(mHintEastCastleTreeList);
+		Serializer->Read(mHintAvenueTreeList);
+		Serializer->Read(mCastleEast);
+		Serializer->Read(mTownHouseList);
+		Serializer->Read(mTerroristCarPath);
+		Serializer->Read(mTerroristsAtWindowCount);
+		for (int i = 0; i < MAX_TERRORISTS_AT_WINDOW; i++)
+		{
+			Serializer->Read(mTerroristsAtWindow[i]);
+			Serializer->Read(mWindowPath[i]);
+			Serializer->Read(mDamageWindow[i]);
+			Serializer->Read(mParticleWindowSplints[i]);
+		}		
+
+		mFailedTooManyDeadCivils = Serializer->ReadBool();
+		mFailedTooManyInjuredPersons = Serializer->ReadBool();
+		mFailedTerroristEscaped = Serializer->ReadBool();
+		mFailedCityBuildingBurns = Serializer->ReadBool();
+		mHintTreeEastCastleBurns = Serializer->ReadBool();
+		mHintTreeAvenueBurns = Serializer->ReadBool();
+		mHintSquadHit = Serializer->ReadBool();
+		mHintManyVictims = Serializer->ReadBool();
+		mAlreadyFiresExt = Serializer->ReadBool();
+		mAlreadyInjuredSaved = Serializer->ReadBool();
+		mCheckMissionStateFirst = Serializer->ReadBool();
+		mRunCutscene = Serializer->ReadBool();
+
+		Serializer->Read(mMaxInjuredCount);
+		Serializer->Read(mTerroristsState);
+		Serializer->Read(mTimeTerroristCarNotMoving);
+		Serializer->Read(mTerroristCarLastPoint);
+		Serializer->Read(mCurrentTransition);
+
+		return true;
+	}
+};

@@ -1,0 +1,197 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script WarningLights
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+// const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+ 
+ const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+ 
+int DummyGroup = 20;
+ 
+ object VCmdWarningLights : CommandScript
+ {
+ 	VCmdWarningLights()
+ 	{
+		SetCursor("warning");
+		SetIcon("warning");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Caller);
+		if (childID==0)
+			if (v.HasCommand(DUMMY_HASWARNINGLIGHTS))
+				childID=2;
+			else
+ 				childID=1;
+
+		switch(childID)
+		{
+			case 2:
+	 			v.EnableBlinker(BLT_NONE);
+ 				v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+				break;
+ 			case 1:
+	 			v.EnableBlinker(BLT_BOTH);
+				v.AssignCommand(DUMMY_HASWARNINGLIGHTS);
+				break;
+		}
+ 	}	
+ };
+ 
+ object DUMMYHasWarningLights : CommandScript
+ {
+ 	DUMMYHasWarningLights()
+ 	{
+ 		SetGroupID(DummyGroup);
+ 	}
+ 
+ 	bool CheckGroupVisibility(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };
+
+ const char IMG[] = "LightOn";
+ 
+ const char DUMMY_HASUMFELD[] = "DUMMYIR";
+ 
+ 
+ object IRLeuchte : CommandScript
+ {
+ 	IRLeuchte()
+ 	{
+ 		SetIcon(IMG);
+ 		SetCursor(IMG);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			Vehicle v(Caller);
+		else 
+			Vehicle v(Target);
+
+		switch (childID)
+		{
+			case 0:
+ 
+ 				if (v.HasCommand(DUMMY_HASUMFELD))
+ 				{
+ 					v.EnableTrafficLight(TLT_NONE);
+ 					v.RemoveCommand(DUMMY_HASUMFELD);
+ 				} else {
+ 					v.EnableTrafficLight(TLT_RED);
+ 					v.AssignCommand(DUMMY_HASUMFELD);
+		 		}
+				break;
+			case 1:
+				v.EnableTrafficLight(TLT_RED);
+				v.AssignCommand(DUMMY_HASUMFELD);
+				break;
+			case 2:
+				v.EnableTrafficLight(TLT_NONE);
+				v.RemoveCommand(DUMMY_HASUMFELD);
+				break;
+		}
+ 	}	
+ };
+ 
+ // 1.1
+ object DUMMYIR : CommandScript
+ {
+ 	DUMMYIR()
+ 	{
+ 		SetGroupID(20);
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };

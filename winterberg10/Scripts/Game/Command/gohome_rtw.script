@@ -1,0 +1,82 @@
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object gohome_rtw : CommandScript
+{
+	Vector Wache;
+	Actor rtw;
+
+	gohome_rtw()
+	{
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(90);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		//Freeplay oder nicht?
+		Actor ReinforcementArea1;
+		ActorList l1("ReinforcementArea1");
+		if(l1.GetNumActors() < 1)
+			return false;
+		//Freeplay oder nicht?
+
+		//Nach Hause nicht mit Transports...
+		Vehicle v(Caller);
+		PersonList persons = v.GetTransports();
+		if (persons.GetNumPersons() > 0)
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		if (v.HasCommand("DUMMYHasWarningLights"))
+		{
+ 			v.EnableBlinker(BLT_NONE);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+		}
+		if (v.HasCommand("DUMMYHasUmfeld"))
+		{
+			v.RemoveCommand("DUMMYHasUmfeld");
+		}
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+
+		ActorList l1(Caller->GetName());
+		if(l1.GetNumActors() > 0)
+		{
+			rtw = *l1.GetActor(0);
+			Mission::PlayHint("Rettungsmittel-Standort gefunden");
+		} else {
+			System::Error("Streife CommandScript: Kann Basis nicht finden!");
+		}
+	
+
+		Wache=rtw.GetPosition();
+
+		//Fahrzeug kann gerufen werden....
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_DISABLE, Caller, 1, false);
+		Game::FindFreePosition(Caller, Wache);
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/FUNKFREI.wav");
+		if (v.GetVehicleType() != VT_AMBULANCE_RHC) 
+		{
+		Caller->PushActionLightOn(ACTION_APPEND,false);
+		Caller->PushActionMove(ACTION_APPEND, Wache + Vector(0, -150, 0)); // Fahre zum Wendepunkt
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+		Caller->PushActionTurnTo(ACTION_APPEND, Wache + Vector(0, -300, 0)); // Wende
+		Caller->PushActionMove(ACTION_APPEND, Wache); // Einparken
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+		} else {
+			Caller->PushActionFlyTo(ACTION_APPEND, Wache, true, 135);
+		}
+	}
+};

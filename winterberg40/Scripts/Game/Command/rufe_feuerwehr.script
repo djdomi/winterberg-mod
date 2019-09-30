@@ -1,0 +1,546 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script rufe_feuerwehr
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+object einzel : CommandScript
+{
+
+   einzel()
+   {
+      SetIcon("fme");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("zalarm");
+	Caller->RemoveCommand("einzel");
+   }
+};
+
+object zalarm : CommandScript
+{
+
+   zalarm()
+   {
+      SetIcon("sir");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("einzel");
+	Caller->RemoveCommand("zalarm");
+   }
+};
+object fae : CommandScript
+{
+
+   fae()
+   {
+      SetIcon("fme");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("sir");
+	Caller->RemoveCommand("fae");
+   }
+};
+
+object sir : CommandScript
+{
+
+   sir()
+   {
+      SetIcon("sir");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("fae");
+	Caller->RemoveCommand("sir");
+   }
+};
+
+
+
+object ort : CommandScript
+{
+
+   ort()
+   {
+      SetIcon("oertlich");
+      SetCursor("oertlich");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("lz");
+	Caller->RemoveCommand("ort");
+   }
+};
+
+ 
+object lz : CommandScript
+{
+
+   lz()
+   {
+      SetIcon("zug");
+      SetCursor("zug");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("hlz");
+	Caller->RemoveCommand("lz");
+   }
+};
+
+object hlz : CommandScript
+{
+
+   hlz()
+   {
+      SetIcon("ruestzug");
+      SetCursor("ruestzug");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("hlzk");
+	Caller->RemoveCommand("hlz");
+   }
+};
+
+object hlzk : CommandScript
+{
+
+   hlzk()
+   {
+      SetIcon("rw_kran");
+      SetCursor("rw_kran");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("ggvz");
+	Caller->RemoveCommand("hlzk");
+   }
+};
+
+object ggvz : CommandScript
+{
+
+   ggvz()
+   {
+      SetIcon("kemmlerzahl");
+      SetCursor("kemmlerzahl");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("wald");
+	Caller->RemoveCommand("ggvz");
+   }
+};
+
+object wald : CommandScript
+{
+
+   wald()
+   {
+      SetIcon("waldbrand");
+      SetCursor("waldbrand");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("einzelfz");
+	Caller->RemoveCommand("wald");
+   }
+};
+
+object einzelfz : CommandScript
+{
+
+   einzelfz()
+   {
+      SetIcon("rufe_lf");
+      SetCursor("rufe_lf");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("ort");
+	Caller->RemoveCommand("einzelfz");
+   }
+};
+
+object fw10 : CommandScript
+{
+
+   fw10()
+   {
+      SetIcon("winterberg");
+      SetCursor("winterberg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,0,false);
+   }
+};
+
+object fw20 : CommandScript
+{
+
+   fw20()
+   {
+      SetIcon("zueschen");
+      SetCursor("zueschen");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,56,false);
+   }
+};
+
+object fw30 : CommandScript
+{
+
+   fw30()
+   {
+      SetIcon("siedlhsn");
+      SetCursor("siedlhsn");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,59,false);
+   }
+};
+
+object fw40 : CommandScript
+{
+
+   fw40()
+   {
+      SetIcon("groenebach");
+      SetCursor("groenebach");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,57,false);
+   }
+};
+
+object fw50 : CommandScript
+{
+
+   fw50()
+   {
+      SetIcon("langewiese");
+      SetCursor("langewiese");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,53,false);
+   }
+};
+
+object fw60 : CommandScript
+{
+
+   fw60()
+   {
+      SetIcon("elkeringhsn");
+      SetCursor("elkeringhsn");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,66,false);
+   }
+};
+
+object fw61 : CommandScript
+{
+
+   fw61()
+   {
+      SetIcon("altenfeld");
+      SetCursor("altenfeld");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,67,false);
+   }
+};
+
+object fw62 : CommandScript
+{
+
+   fw62()
+   {
+      SetIcon("silbach");
+      SetCursor("silbach");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,68,false);
+   }
+};
+
+object fw63 : CommandScript
+{
+
+   fw63()
+   {
+      SetIcon("altastenberg");
+      SetCursor("altastenberg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,69,false);
+   }
+};
+
+object fw64 : CommandScript
+{
+
+   fw64()
+   {
+      SetIcon("neuastenberg");
+      SetCursor("neuastenberg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,70,false);
+   }
+};
+
+object fw65 : CommandScript
+{
+
+   fw65()
+   {
+      SetIcon("altastenberg");
+      SetCursor("altastenberg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_OBJECT)
+        	return false;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_feuerwehr",Target,70,false);
+   }
+};
+
+object rufe_feuerwehr : CommandScript
+{
+
+   rufe_feuerwehr()
+   {
+      SetIcon("rufe_lf");
+      SetCursor("rufe_lf");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Caller->HasCommand("ort"))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_lf",Target,childID,Caller->HasCommand("sir"));
+	else 	if (Caller->HasCommand("lz"))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_loeschzug",Target,childID,Caller->HasCommand("sir"));
+	else 	if (Caller->HasCommand("hlz"))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestzug",Target,childID,Caller->HasCommand("sir"));
+	else 	if (Caller->HasCommand("hlzk"))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestzug",Target,1000+childID,Caller->HasCommand("sir"));
+	else 	if (Caller->HasCommand("ggvz"))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_chemiezug",Target,childID,false);
+	else 	if (Caller->HasCommand("wald"))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_wald",Target,childID,true);
+	else 	if (Caller->HasCommand("einzelfz"))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_einzelfz",Target,childID,false);
+	Caller->RemoveCommand("ort");
+	Caller->RemoveCommand("lz");
+	Caller->RemoveCommand("hlz");
+	Caller->RemoveCommand("hlzk");
+	Caller->RemoveCommand("ggvz");
+	Caller->RemoveCommand("wald");
+	Caller->RemoveCommand("einzelfz");
+	Caller->AssignCommand("ort");
+   }
+};
+

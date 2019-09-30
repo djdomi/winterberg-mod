@@ -1,0 +1,704 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script manv
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+
+
+
+
+// SEG-Triage
+// 
+
+int sx=0;
+int dx=0;
+
+object lna_start_triage : CommandScript
+{
+
+   lna_start_triage()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON);
+      SetIcon("triage");   
+      SetCursor("triage");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Target->GetType() == ACTOR_PERSON)
+	{
+		Person p(Target);
+		return p.IsInjured();
+	} else 
+		return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector ziel;
+	if (Target->GetType() != ACTOR_PERSON)
+	{
+		ziel=Game::GetCommandPos();
+	} else {
+		ziel=Target->GetPosition();
+	}
+	Game::FindFreePosition(Caller,ziel);
+	Caller->PushActionMove(ACTION_NEWLIST,ziel);
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"lna_triage",Target,0,false);
+   }
+};
+
+object lna_triage : CommandScript
+{
+
+   lna_triage()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObjectList triage;
+	Person pat;
+	Vector ziel;
+	bool weiter=false;
+
+	if ((Target->GetType() != ACTOR_PERSON) || (Caller->GetID() == Target->GetID()))
+	{
+		triage=Caller->GetObjectsInRange(1000,ACTOR_PERSON);
+		for (int ix=0;ix<triage.GetNumObjects();ix++)
+		{
+			Person pat(triage.GetObject(ix));
+			if (pat.IsInjured() && !pat.IsCarried() && !pat.IsContaminated())
+			{
+				if (!pat.HasCommand("manv_cat"))
+				{
+					ix=triage.GetNumObjects();
+					weiter=true;
+				}
+			}
+		}
+	} else
+		Person pat(Target);
+
+	if (pat.GetRole() == ROLE_ANIMAL)
+	{
+		pat.AssignCommand("manv_cat");
+		pat.AssignCommand("manv_schwarz");
+	} 
+	else if (pat.IsValid() && (Caller->GetID() != pat.GetID()) && weiter)
+	{
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lna_tr_gopat",&pat,0,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lna_categorize",&pat,0,false);
+	}
+	else 
+	{
+		Caller->PushActionWait(ACTION_APPEND,7.0f);
+	}
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"lna_triage",Caller,0,false);
+   }
+};
+
+object lna_tr_gopat : CommandScript
+{
+
+   lna_tr_gopat()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Person pat(Target);
+	if (!pat.IsBeingHealed())
+	{
+		Caller->PushActionMove(ACTION_INSERT,Target,TARGET_TREATMENT);
+		Caller->PushActionWait(ACTION_INSERTAFTERFIRST,3.0f);
+		Caller->PushActionSwitchAnim(ACTION_INSERTAFTERFIRST,"kneeldown");
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST,Target);
+	}
+   }
+};
+
+object lna_categorize : CommandScript
+{
+
+   lna_categorize()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Person pat(Target);
+	if (pat.IsInjured() && !pat.IsBeingHealed() && !pat.IsContaminated())
+	{
+		// int h=(pat.GetLife()/pat.GetMaxLife())*1000;
+		int h=pat.GetLife();
+		pat.AssignCommand("manv_cat");
+		pat.SetUserData(0);
+		if ((h>799) && !pat.HasCommand("manv_rot"))
+		{
+			pat.AssignCommand("manv_gruen"); //Sammeltransport sitzend -> Sammeln im KTW
+			pat.SetInjuredLifeDrain(0);
+		}
+		else if (h>399)
+			pat.AssignCommand("manv_gelb");  // sofort Abtransport RD -> Sammeln im SEG-Zelt
+		else if (h>0)
+			pat.AssignCommand("manv_rot");	// sofort Behandlung -> SEG-NA zuweisen
+		else 
+			pat.AssignCommand("manv_schwarz"); // keine Behandlung mehr 
+		pat.SetClassified(true);
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"TriageKarte",&pat,0,false);
+	}
+   }
+};
+
+object lna_leichen : CommandScript
+{
+
+   lna_leichen()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObjectList triage=Game::GetGameObjects(TYPE_PERSON);
+	int n=triage.GetNumObjects();
+	for (int x=0;x<n;x++)
+	{
+		Person pat(triage.GetObject(x));
+		if (pat.HasCommand("manv_schwarz") && !pat.IsCarried())
+			pat.PushActionDeleteOwner(ACTION_NEWLIST);
+	}
+   }
+};
+
+object seg_start_triage : CommandScript
+{
+
+   seg_start_triage()
+   {
+      SetIcon("heal");
+      SetCursor("heal");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	PersonList sanis(Caller->GetName());
+	PersonList docs;
+	docs=Game::GetDoctors();
+	Person sani,doc;
+	GameObjectList triage=Game::GetGameObjects(TYPE_PERSON);
+	int tn=triage.GetNumObjects();
+	int sn=sanis.GetNumPersons();
+	int dn=docs.GetNumPersons();
+	int tx,fzid;
+	int cid=1;
+
+	bool weitermachen=false;
+	bool no_sani, no_doc;
+	char * parken[1];
+	System::Error("Triage Schleife startet");
+	if (childID == 3)
+		for (dx=0;dx<dn;dx++)
+			doc.RemoveCommand("ich_bin_nicht_frei");
+	if (sx > (sn-1))
+		sx=0;
+	if (dx > (dn-1))
+		dx=0;	
+
+	for (tx=0;tx<tn;tx++)
+	{
+		Person pat(triage.GetObject(tx));
+		if (pat.HasCommand("manv_cat") && (pat.GetUserData()!=42) && (pat.GetUserData()!=112))
+		{
+			System::Error("... ist ein Triage-Patient");
+			pat.SetUserData(112);
+
+			if (pat.HasCommand("manv_gruen") || pat.HasCommand("manv_gelb"))
+			{
+				System::Error("... ... sani zweig");
+				weitermachen=true;
+				no_sani=true;
+				for (sx=sx;(sx<sn && no_sani);sx++)
+				{
+					sani=sanis.GetPerson(sx);
+					no_sani=sani.HasCommand("ich_bin_nicht_frei");
+				}
+				if (!no_sani)
+				{
+					System::Error("... ... sani gefunden");
+					pat.SetUserData(112);
+					sani.PushActionExecuteCommand(ACTION_NEWLIST,"seg_triage",&pat,0,false);
+				}
+			} else if (pat.HasCommand("manv_rot"))
+			{
+				System::Error("doc zweig");
+				weitermachen=true;
+				no_doc=true;
+				for (dx=dx;(dx<dn && no_doc);dx++)
+				{
+					doc=docs.GetPerson(dx);
+					parken[0]=doc.GetName();
+					fzid=int(parken[0][11])-32;
+					if ((doc.HasCommand("ich_bin_nicht_frei") || doc.IsHealing()) || (fzid != 36))
+					{
+						no_doc=(fzid!=36) || doc.HasAnyAction();
+						if (!no_doc)
+							doc.RemoveCommand("ich_bin_nicht_frei");
+					}
+					else
+						no_doc=false;
+				}
+				if (!no_doc)
+				{
+					System::Error("... ... doc gefunden");
+					doc.PushActionExecuteCommand(ACTION_NEWLIST,"seg_heal",&pat,0,false);
+				} else
+					cid=3;
+			}
+		} 
+		else if (pat.IsBeingHealed() && pat.HasCommand("manv_cat"))
+		{
+			float lim=pat.GetMaxLife()*0.90;
+			System::Log("SEG Heal Check .. ");
+			if ((pat.GetLife()*1.0) > lim)
+			{
+				pat.AssignCommand("manv_gelb");
+				pat.RemoveCommand("manv_rot");
+				pat.SetUserData(44);
+				System::Log("SEG Patient stabil -> Upgrade Gelb");
+			}
+		} else if (pat.IsDead())
+			pat.AssignCommand("manv_schwarz");
+	}
+	System::Error("Triage Schleife beendet");
+	Caller->PushActionWait(ACTION_APPEND,10.0f);
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_start_triage",Caller,cid,false);
+   }
+};
+
+object seg_triage : CommandScript
+{
+
+   seg_triage()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (!Target->IsValid())
+		return;
+	Person pat(Target);
+	if (pat.IsContaminated())
+		return;
+	Caller->AssignCommand("ich_bin_nicht_frei");
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"SEG_pat_aufheben",Target,0,false);
+	pat.SetInjuredLifeDrain(pat.GetInjuredLifeDrain()/5);
+	VehicleList vl(Caller->GetName());
+	Vehicle v;
+	int sx;
+	if (pat.HasCommand("manv_gruen"))
+	{
+		for (sx=0;sx<vl.GetNumVehicles();sx++)
+		{
+			if (v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+				sx=100;
+		}		
+	} else if (pat.HasCommand("manv_gelb"))
+	{
+		for (sx=0;sx<vl.GetNumVehicles();sx++)
+		{
+			v=vl.GetVehicle(sx);
+			if (!v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+				sx=100;
+		}		
+	} 
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_pat_in_ktw",&v,0,false);
+   }
+};
+
+object seg_pat_in_ktw : CommandScript
+{
+
+   seg_pat_in_ktw()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	System::Error("SEG Pat in KTW/Zelt verbringen");
+	Person p(Caller);
+	if (!p.IsCarryingPerson())
+	{
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		Caller->PushActionWait(ACTION_NEWLIST,0.1f);
+		return;
+	}
+	VehicleList vl(Caller->GetName());
+	Vehicle v;
+	Person pat=p.GetCarried();
+	int sx;
+	if (pat.HasCommand("manv_gruen"))
+	{
+		for (sx=0;sx<vl.GetNumVehicles();sx++)
+		{
+			v=vl.GetVehicle(sx);
+			if (v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+				sx=100;
+		}		
+	} else if (pat.HasCommand("manv_gelb"))
+	{
+		for (sx=0;sx<vl.GetNumVehicles();sx++)
+		{
+			v=vl.GetVehicle(sx);
+			if (!v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+				sx=100;
+		}		
+	}
+	pat.SetInjuredLifeDrain(0.0);
+	if (v.HasCommand("ich_bin_nicht_frei"))
+	{
+	 	Caller->PushActionMove(ACTION_APPEND,&v,TARGET_PASSENGERDOOR);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_pat_einladen",&v,0,false);
+	}
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_check_sani_frei",&v,0,false);
+   }
+};
+
+object SEG_pat_aufheben : CommandScript
+{
+
+	SEG_pat_aufheben()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionMove(ACTION_INSERT,Target,TARGET_TREATMENT);
+		Caller->PushActionLift(ACTION_INSERTAFTERFIRST,Target);
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST,Target);
+	}
+};
+
+object SEG_pat_einladen : CommandScript
+{
+
+	SEG_pat_einladen()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		if (v.GetFreeTransports() > 0)
+		{
+			Caller->PushActionPutInCar(ACTION_INSERT,&v);
+			VehicleList vl(Caller->GetName());
+			Vehicle segktw=vl.GetVehicle(0);
+			Caller->PushActionMove(ACTION_APPEND,&segktw,TARGET_REARDOOR);
+		} else
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"seg_fz_voll",&v,0,false);
+	}
+};
+
+
+object seg_ktw_zurueck : CommandScript
+{
+
+   seg_ktw_zurueck()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	System::Error("KTW an SEG-Stelle eingetroffen");
+	Caller->AssignCommand("ich_bin_nicht_frei");
+   }
+};
+
+object seg_heal : CommandScript
+{
+
+   seg_heal()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->AssignCommand("ich_bin_nicht_frei");
+	Caller->PushActionMove(ACTION_NEWLIST,Target,TARGET_TREATMENT);
+	Caller->PushActionTurnTo(ACTION_APPEND,Target);
+	Person pat(Target);
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"heal",Target,0,false);
+   }
+};
+
+object seg_fz_voll : CommandScript
+{
+
+   seg_fz_voll()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle v(Target);
+	System::Error("KTW Check");
+	if ((v.GetFreeTransports() == 0) && v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+	{
+		System::Error("KTW voll zum KH");
+		v.RemoveCommand("ich_bin_nicht_frei");
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"zum_krankenhaus",&v,0,false);
+	}
+   }
+};
+
+object seg_ktw_estelle : CommandScript
+{
+
+   seg_ktw_estelle()
+   {
+		SetCursor("SEG");
+		SetIcon("SEG");
+   }
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle v(Caller);
+	System::Error("SEG zurueckfahren ?");
+	if (v.GetNumTransported() > 0)
+	{
+		System::Error("Rueckfahrt KTW nicht moeglich. Etwas warten");
+		Caller->PushActionWait(ACTION_NEWLIST,2.0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_ktw_estelle",Caller,0,false);
+	} else {
+		System::Error("SEG KTW zur EStelle zurueck senden");
+		PersonList sanis(v.GetName());
+		Person sani=sanis.GetPerson(0);
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, "WT_SoSi", Caller, 0, false);
+		Caller->PushActionMove(ACTION_APPEND,&sani, TARGET_ANY);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 1, false); // childID= 1 -> Blaulichter aus
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_ktw_zurueck",Target,0,false);
+	}
+	return;
+  }
+};
+
+object SEG_an_RTW : CommandScript
+{
+
+	SEG_an_RTW()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		Vehicle zelt(Target);
+		if (zelt.GetFreePassengers() > 0)
+		{
+			if (!v.HasCommand("DUMMYHasWarningLights"))
+				v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 0, false);
+			PersonList l = v.GetPassengers();
+			l.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+			l.GetPerson(1)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+			l.GetPerson(1)->PushActionExecuteCommand(ACTION_APPEND,"ratransport",Target,0,false);
+		}
+	}
+};
+
+object SEG_Pat_anfordern : CommandScript
+{
+
+	SEG_Pat_anfordern()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		v.PushActionExecuteCommand(ACTION_INSERT,"SEG_Pat_zuteilen",Caller,0,false);
+	}
+};
+
+object SEG_Zelt_auschecken: CommandScript
+{
+
+	SEG_Zelt_auschecken()
+	{
+		SetIcon("heal");
+		SetCursor("heal");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.PushActionWait (ACTION_NEWLIST,0.5f);
+		PersonList sanis(v.GetPassengers());
+		// PersonList sanis(v.GetTransports());
+		for (int x=0;x<sanis.GetNumPersons();x++)
+		{
+			Person sani=sanis.GetPerson(x);
+			v.PushActionExecuteCommand(ACTION_INSERT,"SEG_Pat_zuteilen",&sani,0,false);
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_start_triage",Caller,0,false);
+	}
+};
+
+object SEG_Pat_zuteilen : CommandScript
+{
+
+	SEG_Pat_zuteilen()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Error("SEG Zelt Patient zuteilen");
+		Vehicle zelt(Caller);
+		Vehicle rtw;
+		PersonList pats;
+		Person pat,sani;
+		pats=zelt.GetTransports();
+		if (pats.GetNumPersons() == 0)
+		{
+			Caller->PushActionWait(ACTION_APPEND,1.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"SEG_Pat_zuteilen",Target,0,false);
+		} else {		
+			Person sani(Target);
+			System::Error("SEG Zelt Patient vorhanden");
+			pat=pats.GetPerson(0);
+			sani.PushActionLift(ACTION_APPEND,&pat);
+			sani.PushActionLeaveCar(ACTION_APPEND,&zelt);
+			VehicleList vl(sani.GetName());
+			rtw=vl.GetVehicle(0);
+			sani.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&rtw,0,false);
+		}
+		System::Error("SEG Zelt Patient zuteilen Ende");
+	}
+};
+
+object seg_check_sani_frei : CommandScript
+{
+
+   sani_frei()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Person p(Caller);
+	System::Log("SEG Pat abgegeben?");
+	if (!p.IsCarryingPerson())
+	{
+		System::Log("SEG Ja, pat ist weg");
+		Vehicle v(Target);
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"seg_fz_voll",Target,0,false);
+	} else {
+		System::Log("SEG Nein, noch mal versuchen");
+		Caller->PushActionWait(ACTION_NEWLIST,3.0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_pat_einladen",Target,0,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"seg_check_sani_frei",Target,0,false);
+	}
+   }
+};
+
+int DummyGroup = 20;
+
+object manv_cat : CommandScript
+{
+	manv_cat()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object manv_rot : CommandScript
+{
+	manv_rot()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object manv_gelb : CommandScript
+{
+	manv_gelb()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object manv_gruen : CommandScript
+{
+	manv_gruen()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object manv_schwarz : CommandScript
+{
+	manv_schwarz()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+

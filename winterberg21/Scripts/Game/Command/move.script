@@ -1,0 +1,204 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script move
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+//**************************************************************************************************
+// #Version 2.0#										****
+//												****
+// 		Changes: - Disables Sirens after arriving targetpoint.				****
+//												****
+//												****
+// 		DO NEVER REPLACE ORIGINAL SCRIPTS USED BY EM4 IN YOUR DATA-FOLDER!		****
+//**************************************************************************************************
+
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object MoveTo : CommandScript
+{
+	MoveResult mr;
+	
+	MoveTo()
+	{
+		SetValidTargets(ACTOR_FLOOR | ACTOR_OBJECT | ACTOR_VIRTUAL | ACTOR_HOUSE | ACTOR_OPEN_HOUSE | ACTOR_PERSON);
+		SetHighlightingEnabled(false);
+		SetDeselectCaller(false);
+		//SetActivationByLeftClick(true);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (Target->GetType() == ACTOR_PERSON))
+			return true;
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (Target->GetType() == ACTOR_VEHICLE))
+		{
+			Vehicle v(Target);
+			char * parken[1];
+			parken[0]=v.GetName();
+			int fzid=int(parken[0][4])-32;
+			if ((fzid == 35) && (v.HasCommand("ich_bin_kein_fz")) && (v.GetNumTransported()>0)) 
+				return true;
+			else
+				return false;
+		}
+
+		mr = Commands::CheckMoveConditions(Caller, Target, childID);
+		if (mr.Mode == MOVE_ABORT)
+			return false;
+
+		if(Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if(v.GetFreePassengers() > 0 && v.GetNumPassengers() == 0)
+				return false;
+		}
+		
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		//FZG ist nicht verfügbar...
+
+		Caller->AssignCommand("ich_bin_nicht_frei");
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (Target->GetType() == ACTOR_PERSON))
+		{
+			Vector ziel=Target->GetPosition()+Vector (70,70,0);
+			Game::FindFreePosition(Caller,ziel,100);
+			Caller->PushActionMove(ACTION_NEWLIST,ziel,true);
+		} else {
+		
+
+		if (mr.Mode == MOVE_ABORT)
+			return;
+
+		switch(mr.Mode)
+		{
+			case MOVE_TO_POSITION:
+			{
+				if (Caller->GetFirehoseID() > 0)
+				{
+					Caller->PushActionMoveWithHose(ACTION_NEWLIST, mr.Target);
+					return;
+				}
+				Caller->PushActionMove(ACTION_NEWLIST, mr.Target, true);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_DISABLE, Caller, 2, false);
+				break;
+			}
+			
+			case MOVE_INTO_HOUSE:
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, mr.Intermediate1, true);
+				Caller->PushActionEnterHouse(ACTION_APPEND, &mr.EnterHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Target, true);
+				break;
+			}
+			
+			case MOVE_HOUSE_TO_HOUSE:
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, mr.Intermediate1, true);
+				Caller->PushActionLeaveHouse(ACTION_APPEND, &mr.LeaveHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Intermediate2, true);
+				Caller->PushActionEnterHouse(ACTION_APPEND, &mr.EnterHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Target, true);
+				break;
+			}
+			
+			case MOVE_HOUSE_TO_POSITION:
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, mr.Intermediate1, true);
+				Caller->PushActionLeaveHouse(ACTION_APPEND, &mr.LeaveHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Target, true);
+				break;
+			}
+		}
+		}
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (v.IsLightOn())
+			{
+				Caller->PushActionLightOn(ACTION_INSERT, false);
+			}
+		}
+
+		// Special code for fgrr (Bergefahrzeug). Deinstalls itself automatically
+		if (mr.UnInstall) 
+		{
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_THW_FGRR_BKF)
+			{
+				//System::Print("FGRR: Mode 1 - DeInstall");
+				Caller->PushActionDeinstall(ACTION_INSERT);
+			}
+
+			else if (v.GetVehicleType() == VT_FIREFIGHTERS_DLK)
+			{
+				if (mr.BasketDown && mr.UnInstall)
+				{
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+					Caller->PushActionDeinstall(ACTION_INSERT);
+					Caller->PushActionBasketDown(ACTION_INSERT, Vector(0.f, 0.f, 0.f));
+				}
+				else if (mr.BasketDown)
+				     	Caller->PushActionBasketDown(ACTION_INSERT, Vector(0.f, 0.f, 0.f));
+				else if (mr.UnInstall)
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+				     	Caller->PushActionDeinstall(ACTION_INSERT);
+			}
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_DISABLE, Caller, 2, false);
+		Vehicle v(Caller);
+		VehicleType vt=v.GetVehicleType();
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (Target->GetType() == ACTOR_PERSON))
+		{
+			PersonList pl=v.GetPassengers();
+			Person p=pl.GetPerson(0);
+			Person pt(Target);
+			if (pt.IsInjured()) 
+			{
+				switch (vt)
+				{
+					case VT_AMBULANCE_NEF:
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"NEF_examine",Target,0,false);
+					case VT_AMBULANCE_RTW:
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"RTW_examine",Target,0,false);
+				}
+			} else {
+				if ((vt == VT_POLICE_STW) || (vt == VT_POLICE_MTW))
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"POL_arrest",Target,0,false);
+			}
+		}
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (vt == VT_AMBULANCE_RTW) && (Target->GetType() == ACTOR_VEHICLE))
+		{
+			Vehicle zelt(Target);
+			if (zelt.GetNumTransported()>0) 
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"SEG_an_RTW",Target,0,false);
+			} 
+		}
+
+		if ((Caller->GetType() == ACTOR_PERSON))
+		{
+			switch(Caller->GetUserData())
+			{
+				case 106:
+				case 107:
+					Caller->PushActionUseEquipment(ACTION_APPEND,Target,0,3.0);
+			}
+		}
+	}
+};

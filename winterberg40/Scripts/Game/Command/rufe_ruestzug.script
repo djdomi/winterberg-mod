@@ -1,0 +1,110 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script rufe_ruestzug
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+// Winterberger für Em4 
+// rufe_ruestzug v1.0 by WitchDoctor
+// basiert auf rufe_loeschzug.script für Em3 by manuelt
+//
+// Revision
+// 17.6.2006 : Fz-Auswahl über VehicleList (schneller)
+//		Zug wird  anhand Fahrzeugtypen zusammengestellt, von jedem Typ ein Fz
+// 
+// Basis: Garagenausfahrt by BigBob
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+bool sir=false;
+
+object rufe_ruestzug : CommandScript
+{
+   rufe_ruestzug()
+   {
+      SetValidTargets(ACTOR_FLOOR);
+      SetIcon("ruestzug");
+      SetCursor("ruestzug");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	sir=true;
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector TargetPos=Game::GetCommandPos();
+	int alarmtype=101;
+ 	bool dum=false;
+	bool kran=false;
+	Person p;
+
+	if (childID>999)
+	{
+		kran=true;
+		childID=childID-1000;
+	}
+	alarmtype=101;
+	p = Game::CreatePerson("mod:Prototypes/Persons/Civil/firewatchguy01.e4p", "anrufer");
+	p.SetNeverResort(true);
+	p.PushIgnoreEnergy();
+	p.Hide();
+	Game::FindFreePosition(&p,TargetPos);
+	p.SetPosition(TargetPos);
+	p.SetAnimation("wavehelp3");
+	p.SetCommandable(true);
+	p.SetUserData(0);
+	if (Target->GetType() == ACTOR_PERSON)
+	{
+		Person TL(Target);
+		if (TL.HasCommand("tl"))
+		{
+			alarmtype=111;
+			p.AssignCommand("TL");
+			p.SetUserData(TL.GetUserData());
+		}
+		else
+			alarmtype=101;
+	} 
+
+
+	int cid=childID*1000;
+	p.PushActionExecuteCommand(ACTION_NEWLIST,"alarmgeber",&p,alarmtype,false);	// Zugsequenz einschalten
+
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,111,false); // Streife, kein MTW
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,cid+553,false); // Einsatzleitung
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,cid+513,false); // Fz Technische Rettung
+	if (sir)
+		p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,cid+599,false);
+	else
+	{
+		p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,cid+520,false);
+		// p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,cid+511,false);
+	}
+	if (sir)
+	{
+		p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,99510,false);
+		p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,99511,false);
+	}
+	sir=false;
+	if (kran)
+		p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,350,false);
+	kran=false;
+	p.PushActionExecuteCommand(ACTION_APPEND,"alarmgeber",&p,103,false);	// Zugsequenz abschalten
+
+	p.PushActionExecuteCommand(ACTION_APPEND,"alarmgeber",&p,102,false);	// Zugsequenz ausschalten
+
+   }
+};
+

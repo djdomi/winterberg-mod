@@ -1,0 +1,151 @@
+object rufe_dekon : CommandScript
+{
+
+   rufe_dekon()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object rufe_kran : CommandScript
+{
+
+   rufe_kran()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object Alarm_AAB : CommandScript
+{
+
+   Alarm_AAB()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object Alarm_ENK : CommandScript
+{
+
+   Alarm_ENK()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object Alarm_SEG : CommandScript
+{
+
+   Alarm_SEG()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object rufe_sek : CommandScript
+{
+
+   rufe_sek()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object rufe_hummel : CommandScript
+{
+
+   rufe_hummel()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object rufe_taucher : CommandScript
+{
+
+   rufe_taucher()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};

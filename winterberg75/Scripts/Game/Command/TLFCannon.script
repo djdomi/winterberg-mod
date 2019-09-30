@@ -1,0 +1,79 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script TLFCannon
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+object TLFWaterOff : CommandScript
+{
+TLFWaterOff()
+{
+SetIcon("wateroff");
+SetCursor("wateroff");
+SetValidTargets(ACTOR_VEHICLE);
+SetDoubleClickable(true);
+SetRestrictions(RESTRICT_SELFEXECUTE);
+}
+
+bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+{
+if(Caller && Target && Caller->GetID()==Target->GetID())
+return true;
+
+return false;
+}
+
+void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+{
+
+Vehicle v(Caller);
+v.EnableAutoTarget(false);
+Caller->RemoveCommand("TLFWaterOff");
+Caller->AssignCommand("TLFWaterOn");
+Caller->ClearActions();
+}
+};
+
+object TLFWaterOn : CommandScript
+{
+TLFWaterOn()
+{
+SetIcon("wateron");
+SetCursor("wateron");
+SetValidTargets(ACTOR_VEHICLE);
+SetDoubleClickable(true);
+SetRestrictions(RESTRICT_SELFEXECUTE);
+}
+
+bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+{
+if(Caller && Target && Caller->GetID()==Target->GetID())
+return true;
+
+return false;
+}
+
+void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+{
+
+Vehicle v(Caller);
+v.EnableAutoTarget(true);
+v.PushActionExecuteCommand(ACTION_INSERT,"ma_pumpe",&v,0,false);
+Caller->RemoveCommand("TLFWaterOn");
+Caller->AssignCommand("TLFWaterOff");
+}
+};

@@ -1,0 +1,346 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script rufe_nef
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+// Winterberger für Em4 
+// rufe_nef v1.1 by WitchDoctor
+// basiert auf rufe_nef.script für Em3 by manuelt
+//
+// Revision
+// 17.6.06 : Auswahl über VehicleList, NEF/RTH über ein Script
+//		RTH-NA behandelt nicht automatisch verletzte Person
+//		Aufruf mit childID 100 beschränkt Auswahl auf RTH
+//
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freien NEF ...
+
+// Ein freier NEF:
+// steht am KH oder
+// wurde gerade alamiert oder
+// hat einen NA an Bord und
+// wurde vom Spieler nicht per Hand an einen Ort geschickt
+
+// To-Do: Nicht irgendeiner, sondern der nächste NEF wird gerufen...
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+VehicleList rtws[1];
+
+object init_nef : CommandScript
+{
+
+   init_nef()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	VehicleList fz(VT_AMBULANCE_NEF,VT_AMBULANCE_NEF);
+	rtws[0]=fz;
+	System::Log("FZA NEF initialisieren");
+	System::Log(fz.GetVehicle(0)->GetName());
+	return;  
+   }
+};
+
+
+
+object rufe_nef : CommandScript
+{
+
+	bool kriterien_erfuellt; //Ist dieser NEF gerade frei?
+
+   rufe_nef()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("nef");
+      SetCursor("nef");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OBJECT)
+         return false;
+	
+	if (Target->GetType() == ACTOR_VEHICLE)
+	{
+		Vehicle v(Target);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			return true;
+		else
+			return false;
+	}
+
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,601,false);
+	if (Target->GetType() == ACTOR_PERSON)	// primäre NAW-Alarmierung, 
+	{
+		Person p(Target);
+		p.SetUserData(44);  // ein NEF zum Patienen ist bereits alarmiert
+		Vehicle v(Caller);
+		if (v.GetVehicleType() != VT_AMBULANCE_RTW)
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,622,false); // RTW mitalarmieren, darf nicht KTW sein
+	}
+	return;
+   }
+};
+
+object n882 : CommandScript
+{
+
+	int ix;
+
+   n882()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("nef8821");
+      SetCursor("nef8821");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		bool disponibel;
+		disponibel=!rtws[0].GetVehicle(0)->HasCommand("ich_bin_nicht_frei");
+		if (Caller->HasCommand("storno"))
+			disponibel=!disponibel;
+
+		if (!Caller->HasCommand("neudispo"))
+			return disponibel;
+		else {
+			Vehicle Fz=rtws[0].GetVehicle(0);
+			disponibel=((Fz.GetNumPassengers()>0) || !Fz.HasCommand("ich_bin_nicht_frei"));
+			return disponibel;
+		}
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OBJECT)
+         return false;
+	
+	if (Target->GetType() == ACTOR_VEHICLE)
+	{
+		Vehicle v(Target);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			return true;
+		else
+			return false;
+	}
+
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,1601,false);
+	if (Target->GetType() == ACTOR_PERSON)	// primäre NAW-Alarmierung, 
+	{
+		Person p(Target);
+		p.SetUserData(44);  // ein NEF zum Patienen ist bereits alarmiert
+		Vehicle v(Caller);
+		if (v.GetVehicleType() != VT_AMBULANCE_RTW)
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,622,false); // RTW mitalarmieren, darf nicht KTW sein
+	}
+	return;
+   }
+};
+
+object n782 : CommandScript
+{
+
+	int ix;
+
+   n782()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("nef7821");
+      SetCursor("nef7821");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		bool disponibel;
+		disponibel=!rtws[0].GetVehicle(2)->HasCommand("ich_bin_nicht_frei");
+		if (Caller->HasCommand("storno"))
+			disponibel=!disponibel;
+
+		if (!Caller->HasCommand("neudispo"))
+			return disponibel;
+		else {
+			Vehicle Fz=rtws[0].GetVehicle(2);
+			bool disponibel=((Fz.GetNumPassengers()>0) || !Fz.HasCommand("ich_bin_nicht_frei"));
+			return disponibel;
+		}
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OBJECT)
+         return false;
+	
+	if (Target->GetType() == ACTOR_VEHICLE)
+	{
+		Vehicle v(Target);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			return true;
+		else
+			return false;
+	}
+
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,26601,false);
+	if (Target->GetType() == ACTOR_PERSON)	// primäre NAW-Alarmierung, 
+	{
+		Person p(Target);
+		p.SetUserData(44);  // ein NEF zum Patienen ist bereits alarmiert
+		Vehicle v(Caller);
+		if (v.GetVehicleType() != VT_AMBULANCE_RTW)
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,622,false); // RTW mitalarmieren, darf nicht KTW sein
+	}
+	return;
+   }
+};
+
+object nbb : CommandScript
+{
+
+	int ix;
+
+   nbb()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("nefsi4821");
+      SetCursor("nefsi4821");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		bool disponibel;
+		disponibel=!rtws[0].GetVehicle(1)->HasCommand("ich_bin_nicht_frei");
+		if (Caller->HasCommand("storno"))
+			disponibel=!disponibel;
+
+		if (!Caller->HasCommand("neudispo"))
+			return disponibel;
+		else {
+			Vehicle Fz=rtws[0].GetVehicle(1);
+			bool disponibel=((Fz.GetNumPassengers()>0) || !Fz.HasCommand("ich_bin_nicht_frei"));
+			return disponibel;
+		}
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OBJECT)
+         return false;
+	
+	if (Target->GetType() == ACTOR_VEHICLE)
+	{
+		Vehicle v(Target);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			return true;
+		else
+			return false;
+	}
+
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,21601,false);
+	if (Target->GetType() == ACTOR_PERSON)	// primäre NAW-Alarmierung, 
+	{
+		Person p(Target);
+		p.SetUserData(44);  // ein NEF zum Patienen ist bereits alarmiert
+		Vehicle v(Caller);
+		if (v.GetVehicleType() != VT_AMBULANCE_RTW)
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,622,false); // RTW mitalarmieren, darf nicht KTW sein
+	}
+	return;
+   }
+};
+
+
+
+object NEF_examine : CommandScript
+{
+
+	NEF_examine()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetDoubleClickable(true);
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if (!v.HasCommand("DUMMYHasWarningLights"))
+			v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 0, false);
+		bool im_haus=(Target->GetType() == ACTOR_OPEN_HOUSE);
+		if (im_haus)
+		{
+			OpenHouse oh(Target);
+			PersonList pl=oh.GetNonSquadPersonsInside();
+			Person pat;
+			for (int x=0;x<pl.GetNumPersons();x++)
+			{
+				pat=pl.GetPerson(x);
+				if (pat.IsInjured() && !pat.IsCarried())
+					x=pl.GetNumPersons();
+			}
+		} else
+			Person pat(Target);
+		if (!im_haus || (im_haus && oh.HasGroundEntrance()))
+		{
+			PersonList l = v.GetPassengers();
+			for(int i=0; i<l.GetNumPersons(); i++)
+			{
+				l.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Caller);
+				if (im_haus)
+					l.GetPerson(i)->PushActionExecuteCommand(ACTION_APPEND,"EnterHouse",Target,112,false);	
+				if (l.GetPerson(i)->GetEquipment() == EQUIP_EMERGENCY_CASE)
+					l.GetPerson(i)->PushActionExecuteCommand(ACTION_APPEND,"Heal",&pat,0,false);
+			}
+		}
+	}
+};

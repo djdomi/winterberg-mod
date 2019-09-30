@@ -1,0 +1,60 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script LightOn
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+object LightOn : CommandScript
+{
+
+	LightOn()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetGroupID(CGROUP_LIGHT);
+		SetGroupLeader(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetDeselectCaller(false);
+		SetPriority(50);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		Vehicle v(Caller);
+		return !v.IsLightOn();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Target->GetID() != Caller->GetID()))
+			return false;
+			
+		Vehicle rw(Caller);
+		if (rw.IsValid() && !rw.IsLightOn())
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"ActionMotorSound",Caller,3,false);
+		Caller->PushActionLightOn(ACTION_APPEND,true);
+	}	
+
+};

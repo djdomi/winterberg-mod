@@ -1,0 +1,255 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script lift
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+object Lift : CommandScript
+{
+	Lift()
+	{
+		SetIcon("liftperson");
+		SetCursor("liftperson");
+		SetValidTargets(ACTOR_PERSON);
+		SetGroupID(CGROUP_CARRY_PERSON);
+		SetGroupLeader(true);
+		SetPriority(800);
+		SetSelfClickActivation(true);
+		SetPossibleExists(CPE_DROWNING_PERSONS | CPE_INJURED_PERSON | CPE_NONIJURED_PERSON);
+		SetPossibleEquipment(EQUIP_NONE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		if (p.IsCarryingPerson()|| p.IsPulling())
+			return false;
+		if (p.HasCommand("Dive"))
+			return Game::ExistsDrowningPerson();
+		return Game::ExistsInjuredPerson() && !Caller->HasCommand("fuehrung");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (Input::LCtrlPressed())
+			return false;
+
+		if (!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		Person p(Caller);
+		Person t(Target);
+
+		if (t.HasCommand("blutung") && !p.IsDead())
+			return false;
+
+		if (p.IsParamedicTeam() && t.IsInjured() && !t.IsClassified())
+			return false;
+
+		if(p.IsValid() && !p.IsCarryingPerson()&& !p.IsLinkedWithPerson() && !p.IsPulling()
+			&& t.IsValid() && t.IsInjured() && !t.IsCarried() && t.GetRole()!=ROLE_ANIMAL && !t.IsRescueDog())
+		{
+			if (p.GetEnteredCarID() != -1 && p.GetEnteredCarTargetID() != t.GetEnteredHouseID())
+				return false;
+			if (p.GetEnteredCarID() == -1 && t.GetEnteredHouseID() != -1 && t.GetEnteredHouseID() != p.GetEnteredHouseID() && !t.IsInHouseWithGroundEntrance())
+				return false;
+			// Taucher nimmt nur Ertrinkende Personen auf
+			if (p.HasCommand("Dive") && !t.IsDrowning())
+				return false;
+			if(!p.HasCommand("Dive") && t.IsDrowning())
+				return false;
+			
+			return true;
+		}
+
+		if ((t.IsLinkedWithPerson()||t.IsCarryingPerson()) && (t.GetRole() == ROLE_SQUAD) && p.IsParamedicTeam())
+			return true;
+		
+		return false;
+	} 
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Caller);
+		Person pt(Target);
+		bool NAdabei=pt.IsBeingHealed();
+
+		if (NAdabei)
+		{
+			GameObjectList ol=pt.GetObjectsInRange(70.0,ACTOR_PERSON);
+			NAdabei=false;
+			for (int nax=ol.GetNumObjects()-1;(nax>-1) && !NAdabei;nax--)
+			{
+				Person na(&ol.GetObject(nax));
+				char * naname=na.GetName();
+				NAdabei=((int (naname[11])-32)!=36) && na.IsDoctor();
+			}
+		}
+			
+		if (p.GetEnteredCarID() == -1)
+		{
+			if (p.HasCommand("Dive"))
+				Caller->PushActionMove(ACTION_APPEND, Target, TARGET_FOLLOW);
+			else
+				Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_TOUCHPERSON);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		}
+		else
+		{
+			if (pt.GetEnteredHouseID() == p.GetEnteredCarTargetID())
+			{
+				Caller->PushActionEnterHouse(ACTION_NEWLIST, pt.GetEnteredHouseID());
+				Caller->PushActionMove(ACTION_APPEND, Target, TARGET_TOUCHPERSON);
+				Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			}
+			else
+				Caller->PushActionTurnTo(ACTION_NEWLIST, Target);
+		}
+		if (pt.IsLinkedWithPerson() || pt.IsCarryingPerson())
+		{
+			if (pt.IsCarryingPerson())
+			{
+				Person pat=pt.GetCarried();
+				pt.PushActionUnloadPerson(ACTION_NEWLIST);
+			}
+			else
+			{
+				Person pat=pt.GetArrested();
+				pt.PushActionRelease(ACTION_NEWLIST);
+			}
+			pt=pat;
+			pat.SetNeverResort(true);
+			pat.SetClassified(true);
+			Caller->PushActionMove(ACTION_APPEND, &pt, TARGET_TOUCHPERSON);
+			Caller->PushActionTurnTo(ACTION_APPEND,&pt);
+
+		}
+
+		bool mitnehmen=false;
+		bool seg=false;
+
+		if (p.IsParamedicTeam())
+		{
+			char * pname=p.GetName();
+			seg=(int (pname[11])-32)==35;
+			VehicleList vl(Caller->GetName());
+			Vehicle v=vl.GetVehicle(0);
+			bool isKTW=(v.GetFreePassengers() + v.GetNumPassengers())<3;
+			bool isKompakt=v.IsFlagSet(OF_USABLE_WITH_MEGAPHONE);
+			int NACA;
+			int NAID=0;
+			if (pt.GetLife()>600)
+				NACA=3;
+			else if (pt.GetLife()>400)
+				NACA=4;
+			else if (pt.GetLife()>0)
+				NACA=5;
+			else NACA=6;
+
+			System::Log("Pat aufnehmen : %s %u NACA %u %u",pt.GetName(),int(pt.IsFlagSet(OF_BULLDOZABLE)),NACA,int(seg));
+
+			if (!v.HasCommand("ich_bin_ein_bsw") && (v.GetVehicleType()!=VT_AMBULANCE_RHC))
+			{
+				switch (NACA)
+				{
+					case 3:
+						mitnehmen=true;
+						break;
+					case 4:
+						if (isKTW)
+							Mission::PlayHint("WIB_NACA4");
+						else
+							mitnehmen=true;
+						break;
+					case 5:
+						
+						Mission::PlayHint("NACA V :");
+						if (isKTW)
+							Mission::PlayHint("WIB_NAW");
+						else
+						{
+							mitnehmen=true;
+							if (NAdabei && !isKompakt)
+							{
+								Mission::PlayHint("WIB_NA_MIT");
+								NAID=na.GetID();
+							}
+							else 
+								Mission::PlayHint("WIB_NA_MUSS_MIT");					
+							v.SetChildEnabled("NA",true);
+						}
+						break;
+					case 6:
+						Mission::PlayHint("NACA VI : Reanimation !");
+						break;
+				}	
+			} else {
+				if (v.HasCommand("ich_bin_ein_bsw"))
+					if (!pt.IsFlagSet(OF_BULLDOZABLE))
+						mitnehmen=true;
+					else
+						Game::ShowHelpTextWindow("WIB_WD_LSCHAU");		
+				else mitnehmen=true;	
+			}
+		} else mitnehmen=true;
+	  
+		if (mitnehmen)
+		{
+			if (pt.IsFlagSet(OF_BULLDOZABLE))
+				p.SetFlag(OF_BULLDOZABLE);
+			Caller->PushActionLift(ACTION_APPEND, &pt);
+			if (p.IsParamedicTeam() && !seg)
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"RD_aufsitzen_befehlen",&v,NAID,false);
+		}
+	}
+};
+
+object RD_aufsitzen_befehlen : CommandScript
+{
+ 	RD_aufsitzen_befehlen()
+ 	{
+ 		SetGroupID(20);
+ 	}
+ 
+ 	bool CheckGroupVisibility(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return true;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int NAID)
+ 	{
+		Vehicle v(Target);
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"aufsitzen",&v,0,false);
+		if (NAID!=0)
+		{
+			Actor nac=Game::GetActor(NAID);
+			Person na(&nac);
+			na.PushActionExecuteCommand(ACTION_NEWLIST,"entercar",&v,0,false);
+		}
+ 	}
+};

@@ -1,0 +1,988 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script rufe_winterberg
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// Winterberger für Em4 
+// rufe_polizei_tec v1.0 by WitchDoctor
+// basiert auf rufe_stw.script für Em3 by manuelt
+//
+// Revision
+// 17.6.2006 : Auswahl über VehicleList, gesteuert über childID, default -> Streife/MTW
+//		childID = 100 -> nur MTW
+//		childID = 101 -> PolFahrzeug -> 111 Z-Pol für Löschzug
+//		childID = 200 -> Pol.Hubschrauber
+//		childID = 300 -> ASF	-> 350 Kran
+//		childID = 400 -> TecJeep -> 450 DB-Notfallmanager -> 475 Kampfmittelraeumer
+//		childID = 500 -> GW-Mess -> 535 takt GW-Mess im Zug 
+//		childID = 501 -> Löschfahrzeug
+//		childID	= 502 -> Wasserretter
+//		childID	= 503 -> techn. Rettung -> 513 Takt. RW für Ruestzug -> 533 Takt. RW für Chemiezug
+//		childID = 504 -> Hubretter
+//		childID = 505 -> Chemieschutzfahrzeug -> 
+//		childID = 506 -> GTLF
+//		childID = 510 -> takt. Löschfahrzeug für Zug (510 und 511 bilden die gemeinsame Basis fur 501 kleiner Löscheinsatz)
+//		childID = 520 -> takt. Löschfahrzeug für Ruestzug -> A-Trupp rüstet sich nicht mit PA aus
+//		childID	= 530 -> takt. Löschfahrzeug für Chemiezug
+//		childID	= 511 -> takt. TLF für Zug -> 531 = takt.TLF für Chemiezug
+//		childID = 512 -> takt. Hubretter für Zug
+//		childID = 550 -> Einsatzleitung -> 553 EL Ruestzug  -> 555 EL Chemiezug
+// 		childID = 600 -> Bestattungsdienst
+//		childID = 601 -> Notarztbesetztes Rettungsmittel -> 611 = ZNEF
+//		childID = 602 -> RTW -> 612 = ZRTW -> 622 = NAW im Rendezvous, RTW aber kein KTW
+//		childID = 610 -> explizit RTH
+//		childID = 620 -> LNA
+//		childID = 650 -> SEG	-> 651 = SEG Arzt  -> 652 = SEG Truck
+//
+// 20.6.2006 : Erzeugt einen externen Bestatter  
+//		alarmierter Streifenwagen kann Verdächtigen direkt verfolgen		
+//
+// 24.6.2006 : einzelne Feuerwehrfahrzeuge sowie RTD werden auch von diesem Script alarmiert
+//
+// 02.7.2006 : Fahrzeuge werden anhand ByteCode identifiziert. Die ich_bin_funkruf-Kommandos sind entbehrlich
+//		alle genau einmal einsetzbaren Fz stehen hidden auf der Map -> einfachere Nachrücklisten
+
+// Basis: Garagenausfahrt by Big Bob
+
+// Ruft ein freies Winterberger Fahrzeug oder alarmiert externe Fahrzeuge
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+const float verzfakt=50.0;
+const int maxverz=20;
+const float verz[maxverz];
+verz[1]=1;	// Bad Berleburg entspricht 20 km
+verz[2]=0;
+verz[3]=3;	// Langewiese
+verz[4]=1.0;	// Olsberg
+verz[5]=0.75;	// Korbach
+verz[6]=4;	// Zueschen
+verz[7]=4;	// Groenebach
+verz[8]=0;	// 
+verz[9]=2.5;	// Siedlingshausen
+verz[10]=1.1;	// Medebach
+verz[11]=4;	// Altastenberg
+verz[12]=7;	// Enkeringhausen
+verz[13]=2.5;	// Niedersfeld
+verz[14]=0.4;   // Siegen
+verz[15]=0.75;	// Schmallenberg
+
+object rufe_winterberg : CommandScript
+{
+
+	bool kriterien_erfuellt; //Ist dieser STW gerade frei?
+	float abstand, minimum; // Abstand und kürzester Abstand zwischen STW und Ziel...
+
+   rufe_winterberg()
+   {
+	SetPriority(400);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+		return false;
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector FzPos;
+	Vector MinFz;
+	Vector Abstand;
+	Vehicle v;
+	Vehicle stw;
+	int dir=0;
+	char * hint[];
+	int randact;	
+	int cid;
+	Vector TargetPos;
+	int ptype=0;
+	
+	ptype=0;
+	TargetPos=Game::GetCommandPos();
+	bool dummy=false;
+	bool nachforderung=false;
+
+	System::Error("rufe_wb : Ziel definieren");
+
+	if (Target->GetType() == ACTOR_FLOOR)
+	{
+		Vehicle p = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/pylone.e4p", "alarmdummy");
+		p.Hide();
+		Game::FindFreePosition(&p,TargetPos);
+		p.SetPosition(TargetPos);
+		Target=&p;
+		p.AssignCommand("alarm_dummy");
+	}	
+
+	switch (childID) 
+	{
+		case 100 :
+			VehicleList l0(VT_POLICE_MTW,VT_POLICE_MTW);
+			hint="KEIN_MTW";
+			break;
+		case 200 :
+			VehicleList l0(VT_POLICE_PHC,VT_POLICE_PHC);
+			if (l0.GetNumVehicles() < 2)
+				dir=(Math::rand()%8+21)*100+20018;
+			break;
+		case 300:
+			VehicleList l0(VT_FIREFIGHTERS_ASF,VT_FIREFIGHTERS_ASF);
+			if (l0.GetNumVehicles() < 7)
+				dir=(Math::rand()%8+21)*100+20011;
+			break;
+		case 350:			
+			VehicleList l0(VT_THW_FGRR_BKF, VT_THW_FGRR_BKF);
+			if (l0.GetNumVehicles() < 1)
+				dir=21316;
+			break;
+		case 400:
+			VehicleList l0(VT_THW_FGRI_EKW, VT_THW_FGRI_EKW);
+			if (l0.GetNumVehicles() < 7)
+				dir=(Math::rand()%8+21)*100+20013;
+			break;
+		case 475:
+			VehicleList l0(VT_THW_FGRI_EKW, VT_THW_FGRI_EKW);	
+			dir=(Math::rand()%8+21)*100+20034;
+			break;
+		case 450:
+			VehicleList l0(VT_THW_FGRI_EKW, VT_THW_FGRI_EKW);	
+			dir=(Math::rand()%8+21)*100+20033;
+			break;
+		case 500:
+			VehicleList l0(VT_FIREFIGHTERS_DEKONP,VT_FIREFIGHTERS_DEKONP);
+			if (l0.GetNumVehicles() < 1)
+				dir=22715;
+			break;
+		case 506:
+		case 501:
+			VehicleList l0(VT_FIREFIGHTERS_TLF,VT_FIREFIGHTERS_GTF);
+			break;
+		case 502:
+			VehicleList l0(VT_FIREFIGHTERS_DLK,VT_FIREFIGHTERS_GTF);
+			hint="Es steht kein Wasserretter zur Verfügung!";
+			break;
+		case 533:
+		case 513:
+		case 503:
+			VehicleList l0(VT_FIREFIGHTERS_RW,VT_FIREFIGHTERS_GTF);
+			hint="Es steht kein Fahrzeug mit Rettungsschere zur Verfügung!";
+			break;
+		case 504:
+		case 512:
+			VehicleList l0(VT_FIREFIGHTERS_DLK,VT_FIREFIGHTERS_DLK);
+			break;
+		case 505:
+			VehicleList l0(VT_FIREFIGHTERS_DLK,VT_FIREFIGHTERS_GTF);
+			break;
+		case 510:
+		case 520:
+		case 530:
+			VehicleList l0(VT_FIREFIGHTERS_GTF,VT_FIREFIGHTERS_GTF);
+			break;
+		case 511:
+		case 531:
+			VehicleList l0(VT_FIREFIGHTERS_TLF,VT_FIREFIGHTERS_GTF);
+			break;
+		case 550:
+		case 553:
+		case 555:
+			VehicleList l0(VT_FIREFIGHTERS_RW,VT_FIREFIGHTERS_RW);
+			hint="Es steht kein Einsatzleiter zur Verfügung!";
+			break;
+		case 600:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			dir=22717;
+			break;
+		case 650:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			dir=(Math::rand()%8+21)*100+20035;
+			break;
+		case 651:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			dir=(Math::rand()%8+21)*100+20036;
+			break;
+		case 652:
+			VehicleList l0(VT_AMBULANCE_RHF,VT_AMBULANCE_RHF);
+			dir=(Math::rand()%8+21)*100+20037;
+			System::Error("Rufe_winterberg : DRK_TRUCK");
+			break;
+		case 601:
+		case 611:
+			VehicleList l0(VT_AMBULANCE_NEF,VT_AMBULANCE_RHC);
+			VehicleList cl(Caller->GetName());
+			if (Target->GetType() == ACTOR_PERSON)
+				if (cl.GetNumVehicles()>0)
+					nachforderung=(cl.GetVehicle(0)->GetVehicleType() == VT_AMBULANCE_RTW);
+			break;
+		case 622:
+		case 612:
+		case 602:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			break;
+		case 610:
+			VehicleList l0(VT_AMBULANCE_RHC,VT_AMBULANCE_RHC);
+			break;		
+		case 620:
+			VehicleList l0(VT_AMBULANCE_NEF,VT_AMBULANCE_NEF);
+			dir=(Math::rand()%8+21)*100+20032;
+			break;		
+		case 101:
+		case 111:
+      			VehicleList l0(VT_POLICE_STW,VT_POLICE_STW);
+			int choose=rand()%l0.GetNumVehicles();
+			hint="KEIN_STW";
+			break;
+	}
+	int max=l0.GetNumVehicles();
+	int wert=101;
+	int maxspeed;
+	int folge=100;
+	char * fz[1];
+	int fzid;
+	int fzstart;
+	int choose=Math::rand()%3;
+	
+     	for(int i=0; i<max; i++)
+      	{
+	      	//Aktuelles Objekt
+		v = l0.GetVehicle(i);
+		fz[0]=v.GetName();
+		fzid=int(fz[0][4])-32; // Fz-Typ laut AutosKaufen
+		
+		switch (fzid)
+		{
+			case 32:
+				dir=0;
+				break;
+		}
+
+		if (!v.HasCommand("ich_bin_nicht_frei"))
+		{
+			//Nur ohne Transport möglich...
+			if (v.GetNumTransported() > 0)
+			{
+				kriterien_erfuellt=false;
+			} else {
+				kriterien_erfuellt=true;
+			}
+			if (kriterien_erfuellt == true)
+			{
+				switch (childID)
+				{
+					case 620:
+						if (fzid == 32)
+							wert=1;
+						ptype=0;
+						break;
+					case 650:
+						if (fzid == 35)
+							wert=1;
+						ptype=0;
+						break;
+					case 651:
+						if (fzid == 36)
+							wert=1;
+						ptype=0;
+						break;
+					case 652:
+						if (fzid == 37)
+							wert=1;
+						else
+							wert=-1;
+						ptype=0;
+						break;
+					case 601:
+					case 611:
+						kriterien_erfuellt = false;
+						//Ist mind. ein NA an Bord?
+						PersonList na = v.GetPassengers();
+						for(int j=0; j<na.GetNumPersons(); j++)
+						{
+							if (na.GetPerson(j)->IsDoctor())
+							kriterien_erfuellt = true;
+						}
+						if (kriterien_erfuellt == true)
+						{
+							switch (v.GetVehicleType())
+							{
+								case VT_AMBULANCE_NEF:
+									switch (fzid)
+									{
+										case 1:
+											wert=1;
+											break;
+										case 26: 
+											wert=2;
+											break;
+										case 21:
+											wert=3;
+											break;
+									}
+									break;
+								case VT_AMBULANCE_RTW:
+									wert=10; // Kompakt-NAW gefunden, lieber NEF oder RTH
+									break;
+								case VT_AMBULANCE_RHC:
+									// stw=v; // RTH merken, aber lieber NEF suchen
+									if (childID == 610)
+									{
+										wert=1;
+										i=max; // wenn nur RTH gesucht, dann Suche beenden
+									} else {
+										wert=4;
+									}
+									break;
+							}
+						}
+						break;
+					case 602:
+					case 612:
+					case 622:
+						kriterien_erfuellt = false;
+						//Sind 2 RAs an Bord?
+						PersonList ra = v.GetPassengers();
+						int anzahl_ra = 0;
+						for(int j=0; j<ra.GetNumPersons(); j++)
+						{
+							if (ra.GetPerson(j)->IsParamedicTeam())
+								anzahl_ra++;
+							if (ra.GetPerson(j)->IsDoctor())
+								wert=20; // NA-besetzte RTW nur als RTW einsetzen, wenn kein anderer frei.
+						}
+						if ((anzahl_ra >= 1) && (fzid != 17))  // hier mit ra-team -> nur 1 person
+							kriterien_erfuellt = true;
+						if (childID == 622)
+							kriterien_erfuellt = (kriterien_erfuellt && (fzid != 27));
+						if (kriterien_erfuellt == true)
+						{			
+							switch (fzid)
+							{			
+								case 2:
+									wert=1;
+									break;
+								case 14:
+									wert=2;
+									break;
+								case 23:
+									wert=4;
+									break;
+								case 24:
+									wert=5;
+									break;
+								case 25:
+									wert=6;
+									break;
+								case 22:
+									wert=7;
+									break;
+								case 27:
+									wert=3;
+									break;
+							}
+						}
+						break;
+					case 300:
+						stw=v;
+						i=max;
+						ptype=0;
+						break;
+					case 600:
+						if (fzid == 17)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						break;
+					case 350:
+						wert=1;
+						i=max;
+						ptype=0;
+						break;
+					case 450:
+						if (fzid == 33)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						break;
+					case 475:
+						if (fzid == 34)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						break;
+					case 506:
+						wert=-1;
+						if (fzid == 20)
+							wert=1;
+						ptype=112;
+						break;
+					case 501:
+						wert=-1;
+						if (v.IsFirefighter())
+						{
+							wert=99;
+							switch (fzid)
+							{
+								case 3:
+									wert=1;
+									break;
+								case 4:
+									wert=2;
+									break;
+								case 19:
+									wert=3;
+									break;
+								case 38:
+									wert=4;
+									break;
+								case 28:
+									wert=5;
+									break;
+								case 29:
+									wert=6;
+									break;
+								case 30:
+									wert=7;
+									break;
+								case 31:
+									wert=8;
+									break;
+								case 20:
+									wert=9;
+									break;
+							}
+						}
+						ptype=112;
+						break;
+					case 502:
+						wert=-1;
+						if (v.HasCommand("ich_fuehre_tauchgeraet"))
+						{
+							if (stw.IsValid())
+							{
+								if (v.GetSpeed() > stw.GetSpeed()) // Suche das schnellste Fahrzeug
+									stw=v;					
+							} else {
+								stw=v;
+							}
+						}
+						ptype=112;
+						break;
+					case 503:
+					case 513:
+					case 533:
+						wert=-1;
+						if (v.IsFirefighter())
+							if (v.GetFlags() && OF_HAS_SHEARS) 
+							{
+								wert=3;
+								switch (fzid)
+								{
+									case 5:
+										wert=1;
+										break;
+									case 3:
+										wert=2;
+										break;
+									case 19:
+										wert=3;
+										break;
+									case 38:
+										wert=4;
+										break;
+								}	
+							}
+						ptype=112;
+						break;
+					case 505:
+						wert=-1;
+						if (v.HasCommand("ich_fuehre_csa"))
+						{
+							stw=v;
+							i=max;
+						}
+						ptype=112;
+						break;
+					case 511:
+					case 531:
+						wert=-1;
+						if (v.IsFirefighter())
+						{
+							wert=99;
+							switch (fzid)
+							{
+								case 4:
+									wert=1;
+									break;
+								case 30:
+									wert=2;
+									break;
+								case 31:
+									wert=3;
+									break;
+								case 20:
+									wert=4;
+									break;
+							}
+							ptype=112;
+						}
+						break;
+					case 500:
+					case 510:
+					case 512:
+					case 504:
+					case 520:
+					case 530:
+						wert=-1;
+						if (v.IsFirefighter())
+						{
+							wert=99;
+							switch (fzid)
+							{
+								case 3:
+									wert=1;
+									break;
+								case 4:
+									wert=2;
+									break;
+								case 19:
+									wert=3;
+									break;
+								case 38:
+									wert=4;
+									break;
+								case 28:
+									wert=5;
+									break;
+								case 29:
+									wert=6;
+									break;
+								case 30:
+									wert=7;
+									break;
+								case 31:
+									wert=8;
+									break;
+								case 20:
+									wert=9;
+									break;
+							}
+							ptype=112;
+						}
+						break;
+					case 550:
+					case 553:
+					case 555:
+						wert=-1;
+						if (fzid == 40)
+						{
+							wert=1;
+							i=max;
+							ptype=112;
+						}
+						break;
+					case 400:
+						if (fzid == 13)
+						{
+							wert=1;
+							i=max;
+							ptype=11880;
+						}
+						break;
+					case 200:
+						wert=1;	
+						i=max;
+						ptype=110;
+						break;
+					case 100:
+						wert=1;
+						i=max;
+						ptype=110;
+						break;
+					case 101:
+					case 111:
+						if (v.GetVehicleType()!=VT_POLICE_PHC)
+						{
+							if (i == choose)
+								wert=1;
+							else
+								wert=10;
+							ptype=110;
+						}
+						break;
+					default:
+						if (v.GetVehicleType()!=VT_POLICE_PHC)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						break;
+
+				}
+				if ((wert<folge) && (wert>0))
+				{
+					folge=wert;
+					stw=v;
+				}				
+			}
+		}
+	}
+
+	  //Ab hier gehts nur mit einem weiter...
+	  if (!stw.IsValid())
+	  {
+		if (dir>0) 
+		{
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"kaufen",Target,dir,false);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,childID,false);
+			Caller->PushActionWait(ACTION_INSERTAFTERFIRST,2.0f);
+	  		return;
+		} else {
+			Mission::PlayHint("Es steht kein Fahrzeug des angeforderten Typs zur Verfügung.");
+		}
+	  } else {
+		System::Error("Alarmierung rufe_wb");
+		System::Error(stw.GetName());
+		fz[0]=stw.GetName();
+		fzid=int(fz[0][4])-32; // Fz-Typ laut AutosKaufen
+		stw.AssignCommand("ich_bin_nicht_frei");
+		stw.AssignCommand("wird_alarmiert");
+		switch (fzid)
+		{
+			case 1:	
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,0,false);	
+				break;
+			case 26:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,1,false);	
+				break;
+			case 21:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,2,false);	
+				break;
+			case 2:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,3,false);	
+				break;
+			case 14:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,4,false);	
+				break;
+			case 23:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,5,false);	
+				break;
+			case 24:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,6,false);	
+				break;
+			case 27:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,7,false);	
+				break;
+			case 25:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,8,false);	
+				break;
+			case 22:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,9,false);	
+				break;
+			case 12:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,10,false);	
+				break;
+			case 19 :
+			case 30 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,11,false);	
+				break;
+			case 20 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,12,false);	
+				break;
+			case 28 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,13,false);	
+				break;
+			case 29 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,14,false);	
+				break;
+			case 13:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,16,false);	
+				break;
+			case 16:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,17,false);	
+				break;
+			case 3:
+			case 4:
+			case 5:	
+			case 6:
+			case 40:
+			case 15:
+				switch (childID)
+				{
+					case 501:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,18,false);	
+						break;
+					case 510:
+					case 511:
+					case 512:
+					case 550:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,22,false);	
+						break;
+					case 513:
+					case 520:
+					case 553:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,23,false);	
+						break;
+					case 504:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,20,false);	
+						break;
+					case 502:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,21,false);	
+						break;
+					case 530:
+					case 531:
+					case 533:
+					case 535:
+					case 555:
+					case 505:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,28,false);	
+						break;
+					case 500:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,15,false);	
+						break;
+				}
+				break;
+			case 38 :
+			case 31 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,19,false);	
+				break;
+			case 32 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,24,false);	
+				break;
+			case 33 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,25,false);	
+				break;
+			case 34 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,26,false);	
+				break;
+			case 35 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,27,false);	
+				break;
+			default:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,100,false);	
+				break;
+		}
+		
+		fz[0]=stw.GetName();
+		fzstart=int(fz[0][0])-32; // Fz-Standort
+
+		stw.PushActionExecuteCommand(ACTION_NEWLIST,"mannschaft_rufen",&stw,ptype,false);
+		if ((childID == 501) || (childID == 510) || (childID == 511))
+			cid = 112;
+		else
+			cid = 0;
+		stw.PushActionExecuteCommand(ACTION_APPEND,"check_ms_vollzaehlig",&stw,cid,false);
+		System::Error("rufe_wb : Nachbarwache ?");
+		if (stw.HasCommand("hidden"))		// Nachbarfz ausserhalb des Stadtgebietes ?
+		{
+			float anmarsch=(verzfakt * 10/stw.GetSpeed()) / verz[fzstart-50];
+			stw.PushActionWait(ACTION_APPEND,anmarsch);
+		}
+		
+		GameObject obj(Target);
+
+		if (nachforderung)
+			stw.PushActionExecuteCommand(ACTION_APPEND,"fz_raus",Caller,childID,false);		
+		else
+			stw.PushActionExecuteCommand(ACTION_APPEND,"fz_raus",Target,childID,false);
+
+				
+		if (obj.IsValid()) 
+		switch (childID) 
+		{
+			case 610:
+			case 601:
+				stw.PushActionExecuteCommand(ACTION_APPEND,"CheckHubiDown",Caller,0,false);
+				if ((Target->GetType() == ACTOR_PERSON) && !obj.HasCommand("alarm_dummy"))
+					stw.PushActionExecuteCommand(ACTION_APPEND,"NEF_examine",Target,0,false); // NA versorgt Pat
+				else 
+					if (Target->GetType() == ACTOR_VEHICLE)
+						stw.PushActionExecuteCommand(ACTION_APPEND,"TransportBegleiten",Target,0,false);
+					else
+						stw.PushActionExecuteCommand(ACTION_APPEND,"emptycar",&stw,0,false);
+				break;
+			case 622:
+			case 602:
+		      	if ((Target->GetType() == ACTOR_PERSON) && !obj.HasCommand("alarm_dummy")) 
+      			{
+					stw.PushActionExecuteCommand(ACTION_APPEND,"RTW_examine",Target,1,false); // RA versorgt Patient
+   				} else if (Target->GetType() == ACTOR_VEHICLE)
+				{
+					stw.PushActionExecuteCommand(ACTION_APPEND,"SEG_an_RTW",Target,0,false); // RTW übernimmt vom SEG-Zelt
+				}
+				break;
+			case 300:
+		      	if ((Target->GetType() == ACTOR_VEHICLE) || (Target->GetType() == ACTOR_OBJECT))
+	      		{
+					stw.PushActionExecuteCommand(ACTION_APPEND,"LoadUp_Freeplay",Target,0,true); // Fahrzeug aufladen
+   				}
+				break;
+			case 620:
+				stw.PushActionExecuteCommand(ACTION_APPEND,"emptycar",&stw,0,false);
+				break;
+			case 650:
+				PersonList sanis(stw.GetName());
+				Person sani=sanis.GetPerson(0);
+				sani.RemoveCommand("move");
+				sani.RemoveCommand("entercar");
+				sani.RemoveCommand("heal");
+				sani.RemoveCommand("SetZelt");
+				sani.AssignCommand("ich_bin_nicht_frei");
+				break;
+		}
+	  }
+   }
+};
+
+
+object fz_raus : CommandScript
+{
+
+	fz_raus()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Error("fz_raus: start");
+		GameObject obj(Target);
+		int cid=0;
+		Vector TargetPos=Target->GetPosition();
+		Vehicle stw(Caller);
+		if (stw.IsHidden())
+		{
+			Vector nachbarpos=stw.GetPosition();
+			Game::FindFreePosition(&stw,nachbarpos,100);
+			stw.SetPosition(nachbarpos);
+			stw.Show();
+		}
+		//Finde Position
+		Game::FindFreePosition(&stw, TargetPos,50);
+
+		stw.EnableSpecialLights(false);
+		stw.EnableBreakLights(false);
+   		stw.EnableCommand("WarningLightOn", true);
+   	  	stw.RemoveCommand("WarningLightOff");
+	  	//FZG ist nicht mehr verfügbar.
+
+		stw.PushActionExecuteCommand(ACTION_INSERT,"VCmdSiren",&stw,0,false);//Einsatzfahrt
+		stw.PushActionExecuteCommand(ACTION_INSERTAFTERFIRST, "DUMMYDisableSiren", &stw, 2, false); //childID 1: Blaulichter bleiben an...
+
+		switch (childID)
+		{
+			case 200:
+				if (((Target->GetType() == ACTOR_PERSON) || (Target->GetType() == ACTOR_VEHICLE)) && (!obj.HasCommand("alarm_dummy")))
+					stw.PushActionHeliFollow(ACTION_INSERTAFTERFIRST,Target);
+				stw.PushActionFlyTo(ACTION_INSERTAFTERFIRST, TargetPos,false,-1.0f);
+				break;
+			default:
+				if (stw.HasCommand("FlyTo"))
+					stw.PushActionFlyTo(ACTION_INSERTAFTERFIRST,TargetPos,true,135);
+				else
+					stw.PushActionMove(ACTION_INSERTAFTERFIRST, TargetPos);
+				break;
+		}
+		System::Error("Dummy löschen nach ausruecken.");
+		if (obj.HasCommand("alarm_dummy"))
+			obj.PushActionDeleteOwner(ACTION_NEWLIST);
+	}
+};
+
+object witchdoc_action : CommandScript
+{
+
+	witchdoc_action()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Mission::GetCounter("Injured Persons") < 3)
+		{
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"random_vu",Caller,0,false);
+		}
+	}
+};
+
+object CheckHubiDown : CommandScript
+{
+
+	CheckHubiDown()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		if ((v.GetVehicleType() == VT_AMBULANCE_RHC) || (v.GetVehicleType()==VT_POLICE_PHC))
+			if (!v.IsOnGround())
+			{
+				Caller->PushActionWait(ACTION_NEWLIST,1.0f);		
+				System::Error("Hubi nicht am Boden");
+			} else
+				System::Error("Hubi gelandet");
+	}
+};
+
+object TransportBegleiten : CommandScript
+{
+
+	TransportBegleiten()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle nef(Caller);
+		Vehicle rtw(Target);
+		Person doc;
+
+		if (rtw.GetVehicleType() == VT_AMBULANCE_RTW))
+		{
+			PersonList pl=nef.GetPassengers();
+			for (int i=0; i<pl.GetNumPersons(); i++)
+			{
+				doc=pl.GetPerson(i);
+				if (doc.IsDoctor())
+				{
+					doc.PushActionLeaveCar(ACTION_NEWLIST, Caller);
+					doc.PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,false);
+					i=pl.GetNumPersons();
+				}
+			}				
+		}
+	}
+};

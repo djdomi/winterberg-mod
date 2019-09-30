@@ -1,0 +1,128 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script Use
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+object Use : CommandScript
+{
+	Use()
+	{
+		SetValidTargets(ACTOR_OBJECT | ACTOR_HOUSE | ACTOR_OPEN_HOUSE | ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_USABLE);
+		SetPriority(700);
+		SetSelfClickActivation(true);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return Game::ExistsObjectWithFlagSet(OF_USABLE);
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		char * fz[1];
+		bool doit;
+		fz[0]=Caller->GetName();
+		int fzid=int(fz[0][11])-32; // Fz-Typ laut AutosKaufen
+
+		if (!Caller->IsValid() || !Target->IsValid() || Caller->GetID()==Target->GetID())
+			return false;
+		
+		GameObject obj(Target);
+		if (!obj.IsValid()) 
+			return false;
+
+		switch (fzid)
+		{
+			case 13 :
+				doit=(StrCompare(obj.GetPrototypeFileName(), "mod:Prototypes/Objects/Road Signs/trafficlight01.e4p") == 0);
+				doit=doit||(StrCompare(obj.GetPrototypeFileName(), "mod:Prototypes/Objects/Road Signs/trafficlight02.e4p") == 0);
+				doit=doit || obj.HasCommand("siemens_target");
+				break;
+			case 33 :
+				doit=(StrCompare(obj.GetPrototypeFileName(), "mod:Prototypes/Objects/Railway/levelcrossing01.e4p") == 0);
+				break;
+			case 57 :
+				doit=obj.HasCommand("wawe_target");
+				break;
+			case 34 :
+				doit=(StrCompare(obj.GetPrototypeFileName(), "mod:Prototypes/Objects/Misc/bomb.e4p") == 0);
+				doit=doit || obj.HasCommand("kmrd_target");
+				break;
+			default:
+				doit=!Game::IsFreeplay() && !Game::IsMultiplayer();
+		}
+		return doit;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObject obj(Target);
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_USE);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		if (obj.HasCommand("kmrd_target"))
+			if (Target->GetType()==ACTOR_VEHICLE)
+				Caller->PushActionRepair(ACTION_APPEND, Target);
+			else
+				Caller->PushActionUse(ACTION_APPEND, Target);
+		else
+			Caller->PushActionUse(ACTION_APPEND, Target);
+		obj.PushActionExecuteCommand(ACTION_APPEND,"ggv_check",Caller,4,false);
+		VehicleList vl(Caller->GetName());
+		Person p(Caller);
+		if (p.GetPersonType()==PT_ENGINEER && !obj.HasCommand("kmrd_target") )
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_wenn_fertig",vl.GetVehicle(0),0,false);
+	}
+};
+
+
+
+
+
+
+
+
+object UseSchranke : CommandScript
+{
+	UseSchranke()
+	{
+		SetValidTargets(ACTOR_OBJECT);
+		SetIcon("Use");
+		SetCursor("Use");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		char * fz[1];
+		GameObject obj(Target);
+		if (!obj.IsValid()) 
+			return false;
+
+		return obj.HasNamePrefix("schranke");
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObject obj(Target);
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_USE);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"torsteuerung",Target,5,false);
+	}
+};

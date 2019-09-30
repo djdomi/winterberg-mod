@@ -1,0 +1,50 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script FlyTo
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+object FlyTo : CommandScript
+{
+	FlyTo()
+	{
+		SetCursor("moveto");
+		SetIcon("moveto");
+		SetHighlightingEnabled(false);
+		SetDeselectCaller(false);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE || Caller->GetID() == Target->GetID())
+			return false;
+		if (Input::LCtrlPressed())
+			return false;
+	
+		// dafür sorgen, dass auf Verletzten direkt LiftWithRope-Cursor kommt
+		if(Caller->IsValid() && Target->IsValid() && Target->GetType()==ACTOR_PERSON)
+		{
+			Person t(Target);
+			Vehicle v(Caller);
+			if (t.IsInjured() && !t.IsCarried() && (v.GetFreeTransports() >= 1 || (v.GetVehicleType() == VT_THW_FGRT_BH && !v.HasTransportOnStretcher())))
+				return false;
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_THW_FGRT_BH && v.HasEngineerOnBoard() && !t.IsInjured())
+				return false;
+		}
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector TargetPos = Game::GetCommandPos();
+		Caller->PushActionFlyTo(ACTION_NEWLIST, TargetPos, false, -1.0f);
+	}
+};
+

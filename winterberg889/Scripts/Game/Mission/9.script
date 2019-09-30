@@ -1,0 +1,2138 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script 9
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+/* TODO
+	- Absturz Lift Cutscene
+	- Plünderer
+	- Serialisierung
+	- Musik und Sounds
+*/
+
+const int	MAX_HINTS = 13;					// maximale Anzahl Hints
+const int	HINT4_MAX_DEAD_PERSONS = 3;		// Anzahl Toter, damit Hint 4 abgespielt wird
+const int	HINT4_MAX_INJURED_PERSONS = 12;	// Anzahl Verletzter für Hint 4
+const int	HINT6_MAX_BURNING_HOUSES = 4;	// Anzahl brennender Häuser für Hint 6
+const int	MAX_DEAD_CIVILS = 5;			// mehr Tote -> fail
+const int	MAX_INJURED_PERSONS = 12;		// mehr Verletzte -> fail
+const int	MAX_BURNING_HOUSES = 7;			// mehr brennende Gebäude ->fail
+const int	MAX_MARAUDERS = 8;				// Anzahl Plünderer
+const int	MAX_MARAUDER_PATHES = 4;		// Anzahl Pfade für die Plünderer
+const float	MARAUDER_WALK_TIME = 30.f;
+const float	MARAUDER_WAIT_TIME = 5.f;
+const float	MARAUDER_CALMDOWN_TIME = 25.f;
+const int	MAX_LIFTPERSONS = 2;
+const int	MAX_EMITTERSSPARKSLIFT = 10;
+const int	MAX_EMITTERSBURSTLIFT = 5;
+const int	MAX_LIFTPERSONS2 = 3;
+const int	MAX_EMITTERSSPARKSLIFT2 = 10;
+const int	MAX_EMITTERSBURSTLIFT2 = 5;
+const int	MAX_GLASSEMITTERS = 3;
+
+enum
+{
+	STATE_MARAUDER_WALK,		// Auf dem Weg zum Ziel
+	STATE_MARAUDER_WAIT,		// Nichts tun, warten
+	STATE_MARAUDER_AGGRESSIVE,	// auf Aggressiv setzen, Einsatzkräfte angreifen
+	STATE_MARAUDER_THROWSTONE,	// Auf Schaufenster werfen
+	STATE_MARAUDER_QUIET,		// Nichts tun, warten, beruhigter Plünderer
+	STATE_MARAUDER_GOTOPOS,		// gehe zu alter Position
+	STATE_MARAUDER_REPOSITION,	// Verändere Position zufällig, wenn beim Geschäft angekommen (sieht einfach besser aus)
+	STATE_MARAUDER_NORMAL,		// Plünderer ist für 1 Minute ruhig gestellt.
+	STATE_MARAUDER_STEAL,		// Plünderer stehlen aus dem Geschäft
+	STATE_MARAUDER_FLEEING,		// Plünderer flüchtet
+};
+
+const char NAME_SMOKING_TRUCK[]				= "smoking truck";
+const char NAME_HOTEL[]						= "hotel";
+const char NAME_MARAUDER_TRIGGER1[]			= "trigger marauder1";
+const char NAME_MARAUDER_TRIGGER2[]			= "trigger marauder2";
+const char NAME_MARAUDER_TRIGGER3[]			= "trigger marauder3";
+const char NAME_MARAUDER_TRIGGER4[]			= "trigger marauder4";
+const char NAME_HACKER[]					= "hacker";
+const char NAME_LOCATION_LIFTCRASHA[]		= "liftcrashA";
+const char NAME_LOCATION_LIFTCRASHB[]		= "liftcrashB";
+const char NAME_LOCATION_LIFTCRASHA2[]		= "liftcrashA2";
+const char NAME_LOCATION_LIFTCRASHB2[]		= "liftcrashB2";
+const char NAME_LOCATION_TRUCK[]			= "truck";
+const char NAME_LOCATION_HOTEL[]			= "hotel_1";
+const char NAME_BLOCKED_PERSON[]			= "blocked";
+const char NAME_BLOCKING_DEBRIS[]			= "blocking";
+const char NAME_SWITCH_LIFT[]				= "switch";
+const char NAME_MARAUDER[]					= "mobperson";
+const char NAME_BANK[]						= "bank";
+const char NAME_LOCATION_BANK_BURN[]		= "bank location";
+const char NAME_MARAUDER_PATH1[]			= "mob01";
+const char NAME_MARAUDER_PATH2[]			= "mob02";
+const char NAME_MARAUDER_PATH3[]			= "mob03";
+const char NAME_MARAUDER_PATH4[]			= "mob04";
+const char NAME_SHOP[]						= "shop";
+const char NAME_LIFT[]						= "lift";
+const char NAME_LIFT2[]						= "lift2";
+const char NAME_CRASHEDLIFT[]				= "crushedlift";
+const char NAME_CRASHEDLIFT2[]				= "crushedlift2";
+const char NAME_LIFTVICTIM[]				= "liftvictim";
+const char NAME_LIFTPERSON[]				= "lift_person";
+const char NAME_LIFTPERSON2[]				= "lift_person2";
+const char NAME_LIFTPERSONCRUSHED[]			= "lift_person_crushed";
+const char NAME_LIFTPERSONCRUSHED2[]		= "lift_person_crushed2";
+const char NAME_CSLIFTSPARKS2[]				= "cs_liftsparks2";
+const char NAME_CSLIFTSPARKS[]				= "cs_liftsparks";
+const char NAME_CSLIFTSPARKS2[]				= "cs_liftsparks2";
+const char NAME_CSLIFTBURST[]				= "cs_liftburst";
+const char NAME_CSLIFTBURST2[]				= "cs_liftburst2";
+const char NAME_LOCATION_SHOP[]				= "shop location";
+const char NAME_OBJECT0[]					= "HouseFurniture/skyscraper02_monitor01.V3O";
+const char NAME_OBJECT1[]					= "HouseFurniture/skyscraper02_desktop.V3O";
+const char NAME_OBJECT2[]					= "HouseFurniture/skyscraper02_monitor02.V3O";
+const char NAME_OBJECT3[]					= "HouseFurniture/skyscraper02_printer.V3O";
+const char NAME_MARAUDER_FLIGHTPATH0[]		= "mobflight01";
+const char NAME_MARAUDER_FLIGHTPATH1[]		= "mobflight02";
+const char NAME_MARAUDER_FLIGHTPATH2[]		= "mobflight03";
+const char NAME_MARAUDER_FLIGHTPATH3[]		= "mobflight04";
+const char NAME_SOUND_LIFT_FALL[]			= "mod:Audio/FX/destruction/mission_elevator_falling.wav";
+const char NAME_SOUND_LIFT_CRASH[]			= "mod:Audio/FX/destruction/mission_elevator_crash.wav";
+const char NAME_WINDOW[]					= "window";
+const char NAME_WINDOW_BROKEN[]				= "windowbroken";
+const char NAME_GLASS_EMITTER[]				= "glass";
+const char NAME_WINDOW_POS[]				= "windowpos";
+const char NAME_CAR_LIGHTON[]				= "lighton";
+const char NAME_ACCIDENT_CAR[]				= "accident";
+const char NAME_AREA_MEETING[]				= "meeting";
+const char NAME_HOUSE_NETSERVICES[]			= "netservices";
+const char NAME_AREA_INGTARGET2[]			= "ingtarget2";
+
+const char NAME_MESSAGEPOOL1[]				= "poola";
+const char NAME_MESSAGEPOOL2[]				= "poolb";
+const char NAME_MESSAGEPOOL3[]				= "poolc";
+const char NAME_MESSAGEPOOL4[]				= "poold";
+
+const char OBJECTIVE_TRANSPORT_INJURED[]	= "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]		= "EXTINGUISH_FIRES";
+const char OBJECTIVE_TRANSPORT_VEHICLES[]	= "REMOVE_VEHICLES";
+const char OBJECTIVE_TRANSPORT_MARAUDER[]	= "M09_TRANSPORT_MARAUDER";
+const char OBJECTIVE_TRANSPORT_HACKER[]		= "M09_TRANSPORT_HACKER";
+
+const char COUNTER_BURNING_OBJECTS[]		= "Burning Objects";
+const char COUNTER_BURNING_HOUSES[]			= "Burning Houses";
+const char COUNTER_BURNT_OBJECTS[]			= "Burnt Objects";
+const char COUNTER_BURNT_HOUSES[]			= "Burnt Houses";
+const char COUNTER_INJURED_PERSONS[]		= "Injured Persons";
+const char COUNTER_DEAD_PERSONS[]			= "Dead Persons";
+const char COUNTER_CIVIL_DEATHS[]			= "Civil deaths";
+const char COUNTER_PERSON_INJURIES[]		= "Person injuries";
+
+const char HINT_STILL_SMOKING[]				= "HINT_M09_STILL_SMOKING";
+const char HINT_LIFT_CRASHED[]				= "HINT_M09_LIFT_CRASHED";
+const char HINT_SAFE_LIFT[]					= "HINT_M09_SAVE_LIFT";
+const char HINT_MARAUDERS_FLEEING[]			= "HINT_M09_MARAUDERS_FLEEING";
+const char HINT_TOO_MANY_INJUREDS[]			= "HINT_M09_TOO_MANY_INJUREDS";
+const char HINT_TRANSPORT_VEHICLES[]		= "HINT_M09_TRANSPORT_VEHICLES";
+const char HINT_FIRES_OUT_OF_CONTROL[]		= "HINT_M09_FIRES_OUT_OF_CONTROL";
+const char HINT_SQUADS_IN_DANGER[]			= "HINT_M09_SQUADS_IN_DANGER";
+const char HINT_MOLOCTOVS_USED[]			= "HINT_M09_MOLOCTOVS_USED";
+const char HINT_FIND_HACKER[]				= "HINT_M09_FIND_HACKER";
+const char HINT_BURNING_BANK[]				= "HINT_M09_BURNING_BANK";
+const char HINT_MARAUDERS_APPEAR[]			= "HINT_M09_MARAUDERS_APPEAR";
+const char HINT_INFO_HACKER[]				= "HINT_M09_INFO_HACKER";
+
+const char TIMER_NAME_HINT5[]					= "t_hint5";	// Noch nicht alle Fahrzeuge abtransportiert
+const float TIMER_TIME_HINT5					= 15.f * 60.f;
+const char TIMER_NAME_LIFT0[]					= "t_lift0";	// Wenn LKW nicht explodiert
+const float TIMER_TIME_LIFT0					= 4.f * 60.f;
+const char TIMER_NAME_LIFT1[]					= "t_lift1";	// Wenn LKW explodiert
+const float TIMER_TIME_LIFT1					= 8.f * 60.f;
+const char TIMER_NAME_ENDCUTSCENE[]				= "t_endcutscene";
+const float TIMER_TIME_ENDCUTSCENE				= 5.5f;
+const char TIMER_NAME_ENDCUTSCENE2[]			= "t_endcutscene2"; // ohne Kamera zurückfahren zu lassen
+const float TIMER_TIME_ENDCUTSCENE2				= 1.5f;
+const char TIMER_NAME_ENDCUTSCENE3[]			= "t_endcutscene3"; // ohne Kamera zurückfahren zu lassen
+const float TIMER_TIME_ENDLIFTCUTSCENE			= 1.5f;
+const char TIMER_NAME_ENDCUTSCENE4[]			= "t_endcutscene4";
+const float TIMER_TIME_ENDCUTSCENE4				= 1.5f;
+const char TIMER_NAME_SHOW_CRASHED_LIFT[]		= "t_show_crashed_lift";
+const char TIMER_NAME_AFTER_CUTSCENE3[]			= "t_aftercutscene3";
+const float TIMER_TIME_AFTER_CUTSCENE3			= 0.1f;
+const char TIMER_NAME_2ND_LIFT[]				= "t_lift2";	// Fahrstuhl mit den 2 Personen
+const float TIMER_TIME_2ND_LIFT					= 3.f * 60.f;
+const char TIMER_NAME_MARAUDERS[]				= "t_marauders";	// Plünderungen
+const float TIMER_TIME_MARAUDERS				= 4.f * 60.f;
+const char TIMER_NAME_BANK_BURN[]				= "t_bank burn";	// Bank beginnt zu brennen
+const float TIMER_TIME_BANK_BURN				= 4.f * 60.f;
+const char TIMER_NAME_UPDATE_MARAUDERS[]		= "t_u_marauders";	// Logik der Plünderer laufen lassen
+const float TIMER_TIME_UPDATE_MARAUDERS			= 1.7f;
+const char TIMER_NAME_STEAL_STUFF[]				= "t_stealstuff";	// Plünderer rauben Dinge aus dem Laden
+const float TIMER_TIME_STEAL_STUFF				= 12.f;
+const char TIMER_NAME_LIFTCRASH[]				= "t_liftcrash";
+const float TIMER_TIME_LIFTCRASH				= 1.8f;
+const char TIMER_NAME_LIFTCRASH2[]				= "t_liftcrash2";
+const float TIMER_TIME_LIFTCRASH2				= 1.8f;
+const char TIMER_NAME_HIDEHINTS[]				= "t_HideHints";
+const float TIMER_TIME_HIDEHINTS				= 8.0f;
+const char TIMER_NAME_TRUCK_EXPLODE[]			= "t_explode";
+const float TIMER_TIME_TRUCK_EXPLODE			= 15.f;
+const int TIME_TILL_MORNING = 4;	// minuten bis es 6.20 Uhr wird.
+const char TIMER_NAME_MORNING[]					= "t_morning";
+const float TIMER_TIME_MORNING					= 5.f;
+const char TIMER_NAME_HINT9[]					= "t_hint9";
+const float TIMER_TIME_HINT9					= 3.f * 60.f;		// Hacker aufspüren
+
+const char NAME_SOUND_GLASS[]					= "mod:Audio/FX/destruction/Glasbreak01.wav";
+
+object Mission09 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mTooManyDied;
+	bool mFireOutOfControl;
+	bool mMarauderLeft;
+	bool mLiftSaved;
+	bool mHackerFound;
+	bool mHackerTransported;
+	bool mHackerKilled;
+	Vehicle mSmokingTruck;
+	OpenHouse mHotel;
+	Person mHacker;
+	bool mCutsceneTruck;
+	bool mCutsceneHotel;
+	bool mCutsceneLiftCrash, mCutsceneLiftCrash2;
+	bool mHotelSceneShown;
+	GameObject mBlockedPerson;
+	GameObject mSwitch;
+	Person mMarauders[MAX_MARAUDERS];
+	int mMarauderState[MAX_MARAUDERS];
+	int mMarauderTimer[MAX_MARAUDERS];
+	int mNumMarauders;
+	int mNumMaraudersCurrent;
+	GameObject mBank;
+	bool mCutsceneBankBurn;
+	const char * mMarauderPathNames[MAX_MARAUDER_PATHES];
+	const char * mMarauderFlightPathNames[MAX_MARAUDER_PATHES];
+	Vector mOffsets[MAX_MARAUDERS];
+	bool mShopReached;
+	GameObject mShop;
+	GameObject mLift, mLift2, mCrashedLift, mCrashedLift2;
+	Person mLiftPersons[MAX_LIFTPERSONS], mLiftPersonsCrushed[MAX_LIFTPERSONS];
+	Person mLiftPersons2[MAX_LIFTPERSONS2], mLiftPersonsCrushed2[MAX_LIFTPERSONS2];
+	int mLiftPersonCount, mLiftPersonCount2;
+	GameObject mCSLiftSparkEmitters[MAX_EMITTERSSPARKSLIFT];
+	GameObject mCSLiftSparkEmitters2[MAX_EMITTERSSPARKSLIFT2];
+	int mCSLiftSparkEmitterCount;
+	int mCSLiftSparkEmitterCount2;
+	Vector mCSLiftSparkEmitterRelPos[MAX_EMITTERSSPARKSLIFT];
+	Vector mCSLiftSparkEmitterRelPos2[MAX_EMITTERSSPARKSLIFT2];
+	GameObject mCSLiftBurstEmitters[MAX_EMITTERSBURSTLIFT];
+	GameObject mCSLiftBurstEmitters2[MAX_EMITTERSBURSTLIFT2];
+	int mCSLiftBurstEmitterCount;
+	int mCSLiftBurstEmitterCount2;
+	int mNumMaraudersAtTarget;
+	bool mCutsceneShopAttack;
+	int mCSLiftState, mCSLiftState2;
+	bool mMaraudersFleeing;
+	bool mShopAttacked;
+	GameObject mWindow;
+	GameObject mWindowBroken;
+	GameObject mStone;
+	GameObject mGlassEmitters[MAX_GLASSEMITTERS];
+	int mNumGlassEmitters;
+	Actor mWindowPos;
+	int mNumAccidentCars;
+	bool mMaraudersStarted;
+	bool mBankFireStarted;
+	GameObject mNetservices;
+	int mLiftSound;
+
+	Mission09()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mTooManyDied = false;
+		mFireOutOfControl = false;
+		mMarauderLeft = false;
+		mLiftSaved = false;
+		mHackerFound = false;
+		mHackerTransported = false;
+		mHackerKilled = false;
+		mCutsceneTruck = false;
+		mCutsceneHotel = false;
+		mCutsceneLiftCrash = false;
+		mCutsceneLiftCrash2 = false;
+		mHotelSceneShown = false;
+		for (int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			mMarauderState[i] = STATE_MARAUDER_WAIT;
+			mMarauderTimer[i] = 0;
+			mOffsets[i].x	= 0.f;
+			mOffsets[i].y	= 0.f;
+			mOffsets[i].z	= 0.f;
+		}
+		mNumMarauders = 0;
+		mNumMaraudersCurrent = 0;
+		mMarauderPathNames[0] = NAME_MARAUDER_PATH1;
+		mMarauderPathNames[1] = NAME_MARAUDER_PATH2;
+		mMarauderPathNames[2] = NAME_MARAUDER_PATH3;
+		mMarauderPathNames[3] = NAME_MARAUDER_PATH4;
+		mMarauderFlightPathNames[0] = NAME_MARAUDER_FLIGHTPATH0;
+		mMarauderFlightPathNames[1] = NAME_MARAUDER_FLIGHTPATH1;
+		mMarauderFlightPathNames[2] = NAME_MARAUDER_FLIGHTPATH2;
+		mMarauderFlightPathNames[3] = NAME_MARAUDER_FLIGHTPATH3;
+		mCutsceneBankBurn = false;
+		mLiftPersonCount = 0;
+		mLiftPersonCount2 = 0;
+		mShopReached = false;
+		mNumMaraudersAtTarget = 0;
+		mCutsceneShopAttack = false;
+		mCSLiftState = 0;
+		mCSLiftState2 = 0;
+		mCSLiftSparkEmitterCount = 0;
+		mCSLiftBurstEmitterCount2 = 0;
+		mMaraudersFleeing = false;
+		mShopAttacked = false;
+		mNumGlassEmitters = 0;
+		mNumAccidentCars = 1;	// für den Truck
+		mMaraudersStarted = false;
+		mBankFireStarted = false;
+		mLiftSound = -1;
+	}
+
+	~Mission09()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M09 Start");
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		int count = 0;
+		int count2 = 0;
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_SMOKING_TRUCK))
+			{
+				Vehicle v(obj);
+				mSmokingTruck = v;
+				v.SetSmoking(true);
+			}
+			else if (obj->HasName(NAME_HOTEL))
+			{
+				mHotel = (OpenHouse*)obj);
+				mHotel.ClearFlag(OF_ACCESSIBLE);
+			}
+			else if (obj->HasName(NAME_HACKER))
+				mHacker = Person(obj);
+			else if (obj->HasName(NAME_BLOCKED_PERSON))
+			{
+				mBlockedPerson = *obj;
+				mBlockedPerson.SetFlag(OF_BLOCKED);
+			}
+			else if (obj->HasName(NAME_SWITCH_LIFT))
+			{
+				mSwitch = *obj;
+				mSwitch.EnableSpecialLights(true);
+			}
+			else if (obj->HasName(NAME_MARAUDER))
+			{
+				if (mNumMarauders < MAX_MARAUDERS)
+				{
+					mMarauders[mNumMarauders++] = Person(obj);
+					mNumMaraudersCurrent++;
+				}
+				else
+					System::Log("M09: Too many marauders!");
+			}
+			else if (obj->HasName(NAME_BANK))
+				mBank = *obj;
+			else if (obj->HasName(NAME_SHOP))
+				mShop = *obj;
+			else if (obj->HasName(NAME_LIFT))
+				mLift = *obj;
+			else if (obj->HasName(NAME_LIFT2))
+				mLift2 = *obj;
+			else if (obj->HasName(NAME_CRASHEDLIFT))
+			{
+				mCrashedLift = *obj;
+				mCrashedLift.Hide();
+			}
+			else if (obj->HasName(NAME_CRASHEDLIFT2))
+			{
+				mCrashedLift2 = *obj;
+				mCrashedLift2.Hide();
+			}
+			else if (obj->HasName(NAME_LIFTPERSON))
+			{
+				if (mLiftPersonCount < MAX_LIFTPERSONS)
+				{
+					mLiftPersons[mLiftPersonCount] = (Person*)obj;
+					mLiftPersonCount++;
+				}
+			}
+			else if (obj->HasName(NAME_LIFTPERSON2))
+			{
+				if (mLiftPersonCount2 < MAX_LIFTPERSONS2)
+				{
+					mLiftPersons2[mLiftPersonCount2] = (Person*)obj;
+					mLiftPersonCount2++;
+				}
+			}
+			else if (obj->HasName(NAME_CSLIFTSPARKS))
+			{
+				if (mCSLiftSparkEmitterCount < MAX_EMITTERSSPARKSLIFT)
+				{
+					mCSLiftSparkEmitters[mCSLiftSparkEmitterCount] = *obj;
+					mCSLiftSparkEmitters[mCSLiftSparkEmitterCount].StopParticleEffect();
+					mCSLiftSparkEmitterCount++;
+				}
+			}
+			else if (obj->HasName(NAME_CSLIFTSPARKS2))
+			{
+				if (mCSLiftSparkEmitterCount2 < MAX_EMITTERSSPARKSLIFT2)
+				{
+					mCSLiftSparkEmitters2[mCSLiftSparkEmitterCount2] = *obj;
+					mCSLiftSparkEmitters2[mCSLiftSparkEmitterCount2].StopParticleEffect();
+					mCSLiftSparkEmitterCount2++;
+				}
+			}
+			else if (obj->HasName(NAME_CSLIFTBURST))
+			{
+				if (mCSLiftBurstEmitterCount < MAX_EMITTERSBURSTLIFT)
+				{
+					mCSLiftBurstEmitters[mCSLiftBurstEmitterCount] = *obj;
+					mCSLiftBurstEmitters[mCSLiftBurstEmitterCount].StopParticleEffect();
+					mCSLiftBurstEmitterCount++;
+				}
+			}
+			else if (obj->HasName(NAME_CSLIFTBURST2))
+			{
+				if (mCSLiftBurstEmitterCount2 < MAX_EMITTERSBURSTLIFT2)
+				{
+					mCSLiftBurstEmitters2[mCSLiftBurstEmitterCount2] = *obj;
+					mCSLiftBurstEmitters2[mCSLiftBurstEmitterCount2].StopParticleEffect();
+					mCSLiftBurstEmitterCount2++;
+				}
+			}
+			else if (obj->HasName(NAME_LIFTPERSONCRUSHED))
+			{
+				if (count < MAX_LIFTPERSONS)
+				{
+					mLiftPersonsCrushed[count] = (Person*)obj;
+					mLiftPersonsCrushed[count].Hide();
+					count++;
+				}
+			}
+			else if (obj->HasName(NAME_LIFTPERSONCRUSHED2))
+			{
+				if (count2 < MAX_LIFTPERSONS2)
+				{
+					mLiftPersonsCrushed2[count2] = (Person*)obj;
+					mLiftPersonsCrushed2[count2].Hide();
+					count2++;
+				}
+			}
+			else if (obj->HasName(NAME_WINDOW))
+			{
+				mWindow = *obj;
+			}
+			else if (obj->HasName(NAME_WINDOW_BROKEN))
+			{
+				mWindowBroken = *obj;
+				mWindowBroken.Hide();
+			}
+			else if (mNumGlassEmitters < MAX_GLASSEMITTERS && obj->HasName(NAME_GLASS_EMITTER))
+			{
+				mGlassEmitters[mNumGlassEmitters++] = *obj;
+				obj->StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_CAR_LIGHTON))
+			{
+				obj->EnableHeadLights(true);
+			}
+			else if (obj->HasName(NAME_ACCIDENT_CAR))
+				mNumAccidentCars++;
+			else if (obj->HasName(NAME_HOUSE_NETSERVICES))
+				mNetservices = *obj;
+		}
+
+		ActorList list2 = Game::GetActors(NAME_WINDOW_POS);
+		if (list2.GetNumActors() > 0)
+		{
+			mWindowPos = *list2.GetActor(0);
+		}
+
+		if (!mWindow.IsValid())
+			System::Log("M09: Couldn't find window");
+		if (!mWindowBroken.IsValid())
+			System::Log("M09: Couldn't find broken window");
+
+		Mission::StartSingleTimer(TIMER_NAME_HINT5, TIMER_TIME_HINT5);
+		Mission::StartSingleTimer(TIMER_NAME_LIFT0, TIMER_TIME_LIFT0);
+		Mission::StartSingleTimer(TIMER_NAME_LIFT1, TIMER_TIME_LIFT1);
+		Mission::StartIntervalTimer(TIMER_NAME_MORNING, TIMER_TIME_MORNING);
+		Mission::StartSingleTimer(TIMER_NAME_HINT9, TIMER_TIME_HINT9);
+
+		int hour, minute, second;
+		Game::GetTime( hour, minute, second );
+		System::Log("Time: %d %d %d", hour, minute, second );
+		int hoursLeft = 30 - hour; // 6 + 24 = 30
+		int minutesLeft = 60 * hoursLeft + (50 - minute);
+		Game::SetTimeSpeed(minutesLeft/TIME_TILL_MORNING);
+		System::Log("timespeed: %d ", minutesLeft/TIME_TILL_MORNING );
+
+		//mHotel.SetFlag(OF_ACCESSIBLE);
+
+		//Mission::StartSingleTimer(TIMER_NAME_MARAUDERS, 2.f);	// Plünderer
+		//Mission::StartSingleTimer(TIMER_NAME_BANK_BURN, 2.f);	// Bankbrand
+
+		//mSmokingTruck.SetSmokeLevelDuration(0.01f);
+
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_VEHICLES);
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_HACKER);
+
+		Audio::PlaySoundtrack("9", 0.0f);
+		// for debugging
+		//RunCutsceneLiftCrash2();
+	}
+
+	void Update()
+	{
+		if (mHintCounter[4] == 0 && (Mission::GetCounter(COUNTER_CIVIL_DEATHS) >= HINT4_MAX_DEAD_PERSONS || Mission::GetCounter(COUNTER_INJURED_PERSONS) > HINT4_MAX_INJURED_PERSONS))
+			ShowHint(4);
+		if (mHintCounter[6] == 0 && Mission::GetCounter(COUNTER_BURNING_HOUSES) >= HINT6_MAX_BURNING_HOUSES)
+			ShowHint(6);
+		/*if (mStone.IsValid())
+		{
+			if (mStone.HasHadContact())
+			{
+				System::Log("M09: window hit");
+				mWindow.Hide();
+				mWindowBroken.Show();
+				for (int i = 0; i < mNumGlassEmitters; i++)
+					mGlassEmitters[i].StartParticleEffect();
+				mStone = GameObject();
+			}
+		}*/
+	}
+
+	OnContact(GameObject * obj1_, GameObject * obj2_, float x_, float y_, float z_, float force_)
+	{
+		//if ((obj1_ && obj1_->GetID() == mStone.GetID()) || (obj2_ && obj2_->GetID() == mStone.GetID()))
+		{
+			System::Log("M09: window hit");
+			mWindow.Hide();
+			mWindowBroken.Show();
+			//mStone.EnableOnContactCallback(false);
+			obj1_->EnableOnContactCallback(false);
+			obj2_->EnableOnContactCallback(false);
+			for (int i = 0; i < mNumGlassEmitters; i++)
+				mGlassEmitters[i].StartParticleEffect();
+			Audio::PlaySample(NAME_SOUND_GLASS);
+			//mStone = GameObject();
+		}
+	}
+
+	bool OnCheckCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		switch(Cmd_)
+		{
+			case "EnterHouse":
+				{
+					if (Target_->GetID() == mNetservices.GetID())
+					{
+						if (Caller_->HasCommand("Repair"))
+							return true;
+						return false;
+					}
+				}
+				break;
+			case "ScoutHouse":
+				{
+					if (Target_->GetID() == mNetservices.GetID())
+						return false;
+				}
+				break;
+		}
+		return true;
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionLoadUp":
+				if (Data_->Parameters[0].iValue == mSmokingTruck.GetID() && mSmokingTruck.IsSmoking())
+				{
+					if (mHintCounter[0] == 0)
+						ShowHint(0);
+					Mission::StartSingleTimer(TIMER_NAME_TRUCK_EXPLODE, TIMER_TIME_TRUCK_EXPLODE);
+				}
+				break;
+			case "EActionUnload":
+				if (mSmokingTruck.IsValid() && !mSmokingTruck.IsHidden() && mSmokingTruck.IsSmoking())
+				{
+					Mission::StopTimer(TIMER_NAME_TRUCK_EXPLODE);
+				}
+				break;
+			case "EActionThrowMolotov":
+				if (mHintCounter[8] == 0)
+					ShowHint(8);
+				break;
+			case "EActionPull":
+				{
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.IsValid() && target.GetType() == ACTOR_OBJECT && target.HasName(NAME_BLOCKING_DEBRIS))
+					{
+						mBlockedPerson.ClearFlag(OF_BLOCKED);
+					}
+				}
+				break;
+			/*case "EActionUse":
+				{
+					if(!mLiftSaved && Data_->Parameters[0].iValue == mSwitch.GetID())
+					{
+						mLiftSaved = true;
+						mSwitch.EnableSpecialLights(false);
+						mSwitch.ClearFlag(OF_USABLE);
+						Mission::StopTimer(TIMER_NAME_2ND_LIFT);
+						// Fahrstuhl2 ablassen
+						Vector pos = mLift.GetPosition();
+						float height = Game::GetFloorHeight(pos.x, pos.y);
+						mLift.PushActionLiftDown(ACTION_NEWLIST, height + 855.f, 50.f);
+					}
+				}
+				break;*/
+			case "EActionLinkPerson":
+				{
+					System::Log("M09: Link person");
+					// Polizist hat Plünderer festgenommen
+					int n;
+					for (n=0; n<mNumMarauders; n++)
+					{
+						if (Data_->Parameters[0].iValue == mMarauders[n].GetID())
+						{
+							mOffsets[n] = mMarauders[n].GetPosition();
+							System::Log("M09: Marauder arrested");
+							SetMaraudersAggressive();
+							break;
+						}
+					}
+					break;
+				}
+			case "EActionNegotiate":
+				{
+					System::Log("M09: Negotiate");
+					for (int i=0; i<mNumMarauders; i++)
+					{
+						if (mMarauders[i].GetID() == Data_->Parameters[0].iValue)
+						{
+							// Plünderer angesprochen, alle beruhigen
+							System::Log("M09: Negotiate: calming down Marauder");					
+							if (IsValidMarauder(n))
+							{
+								System::Log("M09: Marauder %d set to normal.",i);
+								mMarauders[n].SetRole(ROLE_CIVILIAN);
+								mMarauders[n].StopMovement();
+								mMarauderState[n] = STATE_MARAUDER_NORMAL;
+								mMarauderTimer[n] = MARAUDER_CALMDOWN_TIME;
+							}
+							break;
+						}
+					}
+					break;
+				}
+			case "EActionShowHide":
+				{
+					if (Data_->Parameters[0].bValue == false)
+						ShowHint(12);
+					break;
+				}
+			/*case "EActionThrowStone":
+				{
+					if (Data_->Owner->GetUserData() == 1)
+					{
+						Data_->Owner->SetUserData(0);
+						mStone = GameObject(&Game::GetActor(Data_->Parameters[3].iValue));
+						mStone.EnableOnContactCallback(true);
+						System::Log("M09: Stone thrown");
+					}
+					break;
+				}*/
+			case "EActionEnterHouse":
+				{
+					if (Data_->Owner->GetType() == ACTOR_PERSON && Data_->Parameters[0].iValue == mHotel.GetID())
+					{
+						Person p(Data_->Owner);
+						if (p.GetRole() == ROLE_SQUAD)
+							mHotel.ShowCeiling(true, true, false);
+					}
+				}
+				break;
+
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionFightPerson":
+			case "EActionShoot":
+				{
+					for (int i=0; i<MAX_MARAUDERS; i++)
+					{
+						if (IsValidMarauder(i) && (mMarauders[i].GetID() == Data_->Owner->GetID()))
+						{
+							if (mMarauderState[i] == STATE_MARAUDER_STEAL ||
+								mMarauderState[i] == STATE_MARAUDER_FLEEING)
+							{
+								mMarauders[i].RemoveObjectInRightHand();
+							}
+						}
+					}
+				}
+				break;
+			case "EActionTreatPerson":
+				{
+					Person p(Data_->Owner);
+					if (!mLiftSaved && p.IsValid() && p.GetEnteredHouseID() == mHotel.GetID())
+					{
+						Mission::StopTimer(TIMER_NAME_2ND_LIFT);
+						RunCutsceneLiftCrash();
+					}
+				}
+				break;
+			case "EActionShoot":
+				{
+					if (mHintCounter[7] == 0)
+					{
+						Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+						if (target.IsValid() && target.GetType() == ACTOR_PERSON)
+						{
+							Person p(&target);
+							if (p.GetRole() == ROLE_SQUAD)
+								ShowHint(7);
+						}
+					}
+				}
+				break;
+			case "EActionArrestPerson":
+				{
+					if (!mHackerFound && Data_->Parameters[0].iValue == mHacker.GetID())
+						mHackerFound = true;
+				}
+				break;
+			case "EActionThrowStone":
+				{
+					if (Data_->Owner->GetUserData() == 1)
+					{
+						Data_->Owner->SetUserData(0);
+						//mStone = GameObject(&Game::GetActor(Data_->Parameters[3].iValue));
+						//mStone.EnableOnContactCallback(true);
+						char *activate = reinterpret_cast<char*>(Data_->Parameters[4].pValue);
+						*activate = (char)1;
+						System::Log("M09: Stone thrown");
+					}
+					break;
+				}
+			case "EActionEnterHouse":
+				{
+					if (Data_->Parameters[0].iValue == mNetservices.GetID())
+					{
+						GameObject *o = Data_->Owner;
+						o->PushActionShowHide(ACTION_APPEND, true);
+						o->PushActionWait(ACTION_APPEND, 5.f);
+						o->PushActionShowHide(ACTION_APPEND, false);
+						ActorList targetArea(NAME_AREA_INGTARGET2);
+						if (targetArea.GetNumActors() > 0)
+						{
+							o->PushActionMove(ACTION_APPEND, targetArea.GetActor(0), TARGET_RANDOM);
+						}
+						mNetservices.ClearFlag(OF_ACCESSIBLE);
+						Mission::StopTimer(TIMER_NAME_HINT9);
+						return ACTION_SKIP;
+					}
+					break;
+				}
+		}
+		return ACTION_CONTINUE;
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path, GameObject *Obj)
+	{
+		System::Log("M09: End of path: %s",Path);			
+		for (int i=0; i<MAX_MARAUDERS; i++)
+		{
+			if (StrCompare(Path, mMarauderPathNames[i % 4])==0)
+			{
+				if (IsValidMarauder(i) && (mMarauders[i].GetID() == Obj->GetID()))
+				{
+					System::Log("M09: Marauder %d reached end of path.", i);			
+					Vector pos;
+					Vector tpos;
+					tpos = mShop.GetPosition();
+					pos = mMarauders[i].GetPosition();
+					pos.x += (Math::rand() % 200) - 100;
+					pos.y += (Math::rand() % 200) - 100;
+					mMarauders[i].PushActionMove(ACTION_NEWLIST, pos);
+					mMarauders[i].PushActionTurnTo(ACTION_APPEND, tpos);
+					mMarauderState[i] = STATE_MARAUDER_REPOSITION;
+					mMarauders[i].SetRole(ROLE_CIVILIAN);
+					mMarauderTimer[i] = 0;
+					mNumMaraudersAtTarget++;
+					if (mNumMaraudersAtTarget == mNumMaraudersCurrent)
+					{
+						mShopReached = true;
+						Mission::StartCutScene();
+						System::Log("M09 Start Cutscene Marauders");
+						Mission::ShowBlackBars(1.5f);
+						Camera::StartTransition(NAME_LOCATION_SHOP, 1.8f);
+						mCutsceneShopAttack = true;
+						Audio::SetMusicLevel(0.4f);
+					}
+					return PATH_STOP;
+				}
+			}
+			else if (StrCompare(Path, mMarauderFlightPathNames[i % 4])==0 && Obj->HasName(NAME_MARAUDER))
+			{
+				mMarauderLeft = true;
+				break;
+			}
+		}
+		return PATH_DEFAULT;
+	}
+
+	/*void OnSquadVehicleArrived(Vehicle *Vehicle_)
+	{
+		if (mHintCounter[5] == 0)
+			ShowHint(5);
+	}*/
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_NAME_HINT5:
+				if (mHintCounter[5] == 0)
+					ShowHint(5);
+				break;
+			case TIMER_NAME_LIFT0:
+				Mission::StopTimer(TIMER_NAME_LIFT1);
+				LiftCrash();				
+				break;
+			case TIMER_NAME_LIFT1:
+				LiftCrash();
+				break;
+			case TIMER_NAME_ENDCUTSCENE:
+				Mission::HideBlackBars(1.f);
+				Mission::EndCutScene(true, 5.0f);				
+				System::Log("M09: End Cutscene");
+				//if (mHotel.NumSquadPersonsInside() == 0)
+				//	mHotel.ShowCeiling(true);
+				break;
+			case TIMER_NAME_ENDCUTSCENE2:
+				Mission::HideBlackBars(0.7f);
+				Mission::EndCutScene();				
+				System::Log("M09: End Cutscene2");
+				break;
+			case TIMER_NAME_ENDCUTSCENE4:
+				Mission::HideBlackBars(0.7f);
+				Mission::EndCutScene(true, 5.0f);				
+				System::Log("M09: End Cutscene4");
+				break;
+			case TIMER_NAME_SHOW_CRASHED_LIFT:
+				if (mCSLiftState > 0)
+				{
+					mCrashedLift.Show();
+					System::Log("Show lift crash 1");
+				}
+				if (mCSLiftState2 > 0)
+					mCrashedLift2.Show();
+				break;
+			case TIMER_NAME_ENDCUTSCENE3:
+				Mission::HideBlackBars(1.f);
+				Mission::EndCutScene();				
+				break;
+			case TIMER_NAME_AFTER_CUTSCENE3:
+				//if (mHotel.NumSquadPersonsInside() == 0)
+				//	mHotel.ShowCeiling(true);
+				if (mCSLiftState > 0)
+				{
+					for (int i = 0; i < mLiftPersonCount; i++)
+					{
+						mLiftPersonsCrushed[i].Show();
+						float life = mLiftPersonsCrushed[i].GetLife();
+						mLiftPersonsCrushed[i].Injure(INJUREREASON_ENERGY, false);
+						mLiftPersonsCrushed[i].SetLife(life);
+					}
+					mCSLiftState = 0;
+				}
+				if (mCSLiftState2 > 0)
+				{
+					for (int i = 0; i < mLiftPersonCount2; i++)
+					{
+						mLiftPersonsCrushed2[i].Show();
+						float life = mLiftPersonsCrushed2[i].GetLife();
+						mLiftPersonsCrushed2[i].Injure(INJUREREASON_ENERGY, false);
+						mLiftPersonsCrushed2[i].SetLife(life);
+					}
+					mCSLiftState2 = 0;
+				}
+				break;
+			case TIMER_NAME_2ND_LIFT:				
+				mSwitch.EnableSpecialLights(false);
+				mSwitch.ClearFlag(OF_USABLE);
+				System::Log("M09: Start Cutscene");
+				RunCutsceneLiftCrash();
+				break;
+			case TIMER_NAME_LIFTCRASH:
+				NextCutscenePhase();
+				break;
+			case TIMER_NAME_LIFTCRASH2:
+				NextCutscenePhase2();
+				break;
+			case TIMER_NAME_MARAUDERS:
+				Mission::AddObjective(OBJECTIVE_TRANSPORT_MARAUDER);
+				Mission::PlayComment("SUPERV_M09_OBJ01");
+				SetupMarauders();
+				SetMessagePool(2);
+				break;
+			case TIMER_NAME_BANK_BURN:
+				{
+					mBank.Burn();
+					for(int i = 0; i < mBank.GetNumFireChilds(); i++)
+					{
+						FireObject fo = mBank.GetFireChild(i);
+						if (fo.IsValid())
+						{
+							fo.SetTemperature(fo.GetMaxMaterialTemperature());
+						}
+					}
+					System::Log("M09 Start Cutscene Bank burns");
+					Mission::StartCutScene();
+					Mission::ShowBlackBars(1.f);
+					Camera::StartTransition(NAME_LOCATION_BANK_BURN, 2.f);
+					SetMessagePool(3);
+					ShowHint(10);
+					mCutsceneBankBurn = true;
+					mBankFireStarted = true;
+					Audio::SetMusicLevel(0.5f);
+				}
+				break;
+			case TIMER_NAME_UPDATE_MARAUDERS:
+				UpdateMarauders();
+				break;
+			case TIMER_NAME_STEAL_STUFF:
+				{
+					for(int i = 0; i < mNumMarauders; i++)
+					{
+						if (IsValidMarauder(i))
+						{
+							mMarauders[i].PushActionWait(ACTION_NEWLIST, (float)GetRandomValue(1, 10));
+							mMarauders[i].PushActionMove(ACTION_APPEND, &mWindowPos, TARGET_ANY);
+							mMarauders[i].PushActionWait(ACTION_APPEND, (float)GetRandomValue(1, 4));
+							mMarauderState[i] = STATE_MARAUDER_STEAL;
+							mMarauders[i].SetRole(ROLE_CIVILIAN);							
+						}
+					}					
+					break;
+				}
+			case TIMER_NAME_HIDEHINTS:
+				{
+					ScriptInterface::CloseTutorialInstruction();
+					break;
+				}
+			case TIMER_NAME_TRUCK_EXPLODE:
+				{
+					mSmokingTruck.Explode();
+					break;
+				}
+			case TIMER_NAME_MORNING:
+				{
+					int hour, minute, second;
+					Game::GetTime( hour, minute, second );
+					if ( hour >= 7 && hour < 20)
+					{
+						System::Log("Stop TIMER_NAME_MORNING");
+						Game::SetTimeSpeed(0);
+						Mission::StopTimer(TIMER_NAME_MORNING);
+					}
+				}
+				break;
+			case TIMER_NAME_HINT9:
+				{
+					if (mHacker.IsValid() && !mHackerFound && mHintCounter[9] == 0
+						&& !mHacker.IsArrested() && mHacker.GetEnteredCarID() == -1
+						&& !Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_HACKER))
+						ShowHint(9);
+				}
+				break;
+		}
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		switch(Trigger)
+		{
+			case NAME_MARAUDER_TRIGGER1:
+			case NAME_MARAUDER_TRIGGER2:
+			case NAME_MARAUDER_TRIGGER3:
+			case NAME_MARAUDER_TRIGGER4:
+				{
+					if (mHintCounter[3] == 0)
+					{
+						ShowHint(3);
+						Game::DeactivateTrigger(NAME_MARAUDER_TRIGGER1);
+						Game::DeactivateTrigger(NAME_MARAUDER_TRIGGER2);
+						Game::DeactivateTrigger(NAME_MARAUDER_TRIGGER3);
+						Game::DeactivateTrigger(NAME_MARAUDER_TRIGGER4);
+					}
+				}
+		}
+	}
+
+	void OnMissionLeft(GameObject *Obj)
+	{
+		if (Obj->GetID() == mHacker.GetID())
+		{
+			Person p(Obj);
+			if (!p.IsDead())
+				mHackerTransported = true;
+		}
+		else if (Obj->HasName(NAME_MARAUDER))
+		{
+			for (int i = 0; i < MAX_MARAUDERS; i++)
+			{
+				if (mMarauders[i].IsValid() && mMarauders[i].GetID() == Obj->GetID())
+				{
+					if (mMarauders[i].GetEnteredCarID() == -1)
+						mMarauderLeft = true; // entkommen
+					else
+					{
+						mMarauders[i] = Person();
+						mNumMaraudersCurrent--;
+					}
+				}
+			}
+		}
+		else if (Obj->HasName(NAME_ACCIDENT_CAR) || Obj->GetID() == mSmokingTruck.GetID())
+			mNumAccidentCars--;
+	}
+
+	bool OnExplode(GameObject *Obj)
+	{
+		if (Obj->GetID() == mSmokingTruck.GetID() && !mSmokingTruck.IsHidden())
+		{
+			if (mSmokingTruck.IsCarried())
+				return true;
+			if (!mCutsceneTruck)
+			{
+				if (!Mission::IsCutSceneRunning())
+				{
+					mCutsceneTruck = true;
+					Mission::StopTimer(TIMER_NAME_LIFT0);
+					System::Log("M09 Start Cutscene Truck");
+					Mission::StartCutScene();
+					Mission::ShowBlackBars(0.8f);
+					Vector pos = mSmokingTruck.GetPosition(), pos2;
+					float yaw, pitch, roll;
+					Camera::GetTransition(NAME_LOCATION_TRUCK, pos2, yaw, pitch, roll);
+					Camera::StartTransition(pos, pos2.z, yaw, pitch, roll, 2.f);
+					Audio::SetMusicLevel(0.1f);
+					return false;
+				}
+				else
+					return true;
+			}
+			else
+				return false;
+		}
+		return true;
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int res = Math::rand();
+		res %= max - min;
+		return res + min;
+	}
+
+	void SetMessagePool(int Id_)
+	{
+		System::Log("M09: Messagepool %i set.", Id_);
+		switch(Id_)
+		{
+			case 0 :
+				Game::SetDefaultMessageGroup(NAME_MESSAGEPOOL1);
+				break;
+			case 1 :
+				Game::SetDefaultMessageGroup(NAME_MESSAGEPOOL2);
+				break;
+			case 2 :
+				Game::SetDefaultMessageGroup(NAME_MESSAGEPOOL3);
+				break;
+			case 3 :
+				Game::SetDefaultMessageGroup(NAME_MESSAGEPOOL4);
+				break;
+		}
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M09: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+		case 0:
+			Mission::PlayHint(HINT_STILL_SMOKING);
+			break;
+		case 1:
+			//Mission::StopTimer(TIMER_NAME_HIDEHINTS);
+			//ScriptInterface::ShowTutorialInstruction(HINT_LIFT_CRASHED, -1.0f, 80.f);
+			//Mission::StartSingleTimer(TIMER_NAME_HIDEHINTS, TIMER_TIME_HIDEHINTS);
+			//Mission::PlayHint(HINT_LIFT_CRASHED);
+			break;
+		case 2:
+			Mission::PlayHint(HINT_SAFE_LIFT);
+			break;
+		case 3:
+			Mission::PlayHint(HINT_MARAUDERS_FLEEING);
+			break;
+		case 4:
+			Mission::PlayHint(HINT_TOO_MANY_INJUREDS);
+			break;
+		case 5:
+			Mission::PlayHint(HINT_TRANSPORT_VEHICLES);
+			break;
+		case 6:
+			Mission::PlayHint(HINT_FIRES_OUT_OF_CONTROL);
+			Audio::SetMusicLevel(0.6f);
+			break;
+		case 7:
+			Mission::PlayHint(HINT_SQUADS_IN_DANGER);
+			break;
+		case 8:
+			Mission::PlayHint(HINT_MOLOCTOVS_USED);
+			break;
+		case 9:
+			Mission::PlayHint(HINT_FIND_HACKER);
+			break;
+		case 10:
+			Mission::StopTimer(TIMER_NAME_HIDEHINTS);
+			ScriptInterface::ShowTutorialInstruction(HINT_BURNING_BANK, -1.0f, 80.f);
+			Mission::StartSingleTimer(TIMER_NAME_HIDEHINTS, TIMER_TIME_HIDEHINTS);
+			//Mission::PlayHint(HINT_BURNING_BANK);
+			break;
+		case 11:
+			Mission::PlayHint(HINT_MARAUDERS_APPEAR);
+			break;
+		case 12:
+			Mission::PlayHint(HINT_INFO_HACKER);
+			break;
+		}
+	}
+
+	void SetupMarauders()
+	{
+		System::Log("M09: SetupMarauders()");
+		for(int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			if (mMarauders[i].IsValid())
+			{
+				mMarauders[i].SetObjectPath(mMarauderPathNames[i % 4]);
+				mMarauderState[i] = STATE_MARAUDER_WALK;
+			}
+		}
+		ShowHint(11);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_MARAUDERS, TIMER_TIME_UPDATE_MARAUDERS);
+		Mission::StartSingleTimer(TIMER_NAME_BANK_BURN, TIMER_TIME_BANK_BURN);
+		mMaraudersStarted = true;
+	}
+
+	void UpdateMarauders()
+	{
+		if (!MaraudersAggressive())
+		{
+			for(int i = 0; i < mNumMarauders; i++)
+			{
+				// Wasserwerfer Einsatz oder sonstiges?
+				if (mMarauders[i].IsResorting())
+				{
+					if (!mShopAttacked)
+					{
+						SetMaraudersAggressive();
+						break;
+					}
+					else
+						mMarauderState[i] = STATE_MARAUDER_AGGRESSIVE;
+				}
+			}
+		}
+		int numValid = 0;
+		Vector pos;
+		for(int i = 0; i < mNumMarauders; i++)
+		{
+			if (mMarauders[i].IsValid() && (mMarauders[i].IsInjured() || mMarauders[i].IsArrested()))
+			{
+				mNumMaraudersCurrent--;
+				mMarauders[i] = Person();
+				if (mNumMaraudersAtTarget == mNumMaraudersCurrent && mNumMaraudersCurrent > 0)
+				{
+					mShopReached = true;
+					System::Log("M09 Start Cutscene Marauders 2");
+					Mission::StartCutScene();
+					Mission::ShowBlackBars(1.5f);
+					Camera::StartTransition(NAME_LOCATION_SHOP, 1.8f);
+					mCutsceneShopAttack = true;
+					Audio::SetMusicLevel(0.4f);
+				}
+				continue;
+			}
+			if (IsValidMarauder(i))
+			{
+				if (mMarauders[i].IsFleeing() && mMarauders[i].IsMoving())
+					mMarauders[i].SetAnimation("walkequipped3");
+				numValid++;
+				pos = mMarauders[i].GetPosition();
+				switch(mMarauderState[i])
+				{
+					case STATE_MARAUDER_WAIT:
+					{
+						if ((!mShopAttacked && IsMarauderTargetAvailable()) || mMarauders[i].IsSquadInRange(12.5f * 50.f))
+						{
+							mMarauderState[i] = STATE_MARAUDER_AGGRESSIVE;
+							break;
+						}
+						// Hier mal schreien, Arme hochreißen... etc
+						mMarauderTimer[i]--;
+						if (mMarauderTimer[i]<=0)
+						{
+							// Weiterlaufen
+							if (!mMaraudersFleeing && !mShopReached)
+							{
+								mMarauderState[i] = STATE_MARAUDER_WALK;
+								System::Log("M09: Marauder %d state WALK set", i);
+							}
+							else
+							{
+								mMarauderState[i] = STATE_MARAUDER_FLEEING;
+								System::Log("M09: Marauder %d state FLEEING set", i);
+							}
+
+							mMarauderTimer[i] = MARAUDER_WALK_TIME;
+						}
+						else switch (Math::rand()%10)
+						{
+							case 0:	mMarauders[i].PushActionWait(ACTION_INSERT,1);
+								break;
+							case 1: mMarauders[i].PushActionSwitchAnim(ACTION_INSERT,"demonstrate");
+								break;
+							case 2: mMarauders[i].PushActionSwitchAnim(ACTION_INSERT,"wavehelp");
+								break;
+							case 3: mMarauders[i].PushActionSwitchAnim(ACTION_INSERT,"idle");
+								break;
+						}
+						break;
+					}
+					break;
+					case STATE_MARAUDER_WALK:
+					{
+						if (!mMarauders[i].HasObjectPath(mMarauderPathNames[i % 4]))
+							mMarauders[i].SetObjectPath(mMarauderPathNames[i % 4]);
+						mMarauderTimer[i]--;
+						if (mMarauderTimer[i]<=0)
+						{
+							mMarauderState[i] = STATE_MARAUDER_WAIT;
+							mMarauderTimer[i] = MARAUDER_WAIT_TIME;
+							mMarauders[i].StopMovement();
+						}
+						break;
+					}
+					break;
+					case STATE_MARAUDER_REPOSITION:
+					{
+						// Am Geschäft angekommen, etwas die Leute verteilen
+						if (!mMarauders[i].IsCurrentAction("EActionFindPath") && 
+							!mMarauders[i].IsCurrentAction("EActionMove"))
+						{
+							mMarauderState[i] = STATE_MARAUDER_THROWSTONE;
+						}
+						break;
+					}
+					break;
+					case STATE_MARAUDER_AGGRESSIVE:
+					{
+						if (mMarauders[i].GetRole()!=ROLE_GANGSTER)
+						{
+							System::Log("M09: Setting role and behaviour");
+							// Save old Position
+							mOffsets[i] = mMarauders[i].GetPosition();
+							// Set Gangster Role
+							mMarauders[i].SetRole(ROLE_GANGSTER);
+							mMarauders[i].SetCivilsFleeRange(0.f);
+							mMarauders[i].SetNeverResort(false);
+							int rnd = Math::rand() % MAX_MARAUDERS;
+							if (rnd < 2 && mMarauders[i].IsSquadCarInRange(15.f * 50.f))
+							{
+								System::Log("M09: Marauder is a molotov thrower.");
+								mMarauders[i].SetBehaviour(BEHAVIOUR_GANGSTER_THROWMOLOTOV);
+							}
+							else if (rnd < 5)
+							{
+								System::Log("M09: Marauder is a stone thrower.");
+								mMarauders[i].SetBehaviour(BEHAVIOUR_GANGSTER_THROWSTONES);
+								mMarauders[i].SetStoneThrowLifeDuration(10.f);
+							} 
+							else 
+							{
+								System::Log("M09: Marauder is a fist fighter.");
+								mMarauders[i].SetBehaviour(BEHAVIOUR_GANGSTER_FISTFIGHT);
+							}
+							mMarauders[i].PushActionDrop(ACTION_NEWLIST);
+							mMarauders[i].PushActionWait(ACTION_APPEND, (Math::rand() % 3));
+						}
+						else if (mMarauders[i].GetAimTargetID()==-1) // Falls kein target mehr gefunden, wechsele Zustand
+						{
+							System::Log("M09: Kein Target mehr, wechsle Role, zurück zum Ausgangspunkt! %d",i);
+							mMarauders[i].StopMovement();
+							mMarauders[i].SetRole(ROLE_CIVILIAN);
+							// Goto old Position							
+							mMarauderState[i] = STATE_MARAUDER_GOTOPOS;
+							mMarauders[i].PushActionMove(ACTION_NEWLIST, mOffsets[i]);
+						}					
+						break;
+					}
+					break;
+					case STATE_MARAUDER_GOTOPOS:
+					{
+						//System::Log("DEMO: Goto Pos %d (T:%d)", i,mPersonTimer[i]);
+						if (!mMarauders[i].IsCurrentAction("EActionFindPath") && 
+							!mMarauders[i].IsCurrentAction("EActionMove"))
+						{
+							if (!mShopReached || mShopAttacked)
+							{
+								// noch nicht angekommen, mal weitergehen
+								mMarauderState[i] = STATE_MARAUDER_WAIT;								
+							}
+							else
+							{	// schon am Geschäft angekommen								
+								mMarauderState[i] = STATE_MARAUDER_THROWSTONE;
+								System::Log("M09: Setting state THROWSTONE");
+							}
+						}
+						break;
+					}
+					break;
+					case STATE_MARAUDER_NORMAL:
+					{
+						System::Log("M09: Normal %d (T:%d)", i,mMarauderTimer[i]);
+
+						if (mMarauders[i].GetRole()!=ROLE_CIVILIAN)
+							mMarauders[i].SetRole(ROLE_CIVILIAN);
+
+						// Plünderer wurde beruhigt und sagt jetzt nichts mehr (1 Minute)
+						mMarauderTimer[i]--;
+						if (mMarauderTimer[i]<=0)
+						{
+							mMarauderState[i] = STATE_MARAUDER_GOTOPOS;
+						}					
+						break;
+					}
+					break;
+					case STATE_MARAUDER_STEAL:
+					{
+						if (mMarauders[i].IsIdle())
+						{
+							mShopReached = true;
+							System::Log("M09: Marauder %d wants to steal", i);
+							Vector pos = mMarauders[i].GetPosition();
+							Vector tpos = mWindowPos.GetPosition();
+							if (Math::VectorLen(tpos.x - pos.x, tpos.y - pos.y, 0.f) > 200.f)
+							{
+								mMarauders[i].PushActionMove(ACTION_NEWLIST, &mWindowPos, TARGET_ANY);
+								mMarauders[i].PushActionWait(ACTION_APPEND, (float)GetRandomValue(1, 4));
+								break;
+							}
+							System::Log("M09: Marauder %d is stealing", i);
+							int rnd = GetRandomValue(0, 4);
+							switch(rnd)
+							{
+								case 0:
+									mMarauders[i].PlaceObjectInRightHand(NAME_OBJECT0);
+									break;
+								case 1:
+									mMarauders[i].PlaceObjectInRightHand(NAME_OBJECT1);
+									break;
+								case 2:
+									mMarauders[i].PlaceObjectInRightHand(NAME_OBJECT2);
+									break;
+								case 3:
+									mMarauders[i].PlaceObjectInRightHand(NAME_OBJECT3);
+									break;
+							}
+							/*if (rnd == 0)
+								mMarauders[i].PlaceObjectInRightHand(NAME_OBJECT0);
+							else
+								mMarauders[i].PlaceObjectInRightHand(NAME_OBJECT1);*/
+							ActorList meeting(NAME_AREA_MEETING);
+							Actor meetingvo;
+							if (meeting.GetNumActors() > 0)
+								meetingvo = *meeting.GetActor(0);
+							if (meetingvo.IsValid())
+							{
+								mMarauders[i].PushActionMove(ACTION_NEWLIST, &meetingvo, TARGET_RANDOM);
+								mMarauders[i].PushActionWait(ACTION_APPEND, 60.f);
+							}
+							mMarauders[i].SetObjectPath(mMarauderFlightPathNames[i % 4]);
+							mMarauders[i].SetRole(ROLE_GANGSTER);
+							mMarauders[i].SetBehaviour(BEHAVIOUR_GANGSTER_FISTFIGHT);
+							mMarauders[i].SetFleeing(true, false);
+							mMarauderState[i] = STATE_MARAUDER_FLEEING;
+							mMarauderTimer[i] = 70;
+						}
+						break;
+					}
+					break;
+					case STATE_MARAUDER_FLEEING:
+					{
+						mMaraudersFleeing = true;
+						if (!mMarauders[i].HasObjectPath(mMarauderFlightPathNames[i % 4]))
+							mMarauders[i].SetObjectPath(mMarauderFlightPathNames[i % 4]);
+						mMarauderTimer[i]--;
+						if (mMarauderTimer[i]<=0)
+						{
+							mMarauderState[i] = STATE_MARAUDER_WAIT;
+							mMarauderTimer[i] = MARAUDER_WAIT_TIME;
+							mMarauders[i].StopMovement();
+						}
+						break;
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	bool OnHalt(Person *source_, GameObject *receiver_)
+	{		
+		for (int i=0; i<mNumMarauders; i++)
+		{
+			if ((receiver_->GetID() == mMarauders[i].GetID()) && IsValidMarauder(i))
+			{
+				mOffsets[i] = mMarauders[i].GetPosition();
+				SetMaraudersAggressive();
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool MaraudersAggressive()
+		// Liefert true, falls noch Leute agressiv 
+	{
+		for (int i=0; i<mNumMarauders; i++)
+		{
+			if (IsValidMarauder(i) && (mMarauderState[i]==STATE_MARAUDER_AGGRESSIVE)) 
+				return true;
+		}
+		return false;
+	}
+
+	bool IsMarauderTargetAvailable()
+	{
+		// liefert true, falls ein Demonstant ein noch gültiges Ziel hat,
+		// das dann alle Demonstranten zusammen bekämpfen
+		for (int i=0; i<mNumMarauders; i++)
+		{
+			if (IsValidMarauder(i) && (mMarauderState[i]==STATE_MARAUDER_AGGRESSIVE) && (mMarauders[i].GetAimTargetID()!=-1)) 
+				return true;
+		}
+		return false;
+	}
+
+	bool IsValidMarauder(int person)
+	{
+		return (mMarauders[person].IsValid() && !mMarauders[person].IsInjured() && 
+			!mMarauders[person].IsDead() && !mMarauders[person].IsLinkedWithPerson() &&
+			!mMarauders[person].IsArrested() && (mMarauders[person].GetEnteredCarID()==-1) &&
+			!mMarauders[person].IsResorting());
+	}
+
+	void SetMaraudersAggressive()
+	{
+		for (int i=0; i<mNumMarauders; i++)
+		{
+			if (IsValidMarauder(i) && (mMarauderState[i]!=STATE_MARAUDER_NORMAL && mMarauderState[i]!=STATE_MARAUDER_STEAL)) 
+			{
+				mMarauderState[i] = STATE_MARAUDER_AGGRESSIVE;
+			}
+		}
+	}
+
+	void LiftCrash()
+	{
+		mHotel.SetFlag(OF_ACCESSIBLE);
+		ShowHint(1);
+		//GameObjectList victims(NAME_LIFTVICTIM);
+		//for(int i = 0; i < victims.GetNumObjects(); i++)
+		//{
+		//	Person p(victims.GetObject(i));
+		//	float health = p.GetHealth();
+		//	p.Injure(INJUREREASON_FIRE);
+		//	p.SetLife(health);
+		//}
+		//System::Log("M09 Start Cutscene lift crash 1");
+		//Mission::StartCutScene(false);
+		//Mission::ShowBlackBars(1.f);
+		//Camera::StartTransition(NAME_LOCATION_HOTEL, 2.5f);		
+		Mission::StartSingleTimer(TIMER_NAME_2ND_LIFT, TIMER_TIME_2ND_LIFT);
+		Mission::StartSingleTimer(TIMER_NAME_MARAUDERS, TIMER_TIME_MARAUDERS);
+		SetMessagePool(1);
+		//mCutsceneHotel = true;
+		mHotelSceneShown = true;
+		RunCutsceneLiftCrash2();
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+		if (mCSLiftState > 0)
+		{
+			mCrashedLift.Show();
+			System::Log("Show lift crash 1");
+			NextCutscenePhase();
+
+		}
+		else if (mCSLiftState2 > 0)
+		{
+			mCrashedLift2.Show();
+			System::Log("Show lift crash 2");
+			NextCutscenePhase2();
+		}
+	}
+
+	void RunCutsceneLiftCrash2()
+	{
+		if (!mCutsceneLiftCrash2)
+		{
+			Mission::StartCutScene();
+			Mission::ShowBlackBars(1.f);
+			Camera::StartTransition(NAME_LOCATION_LIFTCRASHA2, 5.0f);
+			mHotel.ShowCeiling(false);
+			mCSLiftState2 = 1;
+			mCutsceneLiftCrash2 = true;
+			Audio::SetMusicLevel(0.3f);
+		}
+	}
+
+	void NextCutscenePhase2()
+	{
+		if (mCSLiftState2 == 1)
+		{
+			mLiftSound = Audio::PlaySample(NAME_SOUND_LIFT_FALL);
+			mLift2.EnablePhysicsSimulation();
+			mLift2.SetCollisionMode(PHYSIC_COLLISION_NONE);
+			mLift2.UnfreezePhysics();
+			Vector pos;
+			mLift2.GetPhysicsPosition(pos);
+			for (int i = 0; i < mCSLiftSparkEmitterCount2; i++)
+			{
+				mCSLiftSparkEmitterRelPos2[i] = mCSLiftSparkEmitters2[i].GetPosition() - pos;
+				mCSLiftSparkEmitters2[i].StartParticleEffect();
+			}
+			for (int i = 0; i < mLiftPersonCount2; i++)
+			{
+				mLiftPersons2[i].EnablePhysicsSimulation();
+				mLiftPersons2[i].SetCollisionMode(PHYSIC_COLLISION_NONE);
+				mLiftPersons2[i].UnfreezePhysics();
+				mLiftPersons2[i].PushActionWait(ACTION_NEWLIST, 10.0f);
+				mLiftPersons2[i].PushActionDeleteOwner(ACTION_APPEND);
+			}
+			Camera::StartTransition(NAME_LOCATION_LIFTCRASHB2, 3.0f);
+			//Mission::StartSingleTimer(TIMER_NAME_LIFTCRASH2, TIMER_TIME_LIFTCRASH2, true);
+			//Mission::StartSingleTimer(TIMER_NAME_SHOW_CRASHED_LIFT, TIMER_TIME_LIFTCRASH2 + 0.2f, true);
+			mLift2.StartPhysicsEvent(40);
+			mCSLiftState2 = 2;
+		}
+		else if (mCSLiftState2 == 2)
+		{
+			Audio::StopSample(mLiftSound);
+			Audio::PlaySample(NAME_SOUND_LIFT_CRASH);
+			for (int i = 0; i < mCSLiftBurstEmitterCount2; i++)
+			{
+				mCSLiftBurstEmitters2[i].StartParticleEffect();
+			}
+			for (int i = 0; i < mCSLiftSparkEmitterCount2; i++)
+			{
+				mCSLiftSparkEmitters2[i].StopParticleEffect();
+			}			
+			//Mission::CloseBlackBars(2.f, 1.f);			
+			Mission::StartSingleTimer(TIMER_NAME_ENDCUTSCENE3, TIMER_TIME_ENDLIFTCUTSCENE);			
+			Mission::StartSingleTimer(TIMER_NAME_AFTER_CUTSCENE3, TIMER_TIME_AFTER_CUTSCENE3);
+			//mCutsceneLiftCrash = false;
+			mCSLiftState2 = 3;
+		}
+	}
+
+	void RunCutsceneLiftCrash()
+	{
+		if (!mCutsceneLiftCrash)
+		{
+			Mission::StartCutScene();
+			Mission::ShowBlackBars(1.f);
+			Camera::StartTransition(NAME_LOCATION_LIFTCRASHA, 5.0f);
+			mHotel.ShowCeiling(false);
+			mCSLiftState = 1;
+			mCutsceneLiftCrash = true;
+			Audio::SetMusicLevel(0.3f);
+		}
+	}
+
+	void UpdateCutScene()
+	{
+		if (mCSLiftState == 2)
+		{
+			for (int i = 0; i < mCSLiftSparkEmitterCount; i++)
+			{
+				Vector pos;
+				mLift.GetPhysicsPosition(pos);
+				mCSLiftSparkEmitters[i].SetPosition(pos + mCSLiftSparkEmitterRelPos[i]);
+			}
+		}
+		else if (mCSLiftState2 == 2)
+		{
+			for (int i = 0; i < mCSLiftSparkEmitterCount2; i++)
+			{
+				Vector pos;
+				mLift2.GetPhysicsPosition(pos);
+				mCSLiftSparkEmitters2[i].SetPosition(pos + mCSLiftSparkEmitterRelPos2[i]);
+			}
+		}
+	}
+
+	void NextCutscenePhase()
+	{
+		if (mCSLiftState == 1)
+		{
+			mLiftSound = Audio::PlaySample(NAME_SOUND_LIFT_FALL);
+			mLift.EnablePhysicsSimulation();
+			mLift.SetCollisionMode(PHYSIC_COLLISION_NONE);
+			mLift.UnfreezePhysics();
+			Vector pos;
+			mLift.GetPhysicsPosition(pos);
+			for (int i = 0; i < mCSLiftSparkEmitterCount; i++)
+			{
+				mCSLiftSparkEmitterRelPos[i] = mCSLiftSparkEmitters[i].GetPosition() - pos;
+				mCSLiftSparkEmitters[i].StartParticleEffect();
+			}
+			for (int i = 0; i < mLiftPersonCount; i++)
+			{
+				mLiftPersons[i].EnablePhysicsSimulation();
+				mLiftPersons[i].SetCollisionMode(PHYSIC_COLLISION_NONE);
+				mLiftPersons[i].UnfreezePhysics();
+				mLiftPersons[i].PushActionWait(ACTION_NEWLIST, 10.0f);
+				mLiftPersons[i].PushActionDeleteOwner(ACTION_APPEND);
+			}
+			Camera::StartTransition(NAME_LOCATION_LIFTCRASHB, 3.0f);
+			//Mission::StartSingleTimer(TIMER_NAME_LIFTCRASH, TIMER_TIME_LIFTCRASH, true);
+			//Mission::StartSingleTimer(TIMER_NAME_SHOW_CRASHED_LIFT, TIMER_TIME_LIFTCRASH2 + 0.2f, true);
+			mLift.StartPhysicsEvent(40);
+			mCSLiftState = 2;
+		}
+		else if (mCSLiftState == 2)
+		{
+			Audio::StopSample(mLiftSound);
+			Audio::PlaySample(NAME_SOUND_LIFT_CRASH);
+			for (int i = 0; i < mCSLiftBurstEmitterCount; i++)
+			{
+				mCSLiftBurstEmitters[i].StartParticleEffect();
+			}
+			for (int i = 0; i < mCSLiftSparkEmitterCount; i++)
+			{
+				mCSLiftSparkEmitters[i].StopParticleEffect();
+			}
+			//Mission::CloseBlackBars(2.f, 1.f);			
+			Mission::StartSingleTimer(TIMER_NAME_ENDCUTSCENE3, TIMER_TIME_ENDLIFTCUTSCENE);
+			Mission::StartSingleTimer(TIMER_NAME_AFTER_CUTSCENE3, TIMER_TIME_AFTER_CUTSCENE3);
+			//mCutsceneLiftCrash = false;
+			mCSLiftState = 3;
+		}
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (Mission::IsCutSceneRunning())
+		{
+			if (mCSLiftState == 1)
+			{
+				System::Log("M9: Cutscene Lift Crash: NextCutscenePhase");
+				NextCutscenePhase();
+			}
+			else if (mCSLiftState2 == 1)
+			{
+				System::Log("M9: Cutscene Lift Crash 2: NextCutscenePhase2");
+				NextCutscenePhase2();
+			}
+			else if (mCutsceneHotel)
+			{
+				//Mission::HideBlackBars(1.f);				
+				Mission::StartSingleTimer(TIMER_NAME_ENDCUTSCENE2, TIMER_TIME_ENDCUTSCENE2);
+				mCutsceneHotel = false;
+			}
+			else if (mCutsceneBankBurn)
+			{
+				//Mission::HideBlackBars(1.f);
+				Mission::StartSingleTimer(TIMER_NAME_ENDCUTSCENE2, TIMER_TIME_ENDCUTSCENE);
+				mCutsceneBankBurn = false;				
+			}
+			else if (mCutsceneShopAttack)
+			{
+				for(int i = 0; i < mNumMarauders; i++)
+				{
+					if (IsValidMarauder(i))
+					{
+						mMarauders[i].PushActionTurnTo(ACTION_NEWLIST, &mWindow, 1.f);
+						mMarauders[i].PushActionThrowStone(ACTION_APPEND, mWindow.GetPosition(), 10.f);
+						mMarauders[i].SetUserData(1);
+						mShopAttacked = true;
+						Mission::StartSingleTimer(TIMER_NAME_STEAL_STUFF, TIMER_TIME_STEAL_STUFF);
+						break;
+					}
+				}
+				mCutsceneShopAttack = false;
+				Mission::StartSingleTimer(TIMER_NAME_ENDCUTSCENE2, TIMER_TIME_ENDCUTSCENE);				
+			}
+			else if (mCutsceneTruck)
+			{
+				//Mission::HideBlackBars(1.f);				
+				Mission::StartSingleTimer(TIMER_NAME_ENDCUTSCENE4, TIMER_TIME_ENDCUTSCENE4);
+				mCutsceneTruck = false;				
+			}
+
+		}
+	}
+
+	MissionState GetMissionState()
+	{
+		if (Mission::GetCounter(COUNTER_BURNING_OBJECTS) > 0 || Mission::GetCounter(COUNTER_BURNING_HOUSES) > 0)
+		{
+			if (!Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE) )
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRE1");				
+			}
+		}
+		else 
+		{			
+			if(Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+				Audio::SetMusicLevel(0.5f);
+			}
+		}
+
+		if (Mission::GetCounter(COUNTER_INJURED_PERSONS) + Mission::GetCounter(COUNTER_DEAD_PERSONS) == 0)
+		{			
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED2");
+			}
+		}
+		else
+		{
+			if (!Mission::HasObjective(OBJECTIVE_TRANSPORT_INJURED) )
+				Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+			
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		if (mNumAccidentCars == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_VEHICLES))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_VEHICLES, true);
+				Mission::PlayComment("SUPERV_M09_OBJ05");
+				Mission::StopTimer(TIMER_NAME_HINT5);
+			}
+		}
+		else if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_VEHICLES)
+			&& mNumAccidentCars > 0)
+		{
+			Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_VEHICLES, false);
+			Mission::PlayComment("SUPERV_M09_OBJ08");
+		}
+
+		if (mNumMarauders > 0 && mNumMaraudersCurrent == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_MARAUDER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_MARAUDER, true);
+				Mission::PlayComment("SUPERV_M09_OBJ04");
+			}
+		}
+
+		if (mHackerTransported || !mHacker.IsValid() || mHacker.IsArrested() || mHacker.GetEnteredCarID() != -1)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_HACKER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_HACKER, true);
+				Mission::PlayComment("SUPERV_M09_OBJ06");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_HACKER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_HACKER, false);
+				Mission::PlayComment("SUPERV_M09_OBJ07");
+			}
+		}
+
+		if (mHacker.IsValid() && mHacker.IsDead())
+		{
+			mHackerKilled = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_CIVIL_DEATHS) > MAX_DEAD_CIVILS || Mission::GetCounter(COUNTER_PERSON_INJURIES) > MAX_INJURED_PERSONS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_BURNING_HOUSES) >= MAX_BURNING_HOUSES )
+		{
+			mFireOutOfControl = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (mMarauderLeft)
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() && !Mission::IsCutSceneRunning())
+		{
+			if (!mHotelSceneShown)
+			{
+				Mission::StopTimer(TIMER_NAME_LIFT0);
+				Mission::StopTimer(TIMER_NAME_LIFT1);
+				LiftCrash();
+				return MISSION_RUNNING;
+			}
+			if (!mMaraudersStarted)
+			{
+				Mission::StopTimer(TIMER_NAME_MARAUDERS);
+				Mission::AddObjective(OBJECTIVE_TRANSPORT_MARAUDER);
+				Mission::PlayComment("SUPERV_M09_OBJ01");
+				SetupMarauders();
+				SetMessagePool(2);
+				return MISSION_RUNNING;
+			}
+			if (!mBankFireStarted)
+			{
+				Mission::StopTimer(TIMER_NAME_BANK_BURN);
+				mBank.Burn();
+				for(int i = 0; i < mBank.GetNumFireChilds(); i++)
+				{
+					FireObject fo = mBank.GetFireChild(i);
+					if (fo.IsValid())
+					{
+						fo.SetTemperature(fo.GetMaxMaterialTemperature());
+					}
+				}
+				System::Log("M09 Start Cutscene bank");
+				Mission::StartCutScene();
+				Mission::ShowBlackBars(1.f);
+				Camera::StartTransition(NAME_LOCATION_BANK_BURN, 2.f);
+				SetMessagePool(3);
+				ShowHint(10);
+				mCutsceneBankBurn = true;
+				mBankFireStarted = true;
+				Audio::SetMusicLevel(0.5f);
+				return MISSION_RUNNING;
+			}
+			Audio::SetMusicLevel(0.8f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+		if (mMarauderLeft)
+			return "M09_MARAUDER_LEFT";
+		if (mHackerKilled)
+			return "M09_HACKER_KILLED";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M09_FAIL01";
+		//if (mFireOutOfControl)
+		//	return "SUPERV_M09_FAIL02";
+		if (mMarauderLeft)
+			return "SUPERV_M09_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.999f)
+			return "SUPERV_M09_RES01";
+		if (scoring->Efficiency < 0.999f && scoring->Efficiency >= 0.9f)
+			return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+		if (scoring->Efficiency < 0.7f && scoring->Efficiency >= 0.5f
+			&& (Mission::GetCounter(COUNTER_DEAD_PERSONS) > 2 || Mission::GetCounter(COUNTER_INJURED_PERSONS) > 12))
+			return "SUPERV_M09_RES03";
+		if (scoring->Efficiency < 0.7f && scoring->Efficiency >= 0.5f
+			&& (Mission::GetCounter(COUNTER_BURNT_HOUSES) > 5 || Mission::GetCounter(COUNTER_BURNT_OBJECTS) > 50))
+			return "SUPERV_M09_RES04";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		return 1.f;
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mTooManyDied);
+		serializer_->Write(mFireOutOfControl);
+		serializer_->Write(mMarauderLeft);
+		serializer_->Write(mLiftSaved);
+		serializer_->Write(mHackerFound);
+		serializer_->Write(mHackerTransported);
+		serializer_->Write(mHackerKilled);
+		serializer_->Write(mSmokingTruck);
+		serializer_->Write(mHotel);
+		serializer_->Write(mHacker);
+
+		serializer_->Write(mCutsceneTruck);
+		serializer_->Write(mCutsceneHotel);
+		serializer_->Write(mCutsceneLiftCrash);
+		serializer_->Write(mHotelSceneShown);
+		serializer_->Write(mLiftSound);
+		serializer_->Write(mBlockedPerson);
+		serializer_->Write(mSwitch);
+		serializer_->Write(MAX_MARAUDERS);
+		for (int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			serializer_->Write(mMarauders[i]);
+			serializer_->Write(mMarauderState[i]);
+			serializer_->Write(mMarauderTimer[i]);
+			serializer_->Write(mOffsets[i]);
+		}
+		serializer_->Write(mNumMarauders);
+		serializer_->Write(mNumMaraudersCurrent);
+		serializer_->Write(mBank);
+		serializer_->Write(mCutsceneBankBurn);
+
+		serializer_->Write(mShopReached);
+		serializer_->Write(mShop);
+		serializer_->Write(mNumMaraudersAtTarget);
+		serializer_->Write(mCutsceneShopAttack);
+		serializer_->Write(mMaraudersFleeing);
+		serializer_->Write(mShopAttacked);
+
+		serializer_->Write(mCSLiftState);
+		serializer_->Write(mCSLiftState2);
+		serializer_->Write(mLift);
+		serializer_->Write(mLift2);
+		serializer_->Write(mCrashedLift);
+		serializer_->Write(mCrashedLift2);
+		serializer_->Write(mLiftPersonCount);
+		serializer_->Write(mLiftPersonCount2);
+		for (int i = 0; i < mLiftPersonCount; i++)
+		{
+			serializer_->Write(mLiftPersons[i]);
+			serializer_->Write(mLiftPersonsCrushed[i]);
+		}
+		for (int i = 0; i < mLiftPersonCount2; i++)
+		{
+			serializer_->Write(mLiftPersons2[i]);
+			serializer_->Write(mLiftPersonsCrushed2[i]);
+		}
+		serializer_->Write(mCSLiftSparkEmitterCount);
+		for (int i = 0; i < mCSLiftSparkEmitterCount; i++)
+		{
+			serializer_->Write(mCSLiftSparkEmitters[i]);
+			serializer_->Write(mCSLiftSparkEmitterRelPos[i]);
+		}
+		serializer_->Write(mCSLiftSparkEmitterCount2);
+		for (int i = 0; i < mCSLiftSparkEmitterCount2; i++)
+		{
+			serializer_->Write(mCSLiftSparkEmitters2[i]);
+			serializer_->Write(mCSLiftSparkEmitterRelPos2[i]);
+		}
+		serializer_->Write(mCSLiftBurstEmitterCount);
+		for (int i = 0; i < mCSLiftBurstEmitterCount; i++)
+			serializer_->Write(mCSLiftBurstEmitters[i]);
+		serializer_->Write(mCSLiftBurstEmitterCount2);
+		for (int i = 0; i < mCSLiftBurstEmitterCount2; i++)
+			serializer_->Write(mCSLiftBurstEmitters2[i]);
+		serializer_->Write(mWindow);
+		serializer_->Write(mWindowBroken);
+		serializer_->Write(mStone);
+		serializer_->Write(mWindowPos);
+		serializer_->Write(mNumAccidentCars);
+		serializer_->Write(mMaraudersStarted);
+		serializer_->Write(mBankFireStarted);
+		serializer_->Write(mNetservices);
+		serializer_->Write(mNumGlassEmitters);
+		for (int i = 0; i < mNumGlassEmitters; i++)
+			serializer_->Write(mGlassEmitters[i]);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mTooManyDied = serializer_->ReadBool();
+		mFireOutOfControl = serializer_->ReadBool();
+		mMarauderLeft = serializer_->ReadBool();
+		mLiftSaved = serializer_->ReadBool();
+		mHackerFound = serializer_->ReadBool();
+		mHackerTransported = serializer_->ReadBool();
+		mHackerKilled = serializer_->ReadBool();
+		serializer_->Read(mSmokingTruck);
+		serializer_->Read(mHotel);
+		serializer_->Read(mHacker);
+
+		mCutsceneTruck = serializer_->ReadBool();
+		mCutsceneHotel = serializer_->ReadBool();
+		mCutsceneLiftCrash = serializer_->ReadBool();
+		mHotelSceneShown = serializer_->ReadBool();
+		serializer_->Read(mLiftSound);
+		serializer_->Read(mBlockedPerson);
+		serializer_->Read(mSwitch);
+		int maxmarauders = 0;
+		serializer_->Read(maxmarauders);
+		if (maxmarauders != MAX_MARAUDERS)
+		{
+			System::Log("M09: Savegame has different MAX_MARAUDERS");
+			return false;
+		}
+		for (int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			serializer_->Read(mMarauders[i]);
+			serializer_->Read(mMarauderState[i]);
+			serializer_->Read(mMarauderTimer[i]);
+			serializer_->Read(mOffsets[i]);
+		}
+		serializer_->Read(mNumMarauders);
+		serializer_->Read(mNumMaraudersCurrent);
+		serializer_->Read(mBank);
+		mCutsceneBankBurn = serializer_->ReadBool();
+
+		mShopReached = serializer_->ReadBool();
+		serializer_->Read(mShop);
+		serializer_->Read(mNumMaraudersAtTarget);
+		mCutsceneShopAttack = serializer_->ReadBool();
+		mMaraudersFleeing = serializer_->ReadBool();
+		mShopAttacked = serializer_->ReadBool();
+
+		serializer_->Read(mCSLiftState);
+		serializer_->Read(mCSLiftState2);
+		serializer_->Read(mLift);
+		serializer_->Read(mLift2);
+		serializer_->Read(mCrashedLift);
+		serializer_->Read(mCrashedLift2);
+		serializer_->Read(mLiftPersonCount);
+		serializer_->Read(mLiftPersonCount2);
+		for (int i = 0; i < mLiftPersonCount; i++)
+		{
+			serializer_->Read(mLiftPersons[i]);
+			serializer_->Read(mLiftPersonsCrushed[i]);
+		}
+		for (int i = 0; i < mLiftPersonCount2; i++)
+		{
+			serializer_->Read(mLiftPersons2[i]);
+			serializer_->Read(mLiftPersonsCrushed2[i]);
+		}
+		serializer_->Read(mCSLiftSparkEmitterCount);
+		for (int i = 0; i < mCSLiftSparkEmitterCount; i++)
+		{
+			serializer_->Read(mCSLiftSparkEmitters[i]);
+			serializer_->Read(mCSLiftSparkEmitterRelPos[i]);
+		}
+		serializer_->Read(mCSLiftSparkEmitterCount2);
+		for (int i = 0; i < mCSLiftSparkEmitterCount2; i++)
+		{
+			serializer_->Read(mCSLiftSparkEmitters2[i]);
+			serializer_->Read(mCSLiftSparkEmitterRelPos2[i]);
+		}
+		serializer_->Read(mCSLiftBurstEmitterCount);
+		for (int i = 0; i < mCSLiftBurstEmitterCount; i++)
+			serializer_->Read(mCSLiftBurstEmitters[i]);
+		serializer_->Read(mCSLiftBurstEmitterCount2);
+		for (int i = 0; i < mCSLiftBurstEmitterCount2; i++)
+			serializer_->Read(mCSLiftBurstEmitters2[i]);
+
+		serializer_->Read(mWindow);
+		serializer_->Read(mWindowBroken);
+		serializer_->Read(mStone);
+		serializer_->Read(mWindowPos);
+		serializer_->Read(mNumAccidentCars);
+		mMaraudersStarted = serializer_->ReadBool();
+		mBankFireStarted = serializer_->ReadBool();
+		serializer_->Read(mNetservices);
+		serializer_->Read(mNumGlassEmitters);
+		for (int i = 0; i < mNumGlassEmitters; i++)
+			serializer_->Read(mGlassEmitters[i]);
+
+		return true;
+	}
+
+};

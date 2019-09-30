@@ -1,0 +1,45 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script Use
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+object UseSchranke : CommandScript
+{
+	UseSchranke()
+	{
+		SetValidTargets(ACTOR_OBJECT);
+		SetIcon("Use");
+		SetCursor("Use");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		char * fz[1];
+		GameObject obj(Target);
+		if (!obj.IsValid()) 
+			return false;
+
+		return obj.HasNamePrefix("schranke");
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObject obj(Target);
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_USE);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"torsteuerung",Target,5,false);
+	}
+};

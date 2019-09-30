@@ -1,0 +1,73 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script Shoot
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+object Shoot : CommandScript
+{
+	Shoot()
+	{
+		SetValidTargets(ACTOR_PERSON | ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetRestrictions(RESTRICT_SHOOTABLE | RESTRICT_NOTDESTROYED | RESTRICT_NOTINJURED);
+		SetPriority(700);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		if(!p.IsValid() || p.IsLinkedWithPerson() || p.GetEnteredCarID() != -1)
+			return false;
+		if (p.GetEquipment() == EQUIP_PISTOL || p.GetEquipment() == EQUIP_RIFLE)
+			return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		SetPriority(700); // standard priority
+			
+		Person t(Caller);	
+		if(!t.IsValid() || t.IsLinkedWithPerson() ||  t.GetEnteredCarID() != -1)
+			return false;
+
+		GameObject obj(Target);
+		Person pa(Target);
+		if(!obj.IsValid() || (Caller->HasCommand("isbw") && !obj.HasCommand("isbw") && pa.GetRole()!=ROLE_ANIMAL))
+			return false;
+		
+		if(Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (!v.IsCivilCar())
+				SetPriority(-700); // low priority for shooting at squad cars
+			
+			if (!v.IsValid() || ((v.GetVehicleType() == VT_POLICE_PHC || v.GetVehicleType() == VT_AMBULANCE_RHC || v.GetVehicleType() == VT_THW_FGRT_BH) && !v.IsOnGround()))
+				return false;
+		}
+				        
+		if (Caller->GetEquipment() == EQUIP_PISTOL || Caller->GetEquipment() == EQUIP_RIFLE)
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionTurnTo(ACTION_NEWLIST, Target);
+		Caller->PushActionShoot(ACTION_APPEND, Target);
+		if (Math::rand()%10>5 || Caller->GetEquipment() == EQUIP_RIFLE)
+			Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"art_blutung",Target,3,false);		
+	}
+};

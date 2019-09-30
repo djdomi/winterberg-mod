@@ -1,0 +1,130 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script lift
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+object Lift : CommandScript
+{
+	Lift()
+	{
+		SetIcon("liftperson");
+		SetCursor("liftperson");
+		SetValidTargets(ACTOR_PERSON);
+		SetGroupID(CGROUP_CARRY_PERSON);
+		SetGroupLeader(true);
+		SetPriority(400);
+		SetSelfClickActivation(true);
+		SetPossibleExists(CPE_DROWNING_PERSONS | CPE_INJURED_PERSON | CPE_NONIJURED_PERSON);
+		SetPossibleEquipment(EQUIP_NONE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		if (p.IsCarryingPerson())
+			return false;
+		if (p.HasCommand("Dive"))
+			return Game::ExistsDrowningPerson();
+		return Game::ExistsInjuredPerson();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		Person p(Caller);
+		Person t(Target);
+
+		if(p.IsValid() && !p.IsCarryingPerson()&& !p.IsLinkedWithPerson() && !p.IsPulling()
+			&& t.IsValid() && t.IsInjured() && !t.IsCarried() && t.GetRole()!=ROLE_ANIMAL && !t.IsRescueDog())
+		{
+			if (p.GetEnteredCarID() != -1 && p.GetEnteredCarTargetID() != t.GetEnteredHouseID())
+				return false;
+			if (p.GetEnteredCarID() == -1 && t.GetEnteredHouseID() != -1 && t.GetEnteredHouseID() != p.GetEnteredHouseID() && !t.IsInHouseWithGroundEntrance())
+				return false;
+			// Taucher nimmt nur Ertrinkende Personen auf
+			if (p.HasCommand("Dive") && !t.IsDrowning())
+				return false;
+			if(!p.HasCommand("Dive") && t.IsDrowning())
+				return false;
+			
+			return true;
+		}
+
+		if ((t.IsLinkedWithPerson()||t.IsCarryingPerson()) && (t.GetRole() == ROLE_SQUAD) && p.IsParamedicTeam())
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Caller);
+		Person pt(Target);
+		if (p.GetEnteredCarID() == -1)
+		{
+			if (p.HasCommand("Dive"))
+				Caller->PushActionMove(ACTION_APPEND, Target, TARGET_FOLLOW);
+			else
+				Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_TOUCHPERSON);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		}
+		else
+		{
+			if (pt.GetEnteredHouseID() == p.GetEnteredCarTargetID())
+			{
+				Caller->PushActionEnterHouse(ACTION_NEWLIST, pt.GetEnteredHouseID());
+				Caller->PushActionMove(ACTION_APPEND, Target, TARGET_TOUCHPERSON);
+				Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			}
+			else
+				Caller->PushActionTurnTo(ACTION_NEWLIST, Target);
+		}
+		if (pt.IsLinkedWithPerson() || pt.IsCarryingPerson())
+		{
+			if (pt.IsCarryingPerson())
+			{
+				Person pat=pt.GetCarried();
+				pt.PushActionUnloadPerson(ACTION_NEWLIST);
+			}
+			else
+			{
+				Person pat=pt.GetArrested();
+				pt.PushActionRelease(ACTION_NEWLIST);
+			}
+			pt=pat;
+			pat.SetNeverResort(true);
+			pat.SetClassified(true);
+			Caller->PushActionMove(ACTION_APPEND, &pt, TARGET_TOUCHPERSON);
+			Caller->PushActionTurnTo(ACTION_APPEND,&pt);
+		}
+		Caller->PushActionLift(ACTION_APPEND, &pt);
+		if (p.IsParamedicTeam())
+		{
+			VehicleList vl(Caller->GetName());
+			Vehicle v=vl.GetVehicle(0);
+			if (!v.HasCommand("ich_bin_ein_bsw"))
+			{
+				Person pat(Target);
+				if ((pat.GetLife()<100) && (v.GetNumPassengers()==0))
+					Mission::PlayHint("Pat instabil, Transport nicht möglich. Notarzt in den RTW!");
+				else if (((v.GetFreePassengers() + v.GetNumPassengers())<2) && (pat.GetLife()<700))
+					{
+						Mission::PlayHint("Schwer verletzte müssen im RTW transportiert werden");
+					}
+					else 
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"entercar",vl.GetVehicle(0),0,false);
+			}
+		}	  
+	}
+};

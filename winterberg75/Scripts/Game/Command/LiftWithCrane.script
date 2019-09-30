@@ -1,0 +1,118 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script LiftWithCrane
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+object LiftWithCrane : CommandScript
+{
+	Vector TargetPos;
+	bool move;
+
+	LiftWithCrane()
+	{
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetGroupID(CGROUP_CRANE);
+		SetGroupLeader(true);
+		SetRestrictions(RESTRICT_RECOVERABLE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		return Caller->GetCarriedObjects().GetNumObjects() == 0;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		move = true;
+	
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		bool ok = false;
+		if (Target->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.GetEnergy() <= 0.1f * v.GetMaxEnergy() && !v.IsSmoking())
+			        ok = true; // Fahrzeug kaputt und gelöscht
+			if (v.IsDestroyed())
+			        ok = true; // Fahrzeug zerstört
+			if (!ok && !v.IsParking())
+				return false;
+		}
+		
+		// check if target object can be picked up
+		GameObject obj(Target);
+		if (!obj.IsValid() /*|| obj.IsFlagSet(OF_PERSON_ENCLOSED)*/ || obj.IsBurning())
+			return false;
+	
+		GameObjectList l = Caller->GetCarriedObjects();
+		if (l.GetNumObjects() > 0) 
+			return false;
+	
+		if (!obj.IsFlagSet(OF_RECOVERABLE) && !obj.HasName("fgrr_signal") && !ok) 
+			return false;
+
+		bool quiet = true;
+		if (obj.IsPhysicsSimulationEnabled() && !obj.IsPhysicsFreezed())
+		{
+			Vector lin, ang;
+			obj.GetPhysicsLinearVelocity(0, lin);
+			obj.GetPhysicsLinearVelocity(0, ang);
+			if (lin.GetLen() > 8.0f && ang.GetLen() > 0.2f)
+				quiet = false;
+		}
+
+		if (!quiet && !obj.HasName("fgrr_signal"))
+			return false;
+		
+		Vehicle vehi(Caller);
+		if (vehi.IsValid()) 
+		{
+			if (vehi.CanBeTaken(&obj))
+			{
+				move = false;
+				return true;
+			} 
+			else if (vehi.IsReady())
+			{
+				vehi.FindReachablePosition(&obj,TargetPos);
+				return true;
+			}
+		}			
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject ggv(Target);
+
+		if (move) 
+		{
+			Caller->PushActionDeinstall(ACTION_NEWLIST);
+			Caller->PushActionMove(ACTION_APPEND, TargetPos);
+			Caller->PushActionLiftWithCrane(ACTION_APPEND, Target);  
+			ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,3,false);
+		} else {
+			Caller->PushActionLiftWithCrane(ACTION_NEWLIST, Target);
+			ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,3,false);
+		}
+
+		if (ggv.HasNamePrefix("emma"))
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"deblock",Target,Target->GetUserData(),false);
+	}	
+};

@@ -1,0 +1,1401 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script 19
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+// mission 19 script
+
+const int HINT_DEAD_PERSONS_COUNT = 1;
+const int MAX_DEAD_CIVILS = 3;
+const float SMOKE_HEALTH_DRAIN = 5.0;
+const float SMOKE_ADDITIONAL_INJURED_DRAIN = 0.1f;
+const float TIME_SMOKEFADE = 30.0f;
+const float TIME_COLLAPSE = 5.0f*60.0f;
+const float TIME_DUST = 4.5f*60.0f;
+const float TIME_INTERVAL_MIN_DUST = 5.0f;
+const float TIME_INTERVAL_MAX_DUST = 10.0f;
+const float TIME_HINT_ENCLOSEDPERSONS = 5*60.0f;
+const float TIME_CS_DEBRIS_FALLING = 4.0f;
+const float TIME_CS_SECOND_DEBRIS_START = 1.5f;
+const float TIME_CS_DUST1 = 0.8f;
+const float TIME_CS_DUST2 = 3.0f;
+const float TIME_CHECK_MISSION_STATE_INTERVAL = 1.0f;
+const float TIME_SHOW_ACS = 2.0f;
+const float SMOKE_LEVEL_ASF_DURATION = 1.0f;
+
+const float VAL_FIRERESISTANCE_FIREFIGHTER_MASK		= 6000.f;
+const float VAL_FIRERESISTANCE_FIREFIGHTER_ABC		= 3000.f;
+
+const char NAME_UPSIDE[]				= "s2";
+const char NAME_PANEL[]					= "panel";
+const char NAME_ROOM_ROOF[]				= "panel_area_top";
+const char NAME_TRIGGER_INSIDE[]		= "trigger_inside";
+const char NAME_TRIGGER_ROOM_INSIDE[]	= "trigger_room_inside";
+const char NAME_PARTICLE_SMOKE[]		= "particle_smoke";
+const char NAME_PARTICLE_DUST1[]		= "particle_dust";
+const char NAME_PARTICLE_DUST2[]		= "particle_dust2";
+const char NAME_PARTICLE_DUST3[]		= "particle_dust3";
+const char NAME_PARTICLE_DUST4[]		= "particle_dust4";
+const char NAME_PARTICLE_CEILING1[]		= "particle_ceiling1";
+const char NAME_PARTICLE_CEILING2[]		= "particle_ceiling2";
+const char NAME_LIGHT_OBJECT[]			= "lightobject";
+const char NAME_PARTICLE_SMOKE_TOP[]	= "particle_smoke_top";
+const char NAME_VO_COLLAPSE[]			= "vo_debris_area";
+const char NAME_DEBRIS1[]				= "cs_debris1";
+const char NAME_DEBRIS2[]				= "cs_debris2";
+const char NAME_DEBRIS_POSITION[]		= "cs_debris_position";
+const char NAME_ACS_DEBRIS[]			= "acs_debris";
+const char NAME_ACS_DEBRIS2[]			= "acs_debris2";
+const char NAME_ACS_CAR_DEBRIS1[]		= "acs_car_debris_1";
+const char NAME_ACS_CAR_DEBRIS2[]		= "acs_car_debris_2";
+const char NAME_ACS_CAR_DEBRIS3[]		= "acs_car_debris_3";
+const char NAME_ACS_PERSON_DEBRIS1[]	= "acs_person_debris_1";
+const char NAME_ACS_PERSON_DEBRIS2[]	= "acs_person_debris_2";
+const char NAME_ACS_PERSON_DEBRIS3[]	= "acs_person_debris_3";
+const char NAME_ACS_CAR1[]				= "acs_car_1";
+const char NAME_ACS_CAR2[]				= "acs_car_2";
+const char NAME_ACS_CAR3[]				= "acs_car_3";
+const char NAME_CAR1[]					= "car_1";
+const char NAME_CAR2[]					= "car_2";
+const char NAME_CAR3[]					= "car_3";
+const char NAME_ACS_PERSON1[]			= "acs_person_1";
+const char NAME_ACS_PERSON2[]			= "acs_person_2";
+const char NAME_ACS_PERSON3[]			= "acs_person_3";
+const char NAME_PERSON1[]				= "person_1";
+const char NAME_PERSON2[]				= "person_2";
+const char NAME_PERSON3[]				= "person_3";
+const char NAME_CS_TRANSITION1[]		= "cutscene1";
+const char NAME_CS_TRANSITION2[]		= "cutscene2";
+const char NAME_ABOVE_TRANSITION[]		= "above";
+const char NAME_TRIGGER_ENTER[]			= "trigger_enter";
+const char NAME_SQUAD_PLACE[]			= "squad_place";
+const char NAME_CAR_SMOKE[]				= "car_smoke";
+const char NAME_BURN_OBJECT[]			= "burn_object";
+
+const char NAME_COUNTER_DEAD_PERSONS[]	= "Dead Persons";
+
+const char NAME_SOUND_FAN_ON[]				= "mod:Audio/FX/misc/mission_tunnel_fan_starting.wav";
+const char NAME_SOUND_CEILING_COLLAPSE[]	= "mod:Audio/FX/destruction/mission_building_breakdown.wav";//mission_tunnel_breakdown.wav";
+const char NAME_SOUND_CEILING[]				= "mod:Audio/FX/destruction/mission_tunnel_ceiling.wav";
+const char NAME_SOUND_COUGH_M[]				= "mod:Audio/FX/voices/man/0/contamination01.wav";
+const char NAME_SOUND_COUGH_F[]				= "mod:Audio/FX/voices/woman/0/contamination01.wav";
+const char NAME_SOUND_COUGH_C[]				= "mod:Audio/FX/voices/child/0/contamination01.wav";
+
+enum TransitionState
+{
+	TRANSITION_NONE,
+	TRANSITION_COLLAPSE,
+	TRANSITION_COLLAPSE2,
+	TRANSITION_END_CUTSCENE
+};
+
+object Mission15 : MissionScript
+{
+	GameObjectList mSmokeEmitters;
+	GameObjectList mDustEmitters1, mDustEmitters2, mDustEmitters3, mDustEmitters4;
+	GameObjectList mCeilingEmitters1, mCeilingEmitters2;
+	GameObjectList mSmokeTopEmitters;
+	GameObjectList mDebris1, mDebris2, mACSDebris, mACSDebris2;
+	GameObjectList mVehiclesPersonsInCSAreaList;
+	ActorList mUpsideParts;
+	GameObject mPanel;
+	GameObject mRoomRoof;
+	GameObject mACSCarDebris1, mACSCarDebris2, mACSCarDebris3;
+	GameObject mACSPersonDebris1, mACSPersonDebris2, mACSPersonDebris3;
+	Vehicle mCar1, mCar2, mCar3;
+	Vehicle mACSCar1, mACSCar2, mACSCar3;
+	Person mPerson1, mPerson2, mPerson3;
+	Person mACSPerson1, mACSPerson2, mACSPerson3;
+	Actor mTriggerEnter;
+	Actor mLookAtObj;
+	ActorList mSquadPlace;
+	float mCounterEndSmoke;
+	TransitionState mCurrentTransition;
+	GameObjectList mBurnObjects;
+
+	float mSmokeStrength;
+	float mDebrisZPos;
+	bool mFirstSquadInside;
+	bool mFirstDust;
+	bool mChoking;
+	bool mTunnelTopStayShown;
+	bool mAlreadyFiresExt;
+	bool mAlreadyInjuredSaved;
+	bool mHintManyDead;
+	bool mPanelButtonPushed;
+	bool mTooManyVictims;
+
+	Mission15()
+	{
+	}
+	
+	~Mission15()
+	{
+	}
+	
+	void Start()
+	{
+		mSmokeStrength = 1.0f;
+		mCounterEndSmoke = 0.0f;
+		mFirstSquadInside = false;
+		mFirstDust = false;
+		mChoking = true;
+		mTunnelTopStayShown = false;
+		mAlreadyFiresExt = false;
+		mAlreadyInjuredSaved = false;
+		mHintManyDead = false;
+		mPanelButtonPushed = false;
+		mTooManyVictims = false;
+
+		mSmokeEmitters = Game::GetGameObjects(NAME_PARTICLE_SMOKE);
+		mDustEmitters1 = Game::GetGameObjects(NAME_PARTICLE_DUST1);
+		mDustEmitters2 = Game::GetGameObjects(NAME_PARTICLE_DUST2);
+		mDustEmitters3 = Game::GetGameObjects(NAME_PARTICLE_DUST3);
+		mDustEmitters4 = Game::GetGameObjects(NAME_PARTICLE_DUST4);
+		mCeilingEmitters1 = Game::GetGameObjects(NAME_PARTICLE_CEILING1);
+		mCeilingEmitters2 = Game::GetGameObjects(NAME_PARTICLE_CEILING2);
+		mBurnObjects = Game::GetGameObjects(NAME_BURN_OBJECT);
+		mSmokeTopEmitters = Game::GetGameObjects(NAME_PARTICLE_SMOKE_TOP);
+		for (int i = 0; i < mSmokeTopEmitters.GetNumObjects(); i++)
+		{
+			//mSmokeTopEmitters.GetObject(i)->StopParticleEffect();
+		}
+		mUpsideParts = Game::GetActors(NAME_UPSIDE);
+		mDebris1 = Game::GetGameObjects(NAME_DEBRIS1);
+		mDebris2 = Game::GetGameObjects(NAME_DEBRIS2);
+		mACSDebris = Game::GetGameObjects(NAME_ACS_DEBRIS);
+		mACSDebris2 = Game::GetGameObjects(NAME_ACS_DEBRIS2);
+		ActorList actList = Game::GetActors(NAME_TRIGGER_ENTER);
+		mTriggerEnter = actList.GetActor(0);
+		ActorList actList4 = Game::GetActors(NAME_SQUAD_PLACE);
+		mSquadPlace = actList4;
+		if (mSquadPlace.GetNumActors() < 2)
+			System::Error("M19: There must be 2 virtual objects named squad_place!");
+
+		for (int i = 0; i < mDebris1.GetNumObjects(); i++)
+		{
+			mDebris1.GetObject(i)->Hide();
+		}
+		for (int i = 0; i < mDebris2.GetNumObjects(); i++)
+		{
+			mDebris2.GetObject(i)->Hide();
+		}
+		for (int i = 0; i < mACSDebris.GetNumObjects(); i++)
+		{
+			mACSDebris.GetObject(i)->Hide();
+			//mACSDebris.GetObject(i)->EnablePhysicsSimulation(false, true);
+		}
+		for (int i = 0; i < mACSDebris2.GetNumObjects(); i++)
+		{
+			mACSDebris2.GetObject(i)->Hide();
+			//mACSDebris2.GetObject(i)->EnablePhysicsSimulation(false, true);
+		}
+		GameObjectList listLO = Game::GetGameObjects(NAME_LIGHT_OBJECT);
+		System::Log("M19: Number of light objects: %d", listLO.GetNumObjects());
+		for (int i = 0; i < listLO.GetNumObjects(); i++)
+		{
+			listLO.GetObject(i)->SetTraceAccuracy_NoCollision();
+		}
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_PANEL))
+			{
+				mPanel = obj;
+			}
+			else if (obj->HasName(NAME_ROOM_ROOF))
+			{
+				mRoomRoof = obj;
+				//Vector pos = mRoomRoof.GetPosition();
+				//System::Log("M19: room_roof position: %d %d %d", (int)pos.x, (int)pos.y, (int)pos.z);
+				//Vector pos;
+				//pos.x = 505; pos.y = 232; pos.z = -782;
+				//mRoomRoof.SetPosition(pos);
+			}
+			else if (obj->HasName(NAME_ACS_CAR_DEBRIS1))
+			{
+				mACSCarDebris1 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_CAR_DEBRIS2))
+			{
+				mACSCarDebris2 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_CAR_DEBRIS3))
+			{
+				mACSCarDebris3 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_DEBRIS_POSITION))
+			{
+				mDebrisZPos = obj->GetPosition().z;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_PERSON_DEBRIS1))
+			{
+				mACSPersonDebris1 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_PERSON_DEBRIS2))
+			{
+				mACSPersonDebris2 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_PERSON_DEBRIS3))
+			{
+				mACSPersonDebris3 = obj;
+				obj->Hide();
+			}			
+			else if (obj->HasName(NAME_CAR1))
+			{
+				mCar1 = obj;
+			}
+			else if (obj->HasName(NAME_CAR2))
+			{
+				mCar2 = obj;
+			}
+			else if (obj->HasName(NAME_CAR3))
+			{
+				mCar3 = obj;
+			}
+			else if (obj->HasName(NAME_ACS_CAR1))
+			{
+				mACSCar1 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_CAR2))
+			{
+				mACSCar2 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_CAR3))
+			{
+				mACSCar3 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_PERSON1))
+			{
+				mPerson1 = obj;
+			}
+			else if (obj->HasName(NAME_PERSON2))
+			{
+				mPerson2 = obj;
+			}
+			else if (obj->HasName(NAME_PERSON3))
+			{
+				mPerson3 = obj;
+			}
+			else if (obj->HasName(NAME_ACS_PERSON1))
+			{
+				mACSPerson1 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_PERSON2))
+			{
+				mACSPerson2 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_ACS_PERSON3))
+			{
+				mACSPerson3 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_CAR_SMOKE))
+			{
+				Vehicle vc(obj);
+				vc.SetSmoking(true);
+			}
+		}
+
+		for(int i = 0; i < mSmokeEmitters.GetNumObjects(); i++)
+		{
+			//mSmokeEmitters.GetObject(i)->StopParticleEffect();
+			mSmokeEmitters.GetObject(i)->SetParticleEffectStrength(mSmokeStrength);
+		}
+		for(int i = 0; i < mDustEmitters1.GetNumObjects(); i++)
+		{
+			mDustEmitters1.GetObject(i)->StopParticleEffect();
+		}
+		for(int i = 0; i < mDustEmitters2.GetNumObjects(); i++)
+		{
+			mDustEmitters2.GetObject(i)->StopParticleEffect();
+		}
+		for(int i = 0; i < mDustEmitters3.GetNumObjects(); i++)
+		{
+			mDustEmitters3.GetObject(i)->StopParticleEffect();
+		}
+		for(int i = 0; i < mDustEmitters4.GetNumObjects(); i++)
+		{
+			mDustEmitters4.GetObject(i)->StopParticleEffect();
+		}
+		for(int i = 0; i < mCeilingEmitters1.GetNumObjects(); i++)
+		{
+			mCeilingEmitters1.GetObject(i)->StopParticleEffect();
+		}
+		for(int i = 0; i < mCeilingEmitters2.GetNumObjects(); i++)
+		{
+			mCeilingEmitters2.GetObject(i)->StopParticleEffect();
+		}
+
+		Game::DeactivateTrigger(NAME_TRIGGER_INSIDE);
+
+		Mission::StartSingleTimer("dust", TIME_DUST);
+		Mission::StartSingleTimer("CheckEnclosed", TIME_HINT_ENCLOSEDPERSONS);
+		Mission::StartIntervalTimer("CheckMissionState", TIME_CHECK_MISSION_STATE_INTERVAL);
+
+		// only for debugging:
+		//Mission::StartSingleTimer("test1", 30.0f);
+		//Mission::StartSingleTimer("test2", 60.0f);
+		//Mission::StartSingleTimer("collapse", 60.0f);
+
+		Mission::AddObjective("TRANSPORT_INJURED");
+		Mission::AddObjective("EXTINGUISH_FIRES");
+		Mission::AddObjective("M19_EVACUATE_CIVILS");
+
+		Audio::PlaySoundtrack("19", 0.0f);
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+	}
+
+	void OnCollision(GameObject *Collider1, GameObject *Collider2)
+	{
+		if (Mission::IsCutSceneRunning())
+			return;
+		if (!Collider2)
+			return;
+		GameObject debris;
+		GameObject hitObj;
+		for (int i = 0; i < mACSDebris.GetNumObjects(); i++)
+		{
+			if (mACSDebris.GetObject(i)->GetID() == Collider1->GetID())
+			{
+				debris = Collider1;
+				hitObj = Collider2;
+				break;
+			}
+			else if (mACSDebris.GetObject(i)->GetID() == Collider2->GetID())
+			{
+				debris = Collider2;
+				hitObj = Collider1;
+				break;
+			}
+		}
+		for (int i = 0; i < mDebris2.GetNumObjects(); i++)
+		{
+			if (mACSDebris2.GetObject(i)->GetID() == Collider1->GetID())
+			{
+				debris = Collider1;
+				hitObj = Collider2;
+				break;
+			}
+			else if (mACSDebris2.GetObject(i)->GetID() == Collider2->GetID())
+			{
+				debris = Collider2;
+				hitObj = Collider1;
+				break;
+			}
+		}
+		Vector linVel;
+		debris.GetPhysicsLinearVelocity(0, linVel);
+		if (linVel.GetLen() > 100.0f)
+		{
+			if (hitObj.GetType() == ACTOR_PERSON)
+			{
+				Person ps(&hitObj);
+				if (!ps.IsInjured())
+				{
+					ps.Injure(INJUREREASON_ENERGY);
+					ps.EnablePhysicsSimulation();
+				}
+			}
+			else if (hitObj.GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle vc(&hitObj);
+				if (!vc.IsSmoking())
+				{
+					vc.EnablePhysicsSimulation();
+					vc.SetSmoking(true);
+				}
+			}
+		}
+	}
+
+	void RunCutscene()
+	{
+		mTunnelTopStayShown = true;
+		ShowTunnelTop();
+		SetCollisionOfTunnelTop(false);
+		//Camera::LookAtPoint(mLookAtObj.GetPosition(), true, 1.0f, 3.0f);
+		mCurrentTransition = TRANSITION_COLLAPSE2;
+		//Camera::StartTransition(NAME_CS_TRANSITION2, 2.0f);
+		
+		for (int i = 0; i < mDebris1.GetNumObjects(); i++)
+		{
+			mDebris1.GetObject(i)->Show();
+			Vector pos = mDebris1.GetObject(i)->GetPosition();
+			pos.z = mDebrisZPos - 100.0f;
+			mDebris1.GetObject(i)->SetPosition(pos);
+			mDebris1.GetObject(i)->EnablePhysicsSimulation();
+			mDebris1.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_NOEXTERNALBODIES);
+			mDebris1.GetObject(i)->UnfreezePhysics();
+		}
+		for(int i = 0; i < mCeilingEmitters1.GetNumObjects(); i++)
+		{
+			Vector pos = mCeilingEmitters1.GetObject(i)->GetPosition();
+			pos.z = mDebrisZPos - 100.0f;
+			mCeilingEmitters1.GetObject(i)->SetPosition(pos);
+			mCeilingEmitters1.GetObject(i)->StartParticleEffect();
+		}
+		Mission::StartSingleTimer("cs_second_debris", TIME_CS_SECOND_DEBRIS_START, true);
+		Mission::StartSingleTimer("cs_dust1", TIME_CS_DUST1, true);
+		Mission::StartSingleTimer("cs_dust2", TIME_CS_DUST2, true);
+		for(int i = 0; i < mDustEmitters1.GetNumObjects(); i++)
+		{
+			mDustEmitters1.GetObject(i)->StopParticleEffect();
+		}
+
+		Audio::SetMusicLevel(0.1f);
+		Audio::PlaySample(NAME_SOUND_CEILING_COLLAPSE);
+
+		CutsceneFirstPhase();
+	}
+
+	void CutsceneFirstPhase()
+	{
+		Mission::StartSingleTimer("cs_lastphase", TIME_CS_DEBRIS_FALLING);
+	}
+
+	void CutsceneLastPhase()
+	{
+		//Mission::CloseBlackBars(3.0f, 1.0f);
+		Mission::HideBlackBars();
+		Mission::EndCutScene(false, 2.0f);
+		Mission::StartSingleTimer("cs_end", 1.5f);
+	}
+
+	void CutsceneEnding()
+	{
+		mCurrentTransition = TRANSITION_END_CUTSCENE;
+		//Camera::StartTransition(NAME_ABOVE_TRANSITION, 2.0f);
+		for (int i = 0; i < mDebris1.GetNumObjects(); i++)
+		{
+			mDebris1.GetObject(i)->Hide();
+		}
+		for (int i = 0; i < mDebris2.GetNumObjects(); i++)
+		{
+			mDebris2.GetObject(i)->Hide();
+		}
+
+		Mission::StartSingleTimer("show_acs_objects", TIME_SHOW_ACS);
+		float destroyTime = 3.0f;
+		Game::CollectObstaclesOnVirtualObject(NAME_VO_COLLAPSE, mVehiclesPersonsInCSAreaList, ACTOR_PERSON + ACTOR_VEHICLE);
+		for (int i = 0; i < mVehiclesPersonsInCSAreaList.GetNumObjects(); i++)
+		{		
+			if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetID() == mCar1.GetID())
+			{
+				mACSCar1.Show();
+				mCar1.Hide();
+				Mission::StartSingleTimer("destroy_car1", destroyTime);
+				destroyTime += 3.0f;
+			}
+			else if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetID() == mCar2.GetID())
+			{
+				mACSCar2.Show();
+				mCar2.Hide();
+				Mission::StartSingleTimer("destroy_car2", destroyTime);
+				destroyTime += 3.0f;
+			}
+			else if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetID() == mCar3.GetID())
+			{
+				mACSCar3.Show();
+				mCar3.Hide();
+				Mission::StartSingleTimer("destroy_car3", destroyTime);
+			}
+			else if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetID() == mPerson1.GetID())
+			{
+				mACSPerson1.Show();				
+				mPerson1.Hide();
+				//mACSPersonDebris1.EnablePhysicsSimulation(false, true);
+			}
+			else if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetID() == mPerson2.GetID())
+			{
+				mACSPerson2.Show();
+				mPerson2.Hide();
+				//mACSPersonDebris2.EnablePhysicsSimulation(false, true);
+			}
+			else if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetID() == mPerson3.GetID())
+			{
+				mACSPerson3.Show();
+				mPerson3.Hide();
+				//mACSPersonDebris3.EnablePhysicsSimulation(false, true);
+			}
+			else
+			{
+				//bool squad = false;
+				//if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetType() == ACTOR_VEHICLE)
+				//{
+				//	Vehicle vc(mVehiclesPersonsInCSAreaList.GetObject(i));
+				//	if (vc.GetVehicleType() != VT_NOSQUAD)
+				//	{
+				//		squad = true;
+				//	}
+				//	vc.Destroy();
+				//	vc.Hide();
+				//	vc.PushActionWait(ACTION_NEWLIST, 1.0f);
+				//	vc.PushActionDeleteOwner(ACTION_APPEND);
+				//}
+				//else if (mVehiclesPersonsInCSAreaList.GetObject(i)->GetType() == ACTOR_PERSON)
+				{
+					//Person ps(mVehiclesPersonsInCSAreaList.GetObject(i));
+					//if (ps.GetRole() == ROLE_SQUAD && ps.GetEnteredCarID() == -1)
+					//{
+					//	squad = true;
+					//}
+					//ps.Injure(INJUREREASON_ENERGY, false);
+
+					GameObject obj = mVehiclesPersonsInCSAreaList.GetObject(i);
+					Vector pos;
+					Vector posObj = mVehiclesPersonsInCSAreaList.GetObject(i)->GetPosition();
+					int j = 0;
+					bool posFound = false;
+					while (!posFound)
+					{
+						if (j > 10)
+						{
+							System::Log("M19: No free area for object found! Object deleted.");
+							obj.PushActionDeleteOwner(ACTION_NEWLIST);
+						}
+						else
+						{
+							if ((posObj - mSquadPlace.GetActor(0)->GetPosition()).GetLen()
+								< (posObj - mSquadPlace.GetActor(1)->GetPosition()).GetLen())
+								pos = mSquadPlace.GetActor(0)->GetTargetPoint(*mSquadPlace.GetActor(0), TARGET_RANDOM);
+							else
+								pos = mSquadPlace.GetActor(1)->GetTargetPoint(*mSquadPlace.GetActor(1), TARGET_RANDOM);
+							posFound = Game::FindFreePosition(&obj, pos, 100.0f);
+							j++;
+						}
+					}
+					if (posFound)
+					{
+						obj.RemoveEquipment();
+						//if (obj.GetType() == ACTOR_PERSON && obj.GetEquipment() != EQUIP_NONE)
+						//	obj.PushActionRemoveEquipment(ACTION_NEWLIST);
+						obj.SetPosition(pos);
+					}
+				}
+			}
+		}
+		if (mPerson1.IsValid() && mPerson1.IsHidden())
+			mPerson1.PushActionDeleteOwner(ACTION_NEWLIST);
+		if (mPerson2.IsValid() && mPerson2.IsHidden())
+			mPerson2.PushActionDeleteOwner(ACTION_NEWLIST);
+		if (mPerson3.IsValid() && mPerson3.IsHidden())
+			mPerson3.PushActionDeleteOwner(ACTION_NEWLIST);
+		if (mACSPerson1.IsValid() && mACSPerson1.IsHidden())
+			mACSPerson1.PushActionDeleteOwner(ACTION_NEWLIST);
+		if (mACSPerson2.IsValid() && mACSPerson2.IsHidden())
+			mACSPerson2.PushActionDeleteOwner(ACTION_NEWLIST);
+		if (mACSPerson3.IsValid() && mACSPerson3.IsHidden())
+			mACSPerson3.PushActionDeleteOwner(ACTION_NEWLIST);
+		for (int i = 0; i < mACSDebris.GetNumObjects(); i++)
+		{
+			mACSDebris.GetObject(i)->Show();
+		}
+		for (int i = 0; i < mACSDebris2.GetNumObjects(); i++)
+		{
+			mACSDebris2.GetObject(i)->Show();
+		}
+		mACSPersonDebris1.Show();
+		mACSPersonDebris2.Show();
+		mACSPersonDebris3.Show();
+		mACSCarDebris1.Show();
+		mACSCarDebris1.EnablePhysicsSimulation(false, true);
+		mACSCarDebris2.Show();
+		mACSCarDebris2.EnablePhysicsSimulation(false, true);
+		mACSCarDebris3.Show();
+		mACSCarDebris3.EnablePhysicsSimulation(false, true);
+		mTunnelTopStayShown = false;
+		SetCollisionOfTunnelTop(true);
+
+		Mission::PlayHint("HINT_M19_AFTER_COLLAPSE");
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_COLLAPSE:
+			{
+				RunCutscene();
+			}
+		}
+	}
+
+	bool OnStartBurning(GameObject *burningObject)
+	{
+		if (burningObject->IsValid())
+		{
+		}
+		return true;
+	}
+
+	void OnMissionLeft(GameObject *obj)
+	{
+		if (!obj->IsValid())
+			return;
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		switch(Timer)
+		{
+			case "test1":
+				for (int i = 0; i < mBurnObjects.GetNumObjects(); i++)
+				{
+					mBurnObjects.GetObject(i)->StopBurning();
+				}
+				break;
+			case "test2":
+				for (int i = 0; i < mBurnObjects.GetNumObjects(); i++)
+				{
+					mBurnObjects.GetObject(i)->Burn();
+				}
+				break;
+			case "show_acs_objects":
+				break;
+			case "destroy_car1":
+				mACSCar1.SetSmoking(true);
+				break;
+			case "destroy_car2":
+				mACSCar2.SetSmoking(true);
+				break;
+			case "destroy_car3":
+				mACSCar3.SetSmoking(true);
+				break;
+			case "cs_dust1":
+				System::Log("M19: Play dust emitter 2 and 3.");
+				for(int i = 0; i < mDustEmitters2.GetNumObjects(); i++)
+				{
+					mDustEmitters2.GetObject(i)->StartParticleEffect();
+				}			
+				for(int i = 0; i < mDustEmitters3.GetNumObjects(); i++)
+				{
+					mDustEmitters3.GetObject(i)->SetPosition(mDebris1.GetObject(0)->GetPosition());
+					mDustEmitters3.GetObject(i)->StartParticleEffect();
+				}
+				break;
+			case "cs_dust2":
+				System::Log("M19: Play dust emitter 4.");
+				for(int i = 0; i < mDustEmitters4.GetNumObjects(); i++)
+				{
+					mDustEmitters4.GetObject(i)->SetPosition(mDebris1.GetObject(0)->GetPosition());
+					mDustEmitters4.GetObject(i)->StartParticleEffect();
+				}
+				break;				
+			case "cs_second_debris":
+				for (int i = 0; i < mDebris2.GetNumObjects(); i++)
+				{
+					mDebris2.GetObject(i)->Show();
+					Vector pos = mDebris2.GetObject(i)->GetPosition();
+					pos.z = mDebrisZPos - 100.0f;
+					mDebris2.GetObject(i)->SetPosition(pos);
+					mDebris2.GetObject(i)->EnablePhysicsSimulation();
+					mDebris2.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_NOEXTERNALBODIES);
+					mDebris2.GetObject(i)->UnfreezePhysics();
+				}
+				for(int i = 0; i < mCeilingEmitters2.GetNumObjects(); i++)
+				{
+					Vector pos = mCeilingEmitters2.GetObject(i)->GetPosition();
+					pos.z = mDebrisZPos - 100.0f;
+					mCeilingEmitters2.GetObject(i)->SetPosition(pos);
+					mCeilingEmitters2.GetObject(i)->StartParticleEffect();
+				}
+				break;
+			case "CheckMissionState":
+				//bool burning = false;
+				//for (int i = 0; i < mBurnObjects.GetNumObjects(); i++)
+				//{
+				//	if (mBurnObjects.GetObject(i)->IsBurning())
+				//	{
+				//		burning = true;
+				//		break;
+				//	}
+				//}
+				//if (!burning && mChoking && mCounterEndSmoke <= 0.0f)
+				//{
+				//	System::Log("M19: No Objects are burning, smoke fades out");
+				//	mCounterEndSmoke = TIME_SMOKEFADE;
+				//}
+				//else if (burning && !mChoking && mCounterEndSmoke <= 0.0f)
+				//{
+				//	System::Log("M19: Objects are burning again, start smoke again");
+				//	for(int i = 0; i < mSmokeEmitters.GetNumObjects(); i++)
+				//	{
+				//		mSmokeEmitters.GetObject(i)->SetParticleEffectStrength(mSmokeStrength);
+				//	}
+				//	mCounterEndSmoke = 0.0f;
+				//	mChoking = true;
+				//}
+						
+				GameObjectList list;
+				Game::CollectObstaclesOnTrigger(NAME_TRIGGER_INSIDE, list, ACTOR_PERSON | ACTOR_VEHICLE);
+				bool squad = false;
+				bool noSquad = false;
+				bool civilInSquad = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					Vehicle vc;
+					Person ps;
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						ps = list.GetObject(i);
+						if (ps.GetRole() == ROLE_SQUAD && ps.GetEnteredCarID() == -1)
+						{
+							squad = true;
+						}
+						else
+							noSquad = true;
+					}
+					else if (list.GetObject(i)->GetType() == ACTOR_VEHICLE)
+					{
+						vc = Vehicle(list.GetObject(i));
+						if (vc.GetVehicleType() != VT_NOSQUAD && vc.GetVehicleType() != VT_GANGSTER_GETAWAY)
+							squad = true;
+						for (int j = 0; j < vc.GetTransports().GetNumPersons(); j++)
+						{
+							if (vc.GetTransports().GetPerson(j)->GetRole() != ROLE_SQUAD)
+							{
+								civilInSquad = true;
+							}
+						}
+					}
+					if (squad && !mFirstSquadInside)
+					{
+						mFirstSquadInside = true;
+						Mission::PlayHint("HINT_M19_SQUADINTUNNEL");
+						Mission::StartSingleTimer("collapse", TIME_COLLAPSE);
+						Mission::StartSingleTimer("dust", TIME_DUST);
+					}						
+				}
+				if (squad)
+				{
+					if (!mTunnelTopStayShown)
+						HideTunnelTop();
+				}
+				else
+				{
+					ShowTunnelTop();
+				}
+
+				if (noSquad || civilInSquad)
+				{
+					if (Mission::IsObjectiveAccomplished("M19_EVACUATE_CIVILS"))
+					{
+						Mission::SetObjectiveAccomplished("M19_EVACUATE_CIVILS", false);
+						Mission::PlayComment("SUPERV_M19_OBJ05");
+					}
+				}
+				else
+				{
+					if (!Mission::IsObjectiveAccomplished("M19_EVACUATE_CIVILS"))
+					{
+						Mission::SetObjectiveAccomplished("M19_EVACUATE_CIVILS", true);
+						Mission::PlayComment("SUPERV_M19_OBJ02");
+					}
+				}
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					Person ps;
+					if (mChoking && list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						ps = list.GetObject(i);
+						if(!IsSpecialFireFighter(&ps))
+						{
+							if (!ps.IsInjured())
+							{						
+								ps.Hurt(INJUREREASON_ENERGY, SMOKE_HEALTH_DRAIN);
+								if (ps.IsInjured())
+									ps.SetBloodPuddle(false);
+								int r = Math::rand();
+								if (!ps.IsCurrentAction("EActionSwitchAnim") && (r % 5 == 0))
+								{
+									if (!ps.IsPulling() && (ps.IsIdle() || ps.IsWaiting()))
+									{
+										ps.PushActionInterruptAnim(ACTION_INSERT, "cough");
+										if (r % 80 == 0)
+										{
+											if (ps.GetGender() == GENDER_MALE)
+												Audio::PlaySample3D(NAME_SOUND_COUGH_M, ps.GetPosition());
+											else if (ps.GetGender() == GENDER_FEMALE)
+												Audio::PlaySample3D(NAME_SOUND_COUGH_F, ps.GetPosition());
+											else if (ps.GetGender() == GENDER_CHILD)
+												Audio::PlaySample3D(NAME_SOUND_COUGH_C, ps.GetPosition());
+										}
+									}
+								}
+							}
+							else if (!ps.IsDead())
+							{
+								ps.SetLife(ps.GetLife() - SMOKE_ADDITIONAL_INJURED_DRAIN);
+							}
+						}
+					}
+				}
+				
+				if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+						Mission::PlayComment("SUPERV_M19_OBJ03");
+						mAlreadyFiresExt = true;
+					}
+				}
+				else
+				{
+					if (Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::RemoveObjective("EXTINGUISH_FIRES");
+						Mission::AddObjective("EXTINGUISH_FIRES");
+						if (mAlreadyFiresExt)
+						{
+							Mission::PlayComment("SUPERV_OBJ_FIRESAGAIN");
+						}
+					}
+				}
+				if (Mission::GetCounter("Injured Persons") == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", true);
+						Mission::PlayComment("SUPERV_M19_OBJ01");
+						mAlreadyInjuredSaved = true;
+					}
+				}
+				else
+				{
+					if (Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+						if (mAlreadyInjuredSaved)
+						{
+							Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+						}
+					}
+				}
+				break;
+			case "dust":
+				{
+					if (!mFirstDust)
+					{
+						Mission::PlayHint("HINT_M19_COLLAPSEWARNING");
+						mFirstDust = true;
+					}
+					int index = Math::rand() / ((Math::RANDMAX + 1) / mDustEmitters1.GetNumObjects());
+					mDustEmitters1.GetObject(index)->StartParticleEffect();
+					Audio::PlaySample3D(NAME_SOUND_CEILING, mDustEmitters1.GetObject(index)->GetPosition());
+					float time = TIME_INTERVAL_MIN_DUST + (float)(Math::rand() / (int)((float)(Math::RANDMAX + 1) / (float)TIME_INTERVAL_MAX_DUST));
+					//System::Log("M19: next dust time: %d", (int)time);				
+					Mission::StartSingleTimer("dust", time);
+				}
+				break;
+
+			case "collapse":
+				Mission::StopTimer("dust");
+				Mission::StartCutScene(true);
+				Mission::ShowBlackBars();
+				mCurrentTransition = TRANSITION_COLLAPSE;
+				Camera::StartTransition(NAME_CS_TRANSITION1, 2.0f);
+				break;
+
+			case "CheckEnclosed":
+				{
+					GameObjectList list;
+					Game::CollectObstaclesOnTrigger(NAME_TRIGGER_INSIDE, list, ACTOR_PERSON);
+					for(int i = 0; i < list.GetNumObjects(); i++)
+					{
+						Person ps(list.GetObject(i));
+						if (ps.GetRole() != ROLE_SQUAD && ps.GetEnteredCarID() != -1)
+						{
+							Mission::PlayHint(HINT_M19_ENCLOSEDINTUNNEL);
+						}
+					}
+				}
+				break;
+
+			case "cs_end":
+				{
+					CutsceneEnding();
+				}
+				break;
+			case "cs_lastphase":
+				{
+					CutsceneLastPhase();
+				}
+				break;		
+		}
+	}
+
+	void OnSquadArrived(Person *squad_)
+	{
+		if (squad_->HasCommand("EnterHouse"))
+		{
+			System::Log("M19: Assigned command EnterTunnel.");
+			squad_->AssignCommand("M19EnterTunnel");
+			//System::Log("M19: Assigned command M19EnterPanelRoom.");
+			//squad_->AssignCommand("M19EnterPanelRoom");
+			squad_->RemoveCommand("EnterHouse");
+		}
+	}
+
+	void OnSquadVehicleArrived(Vehicle *Vehicle_)
+	{
+		if (Vehicle_->HasCommand("MoveTo"))
+		{
+			System::Log("M19: Assigned command EnterTunnel.");
+			Vehicle_->AssignCommand("M19EnterTunnel");
+		}
+	}
+
+	bool IsSpecialFireFighter(Person *person_)
+	{
+		if(person_->GetRole() == ROLE_SQUAD)
+		{
+			if (person_->GetPersonType() == PT_FIREFIGHTER_MASK)
+				return true;
+		}
+		return false;
+	}
+	
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		//if (Trigger == NAME_TRIGGER_INSIDE)
+		//{
+		//	bool squad = false;
+		//	Vehicle vc;
+		//	Person ps;
+		//	if (Collider->GetType() == ACTOR_PERSON)
+		//	{
+		//		Person ps(Collider);
+		//		if (ps.GetRole() == ROLE_SQUAD && ps.GetEnteredCarID() == -1)
+		//		{
+		//			squad = true;
+		//		}
+		//	}
+		//	else if (Collider->GetType() == ACTOR_VEHICLE)
+		//	{
+		//		vc = Vehicle(Collider);
+		//		if (vc.GetVehicleType() != VT_NOSQUAD && vc.GetVehicleType() != VT_GANGSTER_GETAWAY)
+		//			squad = true;
+		//	}
+		//	if (squad && !mFirstSquadInside)
+		//	{
+		//		mFirstSquadInside = true;
+		//		Mission::PlayHint("HINT_M19_SQUADINTUNNEL");
+		//		Mission::StartSingleTimer("collapse", TIME_COLLAPSE);
+		//		Mission::StartSingleTimer("dust", TIME_DUST);
+		//	}
+		//}
+	}
+	
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch (Action)
+		{
+			case "EActionUse":
+				if(Data->Parameters[0].iValue == mPanel.GetID())
+				{
+					mPanelButtonPushed = true;
+					mPanel.ClearFlag(OF_USABLE);
+					mCounterEndSmoke = TIME_SMOKEFADE;
+					for (int i = 0; i < mSmokeTopEmitters.GetNumObjects(); i++)
+					{
+						//mSmokeTopEmitters.GetObject(i)->StopParticleEffect();
+						Audio::PlaySample3D(NAME_SOUND_FAN_ON, mSmokeTopEmitters.GetObject(i)->GetPosition());
+					}
+					for(int i = 0; i < mUpsideParts.GetNumActors(); i++)
+					{
+						GameObject obj;
+						if (mUpsideParts.GetActor(i)->GetType() == ACTOR_OBJECT)
+						{
+							obj = mUpsideParts.GetActor(i);
+							obj.SetAnimation("rotation");
+						}
+					}
+					Mission::PlayHint("HINT_M19_PANEL");
+				}
+				break;
+			case "EActionUnload":
+			{
+				Actor act;
+				act = Game::GetActor(Data->Parameters[0].iValue);
+				GameObject obj(&act);
+				if (obj.GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle vc = obj;
+					if (vc.IsSmoking())
+					{
+						vc.SetSmokeLevelDuration(vc.GetUserData());
+					}
+				}
+				break;
+			}
+			case "EActionLoadUp":
+			{
+				Actor act;
+				act = Game::GetActor(Data->Parameters[0].iValue);
+				GameObject obj(&act);
+				if (obj.GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle vc = &obj;
+					if (vc.IsSmoking())
+					{
+						vc.SetUserData(vc.GetSmokeLevelDuration());
+						vc.SetSmokeLevelDuration(SMOKE_LEVEL_ASF_DURATION);
+					}
+				}
+				break;
+			}
+		}
+		return ACTION_CONTINUE;
+	}
+	
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch (Action)
+		{
+			case "EActionLoadUp":
+			{
+				Actor act;
+				act = Game::GetActor(Data->Parameters[0].iValue);
+				GameObject obj(&act);
+				if (obj.GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle vc = &obj;
+					if (vc.IsSmoking())
+					{
+						Mission::PlayHint("HINT_M19_CAR_BURNING");
+					}
+				}
+				break;
+			}
+		}
+		return ACTION_CONTINUE;
+	}	
+
+	ActionCallbackResult OnAbortAction(const char *Action, ActionCallback* Data)
+	{		
+		return ACTION_CONTINUE;
+	}	
+		
+	PathFinishedAction OnPathFinished(const char *PathName, GameObject *Obj)
+	{		
+		return PATH_DEFAULT;
+	}
+	
+	void SetCollisionOfTunnelTop(bool enable)
+	{
+		for(int i = 0; i < mUpsideParts.GetNumActors(); i++)
+		{
+			GameObject obj;
+			if (mUpsideParts.GetActor(i)->GetType() == ACTOR_OBJECT || mUpsideParts.GetActor(i)->GetType() == ACTOR_VEHICLE
+				|| mUpsideParts.GetActor(i)->GetType() == ACTOR_PERSON || mUpsideParts.GetActor(i)->GetType() == ACTOR_HOUSE
+				|| mUpsideParts.GetActor(i)->GetType() == ACTOR_OPEN_HOUSE)
+			{
+				obj = mUpsideParts.GetActor(i);
+				if (enable)
+					obj.SetCollisionMode(PHYSIC_COLLISION_NOINTERNALBODIES);
+				else
+					obj.SetCollisionMode(PHYSIC_COLLISION_NONE);
+			}
+		}
+	}
+
+	void ShowTunnelTop()
+	{
+		for(int i = 0; i < mUpsideParts.GetNumActors(); i++)
+		{
+			mUpsideParts.GetActor(i)->Show();
+		}
+		for(int i = 0; i < mSmokeTopEmitters.GetNumObjects(); i++)
+		{
+			mSmokeTopEmitters.GetObject(i)->Show();
+		}
+	}
+
+	void HideTunnelTop()
+	{
+		for(int i = 0; i < mUpsideParts.GetNumActors(); i++)
+		{
+			mUpsideParts.GetActor(i)->Hide();
+		}
+		for(int i = 0; i < mSmokeTopEmitters.GetNumObjects(); i++)
+		{
+			mSmokeTopEmitters.GetObject(i)->Hide();
+		}
+	}
+
+	void Update()
+	{
+		if (Mission::IsCutSceneRunning())
+			return;
+
+		//if (Game::IsSquadInTrigger(NAME_TRIGGER_INSIDE))
+		//{
+		//	if (!mTunnelTopStayShown)
+		//		HideTunnelTop();
+		//}
+		//else
+		//{
+		//	ShowTunnelTop();
+		//}
+		if (Game::IsSquadInTrigger(NAME_TRIGGER_ROOM_INSIDE))
+		{
+			if (!mRoomRoof.IsHidden())
+			{
+				System::Log("M19: Panel room roof is hidden");
+				mRoomRoof.Hide();
+			}
+		}
+		else
+		{
+			if (mRoomRoof.IsHidden())
+			{
+				System::Log("M19: Panel room roof is shown");
+				mRoomRoof.Show();
+			}
+		}
+
+		//if (Game::IsCivilianInTrigger(NAME_TRIGGER_INSIDE))
+		//{
+		//	if (Mission::IsObjectiveAccomplished("M19_EVACUATE_CIVILS"))
+		//	{
+		//		Mission::SetObjectiveAccomplished("M19_EVACUATE_CIVILS", false);
+		//		Mission::PlayComment("SUPERV_M19_OBJ05");
+		//	}
+		//}
+		//else
+		//{
+		//	if (!Mission::IsObjectiveAccomplished("M19_EVACUATE_CIVILS"))
+		//	{
+		//		Mission::SetObjectiveAccomplished("M19_EVACUATE_CIVILS", true);
+		//		Mission::PlayComment("SUPERV_M19_OBJ02");
+		//	}
+		//}
+
+		if (mCounterEndSmoke > 0.0f)
+		{
+			for(int i = 0; i < mSmokeEmitters.GetNumObjects(); i++)
+			{
+				mSmokeEmitters.GetObject(i)->SetParticleEffectStrength(mCounterEndSmoke/TIME_SMOKEFADE);
+				//System::Log("M19: Set smoke emitters strength to %d", (int)(mCounterEndSmoke/TIME_SMOKEFADE*100.0f));
+			}
+			//System::Log("M19: Smoke strength: %d", (int)(mCounterEndSmoke*100.0f));
+			mCounterEndSmoke -= Game::GetLastTickDuration();
+			if (mCounterEndSmoke <= 0.0f)
+			{
+				System::Log("M19: Smoke in tunnel off.");
+				mChoking = false;
+				mCounterEndSmoke = 0.0f;
+				mPanelButtonPushed = false;
+			}
+		}
+	}
+	
+	MissionState GetMissionState()
+	{
+		if (Mission::IsCutSceneRunning())
+			return MISSION_RUNNING;
+		// only for debugging
+		//return MISSION_RUNNING;
+		
+		if (Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Civil deaths") > MAX_DEAD_CIVILS)
+		{
+			mTooManyVictims = true;
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (!mHintManyDead && Mission::GetCounter(NAME_COUNTER_DEAD_PERSONS) >= HINT_DEAD_PERSONS_COUNT)
+		{
+			mHintManyDead = true;
+			Mission::PlayHint("HINT_M19_MANY_DEAD");
+			Audio::SetMusicLevel(0.3f);
+		}
+
+		if (Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_SUCCEEDED;
+		}
+			
+		return MISSION_RUNNING;
+	}
+	
+	const char *GetFailReason()
+	{
+		if (mTooManyVictims)
+		{
+			return "TOO_MANY_DIED";
+		}
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyVictims)
+			return "SUPERV_M19_FAIL01";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M19_RES01";
+		if (Mission::GetCounter(NAME_COUNTER_DEAD_PERSONS) >= 4)
+			return "SUPERV_M19_RES02";
+
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		Serializer->Write(mSmokeEmitters);
+		Serializer->Write(mDustEmitters1);
+		Serializer->Write(mDustEmitters2);
+		Serializer->Write(mDustEmitters3);
+		Serializer->Write(mDustEmitters4);
+		Serializer->Write(mCeilingEmitters1);
+		Serializer->Write(mCeilingEmitters2);
+		Serializer->Write(mSmokeTopEmitters);
+		Serializer->Write(mDebris1);
+		Serializer->Write(mDebris2);
+		Serializer->Write(mACSDebris);
+		Serializer->Write(mACSDebris2);
+		Serializer->Write(mVehiclesPersonsInCSAreaList);
+		Serializer->Write(mUpsideParts);
+		Serializer->Write(mPanel);
+		Serializer->Write(mRoomRoof);
+		Serializer->Write(mACSCarDebris1);
+		Serializer->Write(mACSCarDebris2);
+		Serializer->Write(mACSCarDebris3);
+		Serializer->Write(mACSPersonDebris1);
+		Serializer->Write(mACSPersonDebris2);
+		Serializer->Write(mACSPersonDebris3);
+		Serializer->Write(mCar1);
+		Serializer->Write(mCar2);
+		Serializer->Write(mCar3);
+		Serializer->Write(mACSCar1);
+		Serializer->Write(mACSCar2);
+		Serializer->Write(mACSCar3);
+		Serializer->Write(mPerson1);
+		Serializer->Write(mPerson2);
+		Serializer->Write(mPerson3);
+		Serializer->Write(mACSPerson1);
+		Serializer->Write(mACSPerson2);
+		Serializer->Write(mACSPerson3);
+		Serializer->Write(mTriggerEnter);
+		Serializer->Write(mLookAtObj);
+		Serializer->Write(mSquadPlace);
+		Serializer->Write(mCounterEndSmoke);
+		Serializer->Write((int)mCurrentTransition);
+
+		Serializer->Write(mSmokeStrength);
+		Serializer->Write(mDebrisZPos);
+		Serializer->Write(mFirstSquadInside);
+		Serializer->Write(mFirstDust);
+		Serializer->Write(mChoking);
+		Serializer->Write(mTunnelTopStayShown);
+		Serializer->Write(mAlreadyFiresExt);
+		Serializer->Write(mAlreadyInjuredSaved);
+		Serializer->Write(mHintManyDead);
+		Serializer->Write(mTooManyVictims);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		Serializer->Read(mSmokeEmitters);
+		Serializer->Read(mDustEmitters1);
+		Serializer->Read(mDustEmitters2);
+		Serializer->Read(mDustEmitters3);
+		Serializer->Read(mDustEmitters4);
+		Serializer->Read(mCeilingEmitters1);
+		Serializer->Read(mCeilingEmitters2);
+		Serializer->Read(mSmokeTopEmitters);
+		Serializer->Read(mDebris1);
+		Serializer->Read(mDebris2);
+		Serializer->Read(mACSDebris);
+		Serializer->Read(mACSDebris2);
+		Serializer->Read(mVehiclesPersonsInCSAreaList);
+		Serializer->Read(mUpsideParts);
+		Serializer->Read(mPanel);
+		Serializer->Read(mRoomRoof);
+		Serializer->Read(mACSCarDebris1);
+		Serializer->Read(mACSCarDebris2);
+		Serializer->Read(mACSCarDebris3);
+		Serializer->Read(mACSPersonDebris1);
+		Serializer->Read(mACSPersonDebris2);
+		Serializer->Read(mACSPersonDebris3);
+		Serializer->Read(mCar1);
+		Serializer->Read(mCar2);
+		Serializer->Read(mCar3);
+		Serializer->Read(mACSCar1);
+		Serializer->Read(mACSCar2);
+		Serializer->Read(mACSCar3);
+		Serializer->Read(mPerson1);
+		Serializer->Read(mPerson2);
+		Serializer->Read(mPerson3);
+		Serializer->Read(mACSPerson1);
+		Serializer->Read(mACSPerson2);
+		Serializer->Read(mACSPerson3);
+		Serializer->Read(mTriggerEnter);
+		Serializer->Read(mLookAtObj);
+		Serializer->Read(mSquadPlace);
+		Serializer->Read(mCounterEndSmoke);
+		int i;
+		Serializer->Read(i);
+		mCurrentTransition = (TransitionState)i;
+
+		Serializer->Read(mSmokeStrength);
+		Serializer->Read(mDebrisZPos);
+		mFirstSquadInside = Serializer->ReadBool();
+		mFirstDust = Serializer->ReadBool();
+		mChoking = Serializer->ReadBool();
+		mTunnelTopStayShown = Serializer->ReadBool();
+		mAlreadyFiresExt = Serializer->ReadBool();
+		mAlreadyInjuredSaved = Serializer->ReadBool();
+		mHintManyDead = Serializer->ReadBool();
+		mTooManyVictims = Serializer->ReadBool();
+
+		return true;
+	}
+};

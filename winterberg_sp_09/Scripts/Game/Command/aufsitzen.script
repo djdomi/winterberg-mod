@@ -1,0 +1,198 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script aufsitzen
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+object aufsitzen : CommandScript
+{
+	aufsitzen()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetPriority(90);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{	
+		Vehicle v(Caller);
+		bool ok=!Caller->HasCommand("fs") && (v.GetVehicleType()!=VT_THW_FGRR_BKF || Caller->GetCarriedObjects().GetNumObjects()==0)  && (Caller->IsAnimationFinished() || v.GetVehicleType()==VT_POLICE_PHC);
+		return ok;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	bool p_im_haus()
+	{
+		return inhouse;	
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		int cid;
+		bool forceit=Input::LCtrlPressed();
+		bool autoabfahrt=true;
+		bool nodoc=false;
+
+		if (Caller->GetType() == ACTOR_PERSON)
+			Vehicle Fz(Target);
+		else
+		{
+			Vehicle Fz(Caller);
+			if (Fz.IsFlagSet(OF_FLOTSAM))
+			{
+				System::Log("FuehrungsFz %s",Fz.GetName());
+				PersonList pl(Fz.GetName());
+				bool such=true;
+				for (int i=0;such;i++)
+					such=!pl.GetPerson(i)->HasCommand("tl") && i<pl.GetNumPersons()-1;
+				if (pl.GetPerson(i-1)->IsFlagSet(OF_FLOTSAM))
+				{
+					pl.GetPerson(i-1)->PushActionExecuteCommand(ACTION_NEWLIST,"tl_abmarsch",pl.GetPerson(i-1),0,true);
+					Fz.PushActionWait(ACTION_NEWLIST,0.5f);
+				} else
+					Fz.PushActionWait(ACTION_NEWLIST,0.5f);
+			} else if (childID==0)
+					Fz.PushActionWait(ACTION_NEWLIST,0.5f);
+		}
+
+		switch(childID)
+		{
+			case 19291:
+				nodoc=true;
+				cid=19291;
+				break;
+			case 19292:
+				cid=Target->GetID();	// NEF/RTH ohne NA zum KH
+				break;
+			case 60:
+				cid=60;
+				break;
+			case 984:
+				cid=984;
+				autoabfahrt=false;
+				break;
+			default:
+				cid=112; // -> EnterCar, dann auf volles Fz prüfen und ggf abruecken
+				break;
+		}
+		int free;
+		char * parken[1];
+		parken[0]=Fz.GetName();
+		int fzid=int(parken[0][11])-32;
+
+		switch (Fz.GetVehicleType())
+		{
+			case VT_FIREFIGHTERS_DLK:
+				if (Fz.IsInstalled())
+				{
+					// System::Log("DLK Deinstall");
+					PersonList pl(Fz.GetName());
+					Person p;
+					bool inhouse=false;
+					bool p_im_haus=false;
+					for (int i=0;i<pl.GetNumPersons();i++)
+					{
+						p=pl.GetPerson(i);
+						inhouse=(p.GetEnteredHouseID() != -1 && !p.IsInHouseWithGroundEntrance());
+						if (inhouse)
+						{
+							p.PushActionExecuteCommand(ACTION_NEWLIST,"EnterBasket",&Fz,0,false);
+							p.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&Fz,0,false);
+							p_im_haus=true;
+							// System::Log("DLK FW im Haus");
+						}
+					}
+					if (!p_im_haus)
+					{
+						// System::Log("DLK Korb kann runter");
+						Fz.PushActionBasketDown(ACTION_APPEND, Vector(0.f,0.f,0.f));
+							Fz.PushActionDeinstall(ACTION_APPEND);
+						Fz.PushActionExecuteCommand(ACTION_APPEND,"DLK_Lights",&Fz,2,false);	
+						Fz.AssignCommand("WT_SoSi");
+						Fz.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&Fz,0,false);
+					}
+					return;
+				}
+				break;
+			case VT_THW_FGRR_BKF :
+				if (Fz.IsInstalled())
+					if (!Fz.IsUplifting() && !Fz.IsUplifted())
+					{
+						Fz.PushActionDeinstall(ACTION_NEWLIST);
+						Fz.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&Fz,0,false);
+					} else return;
+				break;
+			case VT_FIREFIGHTERS_DEKONP:
+					if (Fz.HasCommand("deinstallDZelt"))
+					{
+						Fz.PushActionExecuteCommand(ACTION_NEWLIST,"deinstallDZelt",&Fz,0,false);
+						Fz.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&Fz,0,false);
+						return;
+					}
+				break;
+			case VT_FIREFIGHTERS_RW:
+					if (Fz.HasCommand("elw_abbauen"))
+					{
+						Fz.PushActionExecuteCommand(ACTION_NEWLIST,"deinstallDZelt",&Fz,1,false);
+						Fz.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&Fz,0,false);
+						return;
+					}
+				break;
+		}			
+		PersonList pl(Fz.GetName());
+		// System::Log("Aufsitzen %s Pl %u Prs %u CID %u",Fz.GetName(),Fz.GetFreePassengers(),pl.GetNumPersons(),childID);
+		for (int i=pl.GetNumPersons()-1; i > -1; i--)
+		{
+			Person *p=pl.GetPerson(i);
+			if (!p->IsInjured() && !p->IsHidden() && !p->IsArrested() && !p->IsCarried() && !p->IsDead())
+			{
+
+				if (p->GetEnteredCarID() == -1 && !p->IsFlagSet(OF_LOCKED))
+				{
+						p->SetCommandable(true);
+						if (!p->HasCommand("tl"))
+							p->PushActionWait(ACTION_NEWLIST,0.1);
+						if (childID==666)
+							p->PushActionSwitchAnim(ACTION_NEWLIST,"rungun");
+						if ((p->GetFirehoseID()!=0) && (p->GetUserData()!=105)) // && p->GetUserData()!=120)
+							p->PushActionExecuteCommand(ACTION_APPEND,"RemoveFirehose",&Fz,cid,false);
+						if (p->GetUserData()==120)
+							Fz.RemoveCommand("haswe");
+							Fz.RemoveCommand("wama");
+						if (p->HasCommand("Geraet_abbauen"))
+							p->PushActionExecuteCommand(ACTION_APPEND,"Geraet_abbauen",&Fz,0,false);
+						if (fzid == 32)
+							p->PushActionExecuteCommand(ACTION_APPEND,"lna_leichen",&Fz,0,false);
+						if (p->HasCommand("CallDog"))
+						{
+							if (!p->IsLinkedWithPerson())
+								p->PushActionExecuteCommand(ACTION_APPEND,"CallDog",&p,p->GetUserData(),false);
+								p->PushActionExecuteCommand(ACTION_APPEND,"PutInCar",&Fz,2,true);
+						} else if ((p->IsCarryingPerson() || p->IsLinkedWithPerson()) && !p->IsParamedicTeam())
+							p->PushActionExecuteCommand(ACTION_APPEND,"PutInCar",&Fz,1,true);
+						if (!p->IsDoctor() || childID != 19292)
+							p->PushActionExecuteCommand(ACTION_APPEND,"entercar",&Fz,cid,false);
+				}
+			} 
+		}
+		if (cid==112)
+			cid=0;
+		if (!Fz.HasCommand("folgeeinsatz"))
+			Fz.SetUserData(0);
+		autoabfahrt=autoabfahrt && cid!=666;
+		if (autoabfahrt)
+			Fz.PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",&Fz,cid,false);
+	}
+}; 

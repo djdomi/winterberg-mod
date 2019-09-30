@@ -1,0 +1,206 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script fz_actions
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object FzInspektion : CommandScript
+{
+	
+	FzInspektion()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		float dam=v.GetEnergy()/v.GetMaxEnergy()*100;
+		if (dam < 50)
+		{
+			v.AssignCommand("ich_bin_nicht_frei");
+			v.SetCommandable(false);
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"Fzreparieren",Caller,ChildID,false);
+		} else {
+			if (!v.HasCommand("feierabend"))
+				v.RemoveCommand("ich_bin_nicht_frei");
+			v.ClearFlag(OF_PULLABLE);
+		}
+	}
+};
+
+object Fzreparieren : CommandScript
+{
+
+	Fzreparieren()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",Caller,6,false);
+		Mission::PlayHint("WIB_S6");
+		ActorList al("werkstatt");
+		Actor *a=al.GetActor(0);
+		Vector Ziel=a->GetPosition();
+		Game::FindFreePosition(Caller,Ziel,100);
+		v.PushActionExecuteCommand(ACTION_APPEND,"Fz_ranholen",Caller,0,false);
+		if (!v.HasCommand("FlyTo"))
+			v.PushActionMove(ACTION_APPEND,Ziel);
+		v.PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",Caller,25,false);
+	}
+};
+
+object sendhome : CommandScript
+{
+
+	sendhome()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		Mission::PlayHint("Fahrzeug instandgesetzt zurueck zur Wache");
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"gohome_winterberg",&v,0,false);
+		v.SetCommandable(true);
+	}
+};
+
+object NEF_zum_KH : CommandScript
+{
+	Vector TargetPos;
+
+	NEF_zum_KH()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		Vehicle rtw(Target);
+		
+		PersonList pl=v.GetPassengers();
+		int ZielID=pl.GetPerson(0)->GetUserData();
+		bool extern=ZielID>99999;
+
+		if (extern)	// externes KH anfahren
+		{
+			Actor nefwache=Game::GetActor(ZielID);
+		} else {
+			if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+				ActorList l1=Game::GetActors("helipad");
+			else
+				ActorList l1=Game::GetActors("pkw0");
+			Actor nefwache = *l1.GetActor(0);
+		}
+
+		Vector Wache=nefwache.GetPosition();
+		Game::FindFreePosition(&v, Wache);
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_DISABLE, &v, 1, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,7,false);
+		v.PushActionLightOn(ACTION_APPEND,false);
+		if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+		{
+			float ang=0;
+			v.PushActionFlyTo(ACTION_APPEND,Wache,true,ang);
+		} else {	
+			v.SetSpeed(rtw.GetSpeed());
+
+			if (extern)
+				v.PushActionExecuteCommand(ACTION_APPEND,"WT_SoSi",&v,0,false); // extern mit SoSi folgen
+			else
+			{
+				v.PushActionMove(ACTION_APPEND, Wache + Vector(0, -150, 0)); // Fahre zum Wendepunkt
+				v.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&v);
+				v.PushActionTurnTo(ACTION_APPEND, Wache + Vector(0, -300, 0)); // Wende
+			}
+			v.PushActionMove(ACTION_APPEND, Wache); // Einparken
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckHubiDown",Caller,0,false);
+		if (extern)
+		{
+			Caller->PushActionShowHide(ACTION_APPEND,true);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,9,false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"verzoegern",&nefwache,1,false);
+		} else {
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,8,false);
+			v.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&v);
+		}
+	}
+};
+
+object gohome_wenn_fertig : CommandScript
+{
+
+	gohome_wenn_fertig()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"aufsitzen",&v,0,false);
+	}
+};
+
+object normale_fahrt : CommandScript
+{
+	normale_fahrt()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Caller->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			PersonList pl(v.GetPassengers());
+			Person p=pl.GetPerson(0);
+		} else {
+			Vehicle v(Target);
+			Person p(Caller);
+		}
+
+		if (!v.IsFlagSet(OF_BULLDOZABLE)) // Sosi an? , dann keine Ausweichmanoever mehr
+		{
+			GameObject obj=v.GetClosestObjectInRange(200.0,50.0,ACTOR_VEHICLE);
+			Vehicle sosi(&obj);
+			if (!sosi.IsCivilCar() && sosi.IsFlagSet(OF_BULLDOZABLE))
+			{
+				Vector umkehr=v.GetPosition();
+				v.PushActionMove(ACTION_INSERT,umkehr);
+				v.PushActionWait(ACTION_INSERTAFTERFIRST,4.0f);
+				p.PushActionWait(ACTION_NEWLIST,5.0f);
+			} else
+				p.PushActionWait(ACTION_NEWLIST,1.0);
+			p.PushActionExecuteCommand(ACTION_APPEND,"normale_fahrt",Target,0,false);
+		}
+	}
+};

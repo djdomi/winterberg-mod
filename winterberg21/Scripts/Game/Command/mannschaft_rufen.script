@@ -1,0 +1,135 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script mannschaft_rufen
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// Winterberger für Em4 
+// Mannschaft aufs Fahrzeug rufen v1.0 by WitchDoctor
+// 
+//
+// Revision
+// 15.6.06 : erster Versuch
+
+object mannschaft_rufen : CommandScript
+{
+
+	mannschaft_rufen()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList place;
+		int n;
+		int ptype;
+		Vehicle fz(Caller);
+		
+		if (Caller->HasCommand("wird_alarmiert"))
+		{
+			Caller->PushActionWait(ACTION_INSERT,1.0);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"mannschaft_rufen",Caller,ChildID,false);
+			return;	
+		}
+		n=fz.GetFreePassengers();
+		if (n>0)
+			System::Error("Mannschaft auswählen");
+		else
+			System::Error("Keine Besatzung erforderlich");
+		
+		switch (ChildID)
+		{	
+			case 0:
+				System::Error("keine Besatzung");
+				break;
+			case 112:
+				System::Error("Feuerwehr");
+				ptype=102;
+				break;
+			case 110:
+				System::Error("Polizei");
+				if (fz.GetVehicleType() == VT_POLICE_MTW)
+				{
+					ptype=104;
+				} else {
+					ptype=103;
+				}
+				break;
+			case 19222:
+				ptype=109;
+				n=1;
+				break;
+			case 19292:
+				ptype=108;
+				break;
+			case 11880:
+				ptype=105;
+				break;
+		}
+		if (Caller->HasCommand("abwarten"))
+			Caller->PushActionWait(ACTION_INSERT,5.0f);
+		if (ChildID > 0)
+		{
+			System::Error("Mannschaft wird erzeugt.");
+			for (int i=0; i<n; i++)
+			{
+				System::Error("1 Mann");
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"CreateNewPerson",Caller,ptype,false);			
+			}
+		}
+		if (Caller->HasCommand("abwarten"))
+		{
+			Caller->PushActionWait(ACTION_INSERT,5.0f*(Caller->GetUserData()-1));
+			Caller->RemoveCommand("abwarten");
+		}
+	}
+};
+
+object check_ms_vollzaehlig : CommandScript
+{
+
+
+	check_ms_vollzaehlig()
+	{
+		SetPriority(300);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		int lim=0;
+		Vehicle v(Caller);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			lim=1;
+		if (v.GetFreePassengers()>lim)
+		{
+			Caller->PushActionWait(ACTION_INSERT,1.0f);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"check_ms_vollzaehlig",Caller,ChildID,false);
+		} else { 
+			System::Error("check_ms : Besatzung vollstaendig");
+			if (ChildID == 112) {
+				PersonList pl=v.GetPassengers();
+				Person p=pl.GetPerson(0);
+				p.ChangePrototype("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p");
+				Person p=pl.GetPerson(1);
+				p.ChangePrototype("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p");
+			}
+		}
+	}
+};

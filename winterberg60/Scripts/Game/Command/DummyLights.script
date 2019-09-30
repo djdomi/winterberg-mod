@@ -1,0 +1,57 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script DummyLights
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+const int DummyGroup = 20;
+
+object DUMMYEnableLights: CommandScript
+{
+	DUMMYEnableLights()
+	{
+		SetGroupID(DummyGroup);		
+	}
+	
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+			
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		switch (childID)
+		{
+			case 1 :
+			{
+				Caller->EnableSpecialLights(true);
+			}
+			break;
+
+			case 2 :
+			{
+				Caller->EnableSpecialLights(false);
+			}
+			break;
+		}
+	}
+};

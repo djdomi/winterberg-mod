@@ -1,0 +1,88 @@
+ const char DUMMY_HASUMFELD[] = "DUMMYHasUmfeld";
+ 
+ int DummyGroup = 20;
+ 
+ object Funkmast : CommandScript
+ {
+ 	Funkmast()
+ 	{
+		SetCursor("Funkmast");
+		SetIcon("Funkmast");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Caller);
+ 
+ 		if (v.HasCommand(DUMMY_HASUMFELD))
+ 		{
+ 			v.EnableSpecialLights(false);
+ 			v.RemoveCommand(DUMMY_HASUMFELD);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+ 			return;
+ 		}
+  
+ 		if (!v.HasCommand(DUMMY_HASUMFELD))
+ 		{
+ 			v.EnableSpecialLights(true);
+ 			v.AssignCommand(DUMMY_HASUMFELD);
+			v.PlayAnimOpenDoor(DAT_SPECIAL, 3.0f);
+  			return;
+ 		}
+ 	}	
+ };
+ 
+ object DUMMYHasUmfeld : CommandScript
+ {
+ 	DUMMYHasUmfeld()
+ 	{
+ 		SetGroupID(DummyGroup);
+ 	}
+ 
+ 	bool CheckGroupVisibility(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };

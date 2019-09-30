@@ -1,0 +1,246 @@
+q#
+MOD	L	fms
+MOD	L	ZVEI
+MOD	L	DTMF
+#MOD	L	POCSAG512
+#MOD	L	POCSAG1200
+#MOD	L	POCSAG2400
+MOD	R	fms
+#MOD	R	ZVEI
+#MOD	R	DTMF
+#MOD	R	POCSAG512
+#MOD	R	POCSAG1200
+#MOD	L scope
+#MOD	R scope
+#
+# Formatierung
+#
+FMS:ZEIT8 BOS5 ORT5 KFZ25 STATUS28TKI3 KANAL1
+ZVEI:ZEIT8           NAME15 NUMMER5 TYPE5 KANAL1
+POCSAG:ZEIT8 NAME37FUNC15 NUMMER7         KANAL1
+#LEGENDE		13
+SPRWLINES	5
+PTT		10,15
+SYNCBITS	12
+CRC		1
+STEUERZEICHEN	0
+SQUELCHFMS	50000
+DUMP	0
+LOGPATH	logs
+DELAYPTT	30
+DELAYALARM	120
+DELAYSPR	120
+EXTORT	1
+CORRPOC	0
+LEGENDE	 25
+QUITTUNG	 2
+
+
+REPPOC	********	40
+COLPOC	********	18
+TXTPOC	087****0	2
+TXTPOC	087****1	2
+TXTPOC	087****2	2
+FUNC	*******0	Auftrag
+FUNC	*******1	Notfall
+FUNC	*******2	Info
+FUNC	*******3	Klartext
+
+ZVNAME	73095	(2)	RTW Winterberg
+ZVNAME	73123	(1)	NEF Winterberg
+ZVNAME	73312	(14)	RTW Medebach
+ZVNAME	73281	(27)	KTW Winterberg
+ZVNAME	70685	(12)	RTH
+ZVNAME  73125	(26)	NEF Olsberg
+ZVNAME	70731	(21)	NEF Berleburg
+ZVNAME	73146	(23)	RTW Olsberg
+ZVNAME	73282	(24)	RTW Schmallenberg
+
+
+#FW
+LABEL	0 1 2 16 RTD
+FORM	D9881001****	(1  2  2 "NEF Wib")
+FORM	D9881026****	(26  3  2 "NEF Ols")
+FORM	D9881021****	(21  4  2 "NEF Berle")
+FORM	D9881002****	(2  6  2 "RTW Wib")
+FORM	D9881027****	(27  7  2 "KTW Wib")
+FORM	D9881014****	(14  9  2 "RTW Med")
+FORM	D9881023****	(23  10  2 "RTW Ols")
+FORM	D9881024****	(24  11  2 "RTW Schma")
+FORM	D9881025****	(25  12  2 "RTW Korb")
+FORM	D9881022****	(22  13  2 "RTW Berle")
+FORM	D9881012****	(12  15  2 "RTH")
+
+LABEL	0 1 16 16 WiBerg
+FORM	69881040****	(40 2  16 "ELW")
+FORM	69881003****	(3  3  16 "LF16")
+FORM	69881004****	(4  4  16 "TLF16")
+FORM	69881006****	(6  5  16 "DLK23")
+FORM	69881005****	(5 6  16 "RW1")
+FORM	69881015****	(15 7  16 "GW-Mess")
+FORM	69881039****	(39 8  16 "LKW")
+
+LABEL	0 10 16 16 Züschen
+FORM	69881019****	(19 11  16 "LF8/6")
+FORM	69881030****	(30 12  16 "TLF8/18")
+FORM	69881020****	(20 14  16 "GTLF Berle")
+
+LABEL	0 16 16 16 THW
+FORM	79881016****	(16 17  16 "Kran")
+
+LABEL	0 1 30 16 Siedlhsn
+FORM	69881038****	(38 2  30 "LF8/6")
+FORM	69881031****	(31 3  30 "TLF8/18")
+
+LABEL	0 5 30 16 Grönebach
+FORM	69881028****	(28 6  30 "TSF-W")
+
+LABEL	0 8 30 16 Langewiese
+FORM	69881029****	(29 9  30 "TSF-W")
+
+LABEL	0 1 44 16 Pol
+FORM	19881007****	(7 2  44 "STW 1")
+FORM	19881008****	(8 3  44 "STW 2")
+FORM	19881009****	(9 4  44 "STW 3")
+FORM	19881010****	(10 5  44 "MTW")
+FORM	19881034****	(34 6  44 "KmRD")
+
+LABEL	0 8 44 16 MANV
+FORM	D9881032****	(32  9  44 "LNA")
+FORM	99881035****	(35  10 44 "SEG-RD")
+FORM	99881036****	(36  11  44 "SEG-NA")
+FORM	99881037****	(37  12  44 "SEG-LKW")
+
+
+# 0	--	Sac
+# 1	POL	Bund
+# 2	BGS	BW
+# 3	BKA	Bay1
+# 4	KATS	B
+# 5	Zoll	HB
+# 6	FW 	HH
+# 7	THW	He
+# 8	ASB	NS
+# 9	DRK	NW
+# A	JUH	RPf
+# B	MHD	SH
+# C	DLRG	SL
+# D	RD 	Bay2
+# E	ZS 	MV/SA
+# F	FERN	Br/Th
+
+
+
+STATUS_F_KFZ	0	0-Notruf
+STATUS_F_KFZ	1	1-frei über Funk
+STATUS_F_KFZ	2	2-einsatzbereit auf Wache
+STATUS_F_KFZ	3	3-Einsatz übernommen
+STATUS_F_KFZ	4	4-am Einsatzort
+STATUS_F_KFZ	5	/C11	$5-Sprechwunsch
+STATUS_F_KFZ	6	6-nicht einsatzbereit
+STATUS_F_KFZ	7	7-Patient aufgenommen
+STATUS_F_KFZ	8	8-im Krankenhaus
+STATUS_F_KFZ	9	/C15	9-Quittung
+STATUS_F_KFZ	a	$$
+STATUS_F_KFZ	b	$$
+STATUS_F_KFZ	c	$$
+STATUS_F_KFZ	d	$$
+STATUS_F_KFZ	e	Fahrzeugquittung
+STATUS_F_KFZ	f	$Sprechtaste
+
+STATUS_F_LST	0	Statusabfrage
+STATUS_F_LST	1	A-Sammelruf
+STATUS_F_LST	2	/C1	E-Einsatz beenden
+STATUS_F_LST	3	/C5	C-Einsatz übernehmen
+STATUS_F_LST	4	F-über Telefon melden
+STATUS_F_LST	5	H-Wache anfahren
+STATUS_F_LST	6	$J-Sprechaufforderung
+STATUS_F_LST	7	L-Lagemeldung durchgeben
+STATUS_F_LST	8	P-Fernwirken
+STATUS_F_LST	9	U-Fernwirken II
+STATUS_F_LST	a	/C3	Textübertragung
+STATUS_F_LST	b	$$besondere Verwendung bei Textübertragung
+STATUS_F_LST	c	$$
+STATUS_F_LST	d	$$
+STATUS_F_LST	e	$$Bereitschaftsanfrage
+STATUS_F_LST	f	
+
+STATUS_P_KFZ	0	0-Notruf
+STATUS_P_KFZ	1	1-frei auf Streife
+STATUS_P_KFZ	2	2-einsatzbereit auf Wache
+STATUS_P_KFZ	3	3-Einsatz übernommen
+STATUS_P_KFZ	4	4-am Einsatzort
+STATUS_P_KFZ	5	/C11	5-Sprechwunsch
+STATUS_P_KFZ	6	6-nicht einsatzbereit
+STATUS_P_KFZ	7	$$
+STATUS_P_KFZ	8	$$
+STATUS_P_KFZ	9	9-Quittung
+STATUS_P_KFZ	a	$$
+STATUS_P_KFZ	b	$$
+STATUS_P_KFZ	c	$$
+STATUS_P_KFZ	d	$$
+STATUS_P_KFZ	e	Fahrzeugquittung
+STATUS_P_KFZ	f	Sprechtaste
+
+STATUS_P_LST	0	Statusabfrage
+STATUS_P_LST	1	A-Sammelruf
+STATUS_P_LST	2	E-Eingesicherung beachten
+STATUS_P_LST	3	/C5	C-Einsatz übernehmen
+STATUS_P_LST	4	F-über Telefon melden
+STATUS_P_LST	5	H-Dienststelle anfahren
+STATUS_P_LST	6	J-Sprechaufforderung
+STATUS_P_LST	7	L-Einsatz abbrechen
+STATUS_P_LST	8	P-Fernwirken I
+STATUS_P_LST	9	U-Fernwirken II
+STATUS_P_LST	a	$$
+STATUS_P_LST	b	$$
+STATUS_P_LST	c	$$
+STATUS_P_LST	d	$$
+STATUS_P_LST	e	$$
+STATUS_P_LST	f	Quittung
+
+COLFMS	********0*0*	3	#Notrufe
+COLFMS	*835**313*1*	20	#H		NEF	C-Al
+COLFMS	*835**413*1*	20	#H		RTW1	C-Al
+COLFMS	*835**423*1*	20	#H		RTW2	C-Al
+COLFMS	*835**433*1*	20	#H		RTW3	C-Al
+COLFMS	6835****3*1*	21	#H		FW 	C-Al
+COLFMS	*835**31****	18	#H		NEF
+COLFMS	*835**41****	18	#H		RTW1
+COLFMS	*835**42****	18	#H		RTW2
+COLFMS	*835**43****	18	#H		RTW3
+#COLFMS	*835**55****	18	#H		KTW
+COLFMS	683552******	18	#H		52
+COLFMS	68******3*0*	3		#			FW		3-Ausfahrt
+COLFMS	68**********	17	#			FW
+COLFMS	********a*1*	19	#Text
+COLFMS	1***********	24	#Pol
+
+COLOR	 0	7	1	B		# w/r	Status0
+COLOR	 1	0	2		#gr/w	Status1
+COLOR	 2	0	7		# s/w	Status2
+COLOR	 3	7	1			# w/r	Status3
+COLOR	 4	0	3			# s/ge	Status4
+COLOR	 5	0	1	B	# p/w	Alarmierung
+COLOR	 6	3	7	F		# w/w	Status6
+COLOR	 7	7	4			# w/b	Status7
+COLOR	 8	0	6			# s/t	Status8
+COLOR	 9	3	7			# t/w	Status9
+COLOR	10	7	0	R	# b/w	Initialisierung und Layouthintergrund
+COLOR	11	0	3	FU	#	Sprechwunsch-Fenster und Überschrift
+COLOR	12	4	3	B		#	Sprechwunsch-Fenster 1. Zeile
+COLOR	13	4	3			#	Sprechwunsch-Fenster 2. Zeile
+COLOR	14	3	0	F		# Sprechtaste
+COLOR	16	7	0	RU	# b/w	LABELS
+COLOR	17	1	7			# r/w	FW H
+COLOR	18	0	7			# s/w	RD H normal
+COLOR	19	1	6			# w/t	RD H-Lk Txt
+COLOR	20	3	6	F		#ge/t	Al H im Verlauf
+COLOR	21	7	5	F		# w/p	Al FW andere
+COLOR	22	3	0	F		#ge/s	Al RD andere
+COLOR	23	6	0	F		# b/s	Al Rest andere
+COLOR	24	2	7			#gr/s	Pol H
+COLOR	26	0	7			#gr/s	Pol H
+
+
+ZVPAUSE	62	960

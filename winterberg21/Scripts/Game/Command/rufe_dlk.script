@@ -1,0 +1,62 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.0
+// ## 
+// ## Script rufe_dlk
+// ## 
+// ## Stand : 06.8.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+// Winterberger für Em4 
+// rufe_taucher v1.0 by WitchDoctor
+// basiert auf rufe_wasserrettung.script für Em3 by manuelt
+//
+// Revision
+// 17.6.06 : Fz-Auswahl über VehicleList
+//		Es wird das schnellste verfügbare Fz ausgewählt (in Em3 z.b.ELW wenn verfügbar)
+//
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freies Fahrzeug mit Taucher ...
+
+// Ein freier Fahrzeug:
+// steht an der Wache oder
+// wurde gerade alamiert oder
+// hat einen FWM an Bord und
+// wurde vom Spieler nicht per Hand an einen Ort geschickt
+
+// To-Do: Nicht irgendeiner, sondern der nächste Wasserretter wird gerufen...
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+object rufe_dlk : CommandScript
+{
+
+	int dl; //ObjectID der gefundenen DLK
+	bool kriterien_erfuellt; //Ist dieses Fzg gerade frei?
+
+   rufe_dlk()
+   {
+      SetValidTargets(ACTOR_FLOOR);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,504,false);
+   }
+};

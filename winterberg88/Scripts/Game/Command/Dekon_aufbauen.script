@@ -1,0 +1,353 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script Dekon_aufbauen
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+object installDZeltRechts : CommandScript
+{
+	Vector TargetPos;
+
+	installDZeltRechts()
+	{
+      	SetIcon("dekon_rechts");
+      	SetCursor("dekon_rechts");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"installDZelt",Target,0,false);
+	}	
+};
+
+object DZeltTeamWeg : CommandScript
+{
+	Vector TargetPos;
+
+	DZeltTeamWeg()
+	{
+	}
+
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Log("DEKON Team aus dem Weg nehmen");
+        	Vehicle v(Caller);
+		PersonList pl(Caller->GetName());
+		Person p;
+		int seite=childID-10;
+		for (int i=0;i<pl.GetNumPersons();i++)
+		{
+			p=pl.GetPerson(i);
+			p.PushActionExecuteCommand(ACTION_NEWLIST,"goaside",Caller,seite+1,false);
+			if (p.GetEnteredCarID()>1)
+				p.PushActionLeaveCar(ACTION_INSERT,Caller);
+		}
+		p.PushActionExecuteCommand(ACTION_APPEND,"installDZelt",Caller,childID-1,false);
+	}	
+};
+
+object installDZelt : CommandScript
+{
+	Vector TargetPos;
+
+	installDZelt()
+	{
+	}
+
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		switch (childID)
+		{
+			case 0:
+			case 1:
+			case 2:
+				System::Log("DEKON Zeltaufbau befohlen");
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"DZeltTeamWeg",Target,childID+11,false);
+				break;
+			case 10:
+			case 11:
+			case 12:
+				System::Log("DEKON Zeltaufbau wird durchgefuehrt");
+		        	Vehicle v(Target);
+				bool flts=v.IsFlagSet(OF_FLOTSAM);
+				bool zfz=v.HasCommand("zugfz");
+				Vector CarPos = v.GetPosition();
+				CarPos.x -= 0.f;
+				CarPos.y -= 0.f;
+				int  stack=v.GetUserData();
+	
+				if (Game::FindFreePosition(&v, CarPos, 200.f))
+					switch (childID)
+					{
+						case 10:
+		               				v.ChangePrototype("mod:Prototypes/Vehicles/Winterberg/dekon_od_installed.e4p");
+							break;
+						case 12:
+		               				v.ChangePrototype("mod:Prototypes/Vehicles/Winterberg/dekon_od_installed_left.e4p");
+							break;
+						case 11:
+		               				v.ChangePrototype("mod:Prototypes/Vehicles/Feuerwehr Arnsberg/elw2-offen.e4p");
+							break;
+					}
+		            	else
+				 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+				v.EnableBlueLights(true);
+				v.EnableSpecialLights(true);
+				v.SetFlag(FLAG_FUNK);
+				v.SetUserData(stack);
+				if (flts)
+					v.SetFlag(OF_FLOTSAM);
+				v.AssignCommand("ich_bin_nicht_frei");
+				if (zfz)
+					v.AssignCommand("zugfz");
+				break;
+		}
+	}	
+};
+
+object deinstallDZelt : CommandScript
+{
+	Vector TargetPos;
+
+	deinstallDZelt()
+	{
+		SetIcon("deinstall_dekon");
+		SetCursor("deinstall_dekon");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+
+ 		Vehicle v(Caller);
+		if (v.GetNumTransported() > 0)
+		return;
+
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+        	Vehicle v(Caller);
+		bool flts=v.IsFlagSet(OF_FLOTSAM);
+		bool zfz=v.HasCommand("zugfz");
+		int stack=v.GetUserData();
+		Vector CarPos = v.GetPosition();
+		CarPos.x -= 0.f;
+		CarPos.y -= 0.f;
+
+		if (v.GetNumTransported()>0)
+			 	Mission::PlayHint("WIB_DEKON_INUSE");
+		else 
+			if (Game::FindFreePosition(Caller, CarPos, 200.f))
+			{
+				if (childID==1)
+	                    		v.ChangePrototype("mod:Prototypes/Vehicles/Feuerwehr Arnsberg/elw2.e4p");
+				else
+	                    		v.ChangePrototype("mod:Prototypes/Vehicles/Winterberg/dekon_od.e4p");
+				v.SetSpeed(6.5);
+				v.AssignCommand("hidden");
+				v.EnableBlueLights(true);
+				v.EnableSpecialLights(true);
+				v.SetFlag(FLAG_FUNK);
+				v.SetUserData(stack);
+				if (flts)
+					v.SetFlag(OF_FLOTSAM);
+				v.AssignCommand("ich_bin_nicht_frei");
+				if (zfz)
+					v.AssignCommand("zugfz");
+			} else
+			 	Mission::PlayHint("WIB_DEKON_KEINPLATZ");
+	}
+};
+
+object installDZeltLinks : CommandScript
+{
+	Vector TargetPos;
+
+	installDZeltLinks()
+	{
+		SetIcon("dekon_links");
+		SetCursor("dekon_links");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"installDZelt",Target,2,false);
+	}	
+};
+
+
+object elw_aufbauen : CommandScript
+{
+	Vector TargetPos;
+
+	elw_aufbauen()
+	{
+	      	SetIcon("install");
+      		SetCursor("install");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"installDZelt",Target,1,false);
+	}	
+};
+
+object elw_abbauen : CommandScript
+{
+	Vector TargetPos;
+
+	elw_abbauen()
+	{
+	      	SetIcon("deinstall");
+      		SetCursor("deinstall");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(50);		
+	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return !Caller->IsFlagSet(OF_FLOTSAM);
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			return true;
+ 
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"deinstallDZelt",Target,1,false);
+	}	
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;

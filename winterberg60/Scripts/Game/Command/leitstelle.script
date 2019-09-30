@@ -1,0 +1,850 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script leitstelle
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+// Leitstellenroutine -> legt die E-Stelle fest und alarmiert die Kraefte
+
+object lst_estelle : CommandScript
+{
+	lst_estelle()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+object lst_alarmieren : CommandScript
+{
+
+	lst_alarmieren()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector TargetPos=Game::GetCommandPos();
+		bool neue_estelle=true;
+		int TargetID;
+		int ecode;
+
+		if (childID < 99)
+			ecode=(Caller->GetUserData() & 15);
+		else 
+			ecode=childID;
+
+		if (Input::LShiftPressed())
+			ecode=1;
+		else if (Input::RShiftPressed())
+			ecode=6;
+		bool fuenfton=((Caller->GetUserData() & 16)==0) && !Input::LCtrlPressed();
+
+		switch (Target->GetType())
+		{
+			case ACTOR_OBJECT:
+				GameObject p(Target);
+				neue_estelle=!p.HasCommand("lst_estelle");
+				TargetID=p.GetID();
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				TargetID=v.GetUserData();
+				neue_estelle=v.IsFirefighter() && TargetID!=0;
+				break;
+			case ACTOR_PERSON:
+				Person p(Target);
+				neue_estelle=!p.HasCommand("fuehrung");
+				TargetID=p.GetUserData();
+				break;
+		}
+				
+		if (neue_estelle)
+		{
+			GameObject p = Game::CreateObject("mod:Prototypes/Objects/Equipment/fsammel.e4p", "estelle");
+			p.ClearFlags();
+			p.AssignCommand("lst_estelle");
+			if (Game::IsMultiplayer())
+				p.SetPlayerMP(Caller->GetPlayerMP());
+			Game::FindFreePosition(&p,TargetPos);
+			p.SetPosition(TargetPos);
+			p.SetCommandable(true);
+			p.SetUserData(0);			// noch kein Zugfuehrer zugeordnet
+		} else {
+			Actor a=Game::GetActor(TargetID);
+			GameObject p(&a);
+		}
+		
+		switch (ecode)
+		{	
+			case 0:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_lf",&p,childID,!fuenfton);
+				break;
+			case 1:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_loeschzug",&p,childID,!fuenfton);
+				break;
+			case 2:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestzug",&p,childID,!fuenfton);
+				break;
+			case 3:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestzug",&p,1000+childID,!fuenfton);
+				break;
+			case 4:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_chemiezug",&p,childID,!fuenfton);
+				break;
+			case 5:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_wald",&p,childID,true);
+				break;
+			case 6:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_einzelfz",&p,childID,false);
+				break;
+			case 7:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_ruestfz",&p,childID,false);
+				break;
+			case 15:
+				p.PushActionExecuteCommand(ACTION_INSERT,"alarmfueralle",&p,childID,false);
+				break;
+			case 110:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_demo",&p,childID,false);
+				break;
+			case 111:
+				p.PushActionExecuteCommand(ACTION_INSERT,"sek_alarm",&p,childID,false);
+				break;
+			case 19222:
+				p.PushActionExecuteCommand(ACTION_INSERT,"manv_alarm",&p,childID,false);
+				break;
+		}
+		Caller->SetUserData(0);
+   	}
+};
+
+// etabliert und verwaltet das Leitstellentableau für die BMA
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+VehicleList rtws[1];
+
+object init_telenorma : CommandScript
+{
+
+   init_telenorma()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	VehicleList bl(VT_THW_FGRR_RL,VT_THW_FGRR_RL);
+	rtws[0]=bl;
+	System::Log("Telenorma initialisieren");
+	System::Log(bl.GetVehicle(0)->GetName());
+	return;  
+   }
+};
+
+object bma100 : CommandScript
+{
+
+	int ix;
+
+   bma100()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(0)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(0)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(0)->GetName());
+	Camera::Set(start);
+   }
+};
+
+object bma101 : CommandScript
+{
+
+	int ix;
+
+   bma101()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(1)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(1)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(1)->GetName());
+	Camera::Set(start);
+   }
+};
+
+object bma102 : CommandScript
+{
+
+	int ix;
+
+   bma102()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(2)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(2)->GetPosition();
+	Vector start=Caller->GetPosition();
+	Mission::PlayHint(rtws[0].GetVehicle(2)->GetName());
+	Camera::Move(start,Ziel,0);
+   }
+};
+object bma103 : CommandScript
+{
+
+	int ix;
+
+   bma103()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(3)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(3)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(3)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma104 : CommandScript
+{
+
+	int ix;
+
+   bma104()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(4)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(4)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(4)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma105 : CommandScript
+{
+
+	int ix;
+
+   bma105()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(5)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(5)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(5)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma106 : CommandScript
+{
+
+	int ix;
+
+   bma106()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(6)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(6)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(6)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma107 : CommandScript
+{
+
+	int ix;
+
+   bma107()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(7)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(7)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(7)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma108 : CommandScript
+{
+
+	int ix;
+
+   bma108()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(8)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(8)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(8)->GetName());
+	Camera::Set(start);
+   }
+};
+
+object bma110 : CommandScript
+{
+
+	int ix;
+
+   bma110()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(10)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(10)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(10)->GetName());
+	Camera::Set(start);
+   }
+};
+
+object bma111 : CommandScript
+{
+
+	int ix;
+
+   bma111()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(11)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(11)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(11)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma112 : CommandScript
+{
+
+	int ix;
+
+   bma112()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(12)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(12)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(12)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma113 : CommandScript
+{
+
+	int ix;
+
+   bma113()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(13)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(13)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(13)->GetName());
+	Camera::Set(start);
+   }
+};
+
+object bma114 : CommandScript
+{
+
+	int ix;
+
+   bma114()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(14)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(14)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(14)->GetName());
+	Camera::Set(start);
+   }
+};
+
+object bma109 : CommandScript
+{
+
+	int ix;
+
+   bma109()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(9)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(9)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Camera::Set(start);
+   }
+};
+
+object bma115 : CommandScript
+{
+
+	int ix;
+
+   bma115()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(15)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(15)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(15)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma116 : CommandScript
+{
+
+	int ix;
+
+   bma116()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(16)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(16)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(16)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma117 : CommandScript
+{
+
+	int ix;
+
+   bma117()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(17)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(17)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(17)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma118 : CommandScript
+{
+
+	int ix;
+
+   bma118()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(18)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(18)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(18)->GetName());
+	Camera::Set(start);
+   }
+};
+object bma119 : CommandScript
+{
+
+	int ix;
+
+   bma119()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON | ACTOR_STREET | ACTOR_VEHICLE | ACTOR_OPEN_HOUSE);
+      SetIcon("bmadisp");
+      SetCursor("bma");
+   }
+		
+	bool CheckPossible(GameObject *Caller)
+	{
+		return rtws[0].GetVehicle(19)->IsSpecialLightEnabled();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector Ziel=rtws[0].GetVehicle(19)->GetPosition();
+	Vector start;
+	start.x=Ziel.x-300;
+	start.y=Ziel.y-300;
+	Mission::PlayHint(rtws[0].GetVehicle(19)->GetName());
+	Camera::Set(start);
+   }
+};

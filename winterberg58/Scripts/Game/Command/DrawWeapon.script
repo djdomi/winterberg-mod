@@ -1,0 +1,55 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script DrawWeapon
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+object DrawWeapon : CommandScript
+{
+
+	DrawWeapon()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetDoubleClickable(true);
+		SetGroupID(CGROUP_DRAW_WEAPON);
+		SetGroupLeader(true);
+		SetPossibleEquipment(EQUIP_NONE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetDeselectCaller(false);
+		SetPriority(800);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		Person p(Caller);
+		if(p.IsValid() && !p.IsEquipped() && !p.IsLinkedWithPerson())
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	        Person p(Caller);
+		if (childID == 0)
+			Caller->PushActionEquipWeapon(ACTION_NEWLIST, true);
+		else
+			Caller->PushActionEquipWeapon(ACTION_INSERT, true);
+	}
+};

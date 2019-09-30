@@ -1,0 +1,142 @@
+
+Found 1 mirrors.
+Server web-desk/w7 checked with 93ms
+Connecting to server web-desk/w7
+Now downloading to D:\Program Files (x86)\sixteen tons entertainment\Emergency 4 Deluxe\Mods\Winterberg Winter 2009
+Loaded checksums
+Comparing files
+Checked 8396 files: 73 new, 54 modified, 1 deleted.
+  Loading /changes.rtf
+  Loading /e4mod.info
+  Loading /Lang/de/events.xml
+  Loading /Lang/de/command.xml
+  Loading /Lang/de/portraits.xml
+  Loading /Lang/de/strings.xml
+  Loading /Lang/en/portraits.xml
+  Loading /Lang/en/strings.xml
+  Loading /Lang/es/portraits.xml
+  Loading /Lang/es/strings.xml
+  Loading /Lang/it/portraits.xml
+  Loading /Lang/it/strings.xml
+  Loading /Maps/dfreeplay.e4m
+  Loading /Maps/freeplay.e4m
+  Loading /Maps/multiplayer.e4m
+  Loading /Models/Vehicles/Ambulance/088501a.dds
+  Loading /Models/Vehicles/Ambulance/088501b.dds
+  Loading /Models/Vehicles/Ambulance/088501.v3o
+  Loading /Models/Vehicles/Ambulance/Antenne.dds
+  Loading /Models/Vehicles/Ambulance/NEF_Marsberg.dds
+  Loading /Models/Vehicles/Ambulance/NEF_Marsberg.v3o
+  Loading /Models/Vehicles/Ambulance/NEF_Meschede.dds
+  Loading /Models/Vehicles/Ambulance/NEF_Meschede.v3o
+  Loading /Models/Vehicles/Ambulance/NEF_Winterberg.dds
+  Loading /Models/Vehicles/Ambulance/NEF_Winterberg.v3o
+  Loading /Models/Vehicles/Ambulance/q5_wheel.png
+  Loading /Models/Vehicles/Ambulance/q5_wheel.v3o
+  Loading /Models/Vehicles/Winterberg/Antenne.dds
+  Loading /Models/Vehicles/Winterberg/hlfwb_wheel01.png
+  Loading /Models/Vehicles/Winterberg/hlfwb_wheel01.v3o
+  Loading /Models/Vehicles/Winterberg/hlfwb_wheel02.png
+  Loading /Models/Vehicles/Winterberg/hlfwb_wheel02.v3o
+  Loading /Models/Vehicles/Winterberg/HLF_Winterberg.dds
+  Loading /Models/Vehicles/Winterberg/HLF_Winterberg_door01.v3o
+  Loading /Models/Vehicles/Winterberg/HLF_Winterberg_Super01.v3o
+  Loading /Models/Vehicles/Winterberg/HLF_Winterberg.v3o
+  Loading /Prototypes/Vehicles/Ambulance/ktw8851_T5.e4p
+  Loading /Prototypes/Vehicles/Ambulance/nef2821neu.e4p
+  Loading /Prototypes/Vehicles/Ambulance/nef6821neu.e4p
+  Loading /Prototypes/Vehicles/Ambulance/nef8821neu.e4p
+  Loading /Prototypes/Vehicles/Ambulance/nef8821q5_wheel01.e4p
+  Loading /Prototypes/Vehicles/Ambulance/rtw8831.e4p
+  Loading /Prototypes/Vehicles/Ambulance/rtw8832.e4p
+  Loading /Prototypes/Vehicles/Police/phc.e4p
+  Loading /Prototypes/Vehicles/Winterberg/hlf_door01.e4p
+  Loading /Prototypes/Vehicles/Winterberg/hlflima_super01.e4p
+  Loading /Prototypes/Vehicles/Winterberg/hlf_wheel01.e4p
+  Loading /Prototypes/Vehicles/Winterberg/hlf_wheel02.e4p
+  Loading /Prototypes/Vehicles/Winterberg/hlf_wtbg.e4p
+  Loading /Save/highscores_ch.xml
+  Loading /Save/highscores_fp.xml
+  Loading /Scripts/Game/Command/BasketDown.script
+  Loading /Scripts/Game/Command/corazon_siete.script
+  Loading /Scripts/Game/Command/emv.script
+  Loading /Scripts/Game/Command/fuehrung.script
+  Loading /Scripts/Game/Command/fz_actions.script
+  Loading /Scripts/Game/Command/heal.script
+  Loading /Scripts/Game/Command/Klinik_funks.script
+  Loading /Scripts/Game/Command/lift.script
+  Loading /Scripts/Game/Command/move.script
+  Loading /Scripts/Game/Command/pickup.script
+  Loading /Scripts/Game/Command/rufe_feuerwehr.script
+  Loading /Scripts/Game/Command/rufe_rettung.script
+  Loading /Scripts/Game/Command/smite2.script
+  Loading /Scripts/Game/Command/unloadperson.script
+  Loading /Scripts/Game/Command/wib_init.script
+  Loading /Scripts/Game/Command/witchdoc_action.script
+  Loading /Scripts/Game/Command/wm2010.script
+  Loading /Scripts/Game/Mission/3.pscript
+  Loading /Specs/fp_params_challenge_d.xml
+  Loading /Specs/fp_params_challenge.xml
+  Loading /Specs/fp_params_endless_d.xml
+  Loading /Specs/fp_params_endless.xml
+  Loading /Specs/materials.xml
+  Loading /Specs/portraits.xml
+  Loading /Specs/wb_parm.xml
+  Loading /Specs/wib_fz.xml
+  Loading /_SYNCAPP/metadata.xml
+  Loading /Ui/Game/Loading/bg_campaign.dds
+  Loading /Ui/Game/Loading/bg_dfreeplay.dds
+  Loading /Ui/Game/Loading/bg_freeplay.dds
+  Loading /Ui/Game/Loading/bg_multiplayer.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/big.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/browser_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/browser_dis.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/browser_on.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/browser_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/icon_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/icon_on.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/icon_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_2821neu/unit.xml
+  Loading /Units/Vehicles/Ambulance/082_6821neu/big.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/browser_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/browser_dis.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/browser_on.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/browser_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/icon_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/icon_on.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/icon_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_6821neu/unit.xml
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/big.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/browser_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/browser_dis.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/browser_on.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/browser_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/icon_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/icon_on.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/icon_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_8821/085_8851neu/unit.xml
+  Loading /Units/Vehicles/Ambulance/082_8821neu/big.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/browser_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/browser_dis.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/browser_on.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/browser_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/icon_cl.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/icon_on.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/icon_ov.dds
+  Loading /Units/Vehicles/Ambulance/082_8821neu/unit.xml
+  Loading /Units/Vehicles/Ambulance/085_8851neu/big.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/browser_cl.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/browser_dis.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/browser_on.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/browser_ov.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/icon_cl.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/icon_on.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/icon_ov.dds
+  Loading /Units/Vehicles/Ambulance/085_8851neu/unit.xml
+Deleting /WinterbergUpdater.exe
+Delete error on /WinterbergUpdater.exe
+  Toegang tot het pad D:\Program Files (x86)\sixteen tons entertainment\Emergency 4 Deluxe\Mods\Winterberg Winter 2009\WinterbergUpdater.exe is geweigerd.
+
+Writing md5 db
+Updating statistics
+Writing log...

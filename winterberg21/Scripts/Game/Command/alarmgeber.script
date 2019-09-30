@@ -1,0 +1,215 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script alarmgeber
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+Person signalgeber;
+int schleife=-1;
+
+const int maxfae=50;
+const char * fae[maxfae];
+bool zfae[maxfae];
+bool zalarm=false;
+
+fae[0]="mod:Audio/FX/nef.wav"; 
+fae[1]="mod:Audio/FX/nef7821.wav"; 
+fae[2]="mod:Audio/FX/nefsi4821.wav";
+fae[3]="mod:Audio/FX/rtw1.wav";
+fae[4]="mod:Audio/FX/rtw2.wav";
+fae[5]="mod:Audio/FX/rtw7831.wav"; 
+fae[6]="mod:Audio/FX/rtw4831.wav"; 
+fae[7]="mod:Audio/FX/ktw.wav"; 
+fae[8]="mod:Audio/FX/rtw9183.wav";
+fae[9]="mod:Audio/FX/rtwsi4831.wav"; 
+fae[10]="mod:Audio/FX/rth.wav";
+fae[11]="mod:Audio/FX/lgzuesch.wav"; 
+fae[12]="mod:Audio/FX/tlfbb.wav";
+fae[13]="mod:Audio/FX/lggroene.wav"; 
+fae[14]="mod:Audio/FX/lglangew.wav"; 
+fae[15]="mod:Audio/FX/dekon.wav"; 
+fae[16]="mod:Audio/FX/siemens.wav";
+fae[17]="mod:Audio/FX/thw_kran.wav"; 
+fae[18]="mod:Audio/FX/lf.wav"; 
+fae[19]="mod:Audio/FX/lgsiedl.wav"; 
+fae[20]="mod:Audio/FX/dlk.wav";
+fae[21]="mod:Audio/FX/wasser.wav";
+fae[22]="mod:Audio/FX/lz_f.wav";
+fae[23]="mod:Audio/FX/lz_vu.wav";
+fae[24]="mod:Audio/FX/lna.wav";
+fae[25]="mod:Audio/FX/nfm.wav";
+fae[26]="mod:Audio/FX/gong_fw_wache.wav";
+fae[27]="mod:Audio/FX/seg.wav";
+fae[28]="mod:Audio/FX/lz_gong.wav";
+fae[49]="mod:Audio/FX/lz_gong.wav";
+
+const char * dusa[maxfae];
+
+dusa[0]="Einsatz Notarzt 8-82-1";
+dusa[1]="Einsatz Notarzt 7-82-1";
+dusa[2]="Zu Ihnen kommt der Notarzt Bad Berleburg";
+dusa[3]="Notfalleinsatz RTW 8-83-1";
+dusa[4]="Notfalleinsatz RTW 11-83-1";
+dusa[5]="Notfalleinsatz RTW 7-83-1";
+dusa[6]="Notfalleinsatz RTW 4-83-1";
+dusa[7]="Notfalleinsatz KTW 8-85-1";
+dusa[8]="Zu Ihnen kommt der Rot-Kreuz Korbach 91/83";
+dusa[9]="Zu Ihnen kommt der RTW Bad Berleburg";
+dusa[10]="Zu Ihnen kommt der Christoph 25";
+dusa[11]="Einsatz Löschgruppe Züschen";
+dusa[12]="Einsatz GTLF Feuerwehr Bad Berleburg";
+dusa[13]="Einsatz Löschgruppe Grönebach";
+dusa[14]="Einsatz Löschgruppe Langewiese";
+dusa[15]="Einsatz für den Gerätewagen-Messtechnik";
+dusa[16]="Einsatz für den Service-Techniker der Fa. Siemens";
+dusa[17]="Einsatz für den Kran des THW";
+dusa[18]="Einsatz Feuerwehr Winterberg";
+dusa[19]="Einsatz Löschgruppe Siedlinghausen";
+dusa[20]="Einsatz für die Drehleiter Winterberg! Menschenleben in Gefahr";
+dusa[21]="Einsatz Wasserrettung Winterberg";
+dusa[22]="Brandeinsatz für den Löschzug Winterberg";
+dusa[23]="Hilfeleistungseinsatz für den Löschzug Winterberg";
+dusa[24]="Einsatz Leitender Notarzt Hochsauerland";
+dusa[25]="Einsatz für den DB Notfallmanager";
+dusa[26]="Kampfmittelräumdienst an der EStelle erforderlich";
+dusa[27]="Einsatz SEG Rettung";
+dusa[28]="Gefahrguteinsatz Löschzug Winterberg";
+dusa[49]="";
+
+object alarmgeber : CommandScript
+{
+
+	alarmgeber()
+	{
+		SetPriority(700);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		signalgeber.PushActionExecuteCommand(ACTION_APPEND,"kanalfrei",Target,childID,false);
+		if (childID<50)
+		{
+			System::Log("Code im FiFo");
+			System::Log(dusa[childID]);
+		} else 
+			if (childID > 100)
+				System::Log("Zugalarm-Code im Fifo");
+			else
+				System::Log("Fz ohne akustische Alarmierung im Fifo");
+	}
+};
+
+object alarminit : CommandScript
+{
+
+	alarminit()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		PersonList al("5tongeber");
+		signalgeber=al.GetPerson(0);
+		schleife=-1;
+		signalgeber.PushActionWait(ACTION_NEWLIST,1.0);
+		for (int i=0;i<maxfae;i++)
+			zfae[i]=true;
+		return;
+	}
+};
+
+object kanalfrei : CommandScript
+{
+	
+	int cid;	
+
+	kanalfrei()
+	{
+		SetPriority(700);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		switch (childID)
+		{		
+			case 101:	// Zugalarmsequenz starten
+				for (int i=0;i<maxfae;i++)
+					zfae[i]=true;
+				zalarm=true;
+				System::Log("Zugalarmierung .. jede Schleife nur einmal");
+				break;
+			case 102:	// Zugalarmsequenz Ende
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"fz_rueckt_aus",Target,100,false);
+				cid=0;
+				break;
+			case 103:	// Zugalarmsequenz Ende
+				zalarm=false;
+				System::Log("Zugalarm Ende..jede Schleife laeuft durch");
+				cid=0;
+				break;
+			case 100:
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"fz_rueckt_aus",Target,0,false);
+				break;
+			default:
+				if ((!zalarm) || (zalarm && zfae[childID]))
+					if ((schleife > -1) && Audio::IsPlaying(schleife))
+					{
+						signalgeber.PushActionExecuteCommand(ACTION_INSERT,"kanalfrei",Target,childID,false);
+					//	signalgeber.PushActionWait(ACTION_INSERT,1.0);
+						return;
+					} else {
+						schleife=Audio::PlaySample(fae[childID]);
+						zfae[childID]=false;
+						Mission::PlayHint(dusa[childID]);
+						System::Log("Alarmierung wird ausgelöst");
+						System::Log(dusa[childID]);
+						cid=1;
+					}
+				else
+					if (zalarm)
+						cid++;
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"fz_rueckt_aus",Target,cid,false);
+				break;
+		}
+	}
+};
+
+object fz_rueckt_aus : CommandScript
+{
+
+	fz_rueckt_aus()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		switch (childID)
+		{
+			case 0:
+				obj.RemoveCommand("wird_alarmiert");
+				System::Log("Fz rueckt aus");
+				break;
+			case 100:
+				// Mission::PlayHint("Zugalarm Ende. Alle Fz ausgerueckt");			
+				obj.PushActionWait(ACTION_APPEND,70.0);
+				obj.PushActionDeleteOwner(ACTION_APPEND);  // Zielmarker-Objekt löschen
+				break;
+			default:
+				obj.AssignCommand("abwarten");
+				obj.SetUserData(childID);
+				System::Log("Ausrueckverzoegerung");
+				obj.RemoveCommand("wird_alarmiert");
+				System::Log("Fz rueckt aus");
+				break;
+		}
+		return;
+	}
+};
+

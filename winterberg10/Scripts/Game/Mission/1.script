@@ -1,0 +1,104 @@
+//**************************************************************************************************
+// #Version 1.0#								  MISSIONSCRIPT ****
+//												****
+// 		Includes: MissionScript for Winterberg Campaign.				****
+//												****
+//												****
+//							    Errors? Contact: Bass-ti@ddr-mod.de ****
+//**************************************************************************************************
+
+const char OBJECTIVE_FIRE[] = "Löschen Sie alle Brände!";
+const char OBJECTIVE_TRANSPORT[] = "Transportieren Sie alle Verletzten ab!";
+
+const char FAIL_FIRE[] = "Ein benachbartes Gebäude hat Feuer gefangen!";
+const char FAIL_DEATH[] = "Es kam zu Todesfällen!";
+
+object Mission01 : MissionScript
+{
+	bool MissionHasDeaths, MissionToMuchFire;
+
+	Mission01()
+	{
+	}
+
+	void Start()
+	{
+		Audio::PlaySoundtrack("1", 0.0f);
+		Mission::AddObjective(OBJECTIVE_FIRE);Mission::AddObjective(OBJECTIVE_TRANSPORT);
+
+		MissionHasDeaths = false;MissionToMuchFire = false;
+	}
+
+	MissionState GetMissionState()
+	{
+		if (Mission::GetCounter("Persons deaths") > 0)
+		{
+			MissionHasDeaths = true;
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Burning Houses") > 2)
+		{
+			MissionToMuchFire = true;
+			return MISSION_FAILED;
+		}
+
+		if (Mission::HasObjective(OBJECTIVE_TRANSPORT) && Mission::GetCounter("Injured Persons") == 0)
+		{
+			Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT, true);
+		} else
+		  {
+			Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT, false);
+		  }
+
+		if (Mission::HasObjective(OBJECTIVE_FIRE) && (Mission::GetCounter("Burning Houses") + Mission::GetCounter("Burning Objects") == 0))
+		{
+			Mission::SetObjectiveAccomplished(OBJECTIVE_FIRE, true);
+		} else
+		  {
+			Mission::SetObjectiveAccomplished(OBJECTIVE_FIRE, false);
+		  }
+
+		if (Mission::AllObjectivesAccomplished())
+			return MISSION_SUCCEEDED;
+
+		return MISSION_RUNNING;
+	}
+
+	bool SerializeTo(ScriptSerializer *Stream)
+	{
+		const int Version = 0x0100;
+		Stream->Write(Version);
+
+		Stream->Write(MissionHasDeaths);
+		Stream->Write(MissionToMuchFire);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Stream)
+	{
+		int Version;
+		Stream->Read(Version);
+
+		Stream->Read(MissionHasDeaths);
+		Stream->Read(MissionToMuchFire);
+
+		return true;
+	}
+
+	const char *GetFailReason()
+	{
+		if (MissionHasDeaths)
+		{
+			return FAIL_DEATHS;
+		}
+
+		if (MissionToMuchFire)
+		{
+			return FAIL_FIRE;
+		}
+
+		return "UNKNOWN";
+	}
+};

@@ -1,0 +1,71 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script LetDownEngineer
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+object LetDownEngineer : CommandScript
+{
+	Vector TargetPos;
+	float landingDirection;
+	bool shipem;
+	Vehicle vec;
+	
+	LetDownEngineer()
+	{
+		//SetValidTargets(ACTOR_VEHICLE);
+		//SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_OBJECT | ACTOR_VIRTUAL | ACTOR_VEHICLE | ACTOR_LIQUID);
+		SetHighlightingEnabled(false);
+		SetPriority(-100);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		Vehicle v(Caller);
+		return !v.IsOnGround() && v.HasEngineerOnBoard();
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(Target->GetID() == Caller->GetID())
+			return false;
+
+		Vehicle v(Caller);
+		if (v.IsOnGround() || !v.HasEngineerOnBoard())
+			return false;
+		TargetPos = Game::GetCommandPos();
+
+
+		// check if position is valid landing position
+		GameObject obj(Target);
+
+		bool ok=v.IsValidEngineerDropPosition(&obj, TargetPos);
+
+		if (Target->GetType() == ACTOR_VEHICLE) {
+			Vehicle vec(Target);
+			shipem=vec.HasChild("hubi");
+			ok=ok||shipem;
+		} else
+			shipem=false;
+		
+		return ok;		
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//Caller->PushActionFlyTo(ACTION_NEWLIST, tx, ty, tz, false, -1.0f);
+
+		if (shipem) {
+			TargetPos=vec.GetChildPosition("hubi");
+		}
+		Caller->PushActionFlyTo(ACTION_NEWLIST, TargetPos, false, landingDirection);
+		Caller->PushActionLetDownEngineer(ACTION_APPEND);
+	}	
+};

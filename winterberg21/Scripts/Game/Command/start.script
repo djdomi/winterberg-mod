@@ -1,0 +1,401 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script start
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// Winterberger Em4 Start-Script by WitchDoc
+// basiert auf start V0.1a by manuelt
+// Rotation function by bass-ti
+//
+// Revision:
+// 16.7.2006 : Doppelte Ausführung verhindern
+
+const int maxdispo=5;
+const char * dispo[maxdispo];
+dispo[0]="disponent";
+dispo[1]="platz1";
+dispo[2]="platz2";
+dispo[3]="platz3";
+dispo[4]="platz4";
+
+
+object alles_auf_start : CommandScript
+{
+
+	alles_auf_start()
+	{
+		SetCursor("start");
+		SetIcon("start");
+		SetDoubleClickable(true);
+		SetActivationByLeftClick(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		
+		if (!Game::IsFreeplay())
+			return;
+
+		//Starte Metronom
+		// Game::ExecuteCommand("StartMetronom",Caller,Target);
+
+		//Caller löschen
+		Caller->PushActionDeleteOwner(ACTION_APPEND);
+
+		// Parameter fuer Fahrzeugerzeugung definieren
+		char *proto[];
+		char *kenn[];
+		Vehicle vec;
+		int MaxPass, maxTrans;
+		char *Act[];
+		Actor fz;
+		int i;
+		GameObject *ofz;
+		GameObjectList lfz;
+		ActorList fzl;
+
+		
+		if (Game::IsFreeplay())
+		{
+			for (int dispx=0;dispx<5;dispx++)
+			{
+				lfz=Game::GetGameObjects(dispo[dispx]);
+				ofz = *lfz.GetObject(0);
+
+				// Doppelstart verhindern
+				if (ofz->HasCommand("rufe_nef"))	//  Schon mal gelaufen?
+					return;			// Script abbrechen
+
+				ofz->AssignCommand("rufe_nef");
+				ofz->AssignCommand("rufe_rtw");
+				ofz->AssignCommand("rufe_rth");
+				ofz->AssignCommand("rufe_lf");
+				ofz->AssignCommand("rufe_gtlf");
+				ofz->AssignCommand("rufe_loeschzug");
+				ofz->AssignCommand("rufe_ruestzug");
+				ofz->AssignCommand("rufe_dlk");
+				ofz->AssignCommand("rufe_wasserrettung");
+				ofz->AssignCommand("rufe_dekon");
+				ofz->AssignCommand("rufe_chemiezug");
+				ofz->AssignCommand("rufe_pol");
+				ofz->AssignCommand("rufe_mtw");
+				ofz->AssignCommand("rufe_hummel");
+				ofz->AssignCommand("rufe_siemens");
+				ofz->AssignCommand("rufe_nfm");
+				ofz->AssignCommand("rufe_bomber");
+				ofz->AssignCommand("rufe_kran");
+				ofz->AssignCommand("rufe_ASF");
+				// ofz->AssignCommand("smite2");
+			}
+			Mission::PlayHint("Leitstelle wurde erfolgreich eingerichtet.");
+		} else {
+			return;  	// kein MP/Mission Modus zulassen
+		}
+		for (int q=1;q<11;q++) 
+		{
+				ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,(100*q+q),false);
+		}
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,1740,false);	// ELW	
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,1639,false);	// LKW
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,16412,false);	// Chr. 25	
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,16014,false);	// RTW Medebach	
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,1515,false);	// GW-Mess
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15619,false);	// LF Zueschen
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15630,false);	// TLF Zueschen
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15728,false);	// TSF-W Grönebach
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15329,false);	// TSF-W Langewiese
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15120,false);   // GTLF Berleburg
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15121,false);   // NAW Berleburg		
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15122,false);		
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15423,false);	// NAW Olsberg	
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15426,false);		
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,16524,false);	// RTW 4-83-1
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15525,false);	// RTW Korbach	
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,1427,false);	// KTW Winterberg
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15931,false);	// TLF Siedlingshausen
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,15938,false);	// LF 8/6 Siedlingshausen
+
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,99,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"alarminit",ofz,0,false);
+
+		lfz=Game::GetGameObjects("leitstelle");
+	
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			OpenHouse oh(ofz);
+			oh.ShowCeiling(false,false,false);
+		}
+	}
+};
+
+object CreateNewPerson: CommandScript
+{
+
+	CreateNewPerson()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//Erzeuge einen neue Person
+
+		Vehicle vec(Target);
+		int zufall = rand()%2;
+		bool anderwache;
+		bool anderwerkstatt=false;
+		ActorList place;
+	
+		if (childID > 100)
+		{
+			childID=childID-100;
+			anderwache=(!vec.IsHidden());
+			if (anderwache)
+				System::Error("An der Wache");
+			else 
+				System::Error("Nachbarfz");
+		} else {
+			anderwache=false;
+		}
+
+		char * parken[1];
+		parken[0]=Target->GetName();
+		int fzid=int(parken[0][4])-32;
+
+		switch (childID)
+		{
+			case 1:
+			//EL
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/Einsatzl.e3p", Target->GetName());
+			break;
+
+			case 2:
+			//FWM
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighternorm_upgrade2.e4p", Target->GetName());
+			switch (fzid)
+			{
+				case 3:
+					place=Game::GetActors("lf_entry");
+					break;
+				case 4:
+					place=Game::GetActors("tlf_entry");
+					break;
+				case 5:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 6:
+					place=Game::GetActors("dlk_entry");
+					break;
+				case 15:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 39:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 40:
+					place=Game::GetActors("elw_entry");
+					break;
+			}
+			break;
+
+			case 3:
+			//Polizist
+			switch(zufall)
+			{
+				case 0:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/policeman_upgraded2_m.e4p", Target->GetName());
+				break;
+				case 1:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/policeman_upgraded2_f.e4p", Target->GetName());
+				break;
+			}
+			place=Game::GetActors("police_entry");
+			break;
+
+			case 4:
+			//Shooter
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/bepo.e4p", Target->GetName());
+			place=Game::GetActors("police_entry");
+			break;
+
+			case 5:
+			//Siemens Techniker
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/engineer_upgraded2.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_THW_CASE);
+			break;
+
+			case 6:
+			//ADAC
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/adac.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_THW_CASE);
+			break;
+
+			case 7:
+			//DB-NFM
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/nfm.e4p",  Target->GetName());
+			break;
+
+			case 8:
+			//NA
+			switch(1)
+			{
+				case 0:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_f.e4p", Target->GetName());
+				break;
+				case 1:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_m.e4p", Target->GetName());
+				break;
+			}
+			p.SetEquipment(EQUIP_EMERGENCY_CASE);
+			p.AssignCommand("rufe_manv");
+			p.SetAutoHealDistance(0.0f);
+			place=Game::GetActors("hospital_entry");
+			break;
+
+			case 9:
+			//RA
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/paramedic02_upgraded2.e4p", Target->GetName());
+			place=Game::GetActors("hospital_entry");
+			break;
+
+			case 10:
+			//Bestatter
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/bestatter.e4p",  Target->GetName());
+			break;
+
+			case 11:
+			//Sharpshooter
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/sharpshooter_upgraded2.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_RIFLE);
+			break;
+
+			case 12:
+			//LNA
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/LNA.e4p", Target->GetName());
+			p.SetEquipment(EQUIP_EMERGENCY_CASE);
+			p.AssignCommand("rufe_seg");
+			p.AssignCommand("lna_start_triage");
+			p.SetAutoHealDistance(0.0f);
+			break;
+
+			case 13:
+			//FWM
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p",  Target->GetName());
+			p.AssignCommand("ggv_abdichten");
+			p.AssignCommand("GetMM");
+			p.AssignCommand("GetGZ");
+			break;
+
+			case 14:
+			//Diver
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/diver_upgraded2.e4p",  Target->GetName());
+			break;
+
+			case 15:
+			//ABC
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighterabc_upgraded2.e4p",  Target->GetName());
+			p.AssignCommand("ggv_abdichten");
+			p.AssignCommand("GetMM");
+			p.AssignCommand("GetGZ");
+			break;
+
+			case 16:
+			//Kampfmittelraeumer
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/kmrd.e4p",  Target->GetName());
+			p.AssignCommand("Repair");
+			p.SetEquipment(EQUIP_LAPTOP);
+			break;
+
+			case 17:
+			//Kampfmittelraeumer
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/kmrd.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_TVCAMERA);
+			break;
+
+			case 18:
+			//SEG-Sani
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/drk_helfer.e4p",  Target->GetName());
+			p.RemoveCommand("MoveTo");
+			p.AssignCommand("SetZelt");
+			break;
+
+			case 19:
+			//SEG-Arzt
+			switch(zufall)
+			{
+				case 0:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_f.e4p", Target->GetName());
+				break;
+				case 1:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_m.e4p", Target->GetName());
+				break;
+			}
+			p.SetEquipment(EQUIP_EMERGENCY_CASE);
+			p.SetAutoHealDistance(0.0f);
+			break;
+
+			case 25:
+			//Siemens Techniker
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/adac.e4p",  "Mechaniker");
+			place=Game::GetActors("werkstatt_entry");
+			anderwache=true;
+			anderwerkstatt=true;
+			break;
+
+			case 99:
+			//Alarmgeber-Objekt
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighternorm_upgrade2.e4p", "5tongeber");
+			p.SetCommandable(false);
+			anderwache=true;
+			place=Game::GetActors("platz2");
+			p.Hide();
+			return;
+			break;
+		}
+		p.SetUserData(0);
+		if (anderwache)
+		{
+			Actor *Entry=place.GetActor(0);
+			Vector pos=Entry->GetPosition();
+			GameObject *pers(p);
+			Game::FindFreePosition(pers,pos,100);
+			p.SetCommandable(true);
+			p.SetPosition (pos);
+			if (anderwerkstatt) 
+			{
+				p.PushActionMove(ACTION_NEWLIST,Target,TARGET_PASSENGERDOOR);
+				p.PushActionTurnTo(ACTION_APPEND,Target);
+				p.PushActionRepair(ACTION_APPEND,Caller);
+				p.PushActionExecuteCommand(ACTION_APPEND,"sendhome",Caller,0,false);
+				p.PushActionMove(ACTION_APPEND,pos);
+				p.PushActionWait(ACTION_APPEND,1.0);
+				p.PushActionDeleteOwner(ACTION_APPEND);
+			} else {
+				if (childID !=99)
+					p.PushActionExecuteCommand(ACTION_NEWLIST,"entercar",Target,0,false);			
+			}
+		} else {
+			System::Error("Einsatzkraft ins Fahrzeug setzen");
+			vec.AddPassenger(&p);
+		}
+	}
+};

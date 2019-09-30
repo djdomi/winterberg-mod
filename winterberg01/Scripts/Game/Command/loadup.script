@@ -1,0 +1,224 @@
+//	Aufladen-Script by Danny Homm alias Winterberger
+//	Modifiziertes Aufladen-Script schaltet Heckbeleuchtung des ASF ein
+
+object LoadUp : CommandScript
+{
+	
+
+
+	LoadUp()
+	{
+		SetIcon("liftwithcrane");
+		SetCursor("liftwithcrane");
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetRestrictions(RESTRICT_TRANSPORTABLE);
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		//Im Freeplay wird LoadUp Freeplay (siehe unten) verwendet
+		//Freeplay oder nicht?
+		Actor ReinforcementArea1;
+		ActorList l1("ReinforcementArea1");
+		if(l1.GetNumActors() > 0)
+			return false;
+		//Freeplay oder nicht?
+
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		if(Caller->GetObjectType()!=TYPE_VEHICLE)
+			return false;
+
+		// check if caller already carries an object
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if(ol.GetNumObjects() > 0)
+			return false;
+
+		// check if target object can be picked up
+		GameObject obj(Target);
+		if (!obj.IsValid() || obj.IsFlagSet(OF_PERSON_ENCLOSED) || !obj.IsFlagSet(OF_TRANSPORTABLE))
+			return false;
+
+		if (Target->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.GetEnergy() <= 0.1f * v.GetMaxEnergy() && !v.IsSmoking())
+			        return true; // Fahrzeug kaputt und gelöscht
+			if (v.IsDestroyed())
+			        return true; // Fahrzeug zerstört
+			if (!v.IsParking())
+			        return false; // normales Fahrzeug, welches nicht parkt
+		}
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//FZG ist nicht verfügbar...
+
+		Caller->AssignCommand("ich_bin_nicht_frei");
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_LOADUP);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionMotorSound",Caller,9,false);
+		Caller->PushActionWait(ACTION_APPEND,1);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",Caller);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);		
+		Caller->PushActionLoadUp(ACTION_APPEND, Target);
+	}
+};
+
+object LoadUp_Freeplay : CommandScript
+{
+	Vector  v, tv;
+	Actor asf;
+
+
+
+	LoadUp_Freeplay()
+	{
+		SetIcon("liftwithcrane");
+		SetCursor("liftwithcrane");
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetRestrictions(RESTRICT_TRANSPORTABLE);
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		//Freeplay oder nicht?
+		Actor ReinforcementArea1;
+		ActorList l1("ReinforcementArea1");
+		if(l1.GetNumActors() < 1)
+			return false;
+		//Freeplay oder nicht?
+
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		if(Caller->GetObjectType()!=TYPE_VEHICLE)
+			return false;
+
+		// check if caller already carries an object
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if(ol.GetNumObjects() > 0)
+			return false;
+
+		// check if target object can be picked up
+		GameObject obj(Target);
+		if (!obj.IsValid() || obj.IsFlagSet(OF_PERSON_ENCLOSED) || !obj.IsFlagSet(OF_TRANSPORTABLE))
+			return false;
+
+		if (Target->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.GetEnergy() <= 0.1f * v.GetMaxEnergy() && !v.IsSmoking())
+			        return true; // Fahrzeug kaputt und gelöscht
+			if (v.IsDestroyed())
+			        return true; // Fahrzeug zerstört
+			if (!v.IsParking())
+			        return false; // normales Fahrzeug, welches nicht parkt
+		}
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!asf.IsValid())
+		{
+			ActorList l1("asf");
+			if(l1.GetNumActors() > 0)
+
+				asf = *l1.GetActor(0);
+			else
+				System::Error("Kann Schrottplatz nicht finden!");
+		}
+		v=asf.GetPosition();
+		Game::FindFreePosition(Caller, v,100);
+
+		//FZG ist nicht verfügbar...
+		Caller->AssignCommand("ich_bin_nicht_frei");
+
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_LOADUP);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionMotorSound",Caller,9,false);
+		Caller->PushActionWait(ACTION_APPEND,1);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",Caller);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+		Caller->PushActionLoadUp(ACTION_APPEND, Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+
+   		Caller->PushActionMove(ACTION_APPEND, v+Vector(0,-150,0)); // Fahre zum Wendepunkt
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+		Caller->PushActionTurnTo(ACTION_APPEND, v+Vector(0,-300,0)); // Wende
+		Caller->PushActionMove(ACTION_APPEND, v); // Einparken
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionMotorSound",Caller,9,false);
+		Caller->PushActionWait(ACTION_APPEND,1);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",Caller);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionFreeplayUnload",Caller,0,true);
+	}
+};
+
+object ActionFreeplayUnload : CommandScript
+{
+
+	ActionFreeplayUnload()
+	{
+	}
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		if(!Caller->IsCarryingAnything())
+			return false;
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//FZG ist verfügbar...
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		Caller->PushActionUnload(ACTION_APPEND);
+		GameObjectList ol = Caller->GetCarriedObjects();
+		for (int i = 0; i < ol.GetNumObjects(); i++)
+		{
+			ol.GetObject(i)->PushActionWait(ACTION_NEWLIST, 5.0f);
+			ol.GetObject(i)->PushActionDeleteOwner(ACTION_APPEND);
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 0, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+	}
+};

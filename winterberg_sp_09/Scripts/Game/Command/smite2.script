@@ -1,0 +1,186 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script smite2
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+// SMITE
+//
+// Der Zorn Gottes 
+// induziert Einsatzszenarien zu Testzwecken
+//
+// auf Personen -> Exitus
+// auf Fz -> Gefahrgutunfall
+// ins Gelände -> Massenanfall von Verletzten
+
+const int MAX_PROTOTYPES = 10;
+const char * prototypes[MAX_PROTOTYPES];
+const char PROTOTYPE1[] = "mod:Prototypes/Persons/Civil/civilminister01.e4p";
+const char PROTOTYPE2[] = "mod:Prototypes/Persons/Civil/civilman03_green.e4p";
+const char PROTOTYPE3[] = "mod:Prototypes/Persons/Civil/civilman02_silver.e4p";
+const char PROTOTYPE4[] = "mod:Prototypes/Persons/Civil/firewatchguy01.e4p";
+const char PROTOTYPE5[] = "mod:Prototypes/Persons/Civil/civilman02_blue.e4p";
+const char PROTOTYPE6[] = "mod:Prototypes/Persons/Civil/civilwoman01_red.e4p";
+const char PROTOTYPE7[] = "mod:Prototypes/Persons/Civil/civilwoman02_beige.e4p";
+const char PROTOTYPE8[] = "mod:Prototypes/Persons/Civil/civilwoman03_blue.e4p";
+const char PROTOTYPE9[] = "mod:Prototypes/Persons/Civil/civilwoman04.e4p";
+const char PROTOTYPE10[] = "mod:Prototypes/Persons/Civil/civilwoman05.e4p";
+
+const int MAX_PROTOVECS = 13;
+const char * protovecs[MAX_PROTOVECS];
+const char PROTOVECS1[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck00.e4p";
+const char PROTOVECS2[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck01.e4p";
+const char PROTOVECS3[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck02.e4p";
+const char PROTOVECS4[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck05.e4p";
+const char PROTOVECS5[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck07.e4p";
+const char PROTOVECS6[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck08.e4p";
+const char PROTOVECS7[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck09.e4p";
+const char PROTOVECS8[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck10.e4p";
+const char PROTOVECS9[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck11.e4p";
+const char PROTOVECS10[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck12.e4p";
+const char PROTOVECS11[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck13.e4p";
+const char PROTOVECS12[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck14.e4p";
+const char PROTOVECS13[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck15.e4p";
+
+const int MAX_PROTONAMES= 8;
+const char * pName[MAX_PROTONAMES];
+
+object smite : CommandScript
+{
+
+	int ggv=1;
+
+   smite()
+   {
+      // SetValidTargets(ACTOR_FLOOR | ACTOR_VEHICLE | ACTOR_PERSON | ACTOR_OPEN_HOUSE);
+      SetIcon("heal");   // Bitte nen Blitz oder sowas 8-)
+      SetCursor("heal");
+		prototypes[0] = PROTOTYPE1;
+		prototypes[1] = PROTOTYPE2;
+		prototypes[2] = PROTOTYPE3;
+		prototypes[3] = PROTOTYPE4;
+            	prototypes[4] = PROTOTYPE5;
+            	prototypes[5] = PROTOTYPE6;
+            	prototypes[6] = PROTOTYPE7;
+            	prototypes[7] = PROTOTYPE8;
+            	prototypes[8] = PROTOTYPE9;
+            	prototypes[9] = PROTOTYPE10;
+
+            	protovecs[0] = PROTOVECS1;
+            	protovecs[1] = PROTOVECS2;
+            	protovecs[2] = PROTOVECS3;
+            	protovecs[3] = PROTOVECS4;
+            	protovecs[4] = PROTOVECS5;
+            	protovecs[5] = PROTOVECS6;
+            	protovecs[6] = PROTOVECS7;
+            	protovecs[7] = PROTOVECS8;
+            	protovecs[8] = PROTOVECS9;
+            	protovecs[9] = PROTOVECS10;
+            	protovecs[10] = PROTOVECS11;
+            	protovecs[11] = PROTOVECS12;
+            	protovecs[12] = PROTOVECS13;
+
+		pName[0]="Civil Man 01";
+		pName[1]="Civil Man 01 Blue";
+		pName[2]="Civil Man 01 White";
+		pName[3]="Civil Man 02 Silver";
+		pName[4]="Civil Pizza 01";
+		pName[5]="Civil Woman 03 Red";
+		pName[6]="Civil Woman 04";
+		pName[7]="Civil Woman 01 Yellow";
+
+
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	
+	if (Caller->GetID() == Target->GetID())
+		return false;
+
+	if (Target->GetType() == ACTOR_VEHICLE)
+	{
+		Vehicle v(Target);
+		return (!v.HasCommand("gefahrgut") && !v.HasCommand("smite"));
+	} else 
+		return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObject flash=Game::CreateObject("mod:Prototypes/Objects/Particles/lightning02.e4p","eschock");
+	flash.SetPosition(Game::GetCommandPos());
+	flash.PushActionWait(ACTION_NEWLIST,2.0);
+	flash.PushActionDeleteOwner(ACTION_APPEND);
+	switch (Target->GetType())
+	{
+		case ACTOR_OPEN_HOUSE:
+			GameObject o(Target);
+			// Game::ExecuteCommand("wt_bma",Caller); // BMA mit Feuer
+			Game::ExecuteCommand("ueberfall",&o);
+			break;
+		case ACTOR_PERSON:
+			Person p(Target);
+			//p.AssignCommand("crime");
+			//p.PushActionExecuteCommand(ACTION_NEWLIST,"art_blutung",Target,0,false);
+			p.PushActionExecuteCommand(ACTION_NEWLIST,"wt_sekundaer",Target,12,false);
+			break;
+		case ACTOR_VEHICLE:
+			Vehicle v(Target);
+			// Caller->PushActionExecuteCommand(ACTION_INSERT,"plane_crash",&v,0,false);
+			Game::ExecuteCommand("random_vu_init",Caller);
+			break;
+		case ACTOR_HOUSE:
+			Person p;
+			Vector Pos=Game::GetCommandPos();
+			Vector Posabc;
+			// Personen erzeugen und verletzt auf der Strasse verstreuen
+			int q=20;
+			for(int i = 0; i < q; i++)
+			{
+				Posabc=Pos+Vector(((rand()%500)-250),((rand()%500)-250),0);
+				int index = rand()%MAX_PROTOTYPES;
+				Person p = Game::CreatePerson(prototypes[index], "Opfer");
+				float val=rand()%600+200;
+				Game::FindFreePosition(&p,Posabc,300);
+				p.SetPosition(Posabc);
+				p.Injure(INJUREREASON_ENERGY,true);
+				p.SetLife(50*i);
+				// p.Hurt(INJUREREASON_ENERGY,val);
+				float val=rand()%8+2;
+				p.SetInjuredLifeDrain(0);
+			}
+			p.SetCommandable(true);
+			p.PushActionExecuteCommand(ACTION_NEWLIST,"rufe_winterberg",Target,650,false);
+			p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,651,false);
+			p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,620,false);
+			break;
+		case ACTOR_OBJECT:
+			Person p;
+				int index = rand()%MAX_PROTOTYPES;
+				Person p = Game::CreatePerson(prototypes[index], "Opfer");
+				p.Hurt(INJUREREASON_ENERGY,300.0);
+				p.SetLife(250);
+			p.PushActionExecuteCommand(ACTION_NEWLIST,"wt_callsek",&p,0,false);
+			break;
+		
+		default:
+			Mission::PlayHint("Smite Default -> Lawine");
+			Game::ExecuteCommand("Lawine",Caller);
+			break;
+	}
+   }
+};

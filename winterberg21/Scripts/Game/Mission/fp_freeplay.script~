@@ -1,0 +1,33 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script start
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// Winterberger Em4 Start-Script by WitchDoc
+// basiert auf start V0.1a by manuelt
+// Rotation function by bass-ti
+//
+// Revision:
+// 16.7.2006 : Doppelte Ausführung verhindern
+
+
+object fp_freeplay : MissionScript
+{
+
+	fp_freeplay()
+	{
+	}
+
+	void OnLoad()
+	{
+		Mission::PlayHint("WINTERBERGER für EM4 - Patch 1.3 enabled. Bitte Start-Pfeil anklicken ");
+	}
+};
+

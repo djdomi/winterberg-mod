@@ -1,0 +1,112 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script tagdienst
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+object dienstbeginn : CommandScript
+{
+
+   dienstbeginn()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return false;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int h,m,s;
+	Game::GetTime(h,m,s);
+	if (h==7)
+	{
+		VehicleList vl(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+		for (int i=0;i<vl.GetNumVehicles();i++)
+		{
+			if (vl.GetVehicle(i)->HasCommand("tagdienst"))
+			{
+				vl.GetVehicle(i)->PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",vl.GetVehicle(i),2,false);
+				vl.GetVehicle(i)->RemoveCommand("feierabend");
+				vl.GetVehicle(i)->RemoveCommand("ich_bin_nicht_frei");
+			}
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"dienstende",Caller,0,false);
+	} else {
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"dienstbeginn",Caller,0,false);
+	}
+   }
+};
+ 
+object dienstende : CommandScript
+{
+
+   dienstende()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return false;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int h,m,s;
+	Game::GetTime(h,m,s);
+	if (h==17)
+	{
+		VehicleList vl(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+		for (int i=0;i<vl.GetNumVehicles();i++)
+		{
+			if (vl.GetVehicle(i)->HasCommand("tagdienst"))
+			{
+				vl.GetVehicle(i)->AssignCommand("feierabend");
+				vl.GetVehicle(i)->AssignCommand("ich_bin_nicht_frei");
+				vl.GetVehicle(i)->PushActionExecuteCommand(ACTION_INSERT,"StatusSenden",vl.GetVehicle(i),6,false);
+			}
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"dienstbeginn",Caller,0,false);
+	} else {
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"dienstende",Caller,0,false);
+	}
+   }
+};
+ 
+
+object tagdienst : CommandScript
+{
+
+   tagdienst()
+   {
+	SetGroupID(20);
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+};
+ 
+object feierabend : CommandScript
+{
+
+   feierabend()
+   {
+	SetGroupID(20);
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+};
+ 

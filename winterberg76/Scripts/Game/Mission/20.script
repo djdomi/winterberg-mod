@@ -1,0 +1,2586 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script 20
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+/* TODO
+- Einstürzendes Hochhaus
+- Eingestürzte Brücke
+- Szene 2
+- Treibgut
+- Zusammenbrechende Gebäude
+- Ertrinkende
+- Tauchpunkte
+- Plünderer
+- Serialisierung
+- Sounds und Musiken
+*/
+
+enum
+{
+	STATE_MARAUDER_WALK,		// Auf dem Weg zum Ziel
+	STATE_MARAUDER_WAIT,		// Nichts tun, warten
+	STATE_MARAUDER_AGGRESSIVE,	// auf Aggressiv setzen, Einsatzkräfte angreifen
+	STATE_MARAUDER_QUIET,		// Nichts tun, warten, beruhigter Plünderer
+	STATE_MARAUDER_GOTOPOS,		// gehe zu alter Position
+	STATE_MARAUDER_REPOSITION,	// Verändere Position zufällig, wenn beim Geschäft angekommen (sieht einfach besser aus)
+	STATE_MARAUDER_NORMAL,		// Plünderer ist für 1 Minute ruhig gestellt.
+	STATE_MARAUDER_FLEEING,		// Plünderer flüchtet
+	STATE_MARAUDER_FIGHT,		// Plünderer bekämpfen andere Gruppe
+	STATE_MARAUDER_ENTERSHOP,	// Shop betreten und dort etwas warten
+};
+
+const int MAX_HINTS = 12;
+const int MAX_DEAD_CIVILS = 10;
+const int MAX_DIVEAREAS = 4;					// maximale Anzahl mit eingeschlossener Person
+const int MIN_BURNING_HOUSES_SCENE2 = 2;		// bei weniger -> Szene 2
+const int MIN_INJURED_PERSONS_SCENE2 = 5;		// bei soviel oder weniger -> Szene 2
+const int MIN_DUST_RESTART = 20;				// minimale Zeit in Sekunden bis wieder Staub rieselt
+const int MAX_DUST_RESTART = 31;				// maximale Zeit bis wieder Staub rieselt
+const int MAX_MARAUDERS = 7;					// Anzahl Plünderer (jeweils pro Gruppe)
+const int MAX_MARAUDER_PATHES = 4;				// Anzahl Pfade für die Plünderer
+const int MARAUDER_WALK_TIME = 30;
+const int MARAUDER_WAIT_TIME = 5;
+const int MARAUDER_CALMDOWN_TIME = 25;
+const float MARAUDER_ACTION_RANGE = 15.f * 50.f;	// Plünderer suchen in dem Bereich nach Zielen
+const int MARAUDER_MIN_SHOP_WAITTIME = 60;			// minimale Zeit, die Plünderer im Shop wartet
+const int MARAUDER_MAX_SHOP_WAITTIME = 120;			// maximale Zeit, die Plünderer im Shop wartet
+const int COUNT_HOUSE_PIECE_GROUPS = 5;				// für Hochhauseinsturz: Anzahl der Trümmer-"Wellen"
+const int MAX_BURNING_HOUSES_FAIL = 14;			// gleich oder mehr brennen -> fail
+const int MAX_BURNING_HOUSES_HINT = 9;			// gleich oder mehr brennen -> hint
+const float MARAUDER_SHOOTPOWER = 90.f;			// Schussstärke der bewaffneten	Plünderer	
+
+const char NAME_BURNING_HOUSE_FAIL[]			= "burning fail";
+const char NAME_HOUSE_HINT0[]					= "burning hint";
+const char NAME_TRIGGER_HIGHWAY[]				= "highway";
+const char NAME_TRIGGER_SKYSCRAPER[]			= "skyscraper";
+const char NAME_PERSON_A[]						= "personA";
+const char NAME_PERSON_B[]						= "personB";
+const char NAME_SHIP_ON_PATH[]					= "shippath";
+const char NAME_COLLAPSING_HOUSE_1[]			= "collapsing1";
+const char NAME_COLLAPSING_HOUSE_2[]			= "collapsing2";
+const char NAME_VO_DIVEAREA1[]					= "vo divearea1";
+const char NAME_VO_DIVEAREA2[]					= "vo divearea2";
+const char NAME_VO_DIVEAREA3[]					= "vo divearea3";
+const char NAME_VO_DIVEAREA4[]					= "vo divearea4";
+const char NAME_PERSON_DIVEAREA1[]				= "p divearea1";
+const char NAME_PERSON_DIVEAREA2[]				= "p divearea2";
+const char NAME_PERSON_DIVEAREA3[]				= "p divearea3";
+const char NAME_PERSON_DIVEAREA4[]				= "p divearea4";
+const char NAME_EFFECT_DIVEAREA1[]				= "dive1";
+const char NAME_EFFECT_DIVEAREA2[]				= "dive2";
+const char NAME_EFFECT_DIVEAREA3[]				= "dive3";
+const char NAME_EFFECT_DIVEAREA4[]				= "dive4";
+const char NAME_EMITTER_DUST[]					= "dust";
+const char NAME_PREFIX_SCENE1[]					= "s3";
+const char NAME_PREFIX_SCENE2[]					= "s2";
+const char NAME_LIQUID_SCENE2[]					= "s2_liquid";
+const char NAME_AREA_HARBOR[]					= "area harbor";
+const char NAME_DROWNING_PERSON[]				= "drowning";
+const char NAME_MARAUDER_A[]					= "marauder_a";
+const char NAME_MARAUDER_B[]					= "marauder_b";
+const char NAME_MARAUDER_PATH_A1[]				= "mob_a01";
+const char NAME_MARAUDER_PATH_A2[]				= "mob_a02";
+const char NAME_MARAUDER_PATH_A3[]				= "mob_a03";
+const char NAME_MARAUDER_PATH_A4[]				= "mob_a04";
+const char NAME_MARAUDER_PATH_B1[]				= "mob_b01";
+const char NAME_MARAUDER_PATH_B2[]				= "mob_b02";
+const char NAME_MARAUDER_PATH_B3[]				= "mob_b03";
+const char NAME_MARAUDER_PATH_B4[]				= "mob_b04";
+const char NAME_MARAUDER_FLIGHTPATH_A0[]		= "mobflight_a01";
+const char NAME_MARAUDER_FLIGHTPATH_A1[]		= "mobflight_a02";
+const char NAME_MARAUDER_FLIGHTPATH_A2[]		= "mobflight_a03";
+const char NAME_MARAUDER_FLIGHTPATH_A3[]		= "mobflight_a04";
+const char NAME_MARAUDER_FLIGHTPATH_B0[]		= "mobflight_b01";
+const char NAME_MARAUDER_FLIGHTPATH_B1[]		= "mobflight_b02";
+const char NAME_MARAUDER_FLIGHTPATH_B2[]		= "mobflight_b03";
+const char NAME_MARAUDER_FLIGHTPATH_B3[]		= "mobflight_b04";
+const char NAME_SHOP[]							= "shop";
+const char NAME_AREA_SHOP[]						= "area shop";
+const char NAME_EFFECT_COLLAPSING1[]			= "effect collapsing1";
+const char NAME_EFFECT_COLLAPSING2[]			= "effect collapsing2";
+const char NAME_AREA_COLLAPSING1[]				= "area collapsing1";
+const char NAME_AREA_COLLAPSING2[]				= "area collapsing2";
+const char NAME_HOUSE_PIECE1[]					= "piece1";
+const char NAME_HOUSE_PIECE2[]					= "piece2";
+const char NAME_HOUSE_PIECE3[]					= "piece3";
+const char NAME_HOUSE_PIECE4[]					= "piece4";
+const char NAME_PARTICLE_WAVE1[]				= "particle_wave1";
+const char NAME_PARTICLE_WAVE2[]				= "particle_wave2";
+const char NAME_PARTICLE_WAVE3[]				= "particle_wave3";
+const char NAME_PARTICLE_WAVE4[]				= "particle_wave4";
+const char NAME_PARTICLE_WAVE5[]				= "particle_wave5";
+const char NAME_CRASH_HOUSE[]					= "crash_house";
+const char NAME_CRASH_RUIN[]					= "crash_ruin";
+const char NAME_CRASH_HOUSE_DEBRIS[]			= "debris";
+const char NAME_POOL_SCENE1[]					= "part1";
+const char NAME_POOL_SCENE2[]					= "part2";
+const char NAME_AREA_WATERS2[]					= "area_water";
+const char NAME_BOATPOINTS[]					= "boatpoint";
+const char NAME_HOUSE_PERSONA[]					= "house_personA";
+const char NAME_HOUSE_PERSONB[]					= "house_personB";
+const char NAME_LOCATION_S2[]					= "camera_s2";
+const char FREELY_ACCESSIBLE[]					= "Freely accessible";
+const char DEMONSTRATE[]						= "demonstrate";
+const char IDLE[]								= "idle";
+const char WAVE_HELP[]							= "wavehelp";
+const char DIVER[]								= "Diver";
+const char MARAUDERS_CAUGHT[]					= "M20_MARAUDERS_CAUGHT";
+const char MARAUDERS_REPORTED[]					= "SUPERV_M20_OBJ06";
+const char NEW_MARAUDERS[]						= "SUPERV_M20_OBJ03";
+const char ACTION_FINDPATH[]					= "EActionFindPath";
+const char ACTION_MOVE[]						= "EActionMove";
+const char NAME_FLOOD_SOUND[]					= "s2_flood01";
+const char NAME_HARBOR01_SOUND[]				= "s1_harbor01";
+const char NAME_HARBOR02_SOUND[]				= "s1_harbor02";
+const char NAME_SEA_SOUND[]						= "s1_sea01";
+
+const char NAME_COLLAPSE1[] = "mod:Audio/FX/destruction/mission_building_breakdown2.wav";
+const char NAME_COLLAPSE2[] = "mod:Audio/FX/destruction/mission_building_breakdown.wav";
+const char NAME_COLLAPSE3[] = "mod:Audio/FX/destruction/mission_tunnel_ceiling.wav";
+const char NAME_BEFORE_COLLAPSE[] = "mod:Audio/FX/destruction/mission_building_before_breakdown.wav";
+
+const char NAME_CS1_TRANSITION[] = "cs1";
+const float TIME_CS1_TRANSITION = 3.0f;
+const char NAME_CS2_TRANSITION[] = "cs2";
+const float TIME_CS2_TRANSITION = 5.0f;
+
+const char HINT_FIRE_OUT_OF_CONTROL[]			= "HINT_M20_FIRE_OUT_OF_CONTROL";	//0 / 11
+const char HINT_BRIDGE_COLLAPSED[]				= "HINT_M20_BRIDGE_COLLAPSED";		//1
+const char HINT_PERSONS_ON_BRIDGE[]				= "HINT_M20_PERSONS_ON_BRIDGE";		//2
+const char HINT_HOUSE_MIGHT_COLLAPSE[]			= "HINT_M20_HOUSE_MIGHT_COLLAPSE";	//3
+//const char HINT_HOUSE_COLLAPSE_SOON[]			= "HINT_M20_HOUSE_COLLAPSE_SOON";	//4
+const char HINT_OBSTACLES_IN_WATER[]			= "HINT_M20_OBSTACLES_IN_WATER";	//5
+const char HINT_HOUSES_MIGHT_COLLAPSE[]			= "HINT_M20_HOUSES_MIGHT_COLLAPSE";	//6
+const char HINT_SUNKEN_CARS[]					= "HINT_M20_SUNKEN_CARS";			//7
+const char HINT_MARAUDERS_ARMED[]				= "HINT_M20_MARAUDERS_ARMED";		//8
+const char HINT_MORE_MARAUDERS[]				= "HINT_M20_MORE_MARAUDERS";		//9
+const char HINT_CATCH_MARAUDERS[]				= "HINT_M20_CATCH_MARAUDERS";		//10
+
+const char OBJECTIVE_TRANSPORT_INJURED[]		= "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRES[]			= "EXTINGUISH_FIRES";
+const char OBJECTIVE_CATCH_MARAUDERS[]			= "M20_CATCH_MARAUDERS";
+
+const char COUNTER_CIVIL_DEATHS[]				= "Civil deaths";
+const char COUNTER_BURNING_HOUSES[]				= "Burning Houses";
+const char COUNTER_INJURED_PERSONS[]			= "Injured Persons";
+const char COUNTER_DEAD_PERSONS[]				= "Dead Persons";
+const char COUNTER_BURNING_OBJECTS[]			= "Burning Objects";
+
+const char TIMER_NAME_HINT2[]					= "t_hint2";
+const float TIMER_TIME_HINT2					= 5.f * 60.f;	// Person stürzt bald ab
+const char TIMER_NAME_PERSON_A[]				= "t_a";
+const float TIMER_TIME_PERSON_A					= 6.f * 60.f;	// Person A stürzt ab
+const char TIMER_NAME_PERSON_B[]				= "t_b";
+const float TIMER_TIME_PERSON_B					= 8.f * 60.f;	// Person B stürzt ab
+const char TIMER_NAME_HINT4[]					= "t_hint4";
+const float TIMER_TIME_HINT4					= 7.f * 60.f;	// Hochhaus bricht bald ein
+const char TIMER_NAME_SKYSCRAPER_COLLAPSE[]		= "t_collapse";
+// for debugging cutscene
+//const float TIMER_TIME_SKYSCRAPER_COLLAPSE		= 1.0f;
+const float TIMER_TIME_SKYSCRAPER_COLLAPSE		= 9.f * 60.f;	// Hochhaus bricht ein
+const char TIMER_NAME_UPDATE_DUST[]				= "t_dust";		// Staub rieselt am Hochhaus
+const char TIMER_NAME_WEATHER[]					= "t_weather";
+const float TIMER_TIME_WEATHER					= 10.f;
+const float WEATHER_OFF_TIME					= 4.f * 60.f;		// Zeit bis Nebel / Sturm aufhört
+// Szene 2
+const char TIMER_NAME_HINT6_1[]					= "t_hint6_1";
+const float TIMER_TIME_HINT6_1					= 3.f * 60.f;	// Haus1 bricht gleich ein
+const char TIMER_NAME_HOUSE1_COLLAPSE[]			= "t_collapse1";
+const float TIMER_TIME_HOUSE1_COLLAPSE			= 4.f * 60.f;	// Haus1 bricht ein
+const char TIMER_NAME_HINT6_2[]					= "t_hint6_2";
+const float TIMER_TIME_HINT6_2					= 6.f * 60.f;	// Haus2 bricht gleich ein
+const char TIMER_NAME_HOUSE2_COLLAPSE[]			= "t_collapse2";
+const float TIMER_TIME_HOUSE2_COLLAPSE			= 8.f * 60.f;	// Haus2 bricht ein
+const char TIMER_NAME_HINT7[]					= "t_hint7";
+const float TIMER_TIME_HINT7					= 9.f * 60.f;	// noch versunkene Autos zu suchen
+const char TIMER_NAME_UPDATE_MARAUDERS[]		= "t_u_marauders";	// Logik der Plünderer laufen lassen
+const float TIMER_TIME_UPDATE_MARAUDERS			= 1.7f;
+const char TIMER_NAME_MARAUDERS_A[]				= "t_marauders_a";
+const float TIMER_TIME_MARAUDERS_A				= 1.f * 60.f;	// Plündergruppe 1 startet
+const char TIMER_NAME_MARAUDERS_B[]				= "t_marauders_b";
+const float TIMER_TIME_MARAUDERS_B				= 3.f * 60.f;	// Plündergruppe 2 startet
+const char TIMER_NAME_END_CUTSCENE[]			= "t_end_house_crash"; // Ende der Cutscene Hochhauseinsturz
+const float TIMER_TIME_END_CUTSCENE				= 2.5f;
+const char TIMER_NAME_FADEOUT[]					= "t_fadeout";
+const float TIMER_TIME_FADEOUT					= 4.f;			// ausfaden zu Szene 2
+const char TIMER_NAME_SHOW_RUIN[]				= "t_showruin";
+const float TIMER_TIME_SHOW_RUIN				= 6.5f;
+const char TIMER_NAME_SECOND_DUSTCLOUD[]		= "t_seconddust";
+const float TIMER_TIME_SECOND_DUSTCLOUD			= 3.0f;
+const char TIMER_NAME_LOAD_RADAR[]				= "t_after_serializefrom";
+
+enum
+{
+	TRANSITION_NONE,
+	TRANSITION_COLLAPSING_HOUSE,
+	TRANSITION_COLLAPSING_HOUSE_END
+};
+
+object Mission20 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mFireOutOfControl;
+	bool mTooManyDied;
+	bool mMarauderLeft;
+	bool mPersonASaved;
+	bool mPersonBSaved;
+	Person mPersonA;
+	Person mPersonB;
+	GameObject mCollapsingHouse1;
+	GameObject mCollapsingHouse2;
+	const char * mDiveAreaNames[MAX_DIVEAREAS];
+	const char * mDiveAreaPersonNames[MAX_DIVEAREAS];
+	GameObject mDiveAreaPersons[MAX_DIVEAREAS];
+	Actor mDiveAreaVOs[MAX_DIVEAREAS];
+	bool mDiveAreaPersonFound[MAX_DIVEAREAS];
+	bool mScene2Started;
+	GameObjectList mEmitterDust;
+	Person mMaraudersA[MAX_MARAUDERS];
+	Person mMaraudersB[MAX_MARAUDERS];
+	int mMarauderStateA[MAX_MARAUDERS];
+	int mMarauderStateB[MAX_MARAUDERS];
+	int mMarauderTimerA[MAX_MARAUDERS];
+	int mMarauderTimerB[MAX_MARAUDERS];
+	int mNumMaraudersA;
+	int mNumMaraudersB;
+	int mNumMaraudersCurrentA;
+	int mNumMaraudersCurrentB;
+	int mNumMaraudersWithGunA;
+	int mNumMaraudersWithGunB;
+	const char * mMarauderPathNamesA[MAX_MARAUDER_PATHES];
+	const char * mMarauderPathNamesB[MAX_MARAUDER_PATHES];
+	const char * mMarauderFlightPathNamesA[MAX_MARAUDER_PATHES];
+	const char * mMarauderFlightPathNamesB[MAX_MARAUDER_PATHES];
+	Vector mOffsetsA[MAX_MARAUDERS];
+	Vector mOffsetsB[MAX_MARAUDERS];
+	bool mMarauderWithGunA[MAX_MARAUDERS];
+	bool mMarauderWithGunB[MAX_MARAUDERS];
+	bool mMaraudersStartedA;
+	bool mMaraudersStartedB;
+	int mNumMaraudersAtTargetA;
+	int mNumMaraudersAtTargetB;
+	bool mShopReachedA;
+	bool mShopReachedB;
+	bool mMaraudersFleeing;
+	OpenHouse mShop;
+	bool mMaraudersAttacked;
+	GameObject mHousePersonA;
+	GameObject mHousePersonB;
+	float mFogIntensity;
+	float mStormIntensity;
+	bool mScene2Running;
+
+	int mCurrentTransition;
+	OpenHouse mCrashHouse;
+	GameObject mCrashRuin;
+	GameObjectList mHousePieceList[COUNT_HOUSE_PIECE_GROUPS];
+	GameObjectList mParticleList[COUNT_HOUSE_PIECE_GROUPS];
+	GameObjectList mHouseDebrisList;
+	Actor mAreaWaterS2;
+
+	Mission20()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+		{
+			mDiveAreaPersonFound[i] = true;
+		}
+		mFireOutOfControl = false;
+		mTooManyDied = false;
+		mMarauderLeft = false;
+		mPersonASaved = false;
+		mPersonBSaved = false;
+		mDiveAreaNames[0] = NAME_VO_DIVEAREA1;
+		mDiveAreaNames[1] = NAME_VO_DIVEAREA2;
+		mDiveAreaNames[2] = NAME_VO_DIVEAREA3;
+		mDiveAreaNames[3] = NAME_VO_DIVEAREA4;
+		mDiveAreaPersonNames[0] = NAME_PERSON_DIVEAREA1;
+		mDiveAreaPersonNames[1] = NAME_PERSON_DIVEAREA2;
+		mDiveAreaPersonNames[2] = NAME_PERSON_DIVEAREA3;
+		mDiveAreaPersonNames[3] = NAME_PERSON_DIVEAREA4;
+		mScene2Started = false;
+		mMaraudersStartedA = false;
+		mMaraudersStartedB = false;
+		mNumMaraudersAtTargetA = 0;
+		mNumMaraudersAtTargetB = 0;
+		mShopReachedA = false;
+		mShopReachedB = false;
+		mMaraudersFleeing = false;
+		for (int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			mMarauderStateA[i] = STATE_MARAUDER_WAIT;
+			mMarauderTimerA[i] = 0;
+			mOffsetsA[i].x	= 0.f;
+			mOffsetsA[i].y	= 0.f;
+			mOffsetsA[i].z	= 0.f;
+			mMarauderWithGunA[i] = false;
+			mMarauderStateB[i] = STATE_MARAUDER_WAIT;
+			mMarauderTimerB[i] = 0;
+			mOffsetsB[i].x	= 0.f;
+			mOffsetsB[i].y	= 0.f;
+			mOffsetsB[i].z	= 0.f;
+			mMarauderWithGunB[i] = false;
+		}
+		mNumMaraudersA = 0;
+		mNumMaraudersB = 0;
+		mNumMaraudersCurrentA = 0;
+		mNumMaraudersCurrentB = 0;
+		mNumMaraudersWithGunA = 0;
+		mNumMaraudersWithGunB = 0;
+		mMarauderPathNamesA[0] = NAME_MARAUDER_PATH_A1;
+		mMarauderPathNamesA[1] = NAME_MARAUDER_PATH_A2;
+		mMarauderPathNamesA[2] = NAME_MARAUDER_PATH_A3;
+		mMarauderPathNamesA[3] = NAME_MARAUDER_PATH_A4;
+		mMarauderPathNamesB[0] = NAME_MARAUDER_PATH_B1;
+		mMarauderPathNamesB[1] = NAME_MARAUDER_PATH_B2;
+		mMarauderPathNamesB[2] = NAME_MARAUDER_PATH_B3;
+		mMarauderPathNamesB[3] = NAME_MARAUDER_PATH_B4;
+		mMarauderFlightPathNamesA[0] = NAME_MARAUDER_FLIGHTPATH_A0;
+		mMarauderFlightPathNamesA[1] = NAME_MARAUDER_FLIGHTPATH_A1;
+		mMarauderFlightPathNamesA[2] = NAME_MARAUDER_FLIGHTPATH_A2;
+		mMarauderFlightPathNamesA[3] = NAME_MARAUDER_FLIGHTPATH_A3;
+		mMarauderFlightPathNamesB[0] = NAME_MARAUDER_FLIGHTPATH_B0;
+		mMarauderFlightPathNamesB[1] = NAME_MARAUDER_FLIGHTPATH_B1;
+		mMarauderFlightPathNamesB[2] = NAME_MARAUDER_FLIGHTPATH_B2;
+		mMarauderFlightPathNamesB[3] = NAME_MARAUDER_FLIGHTPATH_B3;
+		mMaraudersAttacked = false;
+		mFogIntensity = 0.f;
+		mStormIntensity = 0.f;
+		mScene2Running = false;
+	}
+
+	~Mission20()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M20 Start");
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_PERSON_A))
+			{
+				mPersonA = Person(obj);
+				mPersonA.PushIgnoreEnergy();
+				mPersonA.SetNeverResort(true);
+			}
+			else if (obj->HasName(NAME_PERSON_B))
+			{
+				mPersonB = Person(obj);
+				mPersonB.PushIgnoreEnergy();
+				mPersonB.SetNeverResort(true);
+			}
+			else if (obj->HasName(NAME_COLLAPSING_HOUSE_1))
+			{
+				mCollapsingHouse1 = *obj;
+				//mCollapsingHouse1.Hide();
+			}
+			else if (obj->HasName(NAME_COLLAPSING_HOUSE_2))
+			{
+				mCollapsingHouse2 = *obj;
+				//mCollapsingHouse2.Hide();
+			}
+			else if (obj->HasNamePrefix(NAME_PREFIX_SCENE2))
+				obj->Hide();
+			else if (obj->HasName(NAME_SHIP_ON_PATH))
+			{
+				obj->PushActionNOP(ACTION_INSERT);
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_DROWNING_PERSON))
+			{
+				obj->PushActionNOP(ACTION_INSERT);
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_MARAUDER_A))
+			{
+				if (mNumMaraudersA < MAX_MARAUDERS)
+				{
+					mMaraudersA[mNumMaraudersA] = Person(obj);
+					if (mMaraudersA[mNumMaraudersA].GetEquipment() == EQUIP_PISTOL)
+					{
+						mMarauderWithGunA[mNumMaraudersA] = true;
+						mNumMaraudersWithGunA++;
+					}
+					mMaraudersA[mNumMaraudersA++].SetNeverResort(true);
+					mNumMaraudersCurrentA++;
+				}
+				else
+					System::Log("M20: Too many marauders a!");
+			}
+			else if (obj->HasName(NAME_MARAUDER_B))
+			{
+				if (mNumMaraudersB < MAX_MARAUDERS)
+				{
+					mMaraudersB[mNumMaraudersB] = Person(obj);
+					if (mMaraudersB[mNumMaraudersB].GetEquipment() == EQUIP_PISTOL)
+					{
+						mMarauderWithGunB[mNumMaraudersB] = true;
+						mNumMaraudersWithGunB++;
+					}
+					mMaraudersA[mNumMaraudersB++].SetNeverResort(true);
+					mNumMaraudersCurrentB++;
+				}
+				else
+					System::Log("M20: Too many marauders b!");
+			}
+			else if (obj->HasName(NAME_SHOP))
+				mShop = OpenHouse(obj);
+			else if (obj->HasName(NAME_CRASH_HOUSE))
+			{
+				mCrashHouse = OpenHouse(obj);
+			}
+			else if (obj->HasName(NAME_CRASH_RUIN))
+			{
+				mCrashRuin = obj;
+				mCrashRuin.Hide();
+			}
+			else if (obj->HasName(NAME_HOUSE_PERSONA))
+				mHousePersonA = *obj;
+			else if (obj->HasName(NAME_HOUSE_PERSONB))
+				mHousePersonB = *obj;
+			else
+			{
+				for(int j = 0; j < MAX_DIVEAREAS; j++)
+				{
+					if (obj->HasName(mDiveAreaPersonNames[j]))
+					{
+						mDiveAreaPersons[j] = *obj;
+						mDiveAreaPersons[j].Hide();
+						mDiveAreaPersonFound[j] = false;
+						System::Log("M20: person in divearea %d found", j);
+						break;
+					}
+				}
+			}
+		}
+		mEmitterDust = Game::GetGameObjects(NAME_EMITTER_DUST);
+
+		ActorList diveemitter1(NAME_EFFECT_DIVEAREA1);
+		for(int i = 0; i < diveemitter1.GetNumActors(); i++)
+			diveemitter1.GetActor(i)->Hide();
+		ActorList diveemitter2(NAME_EFFECT_DIVEAREA2);
+		for(int i = 0; i < diveemitter2.GetNumActors(); i++)
+			diveemitter2.GetActor(i)->Hide();
+		ActorList diveemitter3(NAME_EFFECT_DIVEAREA3);
+		for(int i = 0; i < diveemitter3.GetNumActors(); i++)
+			diveemitter3.GetActor(i)->Hide();
+		ActorList diveemitter4(NAME_EFFECT_DIVEAREA4);
+		for(int i = 0; i < diveemitter4.GetNumActors(); i++)
+			diveemitter4.GetActor(i)->Hide();
+		// vo`s für tauchzonen
+		ActorList divevo1(NAME_VO_DIVEAREA1);
+		if (divevo1.GetNumActors() > 0)
+		{
+			mDiveAreaVOs[0] = *divevo1.GetActor(0);
+			mDiveAreaVOs[0].SetVirtualObjectTerrain(FREELY_ACCESSIBLE);
+		}
+		ActorList divevo2(NAME_VO_DIVEAREA2);
+		if (divevo2.GetNumActors() > 0)
+		{
+			mDiveAreaVOs[1] = *divevo2.GetActor(0);
+			mDiveAreaVOs[1].SetVirtualObjectTerrain(FREELY_ACCESSIBLE);
+		}
+		ActorList divevo3(NAME_VO_DIVEAREA3);
+		if (divevo3.GetNumActors() > 0)
+		{
+			mDiveAreaVOs[2] = *divevo3.GetActor(0);
+			mDiveAreaVOs[2].SetVirtualObjectTerrain(FREELY_ACCESSIBLE);
+		}
+		ActorList divevo4(NAME_VO_DIVEAREA4);
+		if (divevo4.GetNumActors() > 0)
+		{
+			mDiveAreaVOs[3] = *divevo4.GetActor(0);
+			mDiveAreaVOs[3].SetVirtualObjectTerrain(FREELY_ACCESSIBLE);
+		}
+
+		ActorList areaWaterS2(NAME_AREA_WATERS2);
+		if (areaWaterS2.GetNumActors() > 0)
+		{
+			mAreaWaterS2 = areaWaterS2.GetActor(0);
+			mAreaWaterS2.SetVirtualObjectTerrain(FREELY_ACCESSIBLE);
+		}
+
+		mPersonA.SetEnteredHouseID(mHousePersonA.GetID());
+		mPersonB.SetEnteredHouseID(mHousePersonB.GetID());
+		mHousePersonA.SetCollisionMode(PHYSIC_COLLISION_NONE);
+		mHousePersonB.SetCollisionMode(PHYSIC_COLLISION_NONE);
+
+		Game::DeactivateWaitingPoint(NAME_BOATPOINTS);
+		Game::DeactivateLiquid(NAME_LIQUID_SCENE2);
+		Game::SetDefaultMessageGroup(NAME_POOL_SCENE1);
+
+		mFogIntensity = Weather::GetFogIntensity();
+		mStormIntensity = Weather::GetStormIntensity();
+
+		// Cutscene Hochhauseinsturz
+		mCurrentTransition = TRANSITION_NONE;
+		mHousePieceList[0] = Game::GetGameObjects(NAME_HOUSE_PIECE1);
+		mHousePieceList[1] = Game::GetGameObjects(NAME_HOUSE_PIECE2);
+		mHousePieceList[2] = Game::GetGameObjects(NAME_HOUSE_PIECE3);
+		mParticleList[0] = Game::GetGameObjects(NAME_PARTICLE_WAVE1);
+		mParticleList[1] = Game::GetGameObjects(NAME_PARTICLE_WAVE2);
+		mParticleList[2] = Game::GetGameObjects(NAME_PARTICLE_WAVE3);
+		mParticleList[3] = Game::GetGameObjects(NAME_PARTICLE_WAVE4);
+		mParticleList[4] = Game::GetGameObjects(NAME_PARTICLE_WAVE5);
+		for (int j = 0; j < COUNT_HOUSE_PIECE_GROUPS; j++)
+		{
+			for(int i = 0; i < mParticleList[j].GetNumObjects(); i++)
+				mParticleList[j].GetObject(i)->StopParticleEffect();
+		}
+		mHouseDebrisList = Game::GetGameObjects(NAME_CRASH_HOUSE_DEBRIS);
+		for(int i = 0; i < mHouseDebrisList.GetNumObjects(); i++)
+			mHouseDebrisList.GetObject(i)->Hide();
+
+		Mission::StartSingleTimer(TIMER_NAME_HINT2, TIMER_TIME_HINT2);
+		Mission::StartSingleTimer(TIMER_NAME_PERSON_A, TIMER_TIME_PERSON_A);
+		Mission::StartSingleTimer(TIMER_NAME_PERSON_B, TIMER_TIME_PERSON_B);
+		Mission::StartSingleTimer(TIMER_NAME_HINT4, TIMER_TIME_HINT4);
+		Mission::StartSingleTimer(TIMER_NAME_SKYSCRAPER_COLLAPSE, TIMER_TIME_SKYSCRAPER_COLLAPSE);
+		Mission::StartSingleTimer(TIMER_NAME_UPDATE_DUST, (float)GetRandomValue(MIN_DUST_RESTART, MAX_DUST_RESTART));
+		//Mission::StartSingleTimer("test", 10.0f);
+		Mission::StartIntervalTimer(TIMER_NAME_WEATHER, TIMER_TIME_WEATHER);
+
+		// Debug
+		//SetupMaraudersA();
+		//SetupMaraudersB();
+		//Mission::StartSingleTimer(TIMER_NAME_FADEOUT, 15.f);
+
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+		Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRES);
+
+		Game::SetAmbientSoundVolumeByName(NAME_FLOOD_SOUND, 0.0f);
+		Audio::PlaySoundtrack("20", 0.0f);
+	}
+
+	bool OnCheckCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		if (Cmd_ == "EnterHouse" && (Target_->GetID() == mHousePersonA.GetID()
+			|| Target_->GetID() == mHousePersonB.GetID()))
+			return false;
+		return true;
+	}
+
+	bool OnPostCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		if (Cmd == "DriveAwayPerson" && (Target->GetID() == mPersonA.GetID() || Target->GetID() == mPersonB.GetID()))
+		{
+			Caller->ClearActions();
+			Person pc, pt;
+			pc = Person(Caller);
+			pt = Person(Target);
+			pt.SetEnteredHouseID(-1);
+			Caller->PushActionLinkPerson(ACTION_NEWLIST, &pt);
+			return false;
+		}
+		return true;
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data_)
+	{
+		switch (Action)
+		{
+			case "EActionBasketDown":
+				{
+					if (Data_->Owner->GetType() == ACTOR_PERSON)
+					{
+						Person ps(Data_->Owner);
+						Actor vc = Game::GetActor(ps.GetEnteredCarID());
+						Vehicle car(&vc);
+						if (car.GetInstallTargetID() == mHousePersonA.GetID())
+						{
+							System::Log("Show virtual house");
+							mHousePersonA.Show();
+						}
+						else if (car.GetInstallTargetID() == mHousePersonB.GetID())
+						{
+							System::Log("Show virtual house");
+							mHousePersonB.Show();
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionBasketUp":
+				{
+					if (Data_->Owner->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle car(Data_->Owner);
+						if (car.GetInstallTargetID() == mHousePersonA.GetID())
+						{
+							System::Log("Hide virtual house");
+							int enteredHouse = mPersonA.GetEnteredHouseID();
+							mHousePersonA.Hide();
+							mPersonA.SetEnteredHouseID(enteredHouse);
+						}
+						else if (car.GetInstallTargetID() == mHousePersonB.GetID())
+						{
+							System::Log("Hide virtual house");
+							int enteredHouse = mPersonB.GetEnteredHouseID();
+							mHousePersonB.Hide();
+							mPersonB.SetEnteredHouseID(enteredHouse);
+						}
+					}
+				}
+				break;
+			case "EActionDive":
+				{
+					for(int i = 0; i < MAX_DIVEAREAS; i++)
+					{
+						if (!mDiveAreaPersonFound[i] && mDiveAreaVOs[i].GetID() == Data_->Parameters[2].iValue)
+						{
+							switch(i)
+							{
+								case 0:
+									{
+										GameObjectList list(NAME_EFFECT_DIVEAREA1);
+										for (int j = 0; j < list.GetNumObjects(); j++)
+										{
+											list.GetObject(j)->StopParticleEffect();
+										}
+										break;
+									}
+								case 1:
+									{
+										GameObjectList list(NAME_EFFECT_DIVEAREA2);
+										for (int j = 0; j < list.GetNumObjects(); j++)
+										{
+											list.GetObject(j)->StopParticleEffect();
+										}
+										break;
+									}
+								case 2:
+									{
+										GameObjectList list(NAME_EFFECT_DIVEAREA3);
+										for (int j = 0; j < list.GetNumObjects(); j++)
+										{
+											list.GetObject(j)->StopParticleEffect();
+										}
+										break;
+									}
+								case 3:
+									{
+										GameObjectList list(NAME_EFFECT_DIVEAREA4);
+										for (int j = 0; j < list.GetNumObjects(); j++)
+										{
+											list.GetObject(j)->StopParticleEffect();
+										}
+										break;
+									}
+							}
+							mDiveAreaPersons[i].Show();
+							Person p(&mDiveAreaPersons[i]);
+							p.Injure(INJUREREASON_DROWN, false);
+							//Data_->Owner->SetLinkedPersonID(mDiveAreaPersons[i].GetID());
+							Data_->Owner->PushActionLift(ACTION_APPEND, &mDiveAreaPersons[i]);
+							//Person p(&mDiveAreaPersons[i]);
+							//p.Arrested(true, Data_->Owner);
+							//p.SetAnimation("swimperson02");
+							mDiveAreaPersonFound[i] = true;
+							System::Log("M20: Person %d under water found", i);
+							bool found = true;
+							for(int j = 0; j < MAX_DIVEAREAS; j++)
+								found &= mDiveAreaPersonFound[i];
+							if (found)	// alle Personen gefunden
+								Mission::StopTimer(TIMER_NAME_HINT7);
+							break;
+						}
+					}
+					break;
+				}
+			case "EActionPickUp":
+				{
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.HasName(NAME_DROWNING_PERSON))
+					{
+						Person p(&target);
+						p.SetObjectPath(NULL);
+						System::Log("M20: drowning person %d picked up");
+					}
+					break;
+				}
+			case "EActionJumpOnPad":
+				{
+					if (Data_->Owner->GetID() == mPersonA.GetID())
+					{
+						mPersonASaved = true;
+						mPersonA.PopIgnoreEnergy();
+					}
+					else if (Data_->Owner->GetID() == mPersonB.GetID())
+					{
+						mPersonBSaved = true;
+						mPersonB.PopIgnoreEnergy();
+					}
+				}
+				break;
+			case "EActionEnterHouse":
+				{
+					if (mHintCounter[10] == Data_->Parameters[0].iValue == mShop.GetID() && (Data_->Owner->HasName(NAME_MARAUDER_A) || Data_->Owner->HasName(NAME_MARAUDER_B)))
+					{
+						ShowHint(10);
+					}
+				}
+				break;
+			case "EActionLinkPerson":
+				{
+					if (!mPersonASaved && Data_->Parameters[0].iValue == mPersonA.GetID())
+					{
+						mPersonASaved = true;
+						mPersonA.PopIgnoreEnergy();
+						break;
+					}
+					else if (!mPersonBSaved && Data_->Parameters[0].iValue == mPersonB.GetID())
+					{
+						mPersonBSaved = true;
+						mPersonB.PopIgnoreEnergy();
+						break;
+					}
+					if (mMaraudersStartedA || mMaraudersStartedB)
+					{
+						System::Log("M20: Link person");
+						// Polizist hat Plünderer festgenommen
+						int n;
+						for (n=0; n<mNumMaraudersA; n++)
+						{
+							if (Data_->Parameters[0].iValue == mMaraudersA[n].GetID())
+							{
+								mOffsetsA[n] = mMaraudersA[n].GetPosition();
+								System::Log("M20: Marauder a arrested");
+								SetMaraudersAggressiveA();
+								break;
+							}
+						}
+						for (n=0; n<mNumMaraudersB; n++)
+						{
+							if (Data_->Parameters[0].iValue == mMaraudersB[n].GetID())
+							{
+								mOffsetsB[n] = mMaraudersB[n].GetPosition();
+								System::Log("M20: Marauder b arrested");
+								SetMaraudersAggressiveB();
+								break;
+							}
+						}
+					}
+					break;
+				}
+			case "EActionNegotiate":
+				{
+					if (mMaraudersStartedA || mMaraudersStartedB)
+					{
+						System::Log("M20: Negotiate");
+						for (int i=0; i<mNumMaraudersA; i++)
+						{
+							if (mMaraudersA[i].GetID() == Data_->Parameters[0].iValue)
+							{
+								// Plünderer angesprochen, alle beruhigen
+								System::Log("M20: Negotiate: calming down Marauder a");					
+								if (IsValidMarauderA(n))
+								{
+									System::Log("M20: Marauder a %d set to normal.",i);
+									mMaraudersA[n].SetRole(ROLE_CIVILIAN);
+									mMaraudersA[n].SetNeverResort(true);
+									mMaraudersA[n].StopMovement();
+									mMarauderStateA[n] = STATE_MARAUDER_NORMAL;
+									mMarauderTimerA[n] = MARAUDER_CALMDOWN_TIME;
+								}
+								break;
+							}
+						}
+						for (int i=0; i<mNumMaraudersB; i++)
+						{
+							if (mMaraudersB[i].GetID() == Data_->Parameters[0].iValue)
+							{
+								// Plünderer angesprochen, alle beruhigen
+								System::Log("M20: Negotiate: calming down Marauder b");					
+								if (IsValidMarauderB(n))
+								{
+									System::Log("M20: Marauder b %d set to normal.",i);
+									mMaraudersB[n].SetRole(ROLE_CIVILIAN);
+									mMaraudersB[n].SetNeverResort(true);
+									mMaraudersB[n].StopMovement();
+									mMarauderStateB[n] = STATE_MARAUDER_NORMAL;
+									mMarauderTimerB[n] = MARAUDER_CALMDOWN_TIME;
+								}
+								break;
+							}
+						}
+					}
+					break;
+				}
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnAbortAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionFistFight":
+				{
+					if (Data_->Parameters[2].iValue == 3)
+					{
+						Person p(Data_->Owner);
+						if (p.IsInjured())
+						{
+							Actor Target = Game::GetActor(Data_->Parameters[0].iValue);
+							Person t(&Target);
+							if (!t.IsInjured())
+								t.SetEquipment(EQUIP_PISTOL);
+						}
+					}
+					break;
+				}
+		}
+		return ACTION_CONTINUE;
+	}
+
+	bool OnHit(GameObject *Shooter_, GameObject *HitObject_, Vector *HitPoint_)
+	{
+		if (Shooter_->HasName(NAME_MARAUDER_A))
+		{
+			Person hit(HitObject_);
+			if (hit.IsInjured())
+			{
+				for(int i = 0; i < mNumMaraudersA; i++)
+				{
+					if (mMaraudersA[i].GetID() == Shooter_->GetID())
+					{
+						Vector pos = mMaraudersA[i].GetPosition();
+						pos.x += (Math::rand() % 200) - 100;
+						pos.y += (Math::rand() % 200) - 100;
+						mMaraudersA[i].PushActionMove(ACTION_INSERTAFTERFIRST, pos);
+						mMaraudersA[i].PushActionWait(ACTION_INSERTAFTERFIRST, 1.f);
+						mMarauderStateA[i] = STATE_MARAUDER_REPOSITION;
+						return false;
+					}
+				}
+			}
+		}
+		else if (Shooter_->HasName(NAME_MARAUDER_B))
+		{
+			Person hit(HitObject_);
+			if (hit.IsInjured())
+			{
+				for(int i = 0; i < mNumMaraudersB; i++)
+				{
+					if (mMaraudersB[i].GetID() == Shooter_->GetID())
+					{
+						Vector pos = mMaraudersB[i].GetPosition();
+						pos.x += (Math::rand() % 200) - 100;
+						pos.y += (Math::rand() % 200) - 100;
+						mMaraudersB[i].PushActionMove(ACTION_INSERTAFTERFIRST, pos);
+						mMaraudersB[i].PushActionWait(ACTION_INSERTAFTERFIRST, 1.f);
+						mMarauderStateB[i] = STATE_MARAUDER_REPOSITION;
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_NAME_LOAD_RADAR:
+				{
+					ScriptInterface::SetMission("ID_20b");
+					ScriptInterface::SetRadarTexture("mod:Maps/m20b");
+				}
+				break;
+			case TIMER_NAME_SECOND_DUSTCLOUD:
+				for(int i = 0; i < mParticleList[4].GetNumObjects(); i++)
+				{
+					mParticleList[4].GetObject(i)->StartParticleEffect();
+				}
+				break;
+			case TIMER_NAME_SHOW_RUIN:
+				mCrashRuin.Show();
+				break;
+			case TIMER_NAME_END_CUTSCENE:				
+				GameObjectList areaCollapse;
+				if (Game::CollectObstaclesOnTrigger(NAME_TRIGGER_SKYSCRAPER, areaCollapse, ACTOR_VEHICLE|ACTOR_PERSON))
+				{
+					for ( int i=0; i < areaCollapse.GetNumObjects(); i++ )
+					{
+						if (areaCollapse.GetObject(i)->GetType() == ACTOR_PERSON)
+						{
+							Person p = (Person*)(areaCollapse.GetObject(i));
+							p.Kill();
+						}
+						else
+							areaCollapse.GetObject(i)->PushActionDeleteOwner(ACTION_NEWLIST);
+					}
+				}
+				CutsceneEnding();
+				break;
+			case TIMER_NAME_HINT2:
+				if (mHintCounter[2] == 0 && !mPersonASaved)
+					ShowHint(2);
+				break;
+			case TIMER_NAME_PERSON_A:
+				if (!mPersonASaved)
+				{
+					// Abstürzen lassen					
+					mPersonA.EnablePhysicsSimulation();
+					mPersonA.Kill();
+					mPersonA.SetEnteredHouseID(-1);
+					mHousePersonA.Hide();
+				}
+				break;
+			case TIMER_NAME_PERSON_B:
+				if (!mPersonBSaved)
+				{
+					// Abstürzen lassen					
+					mPersonB.EnablePhysicsSimulation();
+					mPersonB.Kill();
+					mPersonB.SetEnteredHouseID(-1);
+					mHousePersonB.Hide();
+				}
+				break;
+			case TIMER_NAME_HINT4:
+				if (mHintCounter[4] == 0)
+					ShowHint(4);
+				break;
+			case TIMER_NAME_SKYSCRAPER_COLLAPSE:
+				{
+					Mission::StopTimer(TIMER_NAME_UPDATE_DUST);
+					RunCutscene();
+				}
+				break;
+			case TIMER_NAME_HINT6_1:
+			case TIMER_NAME_HINT6_2:
+				ShowHint(6);
+				break;
+			case TIMER_NAME_HOUSE1_COLLAPSE:
+				// Einsturz Haus 1
+				HouseSink(0);
+				break;
+			case TIMER_NAME_HOUSE2_COLLAPSE:
+				// Einsturz Haus 2
+				HouseSink(1);
+				break;
+			case TIMER_NAME_HINT7:
+				if (mHintCounter[7] == 0)
+					ShowHint(7);
+				break;
+			case TIMER_NAME_UPDATE_DUST:
+				{
+					for(int i = 0; i < mEmitterDust.GetNumObjects(); i++)
+						mEmitterDust.GetObject(i)->StartParticleEffect();					
+					Mission::StartSingleTimer(TIMER_NAME_UPDATE_DUST, (float)GetRandomValue(MIN_DUST_RESTART, MAX_DUST_RESTART));
+					Audio::PlaySample3D(NAME_BEFORE_COLLAPSE, mCrashHouse.GetPosition());
+				}
+				break;
+			case TIMER_NAME_UPDATE_MARAUDERS:
+				UpdateMarauders();
+				break;
+			case TIMER_NAME_MARAUDERS_A:
+				SetupMaraudersA();
+				break;
+			case TIMER_NAME_MARAUDERS_B:
+				SetupMaraudersB();
+				break;
+			case TIMER_NAME_WEATHER:
+				{
+					float fogIntensity = Weather::GetFogIntensity();
+					float stormIntensity = Weather::GetStormIntensity();
+					fogIntensity -= 10.f/WEATHER_OFF_TIME * mFogIntensity;
+					stormIntensity -= 10.f/WEATHER_OFF_TIME * mStormIntensity;
+					if (fogIntensity < 0.25f)
+					{
+						fogIntensity = 0.25f;
+						//Weather::SetFogVisible(false);
+					}
+					if (stormIntensity < 0.16f)
+					{
+						stormIntensity = 0.16f;
+						//Weather::SetStormVisible(false);
+					}
+					if (fogIntensity < 0.25001f && stormIntensity < 0.16001f)
+						Mission::StopTimer(TIMER_NAME_WEATHER);
+					Weather::SetFogIntensity(fogIntensity);
+					Weather::SetStormIntensity(stormIntensity);
+				}
+				break;
+			case TIMER_NAME_FADEOUT:
+				{
+					StartScene2();
+					Camera::SetCameraToLocation(NAME_LOCATION_S2);
+				}
+				break;
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path, GameObject *Obj)
+	{
+		System::Log("M20: End of path: %s",Path);			
+		for (int i=0; i<MAX_MARAUDERS; i++)
+		{
+			if (StrCompare(Path, mMarauderPathNamesA[i % 4])==0)
+			{
+				if (IsValidMarauderA(i) && (mMaraudersA[i].GetID() == Obj->GetID()))
+				{
+					System::Log("M20: Marauder a %d reached end of path.", i);			
+					Vector pos;
+					Vector tpos;
+					tpos = mShop.GetPosition();
+					pos = mMaraudersA[i].GetPosition();
+					pos.x += (Math::rand() % 200) - 100;
+					pos.y += (Math::rand() % 200) - 100;
+					mMaraudersA[i].PushActionMove(ACTION_NEWLIST, pos);
+					mMaraudersA[i].PushActionTurnTo(ACTION_APPEND, tpos);
+					mMarauderStateA[i] = STATE_MARAUDER_REPOSITION;
+					mMaraudersA[i].SetRole(ROLE_CIVILIAN);
+					mMaraudersA[i].SetNeverResort(true);
+					mMarauderTimerA[i] = 0;
+					mNumMaraudersAtTargetA++;
+					if (mNumMaraudersAtTargetA == mNumMaraudersCurrentA)
+					{
+						mShopReachedA = true;
+					}
+					return PATH_STOP;
+				}
+			}
+			else if (StrCompare(Path, mMarauderPathNamesB[i % 4])==0)
+			{
+				if (IsValidMarauderB(i) && (mMaraudersB[i].GetID() == Obj->GetID()))
+				{
+					System::Log("M20: Marauder b %d reached end of path.", i);			
+					Vector pos;
+					Vector tpos;
+					tpos = mShop.GetPosition();
+					pos = mMaraudersB[i].GetPosition();
+					pos.x += (Math::rand() % 200) - 100;
+					pos.y += (Math::rand() % 200) - 100;
+					mMaraudersB[i].PushActionMove(ACTION_NEWLIST, pos);
+					mMaraudersB[i].PushActionTurnTo(ACTION_APPEND, tpos);
+					mMarauderStateB[i] = STATE_MARAUDER_REPOSITION;
+					mMaraudersB[i].SetRole(ROLE_CIVILIAN);
+					mMaraudersB[i].SetNeverResort(true);
+					mMarauderTimerB[i] = 0;
+					mNumMaraudersAtTargetB++;
+					if (mNumMaraudersAtTargetB == mNumMaraudersCurrentB)
+					{
+						mShopReachedB = true;
+					}
+					return PATH_STOP;
+				}
+			}
+			else if (StrCompare(Path, mMarauderFlightPathNamesA[i % 4])==0 && Obj->HasName(NAME_MARAUDER_A))
+			{
+				if (!mMaraudersAttacked || Obj->GetEquipment() == EQUIP_PISTOL)
+					mMarauderLeft = true;
+				break;
+			}
+			else if (StrCompare(Path, mMarauderFlightPathNamesB[i % 4])==0 && Obj->HasName(NAME_MARAUDER_B))
+			{
+				if (!mMaraudersAttacked || Obj->GetEquipment() == EQUIP_PISTOL)
+					mMarauderLeft = true;
+				break;
+			}
+		}
+		return PATH_DEFAULT;
+	}
+
+	void HouseSink(int nr_)
+	{
+		switch(nr_)
+		{
+			case 0:
+				{
+					mCollapsingHouse1.EnablePhysicsSimulation();
+					mCollapsingHouse1.SetCollisionMode(PHYSIC_COLLISION_NONE);
+					GameObjectList list;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_COLLAPSING1, list, ACTOR_PERSON);
+					for(int i = 0; i < list.GetNumObjects(); i++)
+					{
+						Person p(list.GetObject(i));
+						p.Kill();
+						p.PushActionDisappear(ACTION_NEWLIST, 1.f);
+					}
+					GameObjectList reffects(NAME_EFFECT_COLLAPSING1);
+					for(int i = 0; i < reffects.GetNumObjects(); i++)
+					{
+						reffects.GetObject(i)->StartParticleEffect();
+					}
+					break;
+				}
+			case 1:
+				{
+					mCollapsingHouse2.EnablePhysicsSimulation();
+					mCollapsingHouse2.SetCollisionMode(PHYSIC_COLLISION_NONE);
+					GameObjectList list;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_COLLAPSING2, list, ACTOR_PERSON);
+					for(int i = 0; i < list.GetNumObjects(); i++)
+					{
+						Person p(list.GetObject(i));
+						p.Kill();
+						p.PushActionDisappear(ACTION_NEWLIST, 1.f);
+					}
+					GameObjectList reffects(NAME_EFFECT_COLLAPSING2);
+					for(int i = 0; i < reffects.GetNumObjects(); i++)
+					{
+						reffects.GetObject(i)->StartParticleEffect();
+					}
+					break;
+				}
+		}
+	}
+
+	void SetupMaraudersA()
+	{
+		System::Log("M20: SetupMaraudersA()");
+		for(int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			if (mMaraudersA[i].IsValid())
+			{
+				mMaraudersA[i].SetObjectPath(mMarauderPathNamesA[i % 4]);
+				mMarauderStateA[i] = STATE_MARAUDER_WALK;
+			}
+		}
+		ShowHint(8);
+		Mission::AddObjective(OBJECTIVE_CATCH_MARAUDERS);
+		Mission::PlayComment(MARAUDERS_REPORTED);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_MARAUDERS, TIMER_TIME_UPDATE_MARAUDERS);
+		mMaraudersStartedA = true;
+	}
+
+	void SetupMaraudersB()
+	{
+		System::Log("M20: SetupMaraudersB()");
+		for(int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			if (mMaraudersB[i].IsValid())
+			{
+				mMaraudersB[i].SetObjectPath(mMarauderPathNamesB[i % 4]);
+				mMarauderStateB[i] = STATE_MARAUDER_WALK;
+			}
+		}
+		ShowHint(9);
+		mMaraudersStartedB = true;
+	}
+
+	void UpdateMarauders()
+	{
+		if (!MaraudersAggressiveA())
+		{
+			for(int i = 0; i < mNumMaraudersA; i++)
+			{
+				// Wasserwerfer Einsatz oder sonstiges?
+				if (mMaraudersA[i].IsResorting())
+				{
+					SetMaraudersAggressiveA();
+					break;
+				}
+			}
+		}
+		if (!MaraudersAggressiveB())
+		{
+			for(int i = 0; i < mNumMaraudersB; i++)
+			{
+				// Wasserwerfer Einsatz oder sonstiges?
+				if (mMaraudersB[i].IsResorting())
+				{
+					SetMaraudersAggressiveB();
+					break;
+				}
+			}
+		}
+		int numValid = 0;
+		Vector pos;
+		int NumMaraudersWithGunA = 0;
+		for(int i = 0; i < mNumMaraudersA; i++)
+		{
+			if (mMaraudersA[i].IsValid() && mMaraudersA[i].IsInjured())
+			{
+				mNumMaraudersCurrentA--;
+				mMaraudersA[i] = Person();
+				if (mNumMaraudersAtTargetA == mNumMaraudersCurrentA && mNumMaraudersCurrentA > 0)
+				{
+					mShopReachedA = true;
+				}
+				continue;
+			}
+			if (mMaraudersA[i].IsValid() && mMarauderWithGunA[i])
+				NumMaraudersWithGunA++;
+			if (IsValidMarauderA(i))
+			{
+				//if (mMarauderWithGunA[i])
+				//	NumMaraudersWithGunA++;
+				numValid++;
+				pos = mMaraudersA[i].GetPosition();
+				switch(mMarauderStateA[i])
+				{
+					case STATE_MARAUDER_WAIT:
+						{
+							if (IsMarauderTargetAvailableA() || mMaraudersA[i].IsSquadInRange(12.5f * 50.f))
+							{
+								mMarauderStateA[i] = STATE_MARAUDER_AGGRESSIVE;
+								break;
+							}
+							// Hier mal schreien, Arme hochreißen... etc
+							mMarauderTimerA[i]--;
+							//System::Log("M20: Marauder a timer %d", mMarauderTimerA[i]);
+							if (mMarauderTimerA[i]<=0)
+							{
+								// Weiterlaufen
+								if (!mMaraudersFleeing && mNumMaraudersWithGunA > 0)
+								{
+									mMarauderStateA[i] = STATE_MARAUDER_WALK;
+									System::Log("M20: Marauder a %d state WALK set", i);
+								}
+								else
+								{
+									mMarauderStateA[i] = STATE_MARAUDER_FLEEING;
+									System::Log("M20: Marauder a %d state FLEEING set", i);
+								}
+
+								mMarauderTimerA[i] = MARAUDER_WALK_TIME;
+							}
+							else switch (Math::rand()%10)
+							{
+								case 0:	mMaraudersA[i].PushActionWait(ACTION_INSERT,1);
+									break;
+								case 1: mMaraudersA[i].PushActionSwitchAnim(ACTION_INSERT,DEMONSTRATE);
+									break;
+								case 2: mMaraudersA[i].PushActionSwitchAnim(ACTION_INSERT,WAVE_HELP);
+									break;
+								case 3: mMaraudersA[i].PushActionSwitchAnim(ACTION_INSERT,IDLE);
+									break;
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_WALK:
+						{
+							if (!mMaraudersA[i].HasObjectPath(mMarauderPathNamesA[i % 4]))
+								mMaraudersA[i].SetObjectPath(mMarauderPathNamesA[i % 4]);
+							mMarauderTimerA[i]--;
+							if (mMarauderTimerA[i]<=0)
+							{
+								mMarauderStateA[i] = STATE_MARAUDER_WAIT;
+								mMarauderTimerA[i] = MARAUDER_WAIT_TIME;
+								mMaraudersA[i].StopMovement();
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_REPOSITION:
+						{
+							// Am Geschäft angekommen, etwas die Leute verteilen
+							if (!mMaraudersA[i].IsCurrentAction(ACTION_FINDPATH) && 
+								!mMaraudersA[i].IsCurrentAction(ACTION_MOVE))
+							{
+								mMarauderStateA[i] = STATE_MARAUDER_FIGHT;
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_AGGRESSIVE:
+						{
+							if (mMaraudersA[i].GetRole()!=ROLE_GANGSTER)
+							{
+								System::Log("M20: Setting role and behaviour a");
+								// Save old Position
+								mOffsetsA[i] = mMaraudersA[i].GetPosition();
+								// Set Gangster Role
+								mMaraudersA[i].SetRole(ROLE_GANGSTER);
+								mMaraudersA[i].SetCivilsFleeRange(0.f);
+								//mMaraudersA[i].SetNeverResort(false);
+								if (mMaraudersA[i].GetEquipment() == EQUIP_PISTOL)
+								{
+									System::Log("M20: Marauder a is a AttackSquad.");
+									mMaraudersA[i].SetShootPower(MARAUDER_SHOOTPOWER);
+									mMaraudersA[i].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+								} 
+								else 
+								{
+									System::Log("M20: Marauder a is a fist fighter.");
+									mMaraudersA[i].SetBehaviour(BEHAVIOUR_GANGSTER_FISTFIGHT);
+								}
+								mMaraudersA[i].PushActionDrop(ACTION_NEWLIST);
+								mMaraudersA[i].PushActionWait(ACTION_APPEND, (Math::rand() % 3));
+							}
+							else if (mMaraudersA[i].GetAimTargetID()==-1) // Falls kein target mehr gefunden, wechsele Zustand
+							{
+								System::Log("M20: Kein Target mehr, wechsle Role, zurück zum Ausgangspunkt a! %d",i);
+								mMaraudersA[i].StopMovement();
+								mMaraudersA[i].SetRole(ROLE_CIVILIAN);
+								mMaraudersA[i].SetNeverResort(true);
+								// Goto old Position							
+								mMarauderStateA[i] = STATE_MARAUDER_GOTOPOS;
+								mMaraudersA[i].PushActionMove(ACTION_NEWLIST, mOffsetsA[i]);
+							}					
+							break;
+						}
+						break;
+					case STATE_MARAUDER_GOTOPOS:
+						{
+							//System::Log("DEMO: Goto Pos %d (T:%d)", i,mPersonTimer[i]);
+							if (!mMaraudersA[i].IsCurrentAction(ACTION_FINDPATH) && 
+								!mMaraudersA[i].IsCurrentAction(ACTION_MOVE))
+							{
+								// noch nicht angekommen, mal weitergehen
+								mMarauderStateA[i] = STATE_MARAUDER_WAIT;								
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_NORMAL:
+						{
+							System::Log("M20: Normal a %d (T:%d)", i,mMarauderTimerA[i]);
+
+							if (mMaraudersA[i].GetRole()!=ROLE_CIVILIAN)
+								mMaraudersA[i].SetRole(ROLE_CIVILIAN);
+
+							// Plünderer wurde beruhigt und sagt jetzt nichts mehr (1 Minute)
+							mMarauderTimerA[i]--;
+							if (mMarauderTimerA[i]<=0)
+							{
+								mMarauderStateA[i] = STATE_MARAUDER_GOTOPOS;
+							}					
+							break;
+						}
+						break;
+					case STATE_MARAUDER_FLEEING:
+						{
+							mMaraudersFleeing = true;
+							if (!mMaraudersA[i].HasObjectPath(mMarauderFlightPathNamesA[i % 4]))
+								mMaraudersA[i].SetObjectPath(mMarauderFlightPathNamesA[i % 4]);
+							mMarauderTimerA[i]--;
+							if (mMarauderTimerA[i]<=0)
+							{
+								mMarauderStateA[i] = STATE_MARAUDER_WAIT;
+								mMarauderTimerA[i] = MARAUDER_WAIT_TIME;
+								mMaraudersA[i].StopMovement();
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_FIGHT:
+						{
+							if (mNumMaraudersCurrentB == 0)
+							{
+								mMarauderStateA[i] = STATE_MARAUDER_ENTERSHOP;
+								break;
+							}
+							if (!mShopReachedB)
+							{
+								mMarauderStateA[i] = STATE_MARAUDER_WAIT;
+								break;
+							}
+							if (mMaraudersA[i].IsIdle())
+							{
+								mMaraudersA[i].SetRole(ROLE_GANGSTER);
+								mMaraudersA[i].SetCivilsFleeRange(0.f);
+								mMaraudersA[i].SetShootPower(MARAUDER_SHOOTPOWER);
+								if (mMaraudersA[i].GetEquipment() == EQUIP_PISTOL)
+								{
+									bool efound = false;
+									GameObjectList list = mMaraudersA[i].GetObjectsInRange(MARAUDER_ACTION_RANGE, ACTOR_PERSON);
+									for(int k = 0; k < list.GetNumObjects(); k++)
+									{
+										Person p(list.GetObject(k));
+										if (!p.IsInjured() && p.HasName(NAME_MARAUDER_B))
+										{
+											mMaraudersA[i].PushActionShoot(ACTION_NEWLIST, &p);
+											efound = true;
+											break;
+										}
+									}
+									if (list.GetNumObjects() == 0 || !efound)
+									{
+										for(int k = 0; k < mNumMaraudersB; k++)
+										{
+											if (IsValidMarauderB(k))
+											{
+												mMaraudersA[i].PushActionMove(ACTION_NEWLIST, &mMaraudersB[i], TARGET_TOUCHPERSON);
+												break;
+											}
+										}
+									}
+								}
+								else
+								{
+									if (IsValidMarauderB(i))
+									{
+										mMaraudersA[i].PushActionMove(ACTION_NEWLIST, &mMaraudersB[i], TARGET_TOUCHPERSON);
+										mMaraudersA[i].PushActionFistFight(ACTION_APPEND, &mMaraudersB[i], true);
+									}
+									else
+									{
+										GameObjectList list = mMaraudersA[i].GetObjectsInRange(MARAUDER_ACTION_RANGE, ACTOR_PERSON);
+										for(int k = 0; k < list.GetNumObjects(); k++)
+										{
+											Person p(list.GetObject(k));
+											if (!p.IsInjured() && p.HasName(NAME_MARAUDER_B))
+											{
+												mMaraudersA[i].PushActionMove(ACTION_NEWLIST, &p, TARGET_TOUCHPERSON);
+												mMaraudersA[i].PushActionFistFight(ACTION_APPEND, &p, true);
+												break;
+											}
+										}
+										if (list.GetNumObjects() == 0)
+										{
+											for(int k = 0; k < mNumMaraudersB; k++)
+											{
+												if (IsValidMarauderB(k))
+												{
+													mMaraudersA[i].PushActionMove(ACTION_NEWLIST, &mMaraudersB[i], TARGET_TOUCHPERSON);
+													break;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						break;
+					case STATE_MARAUDER_ENTERSHOP:
+						{
+							ActorList shoparea(NAME_AREA_SHOP);
+							if (shoparea.GetNumActors() > 0)
+							{
+								mMaraudersA[i].PushActionMove(ACTION_NEWLIST, shoparea.GetActor(0), TARGET_RANDOM);
+								mMarauderTimerA[i] = GetRandomValue(MARAUDER_MIN_SHOP_WAITTIME, MARAUDER_MAX_SHOP_WAITTIME);
+								mMarauderStateA[i] = STATE_MARAUDER_WAIT;
+								mMaraudersFleeing = true;
+							}
+							else
+								System::Log("M20: a shoparea is missing");
+						}
+						break;
+				}
+			}
+		}
+		mNumMaraudersWithGunA = NumMaraudersWithGunA;
+		if (!mMaraudersStartedB)
+			return;
+		int NumMaraudersWithGunB = 0;
+		numValid = 0;
+		for(int i = 0; i < mNumMaraudersB; i++)
+		{
+			if (mMaraudersB[i].IsValid() && mMaraudersB[i].IsInjured())
+			{
+				mNumMaraudersCurrentB--;
+				mMaraudersB[i] = Person();
+				if (mNumMaraudersAtTargetB == mNumMaraudersCurrentB && mNumMaraudersCurrentB > 0)
+				{
+					mShopReachedB = true;
+				}
+				continue;
+			}
+			if (mMaraudersB[i].IsValid() && mMarauderWithGunB[i])
+				NumMaraudersWithGunB++;
+			if (IsValidMarauderB(i))
+			{
+				//if (mMarauderWithGunB[i])
+				//	NumMaraudersWithGunB++;
+				numValid++;
+				pos = mMaraudersB[i].GetPosition();
+				switch(mMarauderStateB[i])
+				{
+					case STATE_MARAUDER_WAIT:
+						{
+							if (IsMarauderTargetAvailableB() || mMaraudersB[i].IsSquadInRange(12.5f * 50.f))
+							{
+								mMarauderStateB[i] = STATE_MARAUDER_AGGRESSIVE;
+								break;
+							}
+							// Hier mal schreien, Arme hochreißen... etc
+							mMarauderTimerB[i]--;
+							if (mMarauderTimerB[i]<=0)
+							{
+								// Weiterlaufen
+								if (!mMaraudersFleeing && mNumMaraudersWithGunB > 0)
+								{
+									mMarauderStateB[i] = STATE_MARAUDER_WALK;
+									System::Log("M20: Marauder b %d state WALK set", i);
+								}
+								else
+								{
+									mMarauderStateB[i] = STATE_MARAUDER_FLEEING;
+									System::Log("M20: Marauder b %d state FLEEING set", i);
+								}
+
+								mMarauderTimerB[i] = MARAUDER_WALK_TIME;
+							}
+							else switch (Math::rand()%10)
+							{
+								case 0:	mMaraudersB[i].PushActionWait(ACTION_INSERT,1);
+									break;
+								case 1: mMaraudersB[i].PushActionSwitchAnim(ACTION_INSERT,DEMONSTRATE);
+									break;
+								case 2: mMaraudersB[i].PushActionSwitchAnim(ACTION_INSERT,WAVE_HELP);
+									break;
+								case 3: mMaraudersB[i].PushActionSwitchAnim(ACTION_INSERT,IDLE);
+									break;
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_WALK:
+						{
+							if (!mMaraudersB[i].HasObjectPath(mMarauderPathNamesB[i % 4]))
+								mMaraudersB[i].SetObjectPath(mMarauderPathNamesB[i % 4]);
+							mMarauderTimerB[i]--;
+							if (mMarauderTimerB[i]<=0)
+							{
+								mMarauderStateB[i] = STATE_MARAUDER_WAIT;
+								mMarauderTimerB[i] = MARAUDER_WAIT_TIME;
+								mMaraudersB[i].StopMovement();
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_REPOSITION:
+						{
+							// Am Geschäft angekommen, etwas die Leute verteilen
+							if (!mMaraudersB[i].IsCurrentAction(ACTION_FINDPATH) && 
+								!mMaraudersB[i].IsCurrentAction(ACTION_MOVE))
+							{
+								mMarauderStateB[i] = STATE_MARAUDER_FIGHT;
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_AGGRESSIVE:
+						{
+							if (mMaraudersB[i].GetRole()!=ROLE_GANGSTER)
+							{
+								System::Log("M20: Setting role and behaviour b");
+								// Save old Position
+								mOffsetsB[i] = mMaraudersB[i].GetPosition();
+								// Set Gangster Role
+								mMaraudersB[i].SetRole(ROLE_GANGSTER);
+								mMaraudersB[i].SetCivilsFleeRange(0.f);
+								//mMaraudersB[i].SetNeverResort(false);
+								if (mMaraudersB[i].GetEquipment() == EQUIP_PISTOL)
+								{
+									System::Log("M20: Marauder b is a AttackSquad.");
+									mMaraudersB[i].SetShootPower(MARAUDER_SHOOTPOWER);
+									mMaraudersB[i].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+								} 
+							else 
+							{
+								System::Log("M20: Marauder b is a fist fighter.");
+								mMaraudersB[i].SetBehaviour(BEHAVIOUR_GANGSTER_FISTFIGHT);
+							}
+							mMaraudersB[i].PushActionDrop(ACTION_NEWLIST);
+							mMaraudersB[i].PushActionWait(ACTION_APPEND, (Math::rand() % 3));
+							}
+							else if (mMaraudersB[i].GetAimTargetID()==-1) // Falls kein target mehr gefunden, wechsele Zustand
+							{
+								System::Log("M20: Kein Target mehr, wechsle Role, zurück zum Ausgangspunkt! b %d",i);
+								mMaraudersB[i].StopMovement();
+								mMaraudersB[i].SetRole(ROLE_CIVILIAN);
+								mMaraudersB[i].SetNeverResort(true);
+								// Goto old Position							
+								mMarauderStateB[i] = STATE_MARAUDER_GOTOPOS;
+								mMaraudersB[i].PushActionMove(ACTION_NEWLIST, mOffsetsB[i]);
+							}					
+							break;
+						}
+						break;
+					case STATE_MARAUDER_GOTOPOS:
+						{
+							//System::Log("DEMO: Goto Pos %d (T:%d)", i,mPersonTimer[i]);
+							if (!mMaraudersB[i].IsCurrentAction(ACTION_FINDPATH) && 
+								!mMaraudersB[i].IsCurrentAction(ACTION_MOVE))
+							{
+								// noch nicht angekommen, mal weitergehen
+								mMarauderStateB[i] = STATE_MARAUDER_WAIT;								
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_NORMAL:
+						{
+							System::Log("M20: Normal b %d (T:%d)", i,mMarauderTimerB[i]);
+
+							if (mMaraudersB[i].GetRole()!=ROLE_CIVILIAN)
+								mMaraudersB[i].SetRole(ROLE_CIVILIAN);
+
+							// Plünderer wurde beruhigt und sagt jetzt nichts mehr (1 Minute)
+							mMarauderTimerB[i]--;
+							if (mMarauderTimerB[i]<=0)
+							{
+								mMarauderStateB[i] = STATE_MARAUDER_GOTOPOS;
+							}					
+							break;
+						}
+						break;
+					case STATE_MARAUDER_FLEEING:
+						{
+							mMaraudersFleeing = true;
+							if (!mMaraudersB[i].HasObjectPath(mMarauderFlightPathNamesB[i % 4]))
+								mMaraudersB[i].SetObjectPath(mMarauderFlightPathNamesB[i % 4]);
+							mMarauderTimerB[i]--;
+							if (mMarauderTimerB[i]<=0)
+							{
+								mMarauderStateB[i] = STATE_MARAUDER_WAIT;
+								mMarauderTimerB[i] = MARAUDER_WAIT_TIME;
+								mMaraudersB[i].StopMovement();
+							}
+							break;
+						}
+						break;
+					case STATE_MARAUDER_FIGHT:
+						{
+							if (mNumMaraudersCurrentA == 0)
+							{
+								mMarauderStateB[i] = STATE_MARAUDER_ENTERSHOP;
+								break;
+							}
+							if (!mShopReachedA)
+							{
+								mMarauderStateB[i] = STATE_MARAUDER_WAIT;
+								break;
+							}
+							if (mMaraudersB[i].IsIdle())
+							{
+								mMaraudersB[i].SetRole(ROLE_GANGSTER);
+								mMaraudersA[i].SetCivilsFleeRange(0.f);
+								mMaraudersB[i].SetShootPower(MARAUDER_SHOOTPOWER);
+								if (mMaraudersB[i].GetEquipment() == EQUIP_PISTOL)
+								{
+									bool efound = false;
+									GameObjectList list = mMaraudersB[i].GetObjectsInRange(MARAUDER_ACTION_RANGE, ACTOR_PERSON);
+									for(int k = 0; k < list.GetNumObjects(); k++)
+									{
+										Person p(list.GetObject(k));
+										if (!p.IsInjured() && p.HasName(NAME_MARAUDER_A))
+										{
+											mMaraudersB[i].PushActionShoot(ACTION_NEWLIST, &p);
+											efound = true;
+											break;
+										}
+									}
+									if (list.GetNumObjects() == 0 || !efound)
+									{
+										for(int k = 0; k < mNumMaraudersA; k++)
+										{
+											if (IsValidMarauderA(k))
+											{
+												mMaraudersB[i].PushActionMove(ACTION_NEWLIST, &mMaraudersA[i], TARGET_TOUCHPERSON);
+												break;
+											}
+										}
+									}
+								}
+								else
+								{
+									if (IsValidMarauderA(i))
+									{
+										mMaraudersB[i].PushActionMove(ACTION_NEWLIST, &mMaraudersA[i], TARGET_TOUCHPERSON);
+										mMaraudersB[i].PushActionFistFight(ACTION_APPEND, &mMaraudersA[i], true);
+									}
+									else
+									{
+										GameObjectList list = mMaraudersB[i].GetObjectsInRange(MARAUDER_ACTION_RANGE, ACTOR_PERSON);
+										for(int k = 0; k < list.GetNumObjects(); k++)
+										{
+											Person p(list.GetObject(k));
+											if (!p.IsInjured() && p.HasName(NAME_MARAUDER_A))
+											{
+												mMaraudersB[i].PushActionMove(ACTION_NEWLIST, &p, TARGET_TOUCHPERSON);
+												mMaraudersB[i].PushActionFistFight(ACTION_APPEND, &p, true);
+												break;
+											}
+										}
+										if (list.GetNumObjects() == 0)
+										{
+											for(int k = 0; k < mNumMaraudersA; k++)
+											{
+												if (IsValidMarauderA(k))
+												{
+													mMaraudersB[i].PushActionMove(ACTION_NEWLIST, &mMaraudersA[i], TARGET_TOUCHPERSON);
+													break;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						break;
+					case STATE_MARAUDER_ENTERSHOP:
+						{
+							ActorList shoparea(NAME_AREA_SHOP);
+							if (shoparea.GetNumActors() > 0)
+							{
+								mMaraudersA[i].PushActionMove(ACTION_NEWLIST, shoparea.GetActor(0), TARGET_RANDOM);
+								mMarauderTimerA[i] = GetRandomValue(MARAUDER_MIN_SHOP_WAITTIME, MARAUDER_MAX_SHOP_WAITTIME);
+								mMarauderStateA[i] = STATE_MARAUDER_WAIT;
+								mMaraudersFleeing = true;
+							}
+							else
+								System::Log("M20: b shoparea is missing");
+						}
+						break;
+				}
+			}
+		}
+		mNumMaraudersWithGunB = NumMaraudersWithGunB;
+	}
+
+	bool OnHalt(Person *source_, GameObject *receiver_)
+	{		
+		for (int i=0; i<mNumMaraudersA; i++)
+		{
+			if ((receiver_->GetID() == mMaraudersA[i].GetID()) && IsValidMarauderA(i))
+			{
+				mOffsetsA[i] = mMaraudersA[i].GetPosition();
+				SetMaraudersAggressiveA();
+				return false;
+			}
+		}
+		for (int i=0; i<mNumMaraudersB; i++)
+		{
+			if ((receiver_->GetID() == mMaraudersB[i].GetID()) && IsValidMarauderB(i))
+			{
+				mOffsetsB[i] = mMaraudersB[i].GetPosition();
+				SetMaraudersAggressiveB();
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool MaraudersAggressiveA()
+		// Liefert true, falls noch Leute agressiv 
+	{
+		for (int i=0; i<mNumMaraudersA; i++)
+		{
+			if (IsValidMarauderA(i) && (mMarauderStateA[i]==STATE_MARAUDER_AGGRESSIVE)) 
+				return true;
+		}
+		return false;
+	}
+
+	bool MaraudersAggressiveB()
+		// Liefert true, falls noch Leute agressiv 
+	{
+		for (int i=0; i<mNumMaraudersB; i++)
+		{
+			if (IsValidMarauderB(i) && (mMarauderStateB[i]==STATE_MARAUDER_AGGRESSIVE)) 
+				return true;
+		}
+		return false;
+	}
+
+	bool IsMarauderTargetAvailableA()
+	{
+		// liefert true, falls ein Demonstant ein noch gültiges Ziel hat,
+		// das dann alle Demonstranten zusammen bekämpfen
+		for (int i=0; i<mNumMaraudersA; i++)
+		{
+			if (IsValidMarauderA(i) && (mMarauderStateA[i]==STATE_MARAUDER_AGGRESSIVE) && (mMaraudersA[i].GetAimTargetID()!=-1)) 
+				return true;
+		}
+		return false;
+	}
+
+	bool IsMarauderTargetAvailableB()
+	{
+		// liefert true, falls ein Demonstant ein noch gültiges Ziel hat,
+		// das dann alle Demonstranten zusammen bekämpfen
+		for (int i=0; i<mNumMaraudersB; i++)
+		{
+			if (IsValidMarauderB(i) && (mMarauderStateB[i]==STATE_MARAUDER_AGGRESSIVE) && (mMaraudersB[i].GetAimTargetID()!=-1)) 
+				return true;
+		}
+		return false;
+	}
+
+	bool IsValidMarauderA(int person)
+	{
+		return (mMaraudersA[person].IsValid() && !mMaraudersA[person].IsInjured() && 
+			!mMaraudersA[person].IsDead() && !mMaraudersA[person].IsLinkedWithPerson() &&
+			!mMaraudersA[person].IsArrested() && (mMaraudersA[person].GetEnteredCarID()==-1) &&
+			!mMaraudersA[person].IsResorting());
+	}
+
+	bool IsValidMarauderB(int person)
+	{
+		return (mMaraudersB[person].IsValid() && !mMaraudersB[person].IsInjured() && 
+			!mMaraudersB[person].IsDead() && !mMaraudersB[person].IsLinkedWithPerson() &&
+			!mMaraudersB[person].IsArrested() && (mMaraudersB[person].GetEnteredCarID()==-1) &&
+			!mMaraudersB[person].IsResorting());
+	}
+
+	void SetMaraudersAggressiveA()
+	{
+		for (int i=0; i<mNumMaraudersA; i++)
+		{
+			if (IsValidMarauderA(i) && (mMarauderStateA[i]!=STATE_MARAUDER_NORMAL && mMarauderStateA[i]!=STATE_MARAUDER_FIGHT)) 
+			{
+				mMarauderStateA[i] = STATE_MARAUDER_AGGRESSIVE;
+			}
+		}
+		mMaraudersAttacked = true;
+	}
+
+	void SetMaraudersAggressiveB()
+	{
+		for (int i=0; i<mNumMaraudersB; i++)
+		{
+			if (IsValidMarauderB(i) && (mMarauderStateB[i]!=STATE_MARAUDER_NORMAL && mMarauderStateB[i]!=STATE_MARAUDER_FIGHT)) 
+			{
+				mMarauderStateB[i] = STATE_MARAUDER_AGGRESSIVE;
+			}
+		}
+		mMaraudersAttacked = true;
+	}
+
+	bool OnExplode(GameObject *obj)
+	{
+		return true;
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int res = Math::rand();
+		res %= max - min;
+		return res + min;
+	}
+
+	bool OnStartBurning(GameObject *obj)
+	{
+		if (obj->HasName(NAME_BURNING_HOUSE_FAIL))
+			mFireOutOfControl = true;
+		else if (mHintCounter[0] == 0 && obj->HasName(NAME_HOUSE_HINT0))
+			ShowHint(0);
+		return true;
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		switch(Trigger)
+		{
+			case NAME_TRIGGER_HIGHWAY:
+				if (Collider->GetType() == ACTOR_PERSON)
+				{
+					Person p(Collider);
+					if (p.GetRole() == ROLE_SQUAD)
+					{
+						if (mHintCounter[1] == 0)
+						{
+							Game::DeactivateTrigger(NAME_TRIGGER_HIGHWAY);
+							ShowHint(1);
+						}
+					}
+				}
+				else if (Collider->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Collider);
+					if (!v.IsCivilCar())
+					{
+						if (mHintCounter[1] == 0)
+						{
+							Game::DeactivateTrigger(NAME_TRIGGER_HIGHWAY);
+							ShowHint(1);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_SKYSCRAPER:
+				if (Collider->GetType() == ACTOR_PERSON)
+				{
+					Person p(Collider);
+					if (p.GetRole() == ROLE_SQUAD)
+					{
+						if (mHintCounter[3] == 0)
+						{
+							Game::DeactivateTrigger(NAME_TRIGGER_SKYSCRAPER);
+							ShowHint(3);
+						}
+					}
+				}
+				else if (Collider->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Collider);
+					if (!v.IsCivilCar())
+					{
+						if (mHintCounter[3] == 0)
+						{
+							Game::DeactivateTrigger(NAME_TRIGGER_SKYSCRAPER);
+							ShowHint(3);
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *obj1, Actor *actor_)
+	{
+		if (obj1->HasName(NAME_SHIP_ON_PATH))
+		{
+			if (actor_->IsValid() && actor_->GetType() == ACTOR_PERSON)
+			{
+				Person p(actor_);
+				p.Kill();
+				p.PushActionDisappear(ACTION_NEWLIST, 1.f);
+				if (mHintCounter[5] == 0)
+					ShowHint(5);
+			}
+			else if (actor_->IsValid() && actor_->GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle v(actor_);
+				v.Destroy();
+				v.PushActionDisappear(ACTION_NEWLIST, 1.f);
+				if (mHintCounter[5] == 0)
+					ShowHint(5);
+			}
+			return MCC_IGNORE_CONTINUE;
+		}
+		return MCC_HALT_CONTINUE;
+	}
+
+	void StartScene2()
+	{		
+		//ScriptInterface::HideInterface();
+		Audio::PlayVideo("mod:Video/mission20b.mpg");
+		Mission::CloseBlackBars(0.01f, 1.f);
+		//ScriptInterface::ResumeFromHideInterface();
+		Mission::EndCutScene();
+		ScriptInterface::ShowBriefing();
+		ScriptInterface::SetMission("ID_20b");
+		ScriptInterface::SetRadarTexture("mod:Maps/m20b");
+		Mission::IncCounter(COUNTER_INJURED_PERSONS, 1);
+		System::Log("M20: Starting scene 2");
+		mScene2Started = true;
+		mScene2Running = true;
+		Game::SetDefaultMessageGroup(NAME_POOL_SCENE2);
+		GameObjectList list;
+		Game::CollectObstaclesOnVirtualObject(NAME_AREA_HARBOR, list, ACTOR_VEHICLE|ACTOR_PERSON);
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			Game::RemoveGameObject(list.GetObject(i));
+		}
+		GameObjectList scene1(NAME_PREFIX_SCENE1);
+		for(int i = 0; i < scene1.GetNumObjects(); i++)
+		{
+			scene1.GetObject(i)->Hide();
+		}
+		// Häuser im Wasser
+		/*mCollapsingHouse1.Show();
+		mCollapsingHouse2.Show();*/
+		// emitter für tauchzonen
+		ActorList diveemitter1(NAME_EFFECT_DIVEAREA1);
+		for(int i = 0; i < diveemitter1.GetNumActors(); i++)
+			diveemitter1.GetActor(i)->Show();
+		ActorList diveemitter2(NAME_EFFECT_DIVEAREA2);
+		for(int i = 0; i < diveemitter2.GetNumActors(); i++)
+			diveemitter2.GetActor(i)->Show();
+		ActorList diveemitter3(NAME_EFFECT_DIVEAREA3);
+		for(int i = 0; i < diveemitter3.GetNumActors(); i++)
+			diveemitter3.GetActor(i)->Show();
+		ActorList diveemitter4(NAME_EFFECT_DIVEAREA4);
+		for(int i = 0; i < diveemitter4.GetNumActors(); i++)
+			diveemitter4.GetActor(i)->Show();
+		// vo`s für tauchzonen
+		mDiveAreaVOs[0].SetVirtualObjectTerrain(DIVER);
+		mDiveAreaVOs[1].SetVirtualObjectTerrain(DIVER);
+		mDiveAreaVOs[2].SetVirtualObjectTerrain(DIVER);
+		mDiveAreaVOs[3].SetVirtualObjectTerrain(DIVER);
+		// wasser
+		mAreaWaterS2.SetVirtualObjectTerrain("Deep Water");
+		Game::ActivateWaitingPoint(NAME_BOATPOINTS);
+		Game::ActivateLiquid(NAME_LIQUID_SCENE2);
+		// treibende schiffe
+		GameObjectList ships(NAME_SHIP_ON_PATH);
+		for(int i = 0; i < ships.GetNumObjects(); i++)
+		{
+			ships.GetObject(i)->Show();
+			//ships.GetObject(i)->ClearActions();
+			ships.GetObject(i)->PushActionWait(ACTION_REPLACEFIRST, 1.f);
+		}
+		// ertrinkende
+		PersonList drowning(NAME_DROWNING_PERSON);
+		for(int i = 0; i < drowning.GetNumPersons(); i++)
+		{
+			drowning.GetPerson(i)->Show();
+			Path path = drowning.GetPerson(i)->GetObjectPath();
+			drowning.GetPerson(i)->SetRole(ROLE_DROWNING);
+			drowning.GetPerson(i)->SetObjectPath(&path);
+		}
+		GameObjectList scene2(NAME_PREFIX_SCENE2);
+		for(int i = 0; i < scene2.GetNumObjects(); i++)
+		{
+			scene2.GetObject(i)->Show();
+		}
+		Mission::StartSingleTimer(TIMER_NAME_HINT7, TIMER_TIME_HINT7);
+		Mission::StartSingleTimer(TIMER_NAME_MARAUDERS_A, TIMER_TIME_MARAUDERS_A);
+		Mission::StartSingleTimer(TIMER_NAME_MARAUDERS_B, TIMER_TIME_MARAUDERS_B);
+		Mission::StartSingleTimer(TIMER_NAME_HINT6_1, TIMER_TIME_HINT6_1);
+		Mission::StartSingleTimer(TIMER_NAME_HINT6_2, TIMER_TIME_HINT6_2);
+		Mission::StartSingleTimer(TIMER_NAME_HOUSE1_COLLAPSE, TIMER_TIME_HOUSE1_COLLAPSE);
+		Mission::StartSingleTimer(TIMER_NAME_HOUSE2_COLLAPSE, TIMER_TIME_HOUSE2_COLLAPSE);
+		Game::SetAmbientSoundVolumeByName(NAME_FLOOD_SOUND, 1.0f);
+		Game::SetAmbientSoundVolumeByName(NAME_HARBOR01_SOUND, 0.0f);
+		Game::SetAmbientSoundVolumeByName(NAME_HARBOR02_SOUND, 0.0f);
+		Game::SetAmbientSoundVolumeByName(NAME_SEA_SOUND, 0.0f);
+
+		Mission::PlayComment("SUPERV_M20_OBJ07");
+		Audio::SetMusicLevel(0.3f);
+	}
+
+	void RunCutscene()
+	{
+		Mission::StopTimer(TIMER_NAME_UPDATE_DUST);
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		Camera::StartTransition(NAME_CS1_TRANSITION, TIME_CS1_TRANSITION);
+		mCurrentTransition = TRANSITION_COLLAPSING_HOUSE;
+		Audio::SetMusicLevel(0.1f);
+	}
+
+	void OnCameraTransitionFinished()
+	{			
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_COLLAPSING_HOUSE:
+				CutsceneFirstPhase();
+				break;
+			case TRANSITION_COLLAPSING_HOUSE_END:
+				//CutsceneEnding();
+				break;
+		}
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	void CutsceneFirstPhase()
+	{
+		System::Log("M20: Cutscene first phase");
+		Game::SetGameSpeed(0.5f);
+		Camera::StartTransition(NAME_CS2_TRANSITION, TIME_CS2_TRANSITION);
+		mCurrentTransition = TRANSITION_COLLAPSING_HOUSE_END;
+		//Camera::LookAtTarget(&mCrashHouse, true, 0.0f, 0.0f);
+		//Camera::Rotate(10000, 0, 0, 20);
+		//mCrashHouse.EnablePhysicsSimulation();
+		//mCrashHouse.DisablePhysics();
+		for(int j = 0; j < 4; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->EnablePhysicsSimulation();
+				if (j > 0)
+				{
+					mHousePieceList[j].GetObject(i)->FreezePhysics();
+					mHousePieceList[j].GetObject(i)->SetPhysicsStatic(true);
+				}
+				else
+				{
+					mHousePieceList[j].GetObject(i)->UnfreezePhysics();
+					Vector force = mHousePieceList[j].GetObject(i)->GetPosition() - mCrashHouse.GetPosition();
+					Vector pos = mHousePieceList[j].GetObject(i)->GetPosition();
+					pos.z += 1000.0f;
+					mHousePieceList[j].GetObject(i)->ApplyForce(0, pos, force.GetNormal()*2000.0f);
+				}
+			}
+		}
+		for(int i = 0; i < mParticleList[0].GetNumObjects(); i++)
+		{
+			mParticleList[0].GetObject(i)->StartParticleEffect();
+		}
+		mHousePieceList[0].GetObject(0)->StartPhysicsEvent(10);
+		//mHousePieceList[0].GetObject(1)->StartPhysicsEvent(5);
+		Audio::PlaySample(NAME_COLLAPSE1);
+	}
+
+	void CutsceneSecondPhase()
+	{
+		System::Log("M20: Cutscene second phase");
+		for(int j = 1; j < 2; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->SetPhysicsStatic(false);
+				mHousePieceList[j].GetObject(i)->UnfreezePhysics();
+			}
+		}
+		for(int i = 0; i < mParticleList[1].GetNumObjects(); i++)
+		{
+			mParticleList[1].GetObject(i)->StartParticleEffect();
+		}
+		mHousePieceList[1].GetObject(0)->StartPhysicsEvent(10);
+	}
+
+	void CutsceneThirdPhase()
+	{
+		System::Log("M20: Cutscene third phase");
+		for(int j = 2; j < 3; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->SetPhysicsStatic(false);
+				mHousePieceList[j].GetObject(i)->UnfreezePhysics();
+			}
+		}
+		for(int i = 0; i < mParticleList[2].GetNumObjects(); i++)
+		{
+			mParticleList[2].GetObject(i)->StartParticleEffect();
+		}
+		mHousePieceList[2].GetObject(0)->StartPhysicsEvent(15);
+		Audio::PlaySample(NAME_COLLAPSE2);
+	}
+
+	void CutsceneEnding()
+	{
+		Mission::HideBlackBars();
+		Mission::EndCutScene();
+		Audio::PlaySample(NAME_COLLAPSE3);
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+		if (obj->GetID() == mHousePieceList[0].GetObject(0)->GetID())
+			CutsceneSecondPhase();
+		else if (obj->GetID() == mHousePieceList[1].GetObject(0)->GetID())
+			CutsceneThirdPhase();
+		else if (obj->GetID() == mHousePieceList[2].GetObject(0)->GetID())
+		{
+			for(int j = 0; j < 3; j++)
+			{
+				for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+				{
+					mHousePieceList[j].GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_NONE);
+				}
+				//mHousePieceList[2].GetObject(0)->StartPhysicsEvent(15);
+			}
+			for(int i = 0; i < mParticleList[3].GetNumObjects(); i++)
+			{
+				mParticleList[3].GetObject(i)->StartParticleEffect();
+			}				
+			mCrashHouse.EnablePhysicsSimulation();
+			mCrashHouse.SetPhysicsStatic(false);
+			mCrashHouse.SetCollisionMode(PHYSIC_COLLISION_NONE);
+			mCrashHouse.UnfreezePhysics();
+
+			Mission::StartSingleTimer(TIMER_NAME_SHOW_RUIN, TIMER_TIME_SHOW_RUIN);
+			Mission::StartSingleTimer(TIMER_NAME_SECOND_DUSTCLOUD, TIMER_TIME_SECOND_DUSTCLOUD);
+			Mission::StartSingleTimer(TIMER_NAME_END_CUTSCENE, TIMER_TIME_END_CUTSCENE, true);
+		}
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M20: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Mission::PlayHint(HINT_FIRE_OUT_OF_CONTROL);
+				Audio::SetMusicLevel(0.2f);
+				break;
+			case 1:
+				Mission::PlayHint(HINT_BRIDGE_COLLAPSED);
+				break;
+			case 2:
+				Mission::PlayHint(HINT_PERSONS_ON_BRIDGE);
+				break;
+			case 3:
+				Mission::PlayHint(HINT_HOUSE_MIGHT_COLLAPSE);
+				Audio::SetMusicLevel(0.4f);
+				break;
+			case 4:
+				//Mission::PlayHint(HINT_HOUSE_COLLAPSE_SOON);
+				Mission::PlayHint("HINT_M20_HOUSE_COLLAPSE_SOON");
+				break;
+			case 5:
+				Mission::PlayHint(HINT_OBSTACLES_IN_WATER);
+				break;
+			case 6:
+				Mission::PlayHint(HINT_HOUSES_MIGHT_COLLAPSE);
+				break;
+			case 7:
+				Mission::PlayHint(HINT_SUNKEN_CARS);
+				break;
+			case 8:
+				Mission::PlayHint(HINT_MARAUDERS_ARMED);
+				break;
+			case 9:
+				Mission::PlayHint(HINT_MORE_MARAUDERS);
+				break;
+			case 10:
+				Mission::PlayHint(HINT_CATCH_MARAUDERS);
+				break;
+			case 11:
+				Mission::PlayHint(HINT_FIRE_OUT_OF_CONTROL);
+				Audio::SetMusicLevel(0.2f);
+				break;
+		}
+	}
+
+	MissionState GetMissionState()
+	{
+		if ( Mission::GetCounter(COUNTER_BURNING_OBJECTS) + Mission::GetCounter(COUNTER_BURNING_HOUSES) > 0 )
+		{
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES, false);
+				Mission::PlayComment("SUPERV_M20_OBJ04");
+			}
+		}
+		else 
+		{			
+			if(		Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRES)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+			}
+		}
+
+		if (mMaraudersStartedA && !mMaraudersStartedB)
+		{
+			if (mNumMaraudersWithGunA == 0)
+			{
+				if (!Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS))
+				{
+					Mission::SetObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS, true);
+					//Mission::PlayComment(MARAUDERS_CAUGHT);
+				}
+			}
+			else
+			{
+				if (Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS))
+				{
+					Mission::SetObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS, false);
+					Mission::PlayComment(NEW_MARAUDERS);
+				}
+			}
+		}
+		else if (mMaraudersStartedA && mMaraudersStartedB)
+		{
+			if (mNumMaraudersWithGunA + mNumMaraudersWithGunB == 0)
+			{
+				if (!Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS))
+				{
+					Mission::SetObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS, true);
+					//Mission::PlayComment(MARAUDERS_CAUGHT);
+				}
+			}
+			else
+			{
+				if (Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS))
+				{
+					Mission::SetObjectiveAccomplished(OBJECTIVE_CATCH_MARAUDERS, false);
+					Mission::PlayComment(NEW_MARAUDERS);
+				}
+			}
+		}
+
+		//if (!mScene2Started && !Mission::TimerIsStarted("test"))
+		if (!mScene2Started && (/*Mission::GetCounter(COUNTER_BURNING_HOUSES) < MIN_BURNING_HOUSES_SCENE2 ||*/ Mission::GetCounter(COUNTER_INJURED_PERSONS) <= MIN_INJURED_PERSONS_SCENE2))
+		{
+			//StartScene2();
+			mScene2Started = true;
+			Game::SetGameSpeed(1.0f);
+			ScriptInterface::HideInterface();			
+			Mission::StartCutScene();
+			Mission::CloseBlackBars(4.f, 5.f);
+			Mission::StartSingleTimer(TIMER_NAME_FADEOUT, TIMER_TIME_FADEOUT);
+		}
+
+		if (mHintCounter[11] == 0 && Mission::GetCounter(COUNTER_BURNING_HOUSES) >= MAX_BURNING_HOUSES_HINT)
+			ShowHint(11);
+
+		if (Mission::GetCounter(COUNTER_BURNING_HOUSES) >= MAX_BURNING_HOUSES_FAIL)
+		{
+			mFireOutOfControl = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (mScene2Started)
+		{
+			int diveareapersons = 0;
+			for(int i = 0; i < MAX_DIVEAREAS; i++)
+				if (!mDiveAreaPersonFound[i])
+					diveareapersons++;
+			Mission::IncCounter(COUNTER_INJURED_PERSONS, diveareapersons);
+			//System::Log("dive are pers: %d", diveareapersons);
+		}
+		if (!mPersonASaved && mPersonA.IsValid() && !mPersonA.IsInjured())
+		{
+			Mission::IncCounter(COUNTER_INJURED_PERSONS, 1);
+		}
+		if (!mPersonBSaved && mPersonB.IsValid() && !mPersonB.IsInjured())
+		{
+			Mission::IncCounter(COUNTER_INJURED_PERSONS, 1);
+		}
+
+		if (Mission::GetCounter(COUNTER_INJURED_PERSONS) + Mission::GetCounter(COUNTER_DEAD_PERSONS) == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED2");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_CIVIL_DEATHS) > MAX_DEAD_CIVILS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (mFireOutOfControl || mMarauderLeft)
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() && mScene2Running )
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+		if (mMarauderLeft)
+			return "M20_MARAUDER_LEFT";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M20_FAIL01";
+		if (mFireOutOfControl)
+			return "SUPERV_M20_FAIL02";
+		if (mMarauderLeft)
+			return "SUPERV_M20_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M20_RES01";
+		if (scoring->Efficiency >= 0.5f && scoring->Efficiency <= 0.7f)
+			return "SUPERV_M20_RES02";
+		if (scoring->Efficiency <= 0.3f)
+			return "SUPERV_M20_RES03";
+
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		return 1.0f;
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mFireOutOfControl);
+		serializer_->Write(mTooManyDied);
+		serializer_->Write(mMarauderLeft);
+		serializer_->Write(mPersonASaved);
+		serializer_->Write(mPersonBSaved);
+		serializer_->Write(mPersonA);
+		serializer_->Write(mPersonB);
+		serializer_->Write(mCollapsingHouse1);
+		serializer_->Write(mCollapsingHouse2);
+		serializer_->Write((int)MAX_DIVEAREAS);
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+		{
+			serializer_->Write(mDiveAreaPersons[i]);
+			serializer_->Write(mDiveAreaVOs[i]);
+			serializer_->Write(mDiveAreaPersonFound[i]);
+		}
+		serializer_->Write(mScene2Started);
+		serializer_->Write(mEmitterDust);
+		serializer_->Write((int)MAX_MARAUDERS);
+		for(int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			serializer_->Write(mMaraudersA[i]);
+			serializer_->Write(mMaraudersB[i]);
+			serializer_->Write(mMarauderStateA[i]);
+			serializer_->Write(mMarauderStateB[i]);
+			serializer_->Write(mMarauderTimerA[i]);
+			serializer_->Write(mMarauderTimerB[i]);
+			serializer_->Write(mOffsetsA[i]);
+			serializer_->Write(mOffsetsB[i]);
+			serializer_->Write(mMarauderWithGunA[i]);
+			serializer_->Write(mMarauderWithGunB[i]);
+		}
+		serializer_->Write(mNumMaraudersA);
+		serializer_->Write(mNumMaraudersB);
+		serializer_->Write(mNumMaraudersCurrentA);
+		serializer_->Write(mNumMaraudersCurrentB);
+		serializer_->Write(mNumMaraudersWithGunA);
+		serializer_->Write(mNumMaraudersWithGunB);
+		serializer_->Write(mMaraudersStartedA);
+		serializer_->Write(mMaraudersStartedB);
+		serializer_->Write(mNumMaraudersAtTargetA);
+		serializer_->Write(mNumMaraudersAtTargetB);
+		serializer_->Write(mShopReachedA);
+		serializer_->Write(mShopReachedB);
+		serializer_->Write(mMaraudersFleeing);
+		serializer_->Write(mShop);
+		serializer_->Write(mMaraudersAttacked);
+		serializer_->Write(mAreaWaterS2);
+		serializer_->Write(mHousePersonA);
+		serializer_->Write(mHousePersonB);
+		serializer_->Write(mScene2Running);
+
+		serializer_->Write(mCurrentTransition);
+		serializer_->Write(mCrashHouse);
+		serializer_->Write(mCrashRuin);
+		for (int i = 0; i < COUNT_HOUSE_PIECE_GROUPS; i++)
+		{
+			serializer_->Write(mHousePieceList[i]);
+			serializer_->Write(mParticleList[i]);
+		}
+		serializer_->Write(mHouseDebrisList);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mFireOutOfControl = serializer_->ReadBool();
+		mTooManyDied = serializer_->ReadBool();
+		mMarauderLeft = serializer_->ReadBool();
+		mPersonASaved = serializer_->ReadBool();
+		mPersonBSaved = serializer_->ReadBool();
+		serializer_->Read(mPersonA);
+		serializer_->Read(mPersonB);
+		serializer_->Read(mCollapsingHouse1);
+		serializer_->Read(mCollapsingHouse2);
+		int maxDiveAreas = 0;
+		serializer_->Read(maxDiveAreas);
+		if (maxDiveAreas != MAX_DIVEAREAS)
+		{
+			System::Log("M20 : savegame has different MAX_DIVEAREAS");
+			return false;
+		}
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+		{
+			serializer_->Read(mDiveAreaPersons[i]);
+			serializer_->Read(mDiveAreaVOs[i]);
+			mDiveAreaPersonFound[i] = serializer_->ReadBool();
+		}
+		mScene2Started = serializer_->ReadBool();
+		serializer_->Read(mEmitterDust);
+		int maxMarauders = 0;
+		serializer_->Read(maxMarauders);
+		if (maxMarauders != MAX_MARAUDERS)
+		{
+			System::Log("M20 : savegame has different MAX_MARAUDERS");
+			return false;
+		}
+		for(int i = 0; i < MAX_MARAUDERS; i++)
+		{
+			serializer_->Read(mMaraudersA[i]);
+			serializer_->Read(mMaraudersB[i]);
+			serializer_->Read(mMarauderStateA[i]);
+			serializer_->Read(mMarauderStateB[i]);
+			serializer_->Read(mMarauderTimerA[i]);
+			serializer_->Read(mMarauderTimerB[i]);
+			serializer_->Read(mOffsetsA[i]);
+			serializer_->Read(mOffsetsB[i]);
+			mMarauderWithGunA[i] = serializer_->ReadBool();
+			mMarauderWithGunB[i] = serializer_->ReadBool();
+		}
+		serializer_->Read(mNumMaraudersA);
+		serializer_->Read(mNumMaraudersB);
+		serializer_->Read(mNumMaraudersCurrentA);
+		serializer_->Read(mNumMaraudersCurrentB);
+		serializer_->Read(mNumMaraudersWithGunA);
+		serializer_->Read(mNumMaraudersWithGunB);
+		mMaraudersStartedA = serializer_->ReadBool();
+		mMaraudersStartedB = serializer_->ReadBool();
+		serializer_->Read(mNumMaraudersAtTargetA);
+		serializer_->Read(mNumMaraudersAtTargetB);
+		mShopReachedA = serializer_->ReadBool();
+		mShopReachedB = serializer_->ReadBool();
+		mMaraudersFleeing = serializer_->ReadBool();
+		serializer_->Read(mShop);
+		mMaraudersAttacked = serializer_->ReadBool();
+		serializer_->Read(mAreaWaterS2);
+		serializer_->Read(mHousePersonA);
+		serializer_->Read(mHousePersonB);
+		mScene2Running = serializer_->ReadBool();
+
+		serializer_->Read(mCurrentTransition);
+		serializer_->Read(mCrashHouse);
+		serializer_->Read(mCrashRuin);
+		for (int i = 0; i < COUNT_HOUSE_PIECE_GROUPS; i++)
+		{
+			serializer_->Read(mHousePieceList[i]);
+			serializer_->Read(mParticleList[i]);
+		}
+		serializer_->Read(mHouseDebrisList);
+		if (mScene2Started)
+		{
+			Mission::StartSingleTimer(TIMER_NAME_LOAD_RADAR, 0.1f);
+		}
+
+		return true;
+	}
+
+};

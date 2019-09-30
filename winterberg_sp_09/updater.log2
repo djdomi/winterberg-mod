@@ -1,0 +1,28 @@
+
+Found 4 mirrors.
+Server web-desk/wem65 checked with 65ms
+Server agl-hh/common checked with 152ms
+Server doctorcito/common checked with 147ms
+Connecting to server web-desk/wem65
+Now downloading to D:\em4\Mods\Release
+Loaded checksums
+Comparing files
+Checked 6439 files: 0 new, 13 modified, 1 deleted.
+  Loading /Audio/FX/rtw_rueckw.wav
+  Loading /changes.rtf
+  Loading /Audio/FX/rueckw.wav
+  Loading /Lang/de/strings.xml
+  Loading /Lang/en/strings.xml
+  Loading /Lang/it/strings.xml
+  Loading /Maps/dfreeplay.dds
+  Loading /Maps/dfreeplay.e4m
+  Loading /Maps/fpd_wtb.eft
+  Loading /Scripts/Game/Command/ActionMotorSound.script
+  Loading /Ui/Game/Loading/bg_dfreeplay.dds
+  Loading /Ui/Game/Loading/bg_freeplay.dds
+  Loading /Ui/Game/Loading/bg_multiplayer.dds
+Deleting /Maps/autosave.e4m
+
+Writing md5 db
+Updating statistics
+Writing log...

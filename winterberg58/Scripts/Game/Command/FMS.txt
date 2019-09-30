@@ -1,0 +1,10 @@
+WEM4 2.2 beta
+
+1. bei der Alarmierung von Fahrzeugen werden nun Fz, die einsatzbereit in der Stadt unterwegs sind, vor Fz auf externen Wachen alarmiert,
+   unabhängig von der Nachrueckfolge
+
+2. Im ordner Audio/fx/fms sind fms-telegramme für die Winterberger Fahrzeuge hinterlegt, die bei Statusaenderung abgesetzt werden und
+   mit entsprechenden Decoder-Programmen wie z.B. FMS32 , FMS-Crusader oder Monitor ausgewertet werden können. Dies erlaubt auf einem
+   zusaetzlichen PC/Monitor eine Fahrzeugzustandsübersicht zu erzeugen (Feature für Freaks :-) )
+   Achtung: Die Telegramme sind fiktiv und entsprechen nicht den tatsächlich im HSK verwendeten Telegrammen. Eine entsprechende Code-Datei
+   für FMS-Crusader und Monitor werde ich mit hier bereitstellen, sobald das ganze einwandfrei funktioniert.

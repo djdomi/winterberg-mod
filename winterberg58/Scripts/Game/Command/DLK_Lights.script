@@ -1,0 +1,77 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script DLK_Lights
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+
+ const char DUMMY_HASUMFELD[] = "DUMMYHasUmfeld";
+ 
+ int DummyGroup = 20;
+ 
+ object DLK_Lights : CommandScript
+ {
+ 	DLK_Lights()
+ 	{
+		SetCursor("LightOn");
+		SetIcon("LightOn");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+  		Vehicle v(Caller);
+		if (childID==0)
+			if (v.IsSpecialLightEnabled())
+				childID=2;
+			else
+ 				childID=1;
+
+		switch(childID)
+		{
+			case 2:
+	 			v.EnableSpecialLights(false);
+	 			v.EnableBlinker(BLT_NONE);
+				break;
+ 			case 1:
+	 			v.EnableSpecialLights(true);
+	 			v.EnableBlinker(BLT_BOTH);
+				break;
+		}
+ 	}	
+ };
+ 

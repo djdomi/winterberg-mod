@@ -1,0 +1,1340 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script autoskaufen
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// Winterberger für Em4 by WitchDoc
+// Fahrzeuge erstellen und besetzen
+// Version 1.99
+// Rotation function by bass-ti
+//
+//  Revision:
+//  02.07.2006 : Alle Fz bekommen eindeutige synth. Kennung nach einheitlichem System
+//		 Die Zuordnung zum Parkplatz-VOB geschieht über Indextabelle
+
+		const int maxdev = 15;
+		const char * availcheck[maxdev];
+		const availcheck[0]="verteiler_an_bord";
+		const availcheck[1]="monitor_an_bord";
+		const availcheck[2]="ts_an_bord";
+		const availcheck[3]="pylone_an_bord";
+		const availcheck[4]="lima_an_bord";
+		const availcheck[5]="schnellangriff_an_bord";
+		const availcheck[6]="gz_an_bord";
+		const availcheck[7]="mm_an_bord";
+		const availcheck[8]="zelt_an_bord";
+		const availcheck[9]="dichtkissen_an_bord";
+		const availcheck[10]="auto_umleiten";
+
+		const int MAX_FZ = 50;
+		const char * kennung[MAX_FZ];
+		kennung[1]="nef";
+		kennung[2]="rtw";
+		kennung[3]="lf";
+		kennung[4]="tlf";
+		kennung[5]="rw";
+		kennung[6]="dlk";
+		kennung[7]="stw1";
+		kennung[8]="stw2";
+		kennung[9]="stw3";
+		kennung[10]="mtw";
+		kennung[11]="asf";
+		kennung[12]="ch25";
+		kennung[13]="tjeep";
+		kennung[14]="rtwm";
+		kennung[15]="gw-mess";
+		kennung[16]="kran";
+		kennung[17]="bsw";
+		kennung[18]="hummel";
+		kennung[19]="zue41";
+		kennung[20]="gtlfbb";
+		kennung[21]="nefbb";
+		kennung[22]="rtwbb";
+		kennung[23] ="rtw7831";
+		kennung[24]="rtw4831";
+		kennung[25]="kb9183";
+		kennung[26]="7821";
+		kennung[27]="8851";
+		kennung[28]="8481";
+		kennung[29]="8482";
+		kennung[30]="8211";
+		kennung[31]="8212";
+		kennung[32]="LNAJeep";
+		kennung[33]="DBNFM";
+		kennung[34]="Bomber";
+		kennung[35]="SEG-RD";
+		kennung[36]="SEG-Arzt";
+		kennung[37]="SEG-Truck";
+		kennung[38]="LF Siedlingshausen";
+		kennung[39]="LKW WiBe";
+		kennung[40]="ELW";
+
+
+		const char * stellplatz[MAX_FZ];
+		stellplatz[1]="nef";
+		stellplatz[2]="rtw";
+		stellplatz[3]="lf";
+		stellplatz[4]="tlf";
+		stellplatz[5]="rw";
+		stellplatz[6]="dlk";
+		stellplatz[7]="stw1";
+		stellplatz[8]="stw2";
+		stellplatz[9]="stw3";
+		stellplatz[10]="mtw";
+		stellplatz[11]="rtwm";
+		stellplatz[12]="ch25";
+		stellplatz[13]="kran";
+		stellplatz[14]="ktw";
+		stellplatz[15]="gw_m";
+		stellplatz[16]="lkw";
+		stellplatz[17]="elw";
+		stellplatz[18]="";
+		stellplatz[19]="";
+		stellplatz[20]="";
+		stellplatz[21]="nord";		// OKZ 51 = Bad Berleburg
+		stellplatz[22]="nord1";		// OKZ 52 =
+		stellplatz[23]="ost";		// OKZ 53 = Langewiese
+		stellplatz[24]="ost1";		// OKZ 54 = Olsberg
+		stellplatz[25]="ost2";		// OKZ 55 = Korbach
+		stellplatz[26]="sued";		// OKZ 56 = Zueschen
+		stellplatz[27]="west";		// OKZ 57 = Langewiese
+		stellplatz[28]="west1";		// OKZ 58 =
+		stellplatz[29]="kran";		// OKZ 59 = Siedlingshausen
+		stellplatz[30]="rtwm";		// OKZ 60 = Medebach
+		stellplatz[31]="rtwm";		// OKZ 61 = Medebach
+		stellplatz[32]="rtwm";		// OKZ 62 = Medebach
+		stellplatz[33]="rtwm";		// OKZ 63 = Medebach
+		stellplatz[34]="ch25";		// OKZ 64 = Siegen
+		stellplatz[35]="ost";		// OKZ 64 = Siegen
+
+
+
+object kaufen : CommandScript
+{
+	bool ersatz;
+
+	kaufen()
+	{
+		ersatz=false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		ersatz=true;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle vec;
+		int MaxPass, maxTrans;
+		char *Act[];
+		Actor fz;
+		int i;
+		GameObject *ofz;
+		GameObjectList lfz;
+		ActorList fzl;
+		int q=childID;
+		Vector Wache;
+		float rot[9];
+		float childRot[9];
+		bool bedarfsfz = false;
+		bool nachbarfz = false;
+		int dir = 0;
+		const char *parken[2];
+	
+	if (q>10000)
+	{
+		i=q/10000;
+		q=q-(10000*i);
+		switch (i)
+		{
+			case 1 :
+				nachbarfz=true;
+				break;
+			case 2 :
+				bedarfsfz=true;
+				break;
+			// ob Ersatzbeschaffung, wird durch CheckTarget geklärt
+		}
+	}
+
+	int wache=q/100;
+	q=q-(100*wache);
+	if (wache>50)
+		dir=wache-30;
+	else
+		dir=wache;
+	parken[1]=stellplatz[dir]; // Fz direkt am Standort erzeugen
+
+	if (ersatz)
+	{
+		parken[1]="neuwagen";
+		System::Error("Ersatzbeschaffung");
+	}
+
+	kennung[0]="000000";
+	int radius;
+	int a,b,c;
+	Game::GetTime(a,b,c);
+	kennung[0][0]=char(32+wache);  // 1. Stelle codiert die Wache
+	kennung[0][1]=char(32+a);    // 2. -4. Stelle eindeutige Objektkennung
+	kennung[0][2]=char(32+b);
+	kennung[0][3]=char(32+c);
+	kennung[0][4]=char(32+q);    // 5. Stelle codiert Fz-Typ
+	
+	fzl=Game::GetActors(parken[1]); // Fz am gewuenschten Stellplatz erzeugen
+	if(fzl.GetNumActors() > 0)
+		fz = *fzl.GetActor(0);
+	else
+		System::Error("Fahrzeugerzeugung Fehler");
+
+	//Wo soll das Fahrzeug parken?
+	Wache=fz.GetPosition();
+	if (bedarfsfz)
+		radius=100;
+	else 	
+		if (ersatz)
+			radius=300;
+		else
+			radius=0;
+	
+	switch (q)
+	{
+ 		
+		// Logischer Block Fahrzeug erzeugen
+		case 1:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/nef8821.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,8,false);
+		break;
+		// Logischer Block Fahrzeug erzeugen
+		//
+		// RTW Winterberg
+		case 2: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw2.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 3:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/lf8442.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(8);
+		vec.SetMaxTransports(0);
+		vec.AssignCommand("kemlerzahl");
+		vec.AssignCommand("gz_an_bord");
+		vec.AssignCommand("mm_an_bord");
+		vec.AssignCommand("dichtkissen_an_bord");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 4:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/WB_TLF_16_25.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(5);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,13,false);
+		break;
+		case 5:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/unimog.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(0.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 6:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/dlk8331.e4p",kennung[0]);
+		vec.SetSpeed(9.5f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 7 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/stw3.e4p",kennung[0]);
+		vec.SetSpeed(15.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		break;
+		case 8 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/stw2.e4p",kennung[0]);
+		vec.SetSpeed(15.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		break;
+		case 9 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/stw1.e4p",kennung[0]);
+		vec.SetSpeed(15.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		break;
+		case 10 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/mtw1.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(4);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		break;
+		case 11 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/asfwtb.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,6,false);
+		break;
+		case 12 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rhc2.e4p",kennung[0]);
+		vec.SetSpeed(25.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,8,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,9,false);
+		break;
+		case 13 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/fgri.e4p",kennung[0]);
+		vec.SetSpeed(12.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,5,false);
+		break;
+		// RTW Medebach
+		case 14: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw2m.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		// Dekon
+		case 15: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/gw8921.e4p",kennung[0]);
+		vec.SetSpeed(8.5f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		vec.AssignCommand("dichtkissen_an_bord");
+		vec.AssignCommand("gz_an_bord");
+		vec.AssignCommand("mm_an_bord");
+		vec.AssignCommand("kemlerzahl");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(0.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		// Kran
+		case 16: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/fgr.e4p",kennung[0]);
+		vec.SetSpeed(6.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(0);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		break;
+		// Logischer Block Fahrzeug erzeugen
+		//
+		// Bestatter
+		case 17: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/bsw.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(0.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,10,false);
+		break;
+		case 18 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/phc.e4p",kennung[0]);
+		vec.SetSpeed(20.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,11,false);
+		break;
+		case 19:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/LF_8_Zuechen.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(8);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 20:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/gtlf_berleburg.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 21:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/nef_si4821.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,8,false);
+		break;
+		// Logischer Block Fahrzeug erzeugen
+		//
+		// RTW Winterberg
+		case 22: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw1.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 23: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw7831.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 24: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw4831.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 25: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw9183.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 26:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/nef7821.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,8,false);
+		break;
+		case 27:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/ktw8851.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,9,false);
+		break;
+		case 28:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsfw8481.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(5);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,13,false);
+		break;
+		case 29:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsfw8482.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(5);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,13,false);
+		break;
+		case 30:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/tlf8211.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 31:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/tlf8212.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 32:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/lna_jeep.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//LNA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,12,false);
+		break;
+		case 33:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/nfm.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		vec.AssignCommand("ich_bin_nfm");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//DBNFM
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,7,false);
+		break;
+		case 34: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/vario/variobody.e4p",kennung[0]);
+		vec.SetSpeed(11.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,16,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,17,false);
+		break;
+		case 35: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/ktw_seg.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(8);
+		vec.SetMaxTransports(10);
+		vec.AssignCommand("zelt_an_bord");
+		vec.AssignCommand("seg_ktw_estelle");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		break;
+		case 36:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/ktw_seg.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(4);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		break;
+		case 37:
+		//Erzeuge das Fahrzeug
+		System::Error("Rufe Versorgungstruck");
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/DRK_Truck.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		// vec.AssignCommand("zelt_an_bord");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		break;
+		case 38:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/lf86.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(8);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,13,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 39:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/LKW.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 40:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/elw.e4p",kennung[0]);
+		vec.SetSpeed(11.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,1,false);
+		break;
+	}
+	
+	lfz = Game::GetGameObjects(kennung[0]);
+	ofz=*lfz.GetObject(0);
+
+	ofz->AssignCommand(availcheck[10]);
+	ofz->AssignCommand("AutoUmleiten");	
+
+	if (!ofz->HasCommand("aufsitzen"))
+		ofz->AssignCommand("gohome_winterberg");
+
+	if (bedarfsfz)
+	{
+		ofz->AssignCommand("bedarfs_fz");
+		ofz->Hide();
+	} else 	if (nachbarfz)
+			ofz->AssignCommand("hidden");
+
+	if (ersatz)
+	{
+		Mission::PlayHint("Ersatzfahrzeug beschafft und auf dem Weg zum Standort.");
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",ofz,0,false); // Ersatzfz zum Standort schicken
+	} else 	if (nachbarfz)
+			ofz->PushActionShowHide(ACTION_APPEND,true);
+
+	ersatz=false;  // Marker für Ersatzfahrzeug wieder zuruecksetzen für nächsten Aufruf
+   }
+};
+

@@ -1,0 +1,106 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.0
+// ## 
+// ## Script dummy_cmd
+// ## 
+// ## Stand : 06.8.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+object Alarm_AAB : CommandScript
+{
+
+   Alarm_AAB()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object Alarm_ENK : CommandScript
+{
+
+   Alarm_ENK()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object Alarm_SEG : CommandScript
+{
+
+   Alarm_SEG()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object rufe_sek : CommandScript
+{
+
+   rufe_sek()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+
+object rufe_hummel : CommandScript
+{
+
+   rufe_hummel()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+
+};
+

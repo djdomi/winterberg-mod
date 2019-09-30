@@ -1,0 +1,46 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.0
+// ## 
+// ## Script aufgaben
+// ## 
+// ## Stand : 06.8.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+object Aufgaben:CommandScript
+{ 
+	Aufgaben()
+	{}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{	
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Mission::AddObjectivePlayComment("WitchDoc","Übungsalarm","Dies ist eine Übung. Sie bekommen dafür 125 Punkte.");
+		Mission::ShowMessageTickerText("Übungsalarm",1.0,1.0,0.0);
+	}
+
+};
+
+object Erledigt:CommandScript
+{ 
+	Erledigt()
+	{}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{	
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Mission::SetObjectiveAccomplished("WitchDoc",true);
+		
+	}
+
+};

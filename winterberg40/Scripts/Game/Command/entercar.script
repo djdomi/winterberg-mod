@@ -1,0 +1,502 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script entercar
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+// Winterberger für Em4 
+// entercar v1.1 by WitchDoctor
+// basiert auf entercar.script für Em3 by manuelt
+//
+// Revision
+// 19.6.06  : zusteigen des NA löst Fahrt zur Klinik aus.
+
+object EnterCar : CommandScript
+{
+	Vector TargetPos;
+	bool NotInLandingStage;
+	
+	EnterCar()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_NOTDESTROYED);
+		SetNeedsConnectedHose(CFN_FAIL);
+		SetPriority(200);
+		SetSelfClickActivation(true);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		/*if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		if (p.GetRole() == ROLE_SQUAD && p.IsContaminated())
+		{
+			if ((p.IsLinkedWithPerson() || p.IsCarryingPerson()) && Game::ExistsFreeVehicle(VT_FIREFIGHTERS_DEKONP, 0, 2)
+				return true;
+			else if (!p.IsLinkedWithPerson() && !p.IsCarryingPerson() && Game::ExistsFreeVehicle(VT_FIREFIGHTERS_DEKONP, , 1))
+				return true;
+			return false;
+		}
+		else if (p.GetRole() == ROLE_SQUAD && (p.IsLinkedWithContaminatedPerson() || p.IsCarryingContaminatedPerson()))
+			return Game::ExistsFreeVehicle(VT_FIREFIGHTERS_DEKONP, 0, 2);
+		if (Game::ExistsFreeVehicle(VT_FIREFIGHTERS_FMB, 1, (p.IsLinkedWithPerson() || p.IsCarryingPerson()) ? 1 : 0))
+			return true;
+		switch(p.GetPersonType())
+		{
+			case PT_ENGINEER:
+				return Game::ExistsFreeVehicle(VT_THW_FGRI_EKW, VT_THW_FGRT_BH, 1, 0);
+				break;
+			case PT_LEADERRESCUEDOG:
+				if (p.IsLinkedWithPerson())
+					return Game::ExistsFreeVehicle(VT_AMBULANCE_RHF, 1, 1);
+				return Game::ExistsFreeVehicle(VT_AMBULANCE_RHF, 1, 0);
+				break;
+			case PT_SHOOTER:
+				return !p.IsLinkedWithPerson() && Game::ExistsFreeVehicle(VT_POLICE_SW, VT_POLICE_MTW, VT_POLICE_PHC, 1, 0);
+				break;
+			case PT_SHARPSHOOTER:
+				return Game::ExistsFreeVehicle(VT_POLICE_SW, VT_POLICE_PHC, 1, 0);
+				break;
+			case PT_POLICEMEN:
+			case PT_PSYCHOLOGIST:
+				return Game::ExistsFreeVehicle(VT_POLICE_SW, VT_POLICE_MTW, VT_POLICE_PHC, VT_POLICE_STW, 1, 0);
+				break;
+			case PT_SCOUT:
+				return Game::ExistsFreeVehicle(VT_POLICE_SW, VT_POLICE_MTW, VT_POLICE_PHC, 1, 0);
+				break;
+			case PT_DOCTOR:
+				return Game::ExistsFreeVehicle(VT_AMBULANCE_ITW, VT_AMBULANCE_NEF, VT_AMBULANCE_RHC, VT_AMBULANCE_RTW, 1, 0);
+				break;
+			case PT_PARAMEDIC:
+				if (p.IsCarryingPerson())
+				{
+					return Game::ExistsFreeVehicle(VT_AMBULANCE_RHC, VT_AMBULANCE_RTW, VT_AMBULANCE_NEF 1, 1);
+				}
+				return Game::ExistsFreeVehicle(VT_AMBULANCE_ITW, VT_AMBULANCE_RHC, VT_AMBULANCE_RTW, 1, 0);
+				break;
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				if (p.IsLinkedWithPerson() || p.IsCarryingPerson())
+					return false;
+				if (Game::ExistsFreeVehicle(VT_FIREFIGHTERS_GTF, 1, 0))
+					return true;
+			case PT_FIREFIGHTER_ABC:
+				if (p.IsLinkedWithPerson() || p.IsCarryingPerson())
+					return false;
+				if (Game::ExistsFreeVehicle(VT_FIREFIGHTERS_DEKONP, 1, 0))
+					return true;
+				// kein break
+			case PT_DIVER:
+				if (p.IsLinkedWithPerson() || p.IsCarryingPerson())
+					return false;
+				return Game::ExistsFreeVehicle(VT_FIREFIGHTERS_DLK, VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_TLF, VT_FIREFIGHTERS_LPF, 1, 0);
+				break;
+		}
+		return false; */
+		return Commands::IsEnterCarPossible(Caller);
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target || !Target->IsValid() || Target->GetType()!=ACTOR_VEHICLE)
+			return false;
+		
+		SetPriority(200);
+		if (Input::PriorityKeyPressed())
+			SetPriority(2000);
+		
+		Vehicle v(Target);
+		if (v.GetEnergy() < = 0.1f * v.GetMaxEnergy())
+			return false;
+		if(Caller->GetObjectType()==TYPE_PERSON/* && v.IsFlagSet(OF_ACCESSIBLE)*/)
+		{
+			Person p(Caller);
+
+			if (p.GetEnteredCarID() != -1)
+				return false;
+			
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_DEKONP)
+			{
+				if (!p.IsLinkedWithPerson() && !p.IsCarryingPerson() && v.GetFreePassengers()==0 && !p.IsContaminated())
+					return false;
+				else if (!p.IsLinkedWithPerson() && !p.IsCarryingPerson() && p.IsContaminated() &&  v.GetFreeTransports() < 1)
+				     	return false;
+				else if ((p.IsLinkedWithPerson() || p.IsCarryingPerson()) && v.GetFreeTransports() < 2)
+					return false;
+			}
+			else 
+			if(v.GetFreePassengers()==0 && !(p.IsLinkedWithPerson() || p.IsCarryingPerson()))
+				return false;
+				
+			if (p.IsCarryingPerson() && v.GetFreeTransports() == 0)
+				return false;
+			else if (p.IsLinkedWithPerson() && v.GetFreeTransports() == 0)
+				return false;
+			
+			if(v.HasCommand("FlyTo") && !v.IsOnGround())
+				return false;					
+			
+			if(p.IsPulling() || (p.GetEquipment() == EQUIP_FIREHOSE && p.GetFirehoseID() > 0))
+				return false;
+				
+			switch(v.GetVehicleType())
+			{
+				case VT_NOSQUAD :
+				case VT_TAXI :
+				case VT_BUS :
+				case VT_DRIVERCAR :
+				case VT_POLICE_GTW:
+				case VT_POLICE_WAW :
+					return false;
+					break;
+				
+				case VT_THW_FGRR_BKF :
+				case VT_THW_FGRB_BLF :
+					return false;
+					break;
+				case VT_THW_FGRI_EKW :
+				case VT_THW_FGRT_BH:
+					if(!p.HasCommand("Repair"))
+						return false;
+					break;
+					
+				/*case VT_FIREFIGHTERS_GTF:
+					if(!p.HasCommand("Extinguish") || !p.HasCommand("GetShears"))
+						return false;
+					break;*/
+				case VT_FIREFIGHTERS_ASF :
+				case VT_FIREFIGHTERS_DLK :
+				case VT_FIREFIGHTERS_RW :
+				case VT_FIREFIGHTERS_TLF :
+				case VT_FIREFIGHTERS_LF :
+				case VT_FIREFIGHTERS_FLB :
+				case VT_FIREFIGHTERS_LPF :
+				case VT_FIREFIGHTERS_TFMB :
+				case VT_FIREFIGHTERS_GTF :
+					if(!p.HasCommand("Extinguish") && !p.HasCommand("GetShears") && !p.HasCommand("Dive"))
+						return false;
+					break;
+					
+				case VT_FIREFIGHTERS_DEKONP :
+					if (!p.HasCommand("DriveAwayPerson") && !p.IsContaminated())
+						return false;
+					if(!p.CanEnterDekonP())
+						return false;
+					break;
+
+				case VT_FIREFIGHTERS_FMB:
+				{
+					// FMB in LStage ? - Liefere Zielpunkt an Land < 0 (=-0.2f)
+					if (v.IsInLandingStage(false, TargetPos, -0.2f) >= 0)
+					{
+						NotInLandingStage = false;
+						return true;
+					}
+					if (v.IsInLandingStage(true, TargetPos, -0.2f) >= 0)
+					{
+						NotInLandingStage = false;
+						return true;
+					};
+					NotInLandingStage = true;
+					// Taucher kann immer rein
+					if (!p.HasCommand("Dive"))
+						return false;		
+					break;
+				}			
+
+				case VT_POLICE_SW :
+				     	if(!p.HasCommand("Aim") && !p.HasCommand("Arrest") && !p.HasCommand("GetFlashgrenade") && !p.HasCommand("Negotiate") && !p.HasCommand("ScoutHouse"))
+						return false;
+					if (p.IsLinkedWithPerson())
+					   	return false;
+					break;
+				case VT_POLICE_PHC :
+					if(!p.HasCommand("Aim") && !p.HasCommand("Arrest") && !p.HasCommand("GetFlashgrenade") && !p.HasCommand("Negotiate") && !p.HasCommand("ScoutHouse"))
+						return false;
+					if (p.IsLinkedWithPerson())
+					   	return false;
+					break;
+
+				case VT_POLICE_STW :
+					if(!p.HasCommand("Arrest") && !p.HasCommand("Negotiate") || p.HasCommand("GetFlashgrenade"))
+						return false;
+					if (p.IsLinkedWithPerson())
+					   	return false;
+					break;
+					
+				case VT_POLICE_MTW :
+					if(!p.HasCommand("Arrest") && !p.HasCommand("GetFlashgrenade") && !p.HasCommand("Negotiate") && !p.HasCommand("ScoutHouse"))
+						return false;
+					if (p.IsLinkedWithPerson())
+						return false;
+					break;
+				
+				case VT_POLICE_GETAWAY : return false; break;
+
+				case VT_AMBULANCE_RHF :
+					if(!p.HasCommand("SendDog") && !p.HasCommand("CallDog"))
+						return false;
+					break;
+					
+				case VT_AMBULANCE_ITW :
+					if(p.IsCarryingPerson())
+						return false;
+					if(!p.HasCommand("Heal") && !p.HasCommand("UnloadPerson") && !p.HasCommand("PutInCar"))
+						return false;
+					if(p.HasCommand("Extinguish") || p.HasCommand("GetRoadBlock"))
+						return false;
+					break;
+				
+				case VT_AMBULANCE_NEF :
+					if(!p.IsDoctor())
+						return false;
+						
+				case VT_AMBULANCE_RHC :
+				case VT_AMBULANCE_RTW :
+					if (v.GetFreePassengers() == 0)
+						return false;
+					if(!p.HasCommand("Heal") && !p.IsParamedicTeam() )
+						return false;
+				
+
+				case VT_AMBULANCE_RTW:
+				case VT_AMBULANCE_ITW:
+				case VT_AMBULANCE_RHC:
+					if (p.IsCarryingPerson())
+					{
+						Person pat=p.GetCarried();
+						if (v.HasCommand("ich_bin_ein_bsw"))
+						{
+							if (!pat.IsDead())
+								return false;  // nur tote in BSW laden
+						} else {
+							if (pat.GetLife()<100)
+								return false; // sehr schwer verletzte dürfen nicht transportiert werden
+							if (((v.GetFreePassengers() + v.GetNumPassengers())<2) && (pat.GetLife()<700))
+							{
+								Mission::PlayHint("Schwer verletzte müssen im RTW transportiert werden");
+								return false;
+							}
+						}
+					}
+					break;				
+				default : return false;
+			}
+
+			if((p.HasCommand("extinguish") && (p.IsCarryingPerson() || p.IsLinkedWithPerson())) || p.IsContaminated())
+			{
+				if (v.GetVehicleType() == VT_FIREFIGHTERS_DEKONP)
+					return true;
+				else
+					return false;
+			}
+
+			
+			return true;
+		}
+
+		return false;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Caller);
+		Vehicle v(Target);
+		bool auto_wt=(Game::IsFreeplay() || Game::IsMultiplayer());
+		bool aufsitzen=((childID == 112) && auto_wt);
+
+		if (p.IsCarryingPerson())
+		{
+			Person carried = p.GetCarried();
+			bool carriedClassified = false;
+			if (carried.IsClassified())
+				carriedClassified = true;
+			if(!carriedClassified && (v.GetVehicleType() == VT_AMBULANCE_ITW || v.GetVehicleType() == VT_AMBULANCE_RTW || v.GetVehicleType() == VT_AMBULANCE_RHC))
+			{
+				ScriptInterface::ShowMessageTickerTextForSinglePlayer(Caller, "ALLM_CLASSIFY_FIRST");
+				Audio::PlaySample("mod:Audio/FX/Voices/Hints/ALLM_CLASSIFY_FIRST.wav");
+				return;
+			}
+		}
+		
+		TargetPoint targetPoint;
+		if (v.GetVehicleType() == VT_AMBULANCE_ITW)
+			targetPoint = TARGET_PASSENGERDOOR;
+		else if (v.GetVehicleType() == VT_THW_FGRT_BH)
+			targetPoint = TARGET_REARDOOR;
+		else if (v.GetVehicleType() == VT_FIREFIGHTERS_FMB)
+		{
+			if (NotInLandingStage)
+				targetPoint = TARGET_OBJECTSURFACE;
+			else
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+				Caller->PushActionTurnTo(ACTION_APPEND, Target);
+				Caller->PushActionEnterCar(ACTION_APPEND, Target);
+				return;
+			}
+		}
+		// diese Abfrage auf jeden Fall erst nach ITW und FMB
+		else if (p.IsParamedicTeam() || (p.IsDoctor() && (v.GetVehicleType() == VT_AMBULANCE_RTW)) ||
+				(p.HasCommand("Heal") && (v.GetNumTransported()>0  || Game::IsParamedicWithInjuredInSelection(Caller))))
+			targetPoint = TARGET_REARDOOR;
+		else 
+			targetPoint = TARGET_PASSENGERDOOR;
+
+		if((p.HasCommand("extinguish") && (p.IsCarryingPerson() || p.IsLinkedWithPerson())) || p.IsContaminated())
+		{
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_DEKONP)
+				targetPoint = TARGET_REARDOOR;
+		}
+
+		if (p.HasCommand("SendDog") && p.GetArrestedID() != -1)
+		{
+			targetPoint = TARGET_REARDOOR;
+			Caller->PushActionMove(ACTION_NEWLIST, Target, targetPoint);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			Caller->PushActionPutInCar(ACTION_APPEND, Target);
+			targetPoint = TARGET_PASSENGERDOOR;
+			Caller->PushActionMove(ACTION_APPEND, Target, targetPoint);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			Caller->PushActionEnterCar(ACTION_APPEND, Target);
+		}
+		else
+		{
+			Caller->PushActionMove(ACTION_NEWLIST, Target, targetPoint);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			Caller->PushActionEnterCar(ACTION_APPEND, Target);
+		}
+		// RTW zur Klinik oder zum Standort
+	
+		int n=0;
+		if (p.IsParamedicTeam() && auto_wt)
+		{
+			aufsitzen=false;
+			VehicleType vt=v.GetVehicleType();
+			switch (vt)
+			{
+				case VT_AMBULANCE_RHC:
+					n=2;
+					break;
+				case VT_AMBULANCE_RTW:
+					n=1;
+					break;
+				case VT_AMBULANCE_ITW:
+					n=2;           // Dummyvalue, beim ITW nicht sinnvoll einsetzbar, ITW kann nicht automatisch abruecken
+					break;
+			}
+			if (p.IsCarryingPerson())
+			{
+			   switch (vt)
+			   {
+			     case VT_AMBULANCE_RTW:
+				Person Pat=p.GetCarried();
+				Pat.SetInjuredLifeDrain(Pat.GetInjuredLifeDrain()*5);
+			     case VT_AMBULANCE_RHC:
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",&v,n+10,false);
+				break;
+			   };
+			} else {
+				if (v.HasCommand("ich_bin_kein_fz"))
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"SEG_Pat_anfordern",&v,n,false);
+				else
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",&v,n,false);
+			}
+		}
+		if (p.IsDoctor() && auto_wt)
+		{
+			aufsitzen=false;
+			VehicleType vt=v.GetVehicleType();
+			switch (vt)
+			{
+				case VT_AMBULANCE_RHC:
+				case VT_AMBULANCE_RTW:
+					if (v.GetFreeTransports() == 0)
+					{
+//						Mission::PlayHint("Mit Notarztbegleitung zur Klinik.");
+						if (v.HasCommand("ErwarteNA"))
+							Caller->PushActionExecuteCommand(ACTION_APPEND,"ErwarteNA",&v,0,false);
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",&v,12,false);
+					} else
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",&v,2,false);
+					break;
+
+				case VT_AMBULANCE_NEF:
+					if (Caller->HasCommand("ich_habe_helm"))
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"helmab",Caller,0,false);
+					}
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",&v,1,false);
+					break;
+				default:
+					aufsitzen=true;
+					break;
+			}
+		}
+		if (aufsitzen)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",&v,0,false);
+	}
+};
+
+object CheckAbfahrt : CommandScript
+ {
+
+   CheckAbfahrt()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle v(Target);
+	bool abfahrt=true;
+	bool transport=false;
+	int cid=childID;
+
+	
+	if (childID > 10) 
+	{
+		childID=childID-10;
+		transport=true;
+		if (v.GetFreeTransports() == 0)
+			abfahrt=true;	
+		else
+			abfahrt=false;
+	} else if (childID == 0) {
+		PersonList pl(Caller->GetName());
+		int n=pl.GetNumPersons();
+		for (int q=0;q<pl.GetNumPersons();q++)
+		{
+			if (pl.GetPerson(q)->IsInjured())
+				n--;
+			else
+				if ((pl.GetPerson(q)->GetEnteredCarID() != -1)) //  && (pl.GetPerson(q)->GetEnteredCarID() != v.GetID()))
+					n--;
+		}
+		abfahrt=(n == 0);
+	}
+	if (childID > 0)
+	{
+		int pl=v.GetNumPassengers();
+		abfahrt=(abfahrt && (pl >= childID)); 
+	}
+	if (abfahrt)
+	{
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"gohome_winterberg",&v,0,false);
+	}
+   }
+};

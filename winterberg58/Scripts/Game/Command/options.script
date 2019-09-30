@@ -1,0 +1,203 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script options
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+
+
+
+object eplus : CommandScript
+{
+
+   eplus()
+   {
+     	SetIcon("bma");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	float freq=Game::GetGlobalEventFrequencyFactor();
+	freq=freq*3;
+	Game::SetGlobalEventFrequencyFactor(freq);
+   }
+};
+
+object eminus : CommandScript
+{
+
+   eminus()
+   {
+     	SetIcon("bma");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	float freq=Game::GetGlobalEventFrequencyFactor();
+	freq=freq/3;
+	Game::SetGlobalEventFrequencyFactor(freq);
+   }
+};
+
+object uplus : CommandScript
+{
+
+   uplus()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int h,m,s;
+	Game::GetTime(h,m,s);
+	h++;
+	if (h>23)
+		h=0;
+	Game::SetTime(h,m,s);
+   }
+};
+
+object uminus : CommandScript
+{
+
+   uminus()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int h,m,s;
+	Game::GetTime(h,m,s);
+	h--;
+	if (h<0)
+		h=23;
+	Game::SetTime(h,m,s);
+   }
+};
+
+object switch_fms : CommandScript
+{
+
+   switch_fms()
+   {
+     	SetIcon("funkmast");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::ExecuteCommand("fms_umschalten",Caller);
+   }
+};
+
+
+object kamera_grenze_an : CommandScript
+{
+
+   kamera_grenze_an()
+   {
+     	SetIcon("lighton");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::SetMapBoundsBlockCamera(false);
+   }
+};
+
+object kamera_grenze_aus : CommandScript
+{
+
+   kamera_grenze_aus()
+   {
+     	SetIcon("lightoff");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::SetMapBoundsBlockCamera(true);
+   }
+};
+
+object schneeaus : CommandScript
+{
+
+   schneeaus()
+   {
+     	SetIcon("notaus");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		char * notrackmap="mod:Maps/notracks_d.e4m";
+		char * trackmap="mod:Maps/d_freeplay.e4m";
+
+		
+
+		if (Weather::GetSnowIntensity() > 0)
+		{
+			Weather::SetSnowVisible(false);
+			Weather::SetSnowIntensity(0.0);
+		} else {
+			Weather::SetSnowVisible(true);
+			Weather::SetSnowIntensity(0.7);
+		}
+   }
+};
+
+

@@ -1,0 +1,449 @@
+//  Einsatzmittel-Kennzeichen Winterberger Em4 v0.1
+//  
+//  dienst zur Identifizierung von Fahrzeugen/Helfern
+
+int DummyGroup = 20;
+
+object ich_bin_frei : CommandScript
+{
+	ich_bin_frei()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_nicht_frei : CommandScript
+{
+	ich_bin_nicht_frei()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+object ich_bin_ein_notarzt : CommandScript
+{
+	ich_bin_ein_notarzt()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_ra : CommandScript
+{
+	ich_bin_ein_ra()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_el : CommandScript
+{
+	ich_bin_ein_el()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+object ich_bin_ein_nef : CommandScript
+{
+	ich_bin_ein_nef()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_rtw : CommandScript
+{
+	ich_bin_ein_rtw()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_lf : CommandScript
+{
+	ich_bin_ein_lf()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_wasser : CommandScript
+{
+	ich_fuehre_wasser()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_rw : CommandScript
+{
+	ich_bin_ein_rw()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_wasser_retter : CommandScript
+{
+	ich_bin_ein_wasser_retter()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_hubretter : CommandScript
+{
+	ich_bin_ein_hubretter()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object loeschzug_teilnehmer : CommandScript
+{
+	loeschzug_teilnehmer()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ruestzug_teilnehmer : CommandScript
+{
+	ruestzug_teilnehmer()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object gefahrgut_teilnehmer : CommandScript
+{
+	gefahrgut_teilnehmer()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_bsw : CommandScript
+{
+	ich_bin_ein_bsw()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+object fl_8442 : CommandScript
+{
+	fl_8442()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object fl_8231 : CommandScript
+{
+	fl_8231()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+object fl_8331 : CommandScript
+{
+	fl_8331()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+object fl_8511 : CommandScript
+{
+	fl_8511()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object fl_8821 : CommandScript
+{
+	fl_8821()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object fl_8831 : CommandScript
+{
+	fl_8831()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object fl_11831 : CommandScript
+{
+	fl_11831()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object fl_4941 : CommandScript
+{
+	fl_4941()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_rth : CommandScript
+{
+	ich_bin_ein_rth()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+object ich_bin_ein_stw : CommandScript
+{
+	ich_bin_ein_stw()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_mtw : CommandScript
+{
+	ich_bin_ein_mtw()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_phc : CommandScript
+{
+	ich_bin_ein_phc()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object freiwillige : CommandScript
+{
+	freiwillige()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_pa : CommandScript
+{
+	ich_fuehre_pa()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_csa : CommandScript
+{
+	ich_fuehre_csa()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_tauchgeraet : CommandScript
+{
+	ich_fuehre_tauchgeraet()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object seg_fz : CommandScript
+{
+	seg_fz()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_siemens : CommandScript
+{
+	ich_bin_ein_siemens()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};

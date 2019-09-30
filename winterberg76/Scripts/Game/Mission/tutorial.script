@@ -1,0 +1,2434 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script tutorial
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+const float TIME_WAIT_FOR_CAMERA = 8.0f; // Zeit, die bei Kamerabewegungen auf jeden Fall gewartet wird
+const float TIME_WAIT_FOR_CAMERA_ZOOM = 4.0f; // Spezielle Zeit, beim Zoomen
+const float TIME_EXTINGUISH = 7.0f; // Zeit zum Löschen von Station 1
+const int START_STATE = 0; // Nummer der Station 0 = von Beginn
+						   //					 1 = Station 1 Feuerbekämpfung
+						   //					 2 = Station 2 Rauchkammer
+						   //					 3 = Station 3 Geiselnahme
+const float HINT_SPEED = 90.0f; // Geschwindigkeit, mit der der Supervisor-Text durchläuft
+const float TIME_CHECK_MISSION = 0.3f;
+const float TIME_ENDCUTSCENE1 = 2.5f;
+const float TIME_ENDCUTSCENE2 = 2.5f;
+const float TIME_ENDCUTSCENE3 = 2.5f;
+const float TIME_ENDCUTSCENE4 = 2.5f;
+const float TIMEOUT_USER_INTERACTION = 20.0f;
+const float INSTRUCTIONWINDOW_DIST_Y = 65.0f;
+const float DURATION_PANEL = 2.5f;
+
+const char NAME_TRANSITION_MOVE_TO_BASE[] = "scene1";
+const float TIME_TRANSITION_MOVE_TO_BASE = 3.0f;
+const char NAME_TRANSITION_MOVE_TO_FIRE_SIM[] = "scene2"; // Fahrt zu Station 1
+const float TIME_TRANSITION_MOVE_TO_FIRE_SIM = 3.0f;
+const float TIME_TRANSITION_MOVE_TO_FIRE_SIM0 = 1.0f;
+const char NAME_TRANSITION_MOVE_TO_FIRE_SIMA[] = "scene2a"; // Fahrt über Hintergrundgeschehen von Station 1 A
+const float TIME_TRANSITION_MOVE_TO_FIRE_SIMA = 2.0f;
+const char NAME_TRANSITION_MOVE_TO_FIRE_SIMB[] = "scene2b"; // Fahrt über Hintergrundgeschehen von Station 1 B
+const float TIME_TRANSITION_MOVE_TO_FIRE_SIMB = 2.0f;
+const char NAME_TRANSITION_MOVE_TO_FIRE_SIMC[] = "scene2c"; // Fahrt über Hintergrundgeschehen von Station 1 C
+const float TIME_TRANSITION_MOVE_TO_FIRE_SIMC = 2.0f;
+const char NAME_TRANSITION_MOVE_TO_SMOKE_SIM[] = "scene3"; // Fahrt zu Station 2
+const float TIME_TRANSITION_MOVE_TO_SMOKE_SIM = 3.0f;
+const float TIME_TRANSITION_MOVE_TO_SMOKE_SIM0 = 1.0f;
+const char NAME_TRANSITION_MOVE_TO_SMOKE_SIMA[] = "scene3a"; // Fahrt über Hintergrundgeschehen von Station 2 A
+const float TIME_TRANSITION_MOVE_TO_SMOKE_SIMA = 3.0f;
+const char NAME_TRANSITION_MOVE_TO_SMOKE_SIMB[] = "scene3b"; // Fahrt über Hintergrundgeschehen von Station 2 B
+const float TIME_TRANSITION_MOVE_TO_SMOKE_SIMB = 3.0f;
+const char NAME_TRANSITION_MOVE_TO_SMOKE_SIMC[] = "scene3c"; // Fahrt über Hintergrundgeschehen von Station 2 C
+const float TIME_TRANSITION_MOVE_TO_SMOKE_SIMC = 3.0f;
+const char NAME_TRANSITION_MOVE_TO_HOSTAGE_SIM[] = "scene4"; // Fahrt zu Station 3
+const float TIME_TRANSITION_MOVE_TO_HOSTAGE_SIM = 3.5f;
+const char NAME_TRANSITION_MOVE_TO_HOSTAGE_SIMA[] = "scene4a"; // Fahrt über Hintergrundgeschehen von Station 3 A
+const float TIME_TRANSITION_MOVE_TO_HOSTAGE_SIMA = 3.0f;
+const char NAME_TRANSITION_MOVE_TO_HOSTAGE_SIMB[] = "scene4b"; // Fahrt über Hintergrundgeschehen von Station 3 B
+const float TIME_TRANSITION_MOVE_TO_HOSTAGE_SIMB = 3.0f;
+const char NAME_TRANSITION_MOVE_TO_HOSTAGE_SIMC[] = "scene4c"; // Fahrt über Hintergrundgeschehen von Station 3 C
+const float TIME_TRANSITION_MOVE_TO_HOSTAGE_SIMC = 3.0f;
+const char NAME_TRANSITION_MOVE_INSIDE_HOSTAGE_SIM[] = "hostage_inside"; // Fahrt über das Haus von Station 3
+const float TIME_TRANSITION_MOVE_INSIDE_HOSTAGE_SIM = 3.0f;
+const char NAME_FIRE_HOUSE[] = "house_fire";
+const char NAME_WINDOW_FIRE[] = "particle_windowfire";
+const char NAME_BLINK_FIELD_FIRE[] = "field_fire";
+const char NAME_BLINK_FIELD_SMOKE[] = "field_smoke";
+const char NAME_BLINK_FIELD_DUMMY[] = "field_dummy";
+const char NAME_BLINK_FIELD_HOUSE[]	= "field_house";
+const char NAME_BLINK_FIELD_GRENADE[] = "field_grenade";
+const char NAME_BLINK_FIELD_HYDRANT[] = "field_hydrant";
+const char NAME_TRIGGER_FIELD_FIRE[] = "trigger_field_fire";
+const char NAME_TRIGGER_FIELD_SMOKE[] = "trigger_field_smoke";
+const char NAME_TRIGGER_FIELD_DUMMY[] = "trigger_field_dummy";
+const char NAME_TRIGGER_FIELD_HOUSE[] = "trigger_field_house";
+const char NAME_HELI1[] = "heli1";
+const char NAME_HELI2[] = "heli2";
+const char NAME_PATH_HELI1[] = "path_heli1";
+const char NAME_PATH_HELI2[] = "path_heli2";
+const char NAME_SMOKEHALL[] = "smokehall";
+const char NAME_SMOKEHALL_GATE[] = "smokehall_gate";
+const char NAME_SMOKEHALL_BUTTON[] = "smokehall_button";
+const char NAME_SMOKEHALL_PARTICLE[] = "particle_smoke";
+const char NAME_ENGINEER[] = "engineer";
+const char NAME_FIREFIGHTER_MASK[] = "firefighter_mask";
+const char NAME_DUMMY[] = "dummy";
+const char NAME_SCOUT[] = "scout";
+const char NAME_SHOOTER[] = "shooter";
+const char NAME_SHARPSHOOTER[] = "sharpshooter";
+const char NAME_SW[] = "sw";
+const char NAME_VO_DOORBLOCK[] = "vo_doorblock";
+const char NAME_HOSTAGE_HOUSE[] = "hostage_house";
+const char NAME_ACTION_LIFTPERSON[] = "EActionLiftPerson";
+const char NAME_SCREEN_CHILD[] = "video_screen";
+const char NAME_GANGSTER[] = "gangster";
+const char NAME_SCREEN_TEXTURE[] = "mod:Models/Objects/HouseChildren/tutstation03_screen.dds";
+const char NAME_SCREEN_VIDEO1[] = "base:Video/tutorial/tutorial_clip_1.mpg";
+const char NAME_SCREEN_VIDEO2[] = "base:Video/tutorial/tutorial_clip_2.mpg";
+const char NAME_SCREEN_VIDEO3[] = "base:Video/tutorial/tutorial_clip_3.mpg";
+const char NAME_CRANE[] = "crane";
+const char NAME_CAR[] = "car";
+const char NAME_TRUCK1[] = "truck1";
+const char NAME_TRUCK2[] = "truck2";
+const char NAME_TRUCK3[] = "truck3";
+const char NAME_PLACE_CAR[] = "place_car";
+const char NAME_TRANSAID[] = "transaid";
+const char NAME_TRANSAID_SQUAD[] = "transaid_squad";
+const char NAME_UNIT[] = "unit";
+
+object Tutorial : MissionScript
+{
+	enum TutorialState
+	{
+		STATE_INITIAL_DELAY,
+		STATE_WAITING_FOR_START_TUTORIAL_MESSAGE,
+		STATE_WAITING_FOR_TUTORIAL_MESSAGE,
+		STATE_MOVING_TO_BASE,
+		STATE_MOVED_TO_BASE,
+		STATE_SUPERVISOR_SPEAKING,
+		STATE_SUPERVISOR_FINISHED,
+		STATE_WAIT_FOR_ENDCUTSCENE1,
+		STATE_WAIT_FOR_ENDCUTSCENE2,
+		STATE_WAIT_FOR_ENDCUTSCENE3,
+		STATE_WAIT_FOR_ENDCUTSCENE4,
+		STATE_WAIT_FOR_USER_CLICKED,
+		STATE_USER_CLICKED_SKIP,
+		STATE_USER_CLICKED_TRAINING,
+		STATE_TRAINING_MESSAGE_FINISHED,
+		STATE_SUPERVISOR_BEFORE_OBJECTIVES,
+		STATE_START_OBJECTIVE_WINDOW_OPEN_OBJECTIVE,
+		STATE_WAITING_FOR_OBJECTIVE_WINDOW_OPEN,
+		STATE_START_OBJECTIVE_WINDOW_CLOSE_OBJECTIVE,
+		STATE_WAITING_FOR_OBJECTIVE_WINDOW_CLOSE,
+		STATE_START_OBJECTIVES_CAMERA,
+		STATE_WAITING_FOR_SCROLLING,
+		STATE_WAITING_FOR_PITCHING,
+		STATE_WAITING_FOR_SCROLLING,
+		STATE_WAITING_FOR_ZOOMING,
+		STATE_MOVING_TO_FIRE_SIM,
+		STATE_MOVING_TO_FIRE_SIM0,
+		STATE_MOVING_TO_FIRE_SIMA,
+		STATE_MOVING_TO_FIRE_SIMB,
+		STATE_MOVING_TO_FIRE_SIMC,
+		STATE_MOVED_TO_FIRE_SIM,
+		STATE_START_OBJECTIVE_FIRE_SIM,
+		STATE_FIRE_MESSAGE_FINISHED,
+		STATE_WAITING_FOR_FIREDEPARTMENT_BUTTON,
+		STATE_WAITING_FOR_RW_BUTTON,
+		STATE_WAITING_FOR_FIREFIGHTER_BUTTON,
+		STATE_WAITING_FOR_SEND_BUTTON,
+		STATE_VEHICLE_SENT,
+		STATE_WAITING_FOR_MOVED_HOME,
+		STATE_MOVED_HOME,
+		STATE_WAITING_FOR_RW_SELECTED,
+		STATE_MOVING_TO_FIRE_SIM_AGAIN,
+		STATE_MOVED_TO_FIRE_SIM_AGAIN,
+		STATE_WAITING_FOR_RW_ARRIVE,
+		STATE_RW_ARRIVED,
+		STATE_WAITING_FOR_RW_EMPTY,
+		STATE_RW_EMPTY,
+		STATE_WAITING_FOR_FIREFIGHTER_SELECTED,
+		STATE_WAITING_FOR_EQUIPMENT_CLICKED,
+		STATE_WAITING_FOR_FIREHOSE_COMMAND,
+		STATE_WAITING_FOR_GET_FIREHOSE,
+		STATE_GOT_FIREHOSE,
+		STATE_WAITING_FOR_ATTACH_FIREHOSE_CLICKED,
+		STATE_WAITING_FOR_ATTACH_FIREHOSE,
+		STATE_ATTACHED_FIREHOSE,
+		STATE_WAITING_FOR_EXTINGUISH,
+		STATE_WAITING_FOR_DEINSTALL_FIREHOSE,
+		STATE_DEINSTALLED_FIREHOSE,
+		STATE_WAITING_FOR_DROPPED_FIREHOSE,
+		STATE_DROPPED_FIREHOSE,
+		STATE_MOVING_TO_SMOKE_SIM,
+		STATE_MOVING_TO_SMOKE_SIM0,
+		STATE_MOVING_TO_SMOKE_SIMA,
+		STATE_MOVING_TO_SMOKE_SIMB,
+		STATE_MOVING_TO_SMOKE_SIMC,
+		STATE_MOVED_TO_SMOKE_SIM,
+		STATE_START_OBJECTIVE_SMOKE_SIM,
+		STATE_SMOKE_MESSAGE_FINISHED,
+		STATE_WAITING_FOR_AMBULANCE_BUTTON,
+		STATE_WAITING_FOR_RTW_BUTTON,
+		STATE_WAITING_FOR_RTW_SEND_BUTTON,
+		STATE_RTW_SENT,
+		STATE_WAITING_FOR_RTW_ARRIVE,
+		STATE_RTW_ARRIVED,
+		STATE_WAITING_FOR_RTW_EMPTY,
+		STATE_RTW_EMPTY,
+		STATE_WAITING_FOR_ENGINEER_SELECTED,
+		STATE_WAITING_FOR_USE_PANEL,
+		STATE_DOOR_OPENED,
+		STATE_WAITING_FOR_FIREFIGHTER_MASK_SELECTED,
+		STATE_WAITING_FOR_ENTERED_SMOKEHALL,
+		STATE_ENTERED_SMOKEHALL,
+		STATE_WAITING_FOR_LIFT_DUMMY,
+		STATE_DUMMY_LIFTED,
+		STATE_WAITING_FOR_DUMMY_ARRIVE,
+		STATE_DUMMY_ARRIVED,
+		STATE_WAITING_FOR_UNLOADED_DUMMY,
+		STATE_DUMMY_UNLOADED,
+		STATE_WAITING_FOR_DOCTOR_SELECTED,
+		STATE_WAITING_FOR_DOCTOR_BEGIN_HEAL,
+		STATE_DOCTOR_BEGIN_HEAL,
+		STATE_WAITING_FOR_DOCTOR_HEAL,
+		STATE_DOCTOR_HEALED,
+		STATE_WAITING_FOR_PARAMEDICS_SELECTED,
+		STATE_WAITING_FOR_PARAMEDICS_LIFT,
+		STATE_PARAMEDICS_LIFTED,
+		STATE_WAITING_FOR_PARAMEDICS_PUTIN,
+		STATE_PARAMEDICS_PUTIN,
+		STATE_WAITING_FOR_DOCTOR_SELECTED2,
+		STATE_WAITING_FOR_DOCTOR_GETIN,
+		STATE_DOCTOR_GOTIN,
+		STATE_WAITING_FOR_RTW_LEFT,
+		STATE_RTW_LEFT,
+		STATE_MOVING_TO_HOSTAGE_SIM,
+		STATE_MOVING_TO_HOSTAGE_SIM0,
+		STATE_MOVING_TO_HOSTAGE_SIMA,
+		STATE_MOVING_TO_HOSTAGE_SIMB,
+		STATE_MOVING_TO_HOSTAGE_SIMC,
+		STATE_MOVED_TO_HOSTAGE_SIM,
+		STATE_START_OBJECTIVE_HOSTAGE_SIM,
+		STATE_HOSTAGE_MESSAGE_FINISHED,
+		STATE_WAITING_FOR_SCOUT_SELECTED,
+		STATE_WAITING_FOR_SCOUT_SCOUTHOUSE,
+		STATE_WAITING_FOR_POST_SCOUTHOUSE,
+		STATE_WAITING_FOR_SHOOTER_SELECTED,
+		STATE_WAITING_FOR_EQUIPMENT_SHOOTERCLICKED,
+		STATE_WAITING_FOR_GET_GRENADE,
+		STATE_GOT_GRENADE,
+		STATE_WAITING_FOR_SHARPSHOOTER_SELECTED,
+		STATE_WAITING_FOR_TEAM_ENTER_HOUSE,
+		STATE_TEAM_ENTERED_HOUSE,
+		STATE_MOVING_INSIDE_HOUSE,
+		STATE_MOVED_INSIDE_HOUSE,
+		STATE_WAITING_FOR_UNSELECT_TEAM,
+		STATE_WAITING_FOR_SHOOTER_SELECTED2,
+		STATE_WAITING_FOR_THROW_CLICKED,
+		STATE_WAITING_FOR_THROW_GRENADE,
+		STATE_GRENADE_THROWN,
+		STATE_WAITING_FOR_SHARPSHOOTER_SELECTED2,
+		STATE_WAITING_FOR_AIM,
+		STATE_AIM,
+		STATE_WAITING_FOR_SHOOT_GANGSTER,
+		STATE_GANGSTER_SHOT,
+
+		STATE_END
+	};
+
+	TutorialState mState, mLastState, mNextState;
+	TutorialState mPreviousState;
+	float mGlobalTime;
+	float mWaitTime;
+	float mWaitTime2;
+	float mWaitTimeSupervisor;
+	Vector mBasePos, mSaveCamPos;
+	float mBaseYaw, mBasePitch, mBaseRoll;
+	bool mCamHasMoved;
+	bool mObjectivesStayUnlocked;
+	bool mEquipmentMenuWasOpen;
+	GameObject mFireHouse;
+	GameObjectList mWindowFireList;
+	GameObject mBlinkFieldFire, mBlinkFieldSmoke, mBlinkFieldDummy,
+			   mBlinkFieldHouse, mBlinkFieldGrenade, mBlinkFieldHydrant,
+			   mBlinkFieldSelect;
+	Vehicle mRW, mRTW, mSW, mTransAid;
+	Vehicle mHeli1, mHeli2;
+	Path mPathHeli1, mPathHeli2;
+	PersonList mFirefighterList;
+	Person mFirefighter;
+	Person mScout, mShooter, mSharpShooter;
+	OpenHouse mSmokehall;
+	GameObject mSmokehallGate, mSmokehallButton;
+	GameObjectList mSmokeHallParticles;
+	Person mEngineer, mFirefighterMask;
+	Person mDummy;
+	Person mDoctor, mParamedics;
+	GameObject mGangster;
+	OpenHouse mHostageHouse;
+	Actor mVODoorBlock;
+	float mExtinguishTime;
+	bool mShooterWasSelected;
+	bool mSharpShooterWasSelected;
+	const char *mAllowedCmd;
+	Vehicle mCrane, mCar, mTruck1, mTruck2, mTruck3;
+	Actor mPlaceCar;
+	float mAfterCommentCountdown;
+	int mSoundID;
+
+	Tutorial()
+	{
+		//System::SetEnv("e4_autogetequipment", 0);
+	}
+
+	~Tutorial()
+	{
+		//System::SetEnv("e4_autogetequipment", 1);
+		ScriptInterface::SetEnableActionButtonsBlinking(false);
+		Game::EnableMultiSelection(true);
+		Game::EnableUpdateMissionOnPause(false);
+		ScriptInterface::SetVehicleBrowserAutohide(true);
+		System::Log("Switch Vehicle-Browser-Autohide to true.");
+		ScriptInterface::DisableTutorialMode();
+	}
+
+	void Start()
+	{
+		mState = STATE_INITIAL_DELAY;
+		mPreviousState = mState;
+		mObjectivesStayUnlocked = false;
+		mExtinguishTime = -1.0f;
+		ScriptInterface::EnableTutorialMode();
+		ScriptInterface::UnlockExit();
+		//ScriptInterface::ShowInvisibleTutorialOverlay();
+		ScriptInterface::SetEnableActionButtonsBlinking(false);
+		Game::EnableMultiSelection(false);
+		ScriptInterface::SetVehicleBrowserAutohide(false);
+		System::Log("Switch Vehicle-Browser-Autohide to false.");
+		Mission::StartIntervalTimer("timer_checkmission", TIME_CHECK_MISSION);
+		System::Log("Tutorial started");
+
+		mWindowFireList = Game::GetGameObjects(NAME_WINDOW_FIRE);
+		for(int i = 0; i < mWindowFireList.GetNumObjects(); i++)
+		{
+			mWindowFireList.GetObject(i)->Hide();
+			mWindowFireList.GetObject(i)->StopParticleEffect();
+		}
+
+		PathList pathList1(NAME_PATH_HELI1);
+		mPathHeli1 = pathList1.GetPath(0);
+		PathList pathList2(NAME_PATH_HELI2);
+		mPathHeli2 = pathList2.GetPath(0);
+		ActorList actList(NAME_VO_DOORBLOCK);
+		mVODoorBlock = actList.GetActor(0);
+		if (!mVODoorBlock.IsValid())
+			System::Error("vo_doorblock not found!");
+		ActorList actList1(NAME_PLACE_CAR);
+		mPlaceCar = actList1.GetActor(0);
+
+		mSmokeHallParticles = Game::GetGameObjects(NAME_SMOKEHALL_PARTICLE);
+
+		GameObjectList listAll = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",listAll.GetObject(0));
+		for(int i = 0; i < listAll.GetNumObjects(); i++)
+		{
+			GameObject *obj = listAll.GetObject(i);
+			if (obj->HasName(NAME_FIRE_HOUSE))
+				mFireHouse = obj;
+			else if (obj->HasName(NAME_BLINK_FIELD_FIRE))
+			{
+				mBlinkFieldFire = *obj;
+				mBlinkFieldFire.Hide();
+			}
+			else if (obj->HasName(NAME_BLINK_FIELD_SMOKE))
+			{
+				mBlinkFieldSmoke = *obj;
+				mBlinkFieldSmoke.Hide();
+			}
+			else if (obj->HasName(NAME_BLINK_FIELD_DUMMY))
+			{
+				mBlinkFieldDummy = *obj;
+				mBlinkFieldDummy.Hide();
+			}
+			else if (obj->HasName(NAME_BLINK_FIELD_HOUSE))
+			{
+				mBlinkFieldHouse = *obj;
+				mBlinkFieldHouse.Hide();
+			}
+			else if (obj->HasName(NAME_BLINK_FIELD_GRENADE))
+			{
+				mBlinkFieldGrenade = *obj;
+				mBlinkFieldGrenade.Hide();
+			}
+			else if (obj->HasName(NAME_BLINK_FIELD_HYDRANT))
+			{
+				mBlinkFieldHydrant = *obj;
+				mBlinkFieldHydrant.Hide();
+				mBlinkFieldSelect = Game::CreateObject(mBlinkFieldHydrant.GetPrototypeFileName(), "BlinkField");
+				mBlinkFieldSelect.Hide();
+			}
+			else if (obj->HasName(NAME_HELI1))
+			{
+				mHeli1 = obj;
+				mHeli1.Hide();
+				mHeli1.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_HELI2))
+			{
+				mHeli2 = obj;
+				mHeli2.Hide();
+				mHeli2.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_SMOKEHALL))
+			{
+				mSmokehall = OpenHouse(obj);
+			}
+			else if (obj->HasName(NAME_SMOKEHALL_GATE))
+			{
+				mSmokehallGate = obj;
+			}
+			else if (obj->HasName(NAME_SMOKEHALL_BUTTON))
+			{
+				mSmokehallButton = obj;
+				mSmokehallButton.EnableSpecialLights(true);
+			}
+			else if (obj->HasName(NAME_ENGINEER))
+			{
+				mEngineer = Person(obj);
+				mEngineer.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_FIREFIGHTER_MASK))
+			{
+				mFirefighterMask = Person(obj);
+				mFirefighterMask.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_DUMMY))
+			{
+				mDummy = Person(obj);
+				mDummy.SetLife(50.0f);
+			}
+			else if (obj->HasName(NAME_SCOUT))
+			{
+				mScout = Person(obj);
+				mScout.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_SHOOTER))
+			{
+				mShooter = Person(obj);
+				mShooter.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_SHARPSHOOTER))
+			{
+				mSharpShooter = Person(obj);
+				mSharpShooter.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_HOSTAGE_HOUSE))
+			{
+				mHostageHouse = OpenHouse(obj);
+				mHostageHouse.ClearFlag(OF_ACCESSIBLE);
+				mHostageHouse.EnableSpecialLights(false);
+			}
+			else if (obj->HasName(NAME_SCREEN_CHILD))
+			{
+				System::Log("video screen trace accuracy set to no collision");
+				obj->SetTraceAccuracy_NoCollision();
+			}
+			else if (obj->HasName(NAME_GANGSTER))
+			{
+				mGangster = obj;
+				//mGangster.Hide();
+			}
+			else if (obj->HasName(NAME_CRANE))
+			{
+				mCrane = Vehicle(obj);				
+			}
+			else if (obj->HasName(NAME_CAR))
+			{
+				mCar = Vehicle(obj);
+			}
+			else if (obj->HasName(NAME_TRUCK1))
+			{
+				mTruck1 = Vehicle(obj);
+			}
+			else if (obj->HasName(NAME_TRUCK2))
+			{
+				mTruck2 = Vehicle(obj);
+			}
+			else if (obj->HasName(NAME_TRUCK3))
+			{
+				mTruck3 = Vehicle(obj);
+			}
+			else if (obj->HasName(NAME_SW))
+			{
+				mSW = Vehicle(obj);
+				mSW.SetSelectable(false);
+			}
+			else if (obj->HasName(NAME_TRANSAID))
+			{
+				mTransAid = Vehicle(obj);
+				mTransAid.ClearActions();
+			}
+			else if (obj->HasName(NAME_UNIT))
+			{
+				obj->SetSelectable(false);
+			}
+		}
+
+		PersonList pList1(NAME_TRANSAID_SQUAD);
+		for (int i = 0; i < pList1.GetNumPersons(); i++)
+		{
+			pList1.GetPerson(i)->Hide();
+			pList1.GetPerson(i)->SetSelectable(false);
+			mTransAid.AddSquad(pList1.GetPerson(i));
+		}
+
+		for(int i = 0; i < mSmokeHallParticles.GetNumObjects(); i++)
+		{
+			mSmokeHallParticles.GetObject(i)->StopParticleEffect();
+		}
+
+		// START_STATE for debugging
+		if (START_STATE == 0)
+		{
+			Camera::DisableCameraXYMovement();
+			Camera::DisableCameraZMovement();
+			Camera::DisableCameraRotation();
+			mState = STATE_INITIAL_DELAY;
+			ScriptInterface::HideNavigator();
+			ScriptInterface::HideActionBar();
+		}
+		else if (START_STATE == 1)
+		{
+			mCamHasMoved = true;
+			mObjectivesStayUnlocked = true;
+			ScriptInterface::UnlockObjectivesWindow();
+			ScriptInterface::EnableOpenCloseBaseWindow();
+			mState = STATE_WAITING_FOR_ZOOMING;
+		}
+		else if (START_STATE == 2)
+		{
+			Game::SetMapBoundsBlockCamera(false);
+			mState = STATE_DROPPED_FIREHOSE;
+		}
+		else if (START_STATE == 3)
+		{
+			Game::SetMapBoundsBlockCamera(false);
+			mState = STATE_RTW_LEFT;
+		}
+		//mState = STATE_GOT_GRENADE;
+		//mState = STATE_END;
+
+		mSoundID = -1;
+		mAllowedCmd = "";
+		mAfterCommentCountdown = 0.0f;
+		ScriptInterface::SetMessageTickerSpeed(HINT_SPEED);
+		ScriptInterface::EnableNavigatorFireDepartmentButton(false);
+		ScriptInterface::EnableNavigatorAmbulanceButton(false);
+		ScriptInterface::LockObjectivesWindow();
+
+		Audio::PlaySoundtrack("tutorial", 0.0f);
+	}
+
+	bool IsCameraSignificantlyMovedAwayFromBase()
+	{
+		Vector pos;
+		pos = Camera::Get();
+		float distance = (pos - mBasePos).GetLen();
+		const float CAMERA_MOVEMENT_THRESHOLD = 200.0f;
+		return distance > CAMERA_MOVEMENT_THRESHOLD;
+	}
+
+	bool IsCameraSignificantlyRotated()
+	{
+		float yaw, pitch, roll;
+		Camera::GetRotation(roll, pitch, yaw);
+		const float CAMERA_ROTATION_YAW_THRESHOLD = 10.0f;
+		//System::Log("base yaw rotation: %d", (int)(mBaseYaw*100.0f));
+		//System::Log("yaw rotation: %d", (int)(yaw*100.0f));
+		//System::Log("roll rotation: %d", (int)(roll*100.0f));
+		//System::Log("pitch rotation: %d", (int)(pitch*100.0f));
+		return Math::fabs(yaw - mBaseYaw) > CAMERA_ROTATION_YAW_THRESHOLD;
+	}
+
+	bool IsCameraSignificantlyZoomed()
+	{
+		Vector pos;
+		pos = Camera::Get();
+		const float CAMERA_ZOOM_THRESHOLD = 500.0f;
+		return Math::fabs(pos.z - mBasePos.z) > CAMERA_ZOOM_THRESHOLD;
+	}
+
+	void OnJumpToEntryPoint()
+	{
+		if (mState == STATE_WAITING_FOR_MOVED_HOME)
+			mState = STATE_MOVED_HOME;
+	}
+
+	bool IsTutorial()
+	{
+		return true;
+	}
+
+	void SetBlinkFieldSelectPosition(const GameObject *obj)
+	{
+		Vector pos = obj->GetPosition();
+		mBlinkFieldFire.Show();
+		pos.z = mBlinkFieldFire.GetPosition().z + 1.0f;		
+		mBlinkFieldFire.Hide();
+		mBlinkFieldSelect.SetPlacementNone();
+		mBlinkFieldSelect.SetPosition(pos);
+	}
+
+	void CheckUserInteraction()
+	{
+		mWaitTime -= TIME_CHECK_MISSION;
+		if (mWaitTime <= 0.0f)
+		{
+			if (mState == mNextState)
+			{
+				mState = mLastState;
+				mNextState = -1;
+			}
+		}
+	}
+
+	void WaitForTutorialMessage(TutorialState nextState)
+	{
+		mLastState = mState;
+		mNextState = nextState;
+		mWaitTime = TIMEOUT_USER_INTERACTION;
+		mState = STATE_WAITING_FOR_START_TUTORIAL_MESSAGE;
+	}
+
+	void CheckMissionState(float time)
+	{
+		mGlobalTime += time;
+		if (mState != mPreviousState)
+		{
+			mPreviousState = mState;
+			if (mObjectivesStayUnlocked)
+				ScriptInterface::UnlockObjectivesWindow();
+		}
+		//CheckUserInteraction();
+		switch (mState)
+		{			
+			case STATE_INITIAL_DELAY:
+			{
+				ScriptInterface::EnableNavigatorFireDepartmentButton(false);
+				ScriptInterface::EnableNavigatorAmbulanceButton(false);
+				mState = STATE_MOVED_TO_BASE;//STATE_MOVING_TO_BASE;
+			}
+			break;
+			case STATE_WAITING_FOR_START_TUTORIAL_MESSAGE:
+			{
+				if (Mission::IsCommentPlaying())
+				{
+					System::Log("Comment started!");
+					mState = STATE_WAITING_FOR_TUTORIAL_MESSAGE;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_TUTORIAL_MESSAGE:
+			{				
+				//if (!ScriptInterface::IsTutorialMessageOpen())
+				if (!Mission::IsCommentPlaying()// && !ScriptInterface::IsMessageTickerOpen()
+					&& mAfterCommentCountdown <= 0.0f)
+				{
+					System::Log("Comment finished!");
+					mAfterCommentCountdown = 0.5f;
+				}
+				if (mAfterCommentCountdown > 0.0f)
+				{
+					mAfterCommentCountdown -= TIME_CHECK_MISSION;
+					if (mAfterCommentCountdown <= 0.0f)
+					{
+						mAfterCommentCountdown = 0.0f;						
+						ScriptInterface::HideTutorialOverlay();
+						mState = mNextState;
+					}
+				}
+			}
+			break;
+			case STATE_MOVING_TO_BASE:
+			{
+				//Mission::StartCutScene();
+				//Mission::ShowBlackBars();
+				//Camera::StartTransition(NAME_TRANSITION_MOVE_TO_BASE, TIME_TRANSITION_MOVE_TO_BASE);
+			}
+			break;
+			case STATE_MOVED_TO_BASE:
+			{
+				mBasePos = Camera::Get();
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT01", "base:Audio/FX/tutorial/tut.wav");
+				Mission::PlayComment("SUPERV_TUT01");
+				ScriptInterface::CloseTutorialInstruction();
+				WaitForTutorialMessage(STATE_SUPERVISOR_FINISHED);				
+			}
+			break;
+			case STATE_SUPERVISOR_FINISHED:
+			{
+				System::Log("Show Notice");
+				ScriptInterface::HideTutorialOverlay();
+				ScriptInterface::ShowNotice("ID_TUTORIAL_QUESTION");
+				mState = STATE_WAIT_FOR_USER_CLICKED;
+			}
+			break;
+			case STATE_WAIT_FOR_USER_CLICKED:
+			{
+				if (ScriptInterface::NoticeIsHidden())
+				{
+					if (ScriptInterface::DidUserHitOK())
+						mState = STATE_USER_CLICKED_TRAINING;
+					else
+						mState = STATE_USER_CLICKED_SKIP;
+				}
+			}
+			break;
+			case STATE_USER_CLICKED_TRAINING:
+			{
+				mState = STATE_WAIT_FOR_ENDCUTSCENE1;
+			}
+			break;
+			case STATE_USER_CLICKED_SKIP:
+			{
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT02", "base:Audio/FX/tutorial/tut.wav");
+				//Mission::PlayComment("SUPERV_TUT02");
+				ScriptInterface::CloseTutorialInstruction();
+				//WaitForTutorialMessage(STATE_END);
+				mState = STATE_END;
+			}
+			break;
+			case STATE_WAIT_FOR_ENDCUTSCENE1:
+			{
+				//WaitForTutorialMessage(STATE_TRAINING_MESSAGE_FINISHED);
+				mState = STATE_TRAINING_MESSAGE_FINISHED;
+			}
+			break;
+			case STATE_TRAINING_MESSAGE_FINISHED:
+			{
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT03", "base:Audio/FX/tutorial/tut.wav");
+				Mission::PlayComment("SUPERV_TUT03");
+				ScriptInterface::CloseTutorialInstruction();
+				mWaitTimeSupervisor = 3.0f;
+				WaitForTutorialMessage(STATE_SUPERVISOR_BEFORE_OBJECTIVES);
+			}
+			break;
+			case STATE_SUPERVISOR_BEFORE_OBJECTIVES:
+			{
+				mWaitTimeSupervisor -= TIME_CHECK_MISSION;
+				if (mWaitTimeSupervisor <= 0.0f)
+				{
+					ScriptInterface::ShowNavigator();
+					ScriptInterface::OpenNavigator();
+					ScriptInterface::ShowActionBar();
+					ScriptInterface::OpenActionBar();
+					//ScriptInterface::ShowInfoBar();
+					//ScriptInterface::OpenInfoBar();
+					ScriptInterface::LockObjectivesWindow();
+					Mission::PlayComment("SUPERV_TUT04");
+					WaitForTutorialMessage(STATE_START_OBJECTIVE_WINDOW_OPEN_OBJECTIVE);
+				}
+			}
+			break;
+			case STATE_START_OBJECTIVE_WINDOW_OPEN_OBJECTIVE:
+			{
+				//if (!ScriptInterface::IsMessageTickerOpen())
+				{
+					Mission::AddObjective("M21_01");
+					Mission::SetObjectiveAccomplished("M21_01", false);
+					ScriptInterface::BlinkNavigatorObjectivesButton(true);
+					ScriptInterface::UnlockObjectivesWindow();
+					ScriptInterface::EnableOpenCloseBaseWindow();
+					mObjectivesStayUnlocked = true;
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT01", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::SetBaseWindowKeepOpen(true);
+					mState = STATE_WAITING_FOR_OBJECTIVE_WINDOW_OPEN;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_OBJECTIVE_WINDOW_OPEN:
+			{
+				if (ScriptInterface::IsObjectivesWindowOpen())
+				{
+					ScriptInterface::SetBaseWindowKeepOpen(false);
+					Mission::SetObjectiveAccomplished("M21_01", true);
+					//Mission::RemoveAllObjectives();
+					//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT04", "base:Audio/FX/tutorial/tut.wav");
+					ScriptInterface::LockObjectivesWindow();
+					//Mission::PlayComment("SUPERV_TUT04");
+					ScriptInterface::CloseTutorialInstruction();
+					//WaitForTutorialMessage(STATE_START_OBJECTIVE_WINDOW_CLOSE_OBJECTIVE);
+					mState = STATE_START_OBJECTIVE_WINDOW_CLOSE_OBJECTIVE;
+				}
+			}
+			break;
+			case STATE_START_OBJECTIVE_WINDOW_CLOSE_OBJECTIVE:
+			{
+				ScriptInterface::UnlockObjectivesWindow();
+				Mission::AddObjective("M21_02");
+				Mission::SetObjectiveAccomplished("M21_02", false);
+				ScriptInterface::BlinkNavigatorObjectivesButton(true);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT02", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mState = STATE_WAITING_FOR_OBJECTIVE_WINDOW_CLOSE;
+			}
+			break;
+			case STATE_WAITING_FOR_OBJECTIVE_WINDOW_CLOSE:
+			{
+				if (!ScriptInterface::IsObjectivesWindowOpen())
+				{
+					Mission::SetObjectiveAccomplished("M21_02", true);
+					Mission::RemoveAllObjectives();
+					ScriptInterface::BlinkNavigatorObjectivesButton(false);
+					//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT05", "base:Audio/FX/tutorial/tut.wav");
+					Audio::StopSample(mSoundID);
+					Mission::PlayComment("SUPERV_TUT05");
+					ScriptInterface::CloseTutorialInstruction();
+					WaitForTutorialMessage(STATE_START_OBJECTIVES_CAMERA);
+				}
+			}
+			break;
+			case STATE_START_OBJECTIVES_CAMERA:
+			{
+				Mission::AddObjective("M21_03");
+				Mission::SetObjectiveAccomplished("M21_03", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT03", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				Camera::EnableCameraXYMovement();
+				mWaitTime = TIME_WAIT_FOR_CAMERA;
+				mCamHasMoved = false;
+				mState = STATE_WAITING_FOR_SCROLLING;
+			}
+			break;
+			case STATE_WAITING_FOR_SCROLLING:
+			{				
+				if (!mCamHasMoved && IsCameraSignificantlyMovedAwayFromBase())
+				{
+					Mission::SetObjectiveAccomplished("M21_03", true);
+					mCamHasMoved = true;
+				}
+				if (mCamHasMoved)
+				{
+					mWaitTime -= TIME_CHECK_MISSION;
+				}
+				if (mCamHasMoved && mWaitTime <= 0.0f)
+				{										
+					Mission::AddObjective("M21_04");
+					Mission::SetObjectiveAccomplished("M21_04", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT04", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					//Camera::DisableCameraXYMovement();
+					Camera::EnableCameraRotation();
+					mWaitTime = TIME_WAIT_FOR_CAMERA;
+					mWaitTime2 = 0.0f;
+					mCamHasMoved = false;
+					Camera::GetRotation(mBaseRoll, mBasePitch, mBaseYaw);
+					mState = STATE_WAITING_FOR_PITCHING;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_PITCHING:
+			{
+				if (!mCamHasMoved && IsCameraSignificantlyRotated())
+				{
+					Mission::SetObjectiveAccomplished("M21_04", true);
+					mCamHasMoved = true;
+				}
+				if (mCamHasMoved)
+					mWaitTime -= TIME_CHECK_MISSION;
+				mWaitTime2 += TIME_CHECK_MISSION;
+
+				if ((mCamHasMoved && mWaitTime <= 0.0f) || (mWaitTime2 > 30.0f))
+				{					
+					Mission::AddObjective("M21_05");
+					Mission::SetObjectiveAccomplished("M21_05", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT05", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					//Camera::DisableCameraRotation();
+					Camera::EnableCameraZMovement();
+					mWaitTime = TIME_WAIT_FOR_CAMERA_ZOOM;
+					mCamHasMoved = false;
+					mBasePos = Camera::Get();
+					mState = STATE_WAITING_FOR_ZOOMING;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_ZOOMING:
+			{
+				if (!mCamHasMoved && IsCameraSignificantlyZoomed())
+				{
+					Mission::SetObjectiveAccomplished("M21_05", true);
+					mCamHasMoved = true;
+				}
+				if (mCamHasMoved)
+					mWaitTime -= TIME_CHECK_MISSION;
+				if (mCamHasMoved && mWaitTime <= 0.0f)
+				{
+					mCrane.PushActionExecuteCommand(ACTION_NEWLIST, "LiftWithCrane", &mCar);
+					Camera::EnableCameraXYMovement();
+					Camera::EnableCameraRotation();
+					ScriptInterface::CloseTutorialInstruction();
+					Mission::StartCutScene();
+					Mission::ShowBlackBars();
+					Camera::StartTransition(NAME_TRANSITION_MOVE_TO_FIRE_SIM, TIME_TRANSITION_MOVE_TO_FIRE_SIM);
+					mState = STATE_MOVING_TO_FIRE_SIM;
+					StartHeliScene();
+					Mission::RemoveAllObjectives();
+				}
+			}
+			break;
+			case STATE_MOVED_TO_FIRE_SIM:
+			{
+				Game::SetMapBoundsBlockCamera(false);
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+				Camera::DisableCameraXYMovement();
+				Mission::StartSingleTimer("timer_endcutscene2", TIME_ENDCUTSCENE2);
+				mState = STATE_WAIT_FOR_ENDCUTSCENE2;
+			}
+			break;
+			case STATE_START_OBJECTIVE_FIRE_SIM:
+			{
+				Mission::RemoveAllObjectives();
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT06", "base:Audio/FX/tutorial/tut.wav");
+				Mission::PlayComment("SUPERV_TUT06");
+				ScriptInterface::CloseTutorialInstruction();
+				WaitForTutorialMessage(STATE_FIRE_MESSAGE_FINISHED);
+			}
+			break;
+			case STATE_FIRE_MESSAGE_FINISHED:
+			{
+				mFireHouse.Burn();
+				for(int i = 0; i < mWindowFireList.GetNumObjects(); i++)
+				{
+					mWindowFireList.GetObject(i)->Show();
+					mWindowFireList.GetObject(i)->StartParticleEffect();
+				}				
+				ScriptInterface::EnableNavigatorFireDepartmentButton(true);
+				ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+				Mission::AddObjective("M21_06");
+				Mission::SetObjectiveAccomplished("M21_06", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT06", mSoundID, 500, INSTRUCTIONWINDOW_DIST_Y);
+				mState = STATE_WAITING_FOR_FIREDEPARTMENT_BUTTON;				
+			}
+			break;
+			case STATE_WAITING_FOR_FIREDEPARTMENT_BUTTON:
+			{
+				if (ScriptInterface::IsFireDepartmentWindowOpen())
+				{
+					ScriptInterface::EnableNavigatorFireDepartmentButton(false);
+					ScriptInterface::BlinkFireDepartmentVehicle("RW", true);
+					Mission::SetObjectiveAccomplished("M21_06", true);
+					Mission::AddObjective("M21_07");
+					Mission::SetObjectiveAccomplished("M21_07", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT07", mSoundID, 500, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::LockObjectivesWindow();
+					mObjectivesStayUnlocked = false;
+					mState = STATE_WAITING_FOR_RW_BUTTON;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_RW_BUTTON:
+			{
+				if (ScriptInterface::IsFireDepartmentVehicleSelected("RW"))
+				{
+					Game::EnableUpdateMissionOnPause(true);
+					ScriptInterface::BlinkFireDepartmentVehicle("RW", false);
+					ScriptInterface::BlinkCrewButton("FIREFIGHTER", true);
+					Mission::SetObjectiveAccomplished("M21_07", true);
+					Mission::AddObjective("M21_08");
+					Mission::SetObjectiveAccomplished("M21_08", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT08", mSoundID, 500, INSTRUCTIONWINDOW_DIST_Y);
+					mState = STATE_WAITING_FOR_FIREFIGHTER_BUTTON;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_FIREFIGHTER_BUTTON:
+			{
+				if (ScriptInterface::GetNumVehicleCrewMembersAdded() > 1)
+				{
+					Game::EnableUpdateMissionOnPause(false);
+					ScriptInterface::BlinkSendVehicleButton(true);
+					ScriptInterface::BlinkCrewButton("FIREFIGHTER", false);
+					Mission::SetObjectiveAccomplished("M21_08", true);
+					Mission::AddObjective("M21_09");
+					Mission::SetObjectiveAccomplished("M21_09", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT09", mSoundID, 500, INSTRUCTIONWINDOW_DIST_Y);
+					mState = STATE_WAITING_FOR_SEND_BUTTON;
+				}
+			}
+			break;
+			case STATE_VEHICLE_SENT:
+			{
+				ScriptInterface::UnlockObjectivesWindow();
+				mObjectivesStayUnlocked = true;
+				Mission::SetObjectiveAccomplished("M21_09", true);
+				Mission::AddObjective("M21_10");
+				Mission::SetObjectiveAccomplished("M21_10", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT10", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				Camera::EnableEntryPoint();
+				mSaveCamPos = Camera::Get();
+				mState = STATE_WAITING_FOR_MOVED_HOME;
+			}
+			break;
+			case STATE_MOVED_HOME:
+			{
+				// to disable entry point
+				Camera::DisableCameraXYMovement();
+				Mission::RemoveAllObjectives();
+				Mission::SetObjectiveAccomplished("M21_10", true);
+				Mission::AddObjective("M21_11");
+				Mission::SetObjectiveAccomplished("M21_11", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT11", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				Game::SetObjectsSelectable(true);
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mRW);
+				mState = STATE_WAITING_FOR_RW_SELECTED;
+			}
+			break;
+			case STATE_WAITING_FOR_RW_SELECTED:
+			{
+				if (mRW.IsSelected())
+				{
+					ScriptInterface::ShowInfoBar();
+					ScriptInterface::OpenInfoBar();
+					mBlinkFieldSelect.Hide();
+					Game::SetObjectsSelectable(false);
+					Camera::EnableCameraXYMovement();
+					ScriptInterface::CloseTutorialInstruction();
+					Mission::StartCutScene();
+					//Mission::ShowBlackBars();
+					Camera::StartTransition(NAME_TRANSITION_MOVE_TO_FIRE_SIM, TIME_TRANSITION_MOVE_TO_FIRE_SIM*0.5f);
+					mState = STATE_MOVING_TO_FIRE_SIM_AGAIN;
+				}
+			}
+			break;
+			case STATE_MOVED_TO_FIRE_SIM_AGAIN:
+			{
+				//Mission::HideBlackBars();
+				Mission::EndCutScene();
+				Camera::DisableCameraXYMovement();
+				mBlinkFieldFire.Show();
+				//mBlinkFieldFire.SetTraceAccuracy_NoCollision();
+				mRW.RemoveCommand("MoveTo");
+				//mRW.EnableCommand("GoHome", false);
+				//mRW.EnableCommand("EmptyCar", false);
+				//mRW.EnableCommand("LightsOn", false);
+				mRW.AssignCommand("MoveToFieldFire");
+				mRW.EnableCommand("MoveToFieldFire", true);
+				mAllowedCmd = "MoveToFieldFire";
+				mRW.SetEquipment(EQUIP_FIREHOSE);
+				Mission::SetObjectiveAccomplished("M21_11", true);
+				Mission::AddObjective("M21_12");
+				Mission::SetObjectiveAccomplished("M21_12", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT12", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mState = STATE_WAITING_FOR_RW_ARRIVE;
+			}
+			break;
+			case STATE_RW_ARRIVED:
+			{
+				mRW.EnableCommand("MoveToFieldFire", false);
+				mRW.EnableCommand("EmptyCar", true);				
+				ScriptInterface::BlinkActionButton("EmptyCar");
+				mAllowedCmd = "EmptyCar";
+				Mission::SetObjectiveAccomplished("M21_12", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_13");
+				Mission::SetObjectiveAccomplished("M21_13", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT13", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mState = STATE_WAITING_FOR_RW_EMPTY;
+			}
+			break;
+			case STATE_RW_EMPTY:
+			{
+				mRW.EnableCommand("EmptyCar", false);				
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				mRW.Deselect();
+				Game::SetObjectsSelectable(true);
+				Mission::SetObjectiveAccomplished("M21_13", true);
+				Mission::AddObjective("M21_14");
+				Mission::SetObjectiveAccomplished("M21_14", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT14", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mState = STATE_WAITING_FOR_FIREFIGHTER_SELECTED;
+			}
+			break;
+			case STATE_WAITING_FOR_FIREFIGHTER_SELECTED:
+			{
+				if (mFirefighterList.GetPerson(0)->IsSelected())
+					mFirefighter = mFirefighterList.GetPerson(0);
+				if (mFirefighterList.GetPerson(1)->IsSelected())
+					mFirefighter = mFirefighterList.GetPerson(1);
+				if (mFirefighter.IsValid())
+				{
+					mBlinkFieldSelect.Hide();
+					Game::SetObjectsSelectable(false);
+					Mission::SetObjectiveAccomplished("M21_14", true);
+					Mission::AddObjective("M21_15");
+					Mission::SetObjectiveAccomplished("M21_15", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT15", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::BlinkActionButton("GetEquipment");
+					mAllowedCmd = "GetEquipment";
+					mEquipmentMenuWasOpen = false;
+					mState = STATE_WAITING_FOR_EQUIPMENT_CLICKED;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_EQUIPMENT_CLICKED:
+			{
+				if (mEquipmentMenuWasOpen != ScriptInterface::IsEquipmentMenuOpen())
+				{
+					mAllowedCmd = "GetFirehose";
+					System::Log("Equipment menu open");
+					ScriptInterface::BlinkEquipmentButton("GetFirehose");
+					Mission::SetObjectiveAccomplished("M21_15", true);
+					if (!Mission::HasObjective("TUT16"))
+					{
+						Mission::AddObjective("M21_16");
+						Mission::SetObjectiveAccomplished("M21_16", false);
+						mSoundID = ScriptInterface::ShowTutorialInstruction("TUT16", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					}
+					if (!ScriptInterface::IsEquipmentMenuOpen() && ScriptInterface::IsCurrentCommand("GetEquipment"))
+					{
+						//Mission::SetObjectiveAccomplished("M21_16", true);
+						//Mission::AddObjective("M21_17");
+						//Mission::SetObjectiveAccomplished("M21_17", false);
+						//ScriptInterface::ShowTutorialInstruction("TUT17", -1, INSTRUCTIONWINDOW_DIST_Y);
+						ScriptInterface::BlinkActionButton(-1);
+						mAllowedCmd = "GetFirehose";
+						ScriptInterface::BlinkEquipmentButton(-1);						
+					}
+					mState = STATE_WAITING_FOR_GET_FIREHOSE;
+					System::Log("State STATE_WAITING_FOR_GET_FIREHOSE");
+				}
+				mEquipmentMenuWasOpen = ScriptInterface::IsEquipmentMenuOpen();
+			}
+			break;
+			case STATE_GOT_FIREHOSE:
+			{
+				//Mission::SetObjectiveAccomplished("M21_17", true);
+				Mission::SetObjectiveAccomplished("M21_16", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_18");
+				Mission::SetObjectiveAccomplished("M21_18", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT18", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);				
+				mAllowedCmd = "AttachFireHose";
+				mState = STATE_WAITING_FOR_ATTACH_FIREHOSE_CLICKED;
+			}
+			break;
+			case STATE_WAITING_FOR_ATTACH_FIREHOSE_CLICKED:
+			{
+				ScriptInterface::BlinkActionButton("AttachFireHose");
+				if (ScriptInterface::IsCurrentCommand("AttachFirehose"))
+				{
+					Mission::SetObjectiveAccomplished("M21_18", true);
+					Mission::AddObjective("M21_19");
+					Mission::SetObjectiveAccomplished("M21_19", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT19", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::BlinkActionButton(-1);
+					mAllowedCmd = "AttachFireHose";
+					mBlinkFieldHydrant.Show();
+					mState = STATE_WAITING_FOR_ATTACH_FIREHOSE;
+				}
+			}
+			break;
+			case STATE_ATTACHED_FIREHOSE:
+			{
+				if (!Mission::IsObjectiveAccomplished("M21_18"))
+					Mission::SetObjectiveAccomplished("M21_18", true);
+				if (Mission::HasObjective("M21_19"))
+					Mission::SetObjectiveAccomplished("M21_19", true);
+				Mission::AddObjective("M21_20");
+				Mission::SetObjectiveAccomplished("M21_20", false);
+				mBlinkFieldHydrant.Hide();
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT20", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				ScriptInterface::BlinkActionButton("extinguish");
+				mAllowedCmd = "Extinguish";
+				mState = STATE_WAITING_FOR_EXTINGUISH;
+			}
+			break;
+			case STATE_WAITING_FOR_EXTINGUISH:
+			{
+				if (mExtinguishTime > 0.0f)
+				{
+					mExtinguishTime -= TIME_CHECK_MISSION;
+					if (mExtinguishTime <= 0.0f)
+					{
+						mFireHouse.StopBurning();
+						Mission::SetObjectiveAccomplished("M21_20", true);
+						Mission::AddObjective("M21_21");
+						Mission::SetObjectiveAccomplished("M21_21", false);
+						mSoundID = ScriptInterface::ShowTutorialInstruction("TUT21", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+						ScriptInterface::BlinkActionButton("RemoveFirehose");
+						mAllowedCmd = "RemoveFirehose";
+						mState = STATE_WAITING_FOR_DEINSTALL_FIREHOSE;
+					}
+					else if (mExtinguishTime <= TIME_CHECK_MISSION*2.0f)
+						mFirefighter.EnableCommand("extinguish", false);
+				}
+			}
+			break;
+			case STATE_DEINSTALLED_FIREHOSE:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Mission::SetObjectiveAccomplished("M21_21", true);
+				Mission::AddObjective("M21_22");
+				Mission::SetObjectiveAccomplished("M21_22", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT22", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				ScriptInterface::BlinkActionButton("RemoveEquipment");
+				mAllowedCmd = "RemoveEquipment";
+				mState = STATE_WAITING_FOR_DROPPED_FIREHOSE;
+			}
+			break;
+			case STATE_DROPPED_FIREHOSE:
+			{
+				Audio::StopSample(mSoundID);
+				Mission::SetObjectiveAccomplished("M21_22", true);
+				Mission::RemoveAllObjectives();
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Game::SetObjectsSelectable(false);
+				Camera::EnableCameraXYMovement();
+				ScriptInterface::CloseTutorialInstruction();
+				Mission::StartCutScene();
+				Mission::ShowBlackBars();
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_FIRE_SIM, TIME_TRANSITION_MOVE_TO_FIRE_SIM);
+				mState = STATE_MOVING_TO_FIRE_SIM0;
+				StartCraneScene();
+				mFirefighter.Deselect();
+			}
+			break;
+			case STATE_MOVED_TO_SMOKE_SIM:
+			{
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+				Camera::DisableCameraXYMovement();
+				Mission::StartSingleTimer("timer_endcutscene3", TIME_ENDCUTSCENE3);
+				mState = STATE_WAIT_FOR_ENDCUTSCENE3;
+			}
+			break;
+			case STATE_START_OBJECTIVE_SMOKE_SIM:
+			{
+				Mission::RemoveAllObjectives();
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT07", "base:Audio/FX/tutorial/tut.wav");
+				Mission::PlayComment("SUPERV_TUT07");
+				ScriptInterface::CloseTutorialInstruction();
+				WaitForTutorialMessage(STATE_SMOKE_MESSAGE_FINISHED);
+			}
+			break;
+			case STATE_SMOKE_MESSAGE_FINISHED:
+			{
+				Mission::AddObjective("M21_23");
+				Mission::SetObjectiveAccomplished("M21_23", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT23", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				ScriptInterface::EnableNavigatorAmbulanceButton(true);
+				ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+				mState = STATE_WAITING_FOR_AMBULANCE_BUTTON;
+			}
+			break;
+			case STATE_WAITING_FOR_AMBULANCE_BUTTON:
+			{
+				if (ScriptInterface::IsAmbulanceWindowOpen())
+				{
+					ScriptInterface::CloseTutorialInstruction();
+					ScriptInterface::EnableNavigatorAmbulanceButton(false);
+					ScriptInterface::BlinkAmbulanceVehicle("RTW", true);
+					ScriptInterface::LockObjectivesWindow();
+					mObjectivesStayUnlocked = false;
+					mState = STATE_WAITING_FOR_RTW_BUTTON;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_RTW_BUTTON:
+			{
+				if (ScriptInterface::IsAmbulanceVehicleSelected("RTW"))
+				{
+					Mission::SetObjectiveAccomplished("M21_23", true);
+					Mission::AddObjective("M21_24");
+					Mission::SetObjectiveAccomplished("M21_24", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT24", mSoundID, 500, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::BlinkSendVehicleTargetButton(true);
+					ScriptInterface::SetShowVehiclePageAfterOrder(false);
+					mState = STATE_WAITING_FOR_RTW_SEND_BUTTON;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_RTW_SEND_BUTTON:
+			{
+				if (ScriptInterface::GetOrderTargetMode())
+				{
+					//Mission::SetObjectiveAccomplished("M21_24", true);
+					//Mission::AddObjective("M21_25");
+					//Mission::SetObjectiveAccomplished("M21_25", false);
+					ScriptInterface::UnlockObjectivesWindow();
+					mObjectivesStayUnlocked = true;
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT25", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::CloseAllVehicleBrowsers();
+					mBlinkFieldSmoke.Show();
+					////Game::SetObjectsSelectable(true);
+					mRTW.RemoveCommand("MoveTo");
+					mRTW.AssignCommand("MoveToFieldSmoke");
+					mRTW.EnableCommand("MoveToFieldSmoke", true);
+					////ScriptInterface::SetCurrentCommand("MoveToFieldSmoke");
+					mState = STATE_WAITING_FOR_RTW_ARRIVE;
+				}
+			}
+			break;
+			case STATE_RTW_ARRIVED:
+			{
+				Mission::SetObjectiveAccomplished("M21_24", true);
+				Mission::AddObjective("M21_25");
+				Mission::SetObjectiveAccomplished("M21_25", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT26", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				//mRTW.EnableCommand("MoveToFieldSmoke", false);
+				mRTW.EnableCommand("EmptyCar", true);				
+				ScriptInterface::BlinkActionButton("EmptyCar");
+				mAllowedCmd = "EmptyCar";
+				mState = STATE_WAITING_FOR_RTW_EMPTY;
+			}
+			break;
+			case STATE_RTW_EMPTY:
+			{
+				mRTW.EnableCommand("EmptyCar", false);
+				mRTW.SetSelectable(false);
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				mRTW.Deselect();
+				Game::SetObjectsSelectable(true);
+				Mission::SetObjectiveAccomplished("M21_25", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_26");
+				Mission::SetObjectiveAccomplished("M21_26", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT27", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				Game::SetObjectsSelectable(true);
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mEngineer);
+				mEngineer.SetSelectable(true);
+				mState = STATE_WAITING_FOR_ENGINEER_SELECTED;
+			}
+			break;
+			case STATE_WAITING_FOR_ENGINEER_SELECTED:
+			{
+				if (mEngineer.IsSelected())
+				{
+					mBlinkFieldSelect.Hide();
+					mEngineer.SetSelectable(false);
+					Game::SetObjectsSelectable(false);
+					Mission::SetObjectiveAccomplished("M21_26", true);					
+					Mission::AddObjective("M21_27");
+					Mission::SetObjectiveAccomplished("M21_27", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT28", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::BlinkActionButton("Use");
+					mAllowedCmd = "Use";
+					mState = STATE_WAITING_FOR_USE_PANEL;
+				}
+			}
+			break;
+			case STATE_DOOR_OPENED:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Mission::SetObjectiveAccomplished("M21_27", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_28");
+				Mission::SetObjectiveAccomplished("M21_28", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT29", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mSmokehallGate.SetAnimation("open");
+				mVODoorBlock.SetVirtualObjectTerrain("Road");
+				Game::SetObjectsSelectable(true);
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mFirefighterMask);
+				mFirefighterMask.SetSelectable(true);
+				for(int i = 0; i < mSmokeHallParticles.GetNumObjects(); i++)
+				{
+					mSmokeHallParticles.GetObject(i)->StartParticleEffect();
+				}
+				mState = STATE_WAITING_FOR_FIREFIGHTER_MASK_SELECTED;
+			}
+			break;
+			case STATE_WAITING_FOR_FIREFIGHTER_MASK_SELECTED:
+			{
+				if (mFirefighterMask.IsSelected())
+				{
+					mBlinkFieldSelect.Hide();
+					mFirefighterMask.SetSelectable(false);
+					Game::SetObjectsSelectable(false);
+					Mission::SetObjectiveAccomplished("M21_28", true);					
+					Mission::AddObjective("M21_29");
+					Mission::SetObjectiveAccomplished("M21_29", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT30", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::BlinkActionButton("EnterHouse");
+					mAllowedCmd = "EnterHouse";
+					mState = STATE_WAITING_FOR_ENTERED_SMOKEHALL;
+				}
+			}
+			break;
+			case STATE_ENTERED_SMOKEHALL:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Mission::SetObjectiveAccomplished("M21_29", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_30");
+				Mission::SetObjectiveAccomplished("M21_30", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT31", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				ScriptInterface::BlinkActionButton("lift");
+				mAllowedCmd = "Lift";
+				mState = STATE_WAITING_FOR_LIFT_DUMMY;
+			}
+			break;
+			case STATE_WAITING_FOR_LIFT_DUMMY:
+			{
+				mDummy.SetHighlighted(true);
+			}
+			break;
+			case STATE_DUMMY_LIFTED:
+			{
+				mDummy.SetHighlighted(false);
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Mission::SetObjectiveAccomplished("M21_30", true);				
+				Mission::AddObjective("M21_31");
+				Mission::SetObjectiveAccomplished("M21_31", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT32", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mBlinkFieldDummy.Show();
+				mFirefighterMask.RemoveCommand("MoveTo");
+				mFirefighterMask.AssignCommand("MoveToFieldDummy");
+				mFirefighterMask.EnableCommand("MoveToFieldDummy", true);
+				mAllowedCmd = "MoveToFieldDummy";
+				mDoctor.EnableAutoTarget(false);
+				mState = STATE_WAITING_FOR_DUMMY_ARRIVE;
+			}
+			break;
+			case STATE_DUMMY_ARRIVED:
+			{
+				mBlinkFieldDummy.Hide();
+				Mission::SetObjectiveAccomplished("M21_31", true);
+				Mission::AddObjective("M21_32");
+				Mission::SetObjectiveAccomplished("M21_32", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT33", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				ScriptInterface::BlinkActionButton("unloadperson");
+				mAllowedCmd = "UnloadPerson";
+				mFirefighterMask.SetEnteredHouseID(-1);
+				mDummy.SetEnteredHouseID(-1);
+				mState = STATE_WAITING_FOR_UNLOADED_DUMMY;
+			}
+			break;
+			case STATE_DUMMY_UNLOADED:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";				
+				Mission::SetObjectiveAccomplished("M21_32", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_33");
+				Mission::SetObjectiveAccomplished("M21_33", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT34", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mDummy.SetAnimation("unconscious01");
+				Game::SetObjectsSelectable(true);
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mDoctor);
+				mDoctor.SetSelectable(true);
+				mState = STATE_WAITING_FOR_DOCTOR_SELECTED;
+			}
+			break;
+			case STATE_WAITING_FOR_DOCTOR_SELECTED:
+			{
+				if (mDoctor.IsSelected())
+				{
+					mDoctor.SetSelectable(false);
+					mBlinkFieldSelect.Hide();
+					Game::SetObjectsSelectable(false);
+					ScriptInterface::BlinkActionButton("heal");
+					mAllowedCmd = "Heal";
+					mState = STATE_WAITING_FOR_DOCTOR_BEGIN_HEAL;
+				}
+			}
+			break;
+			case STATE_DOCTOR_BEGIN_HEAL:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Mission::RemoveAllObjectives();
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT08", "base:Audio/FX/tutorial/tut.wav");
+				Mission::PlayComment("SUPERV_TUT08");
+				ScriptInterface::CloseTutorialInstruction();
+				mDummy.SetLife(50.0f);
+				mDummy.SetMedicalLifeGain(29.0f);
+				mState = STATE_WAITING_FOR_DOCTOR_HEAL;
+			}
+			break;
+			case STATE_WAITING_FOR_DOCTOR_HEAL:
+			{
+				if (mDummy.GetLife() > 950.0f && !Mission::IsCommentPlaying())
+				{
+					System::Log("Tutorial: Dummy healed.");
+					ScriptInterface::BlinkActionButton(-1);
+					mAllowedCmd = "";
+					Mission::SetObjectiveAccomplished("M21_33", true);					
+					Mission::AddObjective("M21_34");
+					Mission::SetObjectiveAccomplished("M21_34", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT35", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					Game::SetObjectsSelectable(true);
+					mBlinkFieldSelect.Show();
+					SetBlinkFieldSelectPosition(&mParamedics);
+					mParamedics.SetSelectable(true);
+					mState = STATE_WAITING_FOR_PARAMEDICS_SELECTED;
+				}
+				else
+				{
+					if (!ScriptInterface::IsTutorialMessageOpen())
+						ScriptInterface::HideTutorialOverlay();
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_PARAMEDICS_SELECTED:
+			{
+				if (mParamedics.IsSelected())
+				{
+					mParamedics.SetSelectable(false);
+					mBlinkFieldSelect.Hide();
+					Game::SetObjectsSelectable(false);
+					ScriptInterface::BlinkActionButton("lift");
+					mAllowedCmd = "Lift";
+					mState = STATE_WAITING_FOR_PARAMEDICS_LIFT;
+				}
+			}
+			break;
+			case STATE_PARAMEDICS_LIFTED:
+			{
+				Mission::SetObjectiveAccomplished("M21_34", true);
+				Mission::AddObjective("M21_35");
+				Mission::SetObjectiveAccomplished("M21_35", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT36", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				ScriptInterface::BlinkActionButton("EnterCar");
+				mAllowedCmd = "EnterCar";
+				mState = STATE_WAITING_FOR_PARAMEDICS_PUTIN;
+			}
+			break;
+			case STATE_PARAMEDICS_PUTIN:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Mission::SetObjectiveAccomplished("M21_35", true);
+				Mission::AddObjective("M21_36");
+				Mission::SetObjectiveAccomplished("M21_36", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT37", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				Game::SetObjectsSelectable(true);
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mDoctor);
+				mDoctor.SetSelectable(true);
+				mState = STATE_WAITING_FOR_DOCTOR_SELECTED2;
+			}
+			break;
+			case STATE_WAITING_FOR_DOCTOR_SELECTED2:
+			{
+				if (mDoctor.IsSelected())
+				{
+					mDoctor.SetSelectable(false);
+					mBlinkFieldSelect.Hide();
+					Game::SetObjectsSelectable(false);
+					ScriptInterface::BlinkActionButton("entercar");
+					mAllowedCmd = "EnterCar";
+					mState = STATE_WAITING_FOR_DOCTOR_GETIN;
+				}
+			}
+			break;
+			case STATE_DOCTOR_GOTIN:
+			{								
+				mRTW.SetSelectable(true);
+				Game::SetObjectsSelectable(true);
+				mRTW.Select();
+				mRTW.SetSelectable(false);
+				Game::SetObjectsSelectable(false);
+				mAllowedCmd = "GoHome";
+				ScriptInterface::BlinkActionButton("GoHome");
+				Mission::SetObjectiveAccomplished("M21_36", true);
+				Mission::AddObjective("M21_37");
+				Mission::SetObjectiveAccomplished("M21_37", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT38", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mState = STATE_WAITING_FOR_RTW_LEFT;
+			}
+			break;
+			case STATE_WAITING_FOR_RTW_LEFT:
+			{
+				if (mRTW.IsSelected())
+				{
+					mAllowedCmd = "GoHome";
+					ScriptInterface::BlinkActionButton("GoHome");
+					Game::SetObjectsSelectable(false);
+				}
+			}
+			break;
+			case STATE_RTW_LEFT:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				mAllowedCmd = "";
+				Game::SetObjectsSelectable(false);
+				Camera::EnableCameraXYMovement();
+				ScriptInterface::CloseTutorialInstruction();
+				Mission::StartCutScene();
+				Mission::ShowBlackBars();
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_SMOKE_SIM, TIME_TRANSITION_MOVE_TO_SMOKE_SIM, false);
+				mState = STATE_MOVING_TO_SMOKE_SIM0;				
+				StartPlaneScene();
+			}
+			break;
+			case STATE_MOVED_TO_HOSTAGE_SIM:
+			{
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+				Camera::DisableCameraXYMovement();
+				Mission::StartSingleTimer("timer_endcutscene4", TIME_ENDCUTSCENE4);
+				mState = STATE_WAIT_FOR_ENDCUTSCENE4;
+			}
+			break;
+			case STATE_START_OBJECTIVE_HOSTAGE_SIM:
+			{
+				Mission::RemoveAllObjectives();
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT09", "base:Audio/FX/tutorial/tut.wav");
+				Mission::PlayComment("SUPERV_TUT09");
+				ScriptInterface::CloseTutorialInstruction();
+				mHostageHouse.SetFlag(OF_ACCESSIBLE);
+				WaitForTutorialMessage(STATE_HOSTAGE_MESSAGE_FINISHED);
+			}
+			break;
+			case STATE_HOSTAGE_MESSAGE_FINISHED:
+			{
+				Mission::SetObjectiveAccomplished("M21_37", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_38");
+				Mission::SetObjectiveAccomplished("M21_38", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT39", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				Game::SetObjectsSelectable(true);
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mScout);
+				mScout.SetSelectable(true);
+				mState = STATE_WAITING_FOR_SCOUT_SELECTED;
+			}
+			break;
+			case STATE_WAITING_FOR_SCOUT_SELECTED:
+			{
+				if (mScout.IsSelected())
+				{
+					mBlinkFieldSelect.Hide();
+					mScout.SetSelectable(false);
+					Game::SetObjectsSelectable(false);
+					ScriptInterface::BlinkActionButton("ScoutHouse");
+					mAllowedCmd = "ScoutHouse";
+					mState = STATE_WAITING_FOR_SCOUT_SCOUTHOUSE;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_SCOUT_SCOUTHOUSE:
+			{
+				if (mHostageHouse.IsCeilingOpen())
+				{
+					Mission::SetObjectiveAccomplished("M21_38", true);
+					Mission::RemoveAllObjectives();
+					Mission::AddObjective("M21_39");
+					Mission::SetObjectiveAccomplished("M21_39", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT40", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					mScout.Deselect();
+					Game::SetObjectsSelectable(true);
+					mBlinkFieldSelect.Show();
+					SetBlinkFieldSelectPosition(&mShooter);
+					mShooter.SetSelectable(true);
+					mState = STATE_WAITING_FOR_SHOOTER_SELECTED;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_SHOOTER_SELECTED:
+			{
+				if (mShooter.IsSelected())
+				{
+					mBlinkFieldSelect.Hide();
+					mShooter.RemoveCommand("Throw");
+					mShooter.AssignCommand("TutThrow");
+					mShooter.EnableCommand("TutThrow", true);
+					mAllowedCmd = "TutThrow";
+					mShooter.SetSelectable(false);
+					Game::SetObjectsSelectable(false);
+					ScriptInterface::BlinkActionButton("GetEquipment");
+					mAllowedCmd = "GetEquipment";
+					mEquipmentMenuWasOpen = false;
+					mState = STATE_WAITING_FOR_EQUIPMENT_SHOOTERCLICKED;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_EQUIPMENT_SHOOTERCLICKED:
+			{
+				if (mEquipmentMenuWasOpen != ScriptInterface::IsEquipmentMenuOpen())
+				{
+					System::Log("Equipment menu open");
+					mAllowedCmd = "GetFlashgrenade";
+					ScriptInterface::BlinkEquipmentButton("GetFlashgrenade");
+					if (!ScriptInterface::IsEquipmentMenuOpen() && ScriptInterface::IsCurrentCommand("GetFlashgrenade"))
+					{
+						ScriptInterface::BlinkActionButton(-1);
+						mAllowedCmd = "GetFlashgrenade";
+						ScriptInterface::BlinkEquipmentButton(-1);
+						mState = STATE_WAITING_FOR_GET_GRENADE;
+					}
+					mSW.SetSelectable(true);
+					mState = STATE_WAITING_FOR_GET_GRENADE;
+				}
+				mEquipmentMenuWasOpen = ScriptInterface::IsEquipmentMenuOpen();
+			}
+			break;
+			case STATE_GOT_GRENADE:
+			{				
+				Mission::SetObjectiveAccomplished("M21_39", true);
+				Mission::AddObjective("M21_40");
+				Mission::SetObjectiveAccomplished("M21_40", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT41", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mSW.SetSelectable(false);
+				Game::SetObjectsSelectable(true);
+				mShooter.SetSelectable(true);
+				mSharpShooter.SetSelectable(true);
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mSharpShooter);
+				mShooterWasSelected = false;
+				mSharpShooterWasSelected = false;
+				mState = STATE_WAITING_FOR_SHARPSHOOTER_SELECTED;
+				//mShooter.Select();
+				mHostageHouse.ShowCeiling(false, false, false);
+			}
+			break;
+			case STATE_WAITING_FOR_SHARPSHOOTER_SELECTED:
+			{
+				if (mShooter.IsSelected())
+					mShooterWasSelected = true;
+				else if (mShooterWasSelected && !mSharpShooter.IsSelected())
+					mShooter.Select();
+				if (mShooter.IsSelected())
+					mSharpShooterWasSelected = true;
+				else if (mSharpShooterWasSelected && !mShooter.IsSelected())
+					mSharpShooter.Select();
+				if (mShooter.IsSelected() && mSharpShooter.IsSelected())
+				{
+					Mission::SetObjectiveAccomplished("M21_40", true);
+					Mission::AddObjective("M21_41");
+					Mission::SetObjectiveAccomplished("M21_41", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT42", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					mBlinkFieldSelect.Hide();
+					mShooter.SetSelectable(false);
+					mSharpShooter.SetSelectable(false);
+					Game::SetObjectsSelectable(false);
+					mBlinkFieldHouse.Show();
+					mHostageHouse.SetTraceAccuracy_NoCollision();
+					mShooter.RemoveCommand("MoveTo");
+					mShooter.AssignCommand("MoveToFieldHouse");
+					mShooter.EnableCommand("MoveToFieldHouse", true);
+					mSharpShooter.RemoveCommand("MoveTo");
+					mSharpShooter.AssignCommand("MoveToFieldHouse");
+					mSharpShooter.EnableCommand("MoveToFieldHouse", true);
+					mAllowedCmd = "MoveToFieldHouse";
+					mState = STATE_WAITING_FOR_TEAM_ENTER_HOUSE;
+				}
+			}
+			break;
+			case STATE_TEAM_ENTERED_HOUSE:
+			{
+				mBlinkFieldHouse.Hide();
+				Camera::EnableCameraXYMovement();
+				Mission::StartCutScene();
+				Camera::StartTransition(NAME_TRANSITION_MOVE_INSIDE_HOSTAGE_SIM, TIME_TRANSITION_MOVE_INSIDE_HOSTAGE_SIM);
+				mState = STATE_MOVING_INSIDE_HOUSE;
+			}
+			break;
+			case STATE_MOVED_INSIDE_HOUSE:
+			{
+				Mission::EndCutScene();
+				Camera::DisableCameraXYMovement();
+				mState = STATE_WAITING_FOR_UNSELECT_TEAM;
+				Mission::SetObjectiveAccomplished("M21_41", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_42");
+				Mission::SetObjectiveAccomplished("M21_42", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT43", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				Audio::PlayTextureVideo(NAME_SCREEN_TEXTURE, NAME_SCREEN_VIDEO1, true);
+				mHostageHouse.EnableSpecialLights(true);
+				Game::SetObjectsSelectable(true);
+				mHostageHouse.SetTraceAccuracy_Polygons();
+				mState = STATE_WAITING_FOR_UNSELECT_TEAM;
+			}
+			break;
+			case STATE_WAITING_FOR_UNSELECT_TEAM:
+			{
+				if (!mShooter.IsSelected() && !mSharpShooter.IsSelected())
+				{
+					Mission::SetObjectiveAccomplished("M21_42", true);
+					Mission::AddObjective("M21_43");
+					Mission::SetObjectiveAccomplished("M21_43", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT44", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					mShooter.SetSelectable(true);
+					mBlinkFieldSelect.Show();
+					SetBlinkFieldSelectPosition(&mShooter);
+					Vector pos = mBlinkFieldSelect.GetPosition();
+					pos.z += 40.0f;		
+					mBlinkFieldSelect.SetPosition(pos);
+					mState = STATE_WAITING_FOR_SHOOTER_SELECTED2;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_SHOOTER_SELECTED2:
+			{
+				if (mShooter.IsSelected())
+				{
+					mShooter.SetSelectable(false);
+					mBlinkFieldSelect.Hide();
+					Game::SetObjectsSelectable(false);
+					ScriptInterface::BlinkActionButton("TutThrow");
+					mAllowedCmd = "TutThrow";
+					mState = STATE_WAITING_FOR_THROW_CLICKED;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_THROW_CLICKED:
+			{
+				if (ScriptInterface::IsCurrentCommand("TutThrow"))
+				{
+					ScriptInterface::BlinkActionButton(-1);
+					mAllowedCmd = "TutThrow";
+					mHostageHouse.SetTraceAccuracy_NoCollision();
+					mBlinkFieldGrenade.Show();
+					mState = STATE_WAITING_FOR_THROW_GRENADE;
+				}
+			}
+			break;
+			case STATE_GRENADE_THROWN:
+			{
+				Mission::SetObjectiveAccomplished("M21_43", true);
+				Mission::RemoveAllObjectives();
+				Mission::AddObjective("M21_44");
+				Mission::SetObjectiveAccomplished("M21_44", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT45", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				//Audio::StopTextureVideo(NAME_SCREEN_TEXTURE);
+				Audio::PlayTextureVideo(NAME_SCREEN_TEXTURE, NAME_SCREEN_VIDEO3, true);
+				Game::SetObjectsSelectable(true);
+				mHostageHouse.SetTraceAccuracy_Polygons();
+				mBlinkFieldGrenade.Hide();
+				mBlinkFieldSelect.Show();
+				SetBlinkFieldSelectPosition(&mSharpShooter);
+				Vector pos = mBlinkFieldSelect.GetPosition();
+				pos.z += 40.0f;
+				mBlinkFieldSelect.SetPosition(pos);
+				mSharpShooter.SetSelectable(true);
+				mState = STATE_WAITING_FOR_SHARPSHOOTER_SELECTED2;
+			}
+			break;
+			case STATE_WAITING_FOR_SHARPSHOOTER_SELECTED2:
+			{
+				if (mSharpShooter.IsSelected())
+				{
+					Mission::SetObjectiveAccomplished("M21_44", true);
+					Mission::AddObjective("M21_45");
+					Mission::SetObjectiveAccomplished("M21_45", false);
+					mSoundID = ScriptInterface::ShowTutorialInstruction("TUT46", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+					ScriptInterface::BlinkActionButton("Aim");
+					mSharpShooter.SetSelectable(false);
+					Game::SetObjectsSelectable(false);
+					mBlinkFieldSelect.Hide();
+					mAllowedCmd = "Aim";
+					mState = STATE_WAITING_FOR_AIM;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_AIM:
+			{
+				if (ScriptInterface::IsCurrentCommand("Aim"))
+				{
+					System::Log("State Aim");
+					mState = STATE_AIM;
+				}
+			}
+			break;
+			case STATE_AIM:
+			{
+				Mission::SetObjectiveAccomplished("M21_45", true);
+				Mission::AddObjective("M21_46");
+				Mission::SetObjectiveAccomplished("M21_46", false);
+				mSoundID = ScriptInterface::ShowTutorialInstruction("TUT47", mSoundID, -1, INSTRUCTIONWINDOW_DIST_Y);
+				mGangster.Show();
+				//mGangster.SetEnteredHouseID(mHostageHouse.GetID());
+				mAllowedCmd = "AimedShot";
+				mState = STATE_WAITING_FOR_SHOOT_GANGSTER;
+			}
+			break;
+			case STATE_GANGSTER_SHOT:
+			{
+				Mission::SetObjectiveAccomplished("M21_46", true);
+				Audio::PlayTextureVideo(NAME_SCREEN_TEXTURE, NAME_SCREEN_VIDEO2, false);
+				//ScriptInterface::ShowTutorialMessage("ID_TUTORIAL_TEXT09", "base:Audio/FX/tutorial/tut.wav");
+				Mission::PlayComment("SUPERV_TUT10");
+				ScriptInterface::CloseTutorialInstruction();
+				WaitForTutorialMessage(STATE_END);
+			}
+			break;
+			case STATE_END:
+			{
+				Mission::StartCutScene();
+				ScriptInterface::HideInterface();
+				Mission::CloseBlackBars(3.0f, 3.0f);
+				Mission::StartSingleTimer("timer_endtutorial", 3.0f);
+				Mission::EndCutScene();
+			}
+		}
+	}
+
+	bool OnCheckCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		//System::Log("OnCheckCommand: %s  Allowed Command: %s", Cmd_, mAllowedCmd);
+		if (Caller_->GetID() == mCrane.GetID())
+			return true;
+		if (Cmd_ == "AimedShot" && Target_->GetID() == mShooter.GetID())
+			return false;
+		if (Cmd_ != mAllowedCmd)
+		{
+			return false;
+		}
+		if (Cmd_ == "ScoutHouse" && Target_->GetID() == mSmokehall.GetID())
+			return false;
+		return true;
+	}
+
+	bool OnCheckSendToTarget(Vector *pos)
+	{
+		Vector pos1, pos2;
+		pos1 = *pos;
+		pos2 = mBlinkFieldSmoke.GetPosition();
+		pos1.z = 0.0f;
+		pos2.z = 0.0f;
+		float dist = (pos1 - pos2).GetLen();
+		if (dist > 150.0f)
+			return false;
+		return true;
+	}
+
+	bool OnPreCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		if (!Cmd)
+			return;
+		System::Log(Cmd);
+		ScriptInterface::BlinkActionButton(-1);
+		if (mState != STATE_WAITING_FOR_TEAM_ENTER_HOUSE)
+			mAllowedCmd = "";
+		if (mState == STATE_WAITING_FOR_RW_EMPTY
+			&& Cmd == "EmptyCar" && Target && Target->GetID() == mRW.GetID())
+		{
+			Vehicle vehicle(Caller);
+			mFirefighterList = vehicle.GetPassengers();
+			mState = STATE_RW_EMPTY;
+		}
+		else if (mState == STATE_WAITING_FOR_RTW_EMPTY
+			&& Cmd == "EmptyCar" && Target && Target->GetID() == mRTW.GetID())
+		{
+			Vehicle vehicle(Caller);
+			PersonList list = vehicle.GetPassengers();
+			if (list.GetNumPersons() != 2)
+				System::Error("Tutorial: Wrong number of persons");
+			for (int i = 0; i < 2; i++)
+			{
+				if (list.GetPerson(i)->GetPersonType() == PT_DOCTOR)
+				{
+					System::Log("Doctor found");
+					mDoctor = list.GetPerson(i);
+					mDoctor.SetSelectable(false);
+					mDoctor.SetAutoHealDistance(0.0f);
+				}
+				else if (list.GetPerson(i)->GetPersonType() == PT_PARAMEDIC)
+				{
+					System::Log("Paramedics found");
+					mParamedics = list.GetPerson(i);
+					mParamedics.SetSelectable(false);
+				}
+			}
+			mState = STATE_RTW_EMPTY;
+		}
+		if (mState == STATE_WAITING_FOR_AIM
+			&& Cmd == "Aim")
+			mState = STATE_AIM;
+		return true;
+	}
+
+	bool OnPostCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		if (!Cmd)
+			return;
+		System::Log(Cmd);
+	}
+
+	bool OnHit(GameObject *Shooter_, GameObject *HitObject_, Vector *hitPoint_)
+	{
+		if (HitObject_)
+		{
+			System::Log("hit object: %s", HitObject_->GetPrototypeName());
+		}
+		if (mState == STATE_WAITING_FOR_SHOOT_GANGSTER
+			&& HitObject_->GetID() == mGangster.GetID())
+		{
+			mState = STATE_GANGSTER_SHOT;
+			//Shooter_->PushActionTurnTo(ACTION_NEWLIST, HitObject_);
+			// Gangster wurde eigentlich gehidet, aber der Scharfschütze zielt
+			// dann in die falsche Richtung also nur unter den Boden mit ihm			
+			Vector pos = mGangster.GetPosition();
+			pos.z = -900.0f;
+			mGangster.SetPosition(pos);
+		}
+		return true;
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Obj, Actor *act)
+	{
+		return MCC_HALT_CONTINUE;
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		switch (mState)
+		{
+			case STATE_MOVING_INSIDE_HOUSE:
+			{
+				Mission::StartIntervalTimer("timer_checkmission", TIME_CHECK_MISSION);
+				mState = STATE_MOVED_INSIDE_HOUSE;
+			}
+			break;
+			case STATE_MOVING_TO_BASE:
+			{
+				Mission::StartIntervalTimer("timer_checkmission", TIME_CHECK_MISSION);
+				mState = STATE_MOVED_TO_BASE;
+			}
+			break;
+			case STATE_MOVING_TO_FIRE_SIM0:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_FIRE_SIM, TIME_TRANSITION_MOVE_TO_FIRE_SIM0);
+				mState = STATE_MOVING_TO_SMOKE_SIMA;
+			}
+			break;
+			case STATE_MOVING_TO_FIRE_SIMA:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_FIRE_SIMB, TIME_TRANSITION_MOVE_TO_FIRE_SIMB);
+				mState = STATE_MOVING_TO_FIRE_SIMB;
+			}
+			break;
+			case STATE_MOVING_TO_FIRE_SIMB:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_FIRE_SIMC, TIME_TRANSITION_MOVE_TO_FIRE_SIMC);
+				mState = STATE_MOVING_TO_FIRE_SIMC;
+			}
+			break;
+			case STATE_MOVING_TO_FIRE_SIMC:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_FIRE_SIM, TIME_TRANSITION_MOVE_TO_FIRE_SIM);
+				mState = STATE_MOVING_TO_FIRE_SIM;
+			}
+			break;
+			case STATE_MOVING_TO_FIRE_SIM:
+			{
+				Mission::StartIntervalTimer("timer_checkmission", TIME_CHECK_MISSION);
+				mState = STATE_MOVED_TO_FIRE_SIM;
+			}
+			break;
+			case STATE_MOVING_TO_FIRE_SIM_AGAIN:
+			{
+				Mission::StartIntervalTimer("timer_checkmission", TIME_CHECK_MISSION);
+				mState = STATE_MOVED_TO_FIRE_SIM_AGAIN;
+			}
+			break;
+			case STATE_MOVING_TO_SMOKE_SIM0:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_SMOKE_SIM, TIME_TRANSITION_MOVE_TO_SMOKE_SIM0, false);
+				mState = STATE_MOVING_TO_HOSTAGE_SIMA;				
+			}
+			break;
+			case STATE_MOVING_TO_SMOKE_SIMA:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_SMOKE_SIMB, TIME_TRANSITION_MOVE_TO_SMOKE_SIMB, false);
+				mState = STATE_MOVING_TO_SMOKE_SIMB;
+			}
+			break;
+			case STATE_MOVING_TO_SMOKE_SIMB:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_SMOKE_SIMC, TIME_TRANSITION_MOVE_TO_SMOKE_SIMC, false);
+				mState = STATE_MOVING_TO_SMOKE_SIMC;
+			}
+			break;
+			case STATE_MOVING_TO_SMOKE_SIMC:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_SMOKE_SIM, TIME_TRANSITION_MOVE_TO_SMOKE_SIM);
+				mState = STATE_MOVING_TO_SMOKE_SIM;
+			}
+			break;
+			case STATE_MOVING_TO_SMOKE_SIM:
+			{
+				Mission::StartIntervalTimer("timer_checkmission", TIME_CHECK_MISSION);
+				mState = STATE_MOVED_TO_SMOKE_SIM;
+			}
+			break;
+			case STATE_MOVING_TO_HOSTAGE_SIMA:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_HOSTAGE_SIMB, TIME_TRANSITION_MOVE_TO_HOSTAGE_SIMB, false);
+				mState = STATE_MOVING_TO_HOSTAGE_SIMB;				
+			}
+			break;
+			case STATE_MOVING_TO_HOSTAGE_SIMB:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_HOSTAGE_SIMC, TIME_TRANSITION_MOVE_TO_HOSTAGE_SIMC, false);
+				mState = STATE_MOVING_TO_HOSTAGE_SIMC;
+			}
+			break;
+			case STATE_MOVING_TO_HOSTAGE_SIMC:
+			{
+				Camera::StartTransition(NAME_TRANSITION_MOVE_TO_HOSTAGE_SIM, TIME_TRANSITION_MOVE_TO_HOSTAGE_SIM);
+				mState = STATE_MOVING_TO_HOSTAGE_SIM;
+			}
+			break;
+			case STATE_MOVING_TO_HOSTAGE_SIM:
+			{
+				Mission::StartIntervalTimer("timer_checkmission", TIME_CHECK_MISSION);
+				mState = STATE_MOVED_TO_HOSTAGE_SIM;
+			}
+			break;
+		}
+	}
+	
+	void OnTimer(const char *Timer, float Time)
+	{		
+		switch(Timer)
+		{
+			case "timer_grenade":
+			{
+				mState = STATE_GRENADE_THROWN;
+			}
+			break;
+			case "timer_endtutorial":
+			{				
+				ScriptInterface::DisableTutorialMode();
+				//ScriptInterface::ShowMainMenu();
+				//System::Execute("m1");
+				Game::ScheduleMissionStart(1, true);
+				//Process::Kill();
+			}
+			break;
+			case "timer_checkmission":
+			{
+				CheckMissionState(Time);
+			}
+			break;
+			case "timer_endcutscene2":
+			{
+				mState = STATE_START_OBJECTIVE_FIRE_SIM;
+			}
+			break;
+			case "timer_endcutscene3":
+			{
+				mState = STATE_START_OBJECTIVE_SMOKE_SIM;
+			}
+			break;
+			case "timer_endcutscene4":
+			{
+				mState = STATE_START_OBJECTIVE_HOSTAGE_SIM;
+			}
+			break;
+		}
+	}
+
+	void UpdateCutScene()
+	{
+	}
+
+	void StartHeliScene()
+	{
+		System::Log("Start Helis");
+		mHeli1.Show();
+		mHeli1.PushActionFlyTo(ACTION_NEWLIST, &mPathHeli1);//, mPathHeli1.GetPointID(0), mPathHeli1.GetPointID(3));
+		mHeli2.Show();
+		mHeli2.PushActionFlyTo(ACTION_NEWLIST, &mPathHeli2);//, mPathHeli2.GetPointID(0), mPathHeli2.GetPointID(3));
+	}
+
+	void StartCraneScene()
+	{
+		mCrane.PushActionDropWithCrane(ACTION_NEWLIST, mPlaceCar.GetPosition());
+	}
+
+	void StartPlaneScene()
+	{
+		mTruck1.SetObjectPath("truck1_path");
+		mTruck2.SetObjectPath("truck2_path");
+		mTruck3.SetObjectPath("truck3_path");
+		mTransAid.PushActionUnloadTransEvac(ACTION_NEWLIST);
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch (Action)
+		{
+			case "EActionFindPath":
+			{
+				if (mState == STATE_WAITING_FOR_RW_ARRIVE)
+				{
+					//System::Log("Start Helis");
+					//mHeli1.Show();
+					//mHeli1.PushActionFlyTo(ACTION_NEWLIST, &mPathHeli1);
+					//mHeli2.Show();
+					//mHeli2.PushActionFlyTo(ACTION_NEWLIST, &mPathHeli2);
+				}
+			}
+			break;
+			case "EActionExtinguish":
+			{
+				if (mState == STATE_WAITING_FOR_EXTINGUISH && mExtinguishTime < 0.0f)
+				{
+					ScriptInterface::BlinkActionButton(-1);
+					mAllowedCmd = "";
+					//mFireHouse.Burn();
+					mExtinguishTime = TIME_EXTINGUISH;
+				}
+			}
+			break;
+			case "EActionTreatPerson":
+			{
+				if (mState == STATE_WAITING_FOR_DOCTOR_BEGIN_HEAL)
+					mState = STATE_DOCTOR_BEGIN_HEAL;
+			}
+			break;
+			case "EActionUse":
+			{
+				if (mState == STATE_WAITING_FOR_USE_PANEL)
+				{
+					float *time = reinterpret_cast<float*>(Data->Parameters[2].pValue);
+					*time = DURATION_PANEL;
+				}
+			}
+			break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch (mState)
+		{
+			case STATE_WAITING_FOR_FIREFIGHTER_SELECTED:
+			case STATE_RW_EMPTY:
+			{
+				if (Action == "EActionLeaveCar")
+				{
+					mBlinkFieldSelect.Show();
+					SetBlinkFieldSelectPosition(mFirefighterList.GetPerson(0));
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_DROPPED_FIREHOSE:
+			{
+				if (Action == "EActionRemoveEquipment")
+					mState = STATE_DROPPED_FIREHOSE;
+			}
+			break;
+			case STATE_WAITING_FOR_ATTACH_FIREHOSE_CLICKED:
+			case STATE_WAITING_FOR_ATTACH_FIREHOSE:
+			{
+				if (Action == "EActionUseEquipment")
+				{
+					mState = STATE_ATTACHED_FIREHOSE;
+					mFirefighter.EnableAutoTarget(false);
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_DEINSTALL_FIREHOSE:
+			{
+				if (Action == "EActionUseEquipment")
+					mState = STATE_DEINSTALLED_FIREHOSE;
+			}
+			break;
+			case STATE_WAITING_FOR_USE_PANEL:
+			{
+				if (Action == "EActionUse")
+				{
+					mSmokehallButton.EnableSpecialLights(false);
+					mState = STATE_DOOR_OPENED;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_ENTERED_SMOKEHALL:
+			{
+				if (Action == "EActionEnterHouse")
+					mState = STATE_ENTERED_SMOKEHALL;
+			}
+			break;
+			case STATE_WAITING_FOR_LIFT_DUMMY:
+			{
+				if (Action == NAME_ACTION_LIFTPERSON)
+					mState = STATE_DUMMY_LIFTED;
+			}
+			break;
+			case STATE_WAITING_FOR_UNLOADED_DUMMY:
+			{
+				if (Action == "EActionUnloadPerson")
+					mState = STATE_DUMMY_UNLOADED;
+			}
+			break;
+			case STATE_WAITING_FOR_DOCTOR_HEAL:
+			{
+				if (Action == "EActionTreatPerson")
+					mState = STATE_DOCTOR_HEALED;
+			}
+			break;
+			case STATE_WAITING_FOR_PARAMEDICS_LIFT:
+			{				
+				if (Action == NAME_ACTION_LIFTPERSON)
+				{
+					mState = STATE_PARAMEDICS_LIFTED;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_PARAMEDICS_PUTIN:
+			{
+				if (Action == "EActionEnterCar")
+					mState = STATE_PARAMEDICS_PUTIN;
+			}
+			break;
+			case STATE_WAITING_FOR_DOCTOR_GETIN:
+			{
+				if (Action == "EActionEnterCar")
+					mState = STATE_DOCTOR_GOTIN;
+			}
+			break;
+			case STATE_WAITING_FOR_SCOUT_SCOUTHOUSE:
+			{
+				if (Action == "EActionScout")
+					mState = STATE_WAITING_FOR_POST_SCOUTHOUSE;
+			}
+			break;
+			case STATE_WAITING_FOR_GET_GRENADE:
+			{
+				if (Action == "EActionGetEquipment")
+					mState = STATE_GOT_GRENADE;
+			}
+			break;
+			case STATE_WAITING_FOR_GET_FIREHOSE:
+			{
+				if (Action == "EActionGetEquipment")
+				{
+					System::Log("Got firehose");
+					mState = STATE_GOT_FIREHOSE;
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_THROW_GRENADE:
+			{
+				if (Action == "EActionThrow")
+				{
+					Mission::StartSingleTimer("timer_grenade", 3.0f);					
+				}
+			}
+			break;
+			case STATE_WAITING_FOR_AIM:
+			{
+				//if (Action == "EActionPrepareAim")
+				//	mState = STATE_AIM;
+			}
+			break;
+		}
+		return ACTION_CONTINUE;
+	}
+	    
+	void OnSquadVehicleArrived(Vehicle* Vehicle)
+	{
+		if (mState == STATE_WAITING_FOR_SEND_BUTTON)
+		{			
+			Vehicle->EnableCommand("LightOn", false);
+			mRW = Vehicle;
+			ScriptInterface::CloseAllVehicleBrowsers();
+			mState = STATE_VEHICLE_SENT;
+		}
+		else if (mState == STATE_WAITING_FOR_RTW_SEND_BUTTON || mState == STATE_WAITING_FOR_RTW_ARRIVE)
+		{			
+			Vehicle->EnableCommand("LightOn", false);
+			mRTW = Vehicle;
+			mRTW.RemoveCommand("MoveTo");
+			Game::SetObjectsSelectable(true);
+			mRTW.Select();
+			Game::SetObjectsSelectable(false);
+		}
+	}
+
+	void OnMissionLeft(GameObject *Object_)
+	{
+		if (mState == STATE_WAITING_FOR_RTW_LEFT && Object_->GetID() == mRTW.GetID())
+		{
+			mState = STATE_RTW_LEFT;
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path, GameObject *Caller)
+	{
+		return PATH_DEFAULT;
+	}
+
+	void OnTrigger(const char *Trigger_, Actor *Collider_)
+	{
+		switch(Trigger_)
+		{
+			System::Log("Trigger: %s", Trigger_);
+			case NAME_TRIGGER_FIELD_FIRE:
+			{
+				if (mState == STATE_WAITING_FOR_RW_ARRIVE)
+				{
+					mBlinkFieldFire.Hide();
+					mState = STATE_RW_ARRIVED;
+				}
+			}
+			break;
+			case NAME_TRIGGER_FIELD_SMOKE:
+			{
+				if (mState == STATE_WAITING_FOR_RTW_ARRIVE)
+				{
+					mBlinkFieldSmoke.Hide();
+					mState = STATE_RTW_ARRIVED;
+				}
+			}
+			break;
+			case NAME_TRIGGER_FIELD_DUMMY:
+			{
+				if (mState == STATE_WAITING_FOR_DUMMY_ARRIVE)
+				{
+					mBlinkFieldDummy.Hide();
+					mState = STATE_DUMMY_ARRIVED;
+				}
+			}
+			break;
+			case NAME_TRIGGER_FIELD_HOUSE:
+			{
+				if (mState == STATE_WAITING_FOR_TEAM_ENTER_HOUSE)
+				{
+					mHostageHouse.SetTraceAccuracy_Polygons();
+					mBlinkFieldHouse.Hide();
+					mState = STATE_TEAM_ENTERED_HOUSE;
+				}
+			}
+			break;
+		}
+    }
+
+	MissionState GetMissionState()
+	{
+		if (mState == STATE_END)
+			return MISSION_SUCCEEDED;
+		else
+			return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		return "UNKNOWN";
+	}
+
+	float GetRating()
+	{
+		return 1.0f;
+	}
+};

@@ -1,0 +1,809 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script gohome_winterberg
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+int escalator=2;
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+		const int MAX_FZ = 50;
+		const char * stellplatz[MAX_FZ];
+		stellplatz[1]="nef";
+		stellplatz[2]="rtw";
+		stellplatz[3]="lf";
+		stellplatz[4]="tlf";
+		stellplatz[5]="rw";
+		stellplatz[6]="dlk";
+		stellplatz[7]="stw1";
+		stellplatz[8]="stw2";
+		stellplatz[9]="stw3";
+		stellplatz[10]="mtw";
+		stellplatz[11]="rtwm";
+		stellplatz[12]="ch25";
+		stellplatz[13]="kran";
+		stellplatz[14]="ktw";
+		stellplatz[15]="gw_m";
+		stellplatz[16]="lkw";
+		stellplatz[17]="elw";
+		stellplatz[18]="";
+		stellplatz[19]="";
+		stellplatz[20]="";
+		stellplatz[21]="nord";		// OKZ 51 = Bad Berleburg
+		stellplatz[22]="nord1";		// OKZ 52 =
+		stellplatz[23] ="ost";		// OKZ 53 = Langewiese
+		stellplatz[24]="ost1";		// OKZ 54 = Olsberg
+		stellplatz[25]="ost2";		// OKZ 55 = Korbach
+		stellplatz[26]="sued";		// OKZ 56 = Zueschen
+		stellplatz[27]="west";		// OKZ 57 = Langewiese
+		stellplatz[28]="west1";		// OKZ 58 =
+		stellplatz[29]="kran";		// OKZ 59 = Siedlingshausen
+		stellplatz[30]="rtwm";		// OKZ 60 = Medebach
+		stellplatz[31]="rtwm";		// OKZ 61 = Medebach
+		stellplatz[32]="rtwm";		// OKZ 62 = Medebach
+		stellplatz[33]="rtwm";		// OKZ 63 = Medebach
+		stellplatz[34]="ch25";		// OKZ 64 = Siegen
+		stellplatz[35]="ost";		// OKZ 65 = Schmallenberg
+
+		const char * kennung[MAX_FZ];
+		kennung[1]="nef";
+		kennung[2]="rtw";
+		kennung[3]="lf";
+		kennung[4]="tlf";
+		kennung[5]="rw";
+		kennung[6]="dlk";
+		kennung[7]="stw1";
+		kennung[8]="stw2";
+		kennung[9]="stw3";
+		kennung[10]="mtw";
+		kennung[11]="asf";
+		kennung[12]="ch25";
+		kennung[13]="tjeep";
+		kennung[14]="rtwm";
+		kennung[15]="gw-mess";
+		kennung[16]="kran";
+		kennung[17]="bsw";
+		kennung[18]="hummel";
+		kennung[19]="zue41";
+		kennung[20]="gtlfbb";
+		kennung[21]="nefbb";
+		kennung[22]="rtwbb";
+		kennung[23] ="rtw7831";
+		kennung[24]="rtw4831";
+		kennung[25]="kb9183";
+		kennung[26]="7821";
+		kennung[27]="8851";
+		kennung[28]="8481";
+		kennung[29]="8482";
+		kennung[30]="8211";
+		kennung[31]="8212";
+		kennung[32]="LNAJeep";
+		kennung[33]="DBNFM";
+		kennung[34]="Bomber";
+
+		const int richtung[MAX_FZ];
+		richtung[1]=0;
+		richtung[2]=0;
+		richtung[3]=90;
+		richtung[4]=90;
+		richtung[5]=1;
+		richtung[6]=90;
+		richtung[7]=0;
+		richtung[8]=0;
+		richtung[9]=0;
+		richtung[10]=0;
+		richtung[11]=0;
+		richtung[12]=0;
+		richtung[13]=0;
+		richtung[14]=0;
+		richtung[15]=1;
+		richtung[16]=90;
+		richtung[17]=90;
+
+object gohome_winterberg : CommandScript
+{
+	Vector Wache;
+	Actor fz;
+
+	gohome_winterberg()
+	{
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(85);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		return !v.IsDestroyed();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE || ((v.GetNumPassengers() == 0) && (v.GetFreePassengers()>0)))
+			return false;
+
+		//Freeplay oder nicht?
+		// changed by Bass-ti -> new em4-codec
+		if (Game::IsFreeplay())
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		bool nachbarfz=v.HasCommand("hidden");
+		bool extern=(!(v.HasCommand("gohome_winterberg")) && !(v.HasCommand("aufsitzen")));
+		bool bedarfsfz=v.HasCommand("bedarfs_fz");		
+		const char * parken[2];
+		int randact;
+		int fzid;
+
+		randact=Math::rand()%100;
+		int h,m,s;
+		Game::GetTime (h,m,s);
+		escalator++;
+		Game::ExecuteCommand("CheckWitchDoc",Caller);
+		
+			if ((randact < escalator) && (h>7))		// hier wahrscheinlichkeit für neuen vu einstellen
+			{
+				Caller->PushActionExecuteCommand(ACTION_NEWLIST,"witchdoc_action",Target,s,false);
+				escalator=-40;
+			} else
+				v.PushActionWait(ACTION_NEWLIST,1.0);
+		
+
+		if ((v.GetNumPassengers() == 0) && (v.GetFreePassengers() > 0) && (childID != 19292))	// Fz nicht ohne sein Personal wegfahren lassen, NEF darf ins KH folgen
+			return;
+
+		if (v.GetVehicleType() == VT_FIREFIGHTERS_GTF)
+		{
+			PersonList pl(ROLE_SQUAD);
+			bool SchlauchDran=false;
+			Person fw;
+			for (int i=0; (i<pl.GetNumPersons()) && (!SchlauchDran);i++)
+			{
+				fw=pl.GetPerson(i);
+				if (fw.GetFirehoseID()!=0)
+					SchlauchDran=v.IsUsingConnector(&fw);
+			}
+			if (SchlauchDran)
+			{
+				Mission::PlayHint("Schlauchanschluss noch in Betrieb");
+				v.PushActionWait(ACTION_NEWLIST,1.0);
+				return;
+			}
+		}
+
+		if (v.HasCommand("DUMMYHasWarningLights"))
+		{
+ 			v.EnableBlinker(BLT_NONE);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+		}
+		if (v.HasCommand("DUMMYHasUmfeld"))
+		{
+			v.RemoveCommand("DUMMYHasUmfeld");
+		}
+		if (v.GetVehicleType() == VT_THW_FGRR_BKF)
+		{
+			Caller->PushActionDeinstall(ACTION_INSERT);
+		}
+
+		v.PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",&v);
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+		
+		if (extern)
+		{
+			Mission::PlayHint("Externes Zusatzfahrzeug zurueck zur Basis.");
+			Caller->PushActionReturnToBase(ACTION_APPEND);
+		} else {
+
+			parken[0]=Caller->GetName();
+			int dir=int(parken[0][0])-32;
+			if (dir>50)
+				dir=dir-30;
+			fzid=int(parken[0][4])-32;
+			parken[1]=stellplatz[dir];
+		
+			ActorList fzl=Game::GetActors(parken[1]); 
+			if(fzl.GetNumActors() > 0)
+				Actor fz = *fzl.GetActor(0);
+			else
+				System::Error("Fahrzeugerzeugung Fehler");
+
+			//Wo soll das Fahrzeug parken?
+			Vector Wache=fz.GetPosition();
+			Game::FindFreePosition(&v, Wache);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_DISABLE, Caller, 1, false);
+			Caller->PushActionLightOn(ACTION_APPEND,false);
+
+			int cid;
+			bool rueckfahrwarnung = false;  // erstmal für alle an
+
+			switch(v.GetVehicleType())
+			{
+				case VT_AMBULANCE_RTW :
+				case VT_AMBULANCE_RHC :
+					if (v.HasCommand("ich_bin_ein_bsw"))
+						break;
+
+					// PersonList persons = v.GetTransports();
+					if (v.GetNumTransported() > 0)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"zum_krankenhaus",Caller,0,false);
+						return;
+					}
+					cid=0;		// nicht absitzen
+					if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+						break;
+
+				case VT_AMBULANCE_NEF :
+				case VT_AMBULANCE_RHC :				
+					//Leeres NEF bekommt am KH einen neuen NA...
+					PersonList persons = v.GetPassengers();
+					bool HasNA=false;
+					for(int j=0; j<persons.GetNumPersons(); j++)
+					{
+						HasNA=(HasNA || persons.GetPerson(j)->IsDoctor()); //Ist ein NA an Bord?
+					}
+					if (!HasNA)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionNeuerNA", &v, 0, false);
+						return;
+					}
+					cid=0;
+					break;
+			}
+
+			GameObjectList ol=v.GetCarriedObjects();
+			if ((childID != 19222) && (ol.GetNumObjects() == 0) && (v.GetNumTransported() == 0))
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"FzFrei",Caller,0,false);
+
+			rueckfahrwarnung=((fzid == 3) || (fzid == 4));
+			Vector Vorfahrt=Vector (0,-150,0);
+			Vector Wende=Vector (0,-300,0);	// Standardwende
+
+			switch (richtung[dir])
+			{
+				case 90:
+					Vorfahrt=Vector (0,450,0);
+					Wende=Vector (0,800,0);
+					break;
+				case 1 :
+					Vorfahrt=Vector (300,0,0);
+					Wende=Vector (450,0,0);
+					break;
+				default :
+					break;
+			}
+	
+
+			if (Caller->HasCommand("FlyTo"))
+			{
+				v.PushActionFlyTo(ACTION_APPEND,Wache,(!bedarfsfz && !nachbarfz),135);
+				// wenn stammfz, dann am ziel landen
+			} else	{
+				Caller->PushActionMove(ACTION_APPEND, Wache + Vorfahrt); // Fahre zum Wendepunkt
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+				if (rueckfahrwarnung)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionMotorSound",Caller,4,false);
+				Caller->PushActionTurnTo(ACTION_APPEND, Wache + Wende); // Wende
+				Caller->PushActionMove(ACTION_APPEND, Wache); // Einparken
+				if (rueckfahrwarnung)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",Caller);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+			}
+			
+			switch(v.GetVehicleType())
+			{
+				case VT_FIREFIGHTERS_DLK :
+				case VT_FIREFIGHTERS_RW :
+				case VT_FIREFIGHTERS_TLF :
+				case VT_FIREFIGHTERS_LF :
+				case VT_FIREFIGHTERS_LPF :
+				case VT_FIREFIGHTERS_TFMB :
+				case VT_FIREFIGHTERS_GTF :
+				case VT_FIREFIGHTERS_DEKONP :
+					cid=112;	// Absitzen und Fw betretet
+					break;	
+
+				case VT_POLICE_SW :
+				case VT_POLICE_STW :
+				case VT_POLICE_MTW :
+					if (v.GetNumTransported() > 0)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol",&v,0,true);
+						if ((v.GetVehicleType() == VT_POLICE_MTW) && (v.GetNumTransported() < 4))
+							Caller->PushActionExecuteCommand(ACTION_INSERT,"FzFrei",Caller,0,false);
+						return;
+					} else {
+						cid=110;	// Absitzen und PSt betreten			
+					}
+					break;
+
+				case VT_FIREFIGHTERS_ASF:
+					if (Caller->IsCarryingAnything())
+					{
+						System::Error("ASF wird abgeladen");
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionFreeplayUnload",Caller,0,false);
+					}
+					cid=0;
+					break;
+				
+				case VT_AMBULANCE_RTW :
+				case VT_AMBULANCE_RHC :
+					cid=0;		// nicht absitzen
+					break;
+				case VT_AMBULANCE_NEF :
+				case VT_AMBULANCE_RHC :				
+					cid=0;
+					break;
+
+				default : 
+					cid=0;	// wenn nicht gelistet, dann nicht absitzen
+			}
+
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"Geraete_entfernen",Caller,0,false);
+
+			if (bedarfsfz)
+			{
+				Caller->PushActionWait(ACTION_APPEND,5.0);
+				Caller->PushActionDeleteOwner(ACTION_APPEND);
+				
+			} else {
+				if (nachbarfz)
+				{
+					Caller->PushActionShowHide(ACTION_APPEND,true);
+				}
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"WacheAussteigen",Caller,cid,false);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"Fzaufruesten",Caller,0,false);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"FzInspektion",Caller,fzid,false);
+				switch (childID)	// Rüstzeit vor Fahrzeug frei?
+				{
+					case 19222 : 
+						Caller->PushActionWait(ACTION_APPEND,7.0f);
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"FzFrei",Caller,0,false);
+						break;
+				
+				}
+			}
+		}
+
+	}
+};
+
+object ActionCheckPol : CommandScript
+{
+
+	ActionCheckPol()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		PersonList transport = v.GetTransports();
+
+		if (transport.GetNumPersons() > 0)
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionEmptyPol",&v,0,false);
+			Caller->PushActionWait(ACTION_APPEND, 10.f); //bis zum nächsten Durchlauf
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol",&v,0,false);
+		}
+		else
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"FzFrei",Caller,0,false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"WacheAussteigen",Caller,110,false);
+		}
+
+
+	}
+};
+
+object ActionEmptyPol : CommandScript
+{
+	Vector tv,v;
+
+	ActionEmptyPol()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+        	mPlaceList = Game::GetActors("police_entry");
+        	if (mPlaceList.GetNumActors() > 0)
+        		tv=mPlaceList.GetActor(0)->GetPosition();
+
+		Vehicle v(Caller);
+		PersonList passenger = v.GetPassengers();
+		PersonList transport = v.GetTransports();
+
+		if (passenger.GetNumPersons() > 0 && transport.GetNumPersons() > 0)
+		{
+			//Gangster
+			transport.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			bool nix=transport.GetPerson(0)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+			transport.GetPerson(0)->PushActionWait(ACTION_APPEND, 5.f);
+
+			//Polizist
+			passenger.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, transport.GetPerson(0), TARGET_FOLLOW);
+			passenger.GetPerson(0)->PushActionArrest(ACTION_APPEND, transport.GetPerson(0),false);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, tv, true);
+			passenger.GetPerson(0)->PushActionPutInBase(ACTION_APPEND);
+			passenger.GetPerson(0)->PushActionDeleteOwner(ACTION_APPEND);
+		}
+		else
+		{
+			return;
+		}
+
+
+	}
+};
+
+object WacheAussteigen : CommandScript
+{
+
+	WacheAussteigen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList place;
+		Vector entry;
+		char * parken[1];
+
+		parken[0]=Caller->GetName();
+		int fzid=int(parken[0][4])-32;
+
+		switch (ChildID)
+		{	
+			case 0 :
+				break;
+			case 112:
+				switch (fzid)
+				{
+					case 3:
+						place=Game::GetActors("lf_entry");
+						break;
+					case 4:
+						place=Game::GetActors("tlf_entry");
+						break;
+					case 5:
+						place=Game::GetActors("lkw_entry");
+						break;
+					case 6:
+						place=Game::GetActors("dlk_entry");
+						break;
+					case 15:
+						place=Game::GetActors("lkw_entry");
+						break;
+					case 39:
+						place=Game::GetActors("lkw_entry");
+						break;
+					case 40:
+						place=Game::GetActors("elw_entry");
+						break;
+				}
+				break;
+			case 110:
+				place=Game::GetActors("police_entry");
+				break;
+		}
+		if (ChildID > 0) 
+		{
+			if (!Caller->IsHidden())
+				entry=place.GetActor(0)->GetPosition();
+			Vehicle v(Caller);
+			PersonList pl=v.GetPassengers();
+			for (int i=0; i<pl.GetNumPersons(); i++)
+			{
+				pl.GetPerson(i)->PushActionLeaveCar(ACTION_NEWLIST,Caller);
+				if (!Caller->IsHidden())
+					pl.GetPerson(i)->PushActionMove(ACTION_APPEND,entry,true);
+				pl.GetPerson(i)->PushActionDeleteOwner(ACTION_APPEND);
+			}
+		}
+	}
+};
+
+object FzInspektion : CommandScript
+{
+	
+	FzInspektion()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		float dam=v.GetEnergy()/v.GetMaxEnergy()*100;
+		if (dam < 50)
+		{
+			v.AssignCommand("ich_bin_nicht_frei");
+			v.SetCommandable(false);
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"Fzreparieren",Caller,ChildID,false);
+		}
+		
+	}
+};
+
+object Fzreparieren : CommandScript
+{
+
+	Fzreparieren()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		Mission::PlayHint(kennung[ChildID]);
+		Mission::PlayHint("Fahrzeug Status 6 zur Werkstatt");
+		ActorList al("werkstatt");
+		Actor *a=al.GetActor(0);
+		Vector Ziel=a->GetPosition();
+		Game::FindFreePosition(Caller,Ziel,100);
+		v.PushActionMove(ACTION_NEWLIST,Ziel);
+		v.PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",Caller,25,false);
+	}
+};
+
+object sendhome : CommandScript
+{
+
+	sendhome()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		Mission::PlayHint(v.GetName());
+		Mission::PlayHint("Fahrzeug instandgesetzt zurueck zur Wache");
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"gohome_winterberg",&v,0,false);
+		v.SetCommandable(true);
+		v.RemoveCommand("ich_bin_nicht_frei");
+	}
+};
+
+object ActionNeuerNA : CommandScript
+{
+	Vector TargetPos;
+
+	ActionNeuerNA()
+	{
+		SetIcon("naholen");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (!Caller->IsCollidingWithTrigger("aufnahme"))
+			return false;
+
+	   if (Caller->GetID() != Target->GetID())
+		return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+			ActorList l1=Game::GetActors("helipad");
+		else
+			ActorList l1=Game::GetActors("notarzt");
+		
+		Actor nefwache = *l1.GetActor(0);
+		GameObject wobj(&nefwache);
+		Vector Wache=nefwache.GetPosition();
+		Game::FindFreePosition(&v, Wache);
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_DISABLE, &v, 1, false);
+		v.RemoveCommand("ich_bin_nicht_frei");	
+		v.PushActionLightOn(ACTION_APPEND,false);
+		if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+		{
+			float ang=v.GetValidLandingAngle(&wobj,Wache);
+			v.PushActionFlyTo(ACTION_APPEND,Wache,true,ang);
+		} else {	
+			v.PushActionMove(ACTION_APPEND, Wache + Vector(0, -150, 0)); // Fahre zum Wendepunkt
+			v.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&v);
+			v.PushActionTurnTo(ACTION_APPEND, Wache + Vector(0, -300, 0)); // Wende
+			v.PushActionMove(ACTION_APPEND, Wache); // Einparken
+		}
+		v.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&v);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckHubiDown",Caller,0,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"mannschaft_rufen",Caller,19292,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionCheckNAinNEF", Caller, 0, false);
+	}
+};
+
+object ActionCheckNAinNEF : CommandScript
+{
+	ActionCheckNAinNEF()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		//RTH: Nur am KH mit passengers != 3
+		Vehicle rth(Caller);
+		PersonList passengers = rth.GetPassengers();
+		if ((rth.GetVehicleType() == VT_AMBULANCE_RHC) && (!rth.IsCollidingWithTrigger("aufnahme") || passengers.GetNumPersons() == 3)))
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle vec(Target);
+		PersonList persons = vec.GetPassengers();
+		
+		//Ist kein NA an Bord?
+		int anzahl_na = 0;
+		for(int j=0; j<persons.GetNumPersons(); j++)
+		{
+			if (persons.GetPerson(j)->IsDoctor())
+				anzahl_na++;
+		}
+
+		if (anzahl_na == 0)
+		{
+			vec.PushActionWait(ACTION_APPEND,2.0f);
+			vec.PushActionExecuteCommand(ACTION_APPEND,"ActionCheckNAinNEF",Caller,0,true);
+		}
+		else
+		{
+			// vec.PushActionExecuteCommand(ACTION_NEWLIST,"FzFrei",Caller,0,false);
+			vec.PushActionExecuteCommand(ACTION_NEWLIST,"gohome_winterberg",Caller,0,true);
+		}
+	}
+};
+
+object FzFrei : CommandScript
+{
+	FzFrei()
+	{
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		char * fzfrei="Einsatzfahrzeug frei auf Funk";
+		char * fz[1];
+		fz[0]=Caller->GetName();
+		int fzid=int(fz[0][4])-32; 	// Fz-Typ laut AutosKaufen
+
+		switch (fzid)
+		{
+			case 1:		
+				fzfrei="8-82-1 einsatzbereit auf Funk";
+				break;
+			case 26:
+				fzfrei="7-82-1 einsatzbereit auf Funk";
+				break;
+			case 21:
+				fzfrei="Notarzt Bad Berleburg einsatzbereit auf Funk";
+				break;
+			case 2:
+				fzfrei="RTW 8-83-1 einsatzbereit auf Funk";
+				break;
+			case 14:
+				fzfrei="RTW 11-83-1 einsatzbereit auf Funk";
+				break;
+			case 23:
+				fzfrei="RTW 7-83-1 einsatzbereit auf Funk";
+				break;
+			case 24:
+				fzfrei="RTW 4-83-1 einsatzbereit auf Funk";
+				break;
+			case 27:
+				fzfrei="KTW 8-85-1 einsatzbereit auf Funk";
+				break;
+			case 28:
+				fzfrei="Florian Sauerland 8-48-1 einsatzbereit auf Funk";
+				break;
+			case 29:
+				fzfrei="Florian Sauerland 8-48-2 einsatzbereit auf Funk";
+				break;
+			case 25:
+				fzfrei="Rot-Kreuz Korbach 91/83 einsatzbereit auf Funk";
+				break;
+			case 22:
+				fzfrei="RTW Bad Berleburg einsatzbereit auf Funk";
+				break;
+			case 12:
+				fzfrei="Christoph 25 einsatzbereit auf Funk";
+				break;
+			case 19 : 
+				fzfrei="Florian Sauerland 8-42-2 einsatzbereit auf Funk";
+				break;
+			case 20 :
+				fzfrei="Florian Siegen 4-29-1 einsatzbereit auf Funk";
+				break;
+			case 3:
+				fzfrei="Florian Sauerland 8-44-2 einsatzbereit auf Funk";
+				break;
+			case 4:	
+				fzfrei="Florian Sauerland 8-23-1 einsatzbereit auf Funk";
+				break;
+			case 6:	
+				fzfrei="Florian Sauerland 8-33-1 einsatzbereit auf Funk";
+				break;
+			case 5:	
+				fzfrei="Florian Sauerland 8-51-1 einsatzbereit auf Funk";
+				break;
+			case 30:	
+				fzfrei="Florian Sauerland 8-21-1 einsatzbereit auf Funk";
+				break;
+			case 31:	
+				fzfrei="Florian Sauerland 8-21-2 einsatzbereit auf Funk";
+				break;
+			case 32:	
+				fzfrei="LNA Sauerland einsatzbereit auf Funk";
+				break;
+			case 35:
+				fzfrei="SEG Rettung Rückfahrt Unterkunft";
+				break;
+			case 38:
+				fzfrei="Florian Sauerland 8-42-2 einsatzbereit auf Funk";
+				break;
+		}
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/FUNKFREI.wav");
+		Mission::PlayHint(fzfrei);
+		Caller->RemoveCommand("ich_bin_nicht_frei");	
+	}
+};

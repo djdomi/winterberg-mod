@@ -1,0 +1,161 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script cool_wawe
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+
+
+
+
+
+object Cool_wawe : CommandScript
+{
+	bool shouldturn, useDLKlogic, moveToTarget;
+
+	Cool_wawe()
+	{
+		SetCursor("extinguish");
+		SetIcon("extinguish");
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT | ACTOR_HOUSE | ACTOR_OPEN_HOUSE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target || !Target->IsValid() || Caller->GetID() == Target->GetID())
+			return false;
+
+		if(Target->GetType() == ACTOR_PERSON)
+			return false;
+
+		GameObject o(Target);
+		if (!o.IsValid() || !o.IsFlagSet(OF_COOLABLE) || o.GetNumActiveFireChilds() == 0)
+			return false;
+		if (o.GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if ((v.GetVehicleType() == VT_POLICE_PHC || v.GetVehicleType() == VT_AMBULANCE_RHC) && !v.IsOnGround())
+			   	return false;
+		}
+
+		if (Caller->GetType() == ACTOR_PERSON )
+		{
+			Person p(Caller);
+			if (p.CanUseDLKCannon())
+			{
+				useDLKlogic = true;
+				if (o.GetNumActiveFireChilds() == 0)
+					return false;
+				if (p.GetEnteredCarTargetID() != -1 && p.GetEnteredCarTargetID() != Target->GetID())
+					return false;
+				if (p.GetEnteredCarID() == Target->GetID())
+					return false;
+
+				if (!p.CheckDLKExtinguishDistance(Target))
+					return false;
+
+				if (p.GetEnteredCarTargetID() != -1/* && o.IsBurningInside()*/)
+					return false;
+				else if (p.GetEnteredCarTargetID() == -1 && o.IsBurningOutside())
+					return false;
+
+				if (p.GetEnteredCarTargetID() != -1)
+					shouldturn = false;
+				else
+					shouldturn = true;
+
+				return true;
+			}
+			if (p.GetEnteredCarID() != -1)
+			   	return false;
+		}
+
+		if (o.IsBurning())
+		   	return false;
+
+		useDLKlogic = false;
+
+		if (Caller->GetType() == ACTOR_VEHICLE || Caller->GetEquipment()==EQUIP_FIRE_EXTINGUISHER || Caller->GetEquipment()== EQUIP_FIREHOSE)
+		{
+			if (Caller->GetEquipment() == EQUIP_FIREHOSE && Caller->GetFirehoseID() == 0)
+				return false;
+			if (Caller->GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle v(Caller);
+				moveToTarget = !v.CheckExtinguishDistance(o);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject ggv(Target);
+
+		if (!Target)
+			return;
+
+		if (useDLKlogic)
+		{
+			if (shouldturn)
+			{
+				Caller->PushActionTurnBase(ACTION_NEWLIST, Target);
+				Caller->PushActionCannonExtinguish(ACTION_APPEND, Target, 100.f, true);
+				ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,1,false);
+			} else {
+				Caller->PushActionCannonExtinguish(ACTION_NEWLIST, Target, 100.f, true);
+				ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,1,false);
+			}
+			return;
+		}
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			if (moveToTarget)
+			{
+				if (Target->GetType() == ACTOR_VEHICLE)
+				{
+					Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_ENGINE_EXTINGUISH);
+					Caller->PushActionNOP(ACTION_NEWLIST);
+				}
+				else
+				{
+					Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_EXTINGUISH);
+					Caller->PushActionNOP(ACTION_NEWLIST);
+				}
+				Caller->PushActionCool(ACTION_APPEND, Target);
+				ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,1,false);
+			} else {
+			    	Caller->PushActionCool(ACTION_NEWLIST, Target);
+				ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,1,false);
+			}
+		}
+		else if (Caller->GetType() == ACTOR_PERSON)
+		{
+			if (Target->GetType()==ACTOR_VEHICLE)
+			{;
+				Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_ENGINE_EXTINGUISH);
+				Caller->PushActionNOP(ACTION_NEWLIST);
+				Caller->PushActionTurnTo(ACTION_APPEND, Target, TARGET_ENGINE);
+			}
+			else
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_EXTINGUISH);
+				Caller->PushActionNOP(ACTION_NEWLIST);
+				Caller->PushActionTurnTo(ACTION_APPEND, Target, TARGET_OBJECTSURFACE);
+			}
+		}
+		Caller->PushActionCool(ACTION_APPEND, Target);
+		ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,1,false);
+	}
+
+};

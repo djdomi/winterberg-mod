@@ -1,0 +1,39 @@
+object LightOff : CommandScript
+{
+
+	LightOff()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetGroupID(CGROUP_LIGHT);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetDeselectCaller(false);
+		SetPriority(50);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		Vehicle v(Caller);
+		return v.IsLightOn();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Target->GetID() != Caller->GetID()))
+			return false;
+			
+		Vehicle rw(Caller);
+		if (rw.IsValid() && rw.IsLightOn())
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"ActionStopSound",Caller);
+		Caller->PushActionLightOn(ACTION_APPEND,false);
+	}	
+};

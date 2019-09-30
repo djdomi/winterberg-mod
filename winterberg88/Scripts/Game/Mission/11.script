@@ -1,0 +1,1337 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script 11
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+/* TODO
+	- Musik und Sounds
+*/
+
+const int	MAX_HINTS = 8;					// maximale Anzahl Hints
+const int	MAX_DEAD_CIVILS = 6;			// mehr Tote -> fail
+const int	MAX_DEAD_PERSONS_HINT6 = 4;		// Soviele Tote -> Hint
+const int	MAX_BLOCKED_PERSONS = 4;		// Personen unter Trümmern
+const int	COUNT_PLANE_FRAMES = 6;			// Anzahl der Flugzeug-Frames für die Landung
+const int	COUNT_PLANE_FRAMES_CS = 3;		// Anzahl der Flugzeug-Frames für den Crash
+const float SPEED_PLANE = 80.0f;			// Anfangsgeschwindigkeit des landenden Flugzeugs
+const float DECELERATION_PLANE = 5.0f;
+const int MAX_EVACUATE_PATHS = 30;
+
+const float TIME_FADEOUT_BEGIN_SMOKE = 2.0f*60.0f;
+const float TIME_FADEOUT_DURATION_SMOKE = 5.0f*60.0f;
+
+const char NAME_FAIL_BUILDING[]				= "fail";
+const char NAME_FAIL_PLANE[]				= "planeburn";
+const char NAME_OBJECT_HINT5[]				= "hint5";
+const char NAME_GATE1[]						= "gate1";
+const char NAME_SWITCH1[]					= "switch1";
+const char NAME_AREA1[]						= "area1";
+const char NAME_GATE2[]						= "gate2";
+const char NAME_SWITCH2[]					= "switch2";
+const char NAME_AREA2[]						= "area2";
+const char NAME_TERRAIN[]					= "Road";
+const char NAME_TERMINAL_ROOF[]				= "s2";
+const char NAME_AREA_ROOF[]					= "area roof";
+const char NAME_TRIGGER_HINT1[]				= "trigger h1";
+const char NAME_TRIGGER_HINT3[]				= "trigger h3";
+const char NAME_TRIGGER_HINT4[]				= "trigger h4";
+const char NAME_TRIGGER_HINT7[]				= "trigger h7";
+const char NAME_TRIGGER_CAMERA[]			= "trigger_camera";
+const char NAME_TOWER[]						= "tower";
+const char NAME_BLOCKED1[]					= "blocked1";
+const char NAME_BLOCKED2[]					= "blocked2";
+const char NAME_BLOCKED3[]					= "blocked3";
+const char NAME_BLOCKED4[]					= "blocked4";
+const char NAME_DEBRIS1[]					= "debris1";
+const char NAME_DEBRIS2[]					= "debris2";
+const char NAME_DEBRIS3[]					= "debris3";
+const char NAME_DEBRIS4[]					= "debris4";
+const char NAME_PLANE[]						= "s2_plane";
+const char NAME_PLANE1[]					= "s2_plane1";
+const char NAME_PLANE2[]					= "s2_plane2";
+const char NAME_PLANE3[]					= "s2_plane3";
+const char NAME_PLANE4[]					= "s2_plane4";
+const char NAME_PLANE5[]					= "s2_plane5";
+const char NAME_PLANE6[]					= "s2_plane6";
+const char NAME_PLANE5CS[]					= "s2_plane5cs";
+const char NAME_PLANE6CS[]					= "s2_plane6cs";
+const char NAME_PLANE7CS[]					= "s2_plane7cs";
+const char NAME_CS_TRANSITION1[]			= "cs1";
+const char NAME_CS_TRANSITION2[]			= "cs2";
+const char NAME_DEBRIS[]					= "debris";
+const char NAME_DEBRIS_AREA[]				= "debris_area";
+const char NAME_MAIN_GEAR_SMOKE[]			= "pmain";
+const char NAME_FRONT_GEAR_SMOKE[]			= "pfront";
+const char NAME_LEFT_ENGINE_EXPLOSION[]		= "leftengine";
+const char NAME_RIGHT_ENGINE_EXPLOSION[]	= "rightengine";
+const char NAME_TANK_EXPLOSION[]			= "ptank";
+const char NAME_FUEL_EXPLOSION[]			= "pfuel";
+const char NAME_PARTICLE_WAVE0[]			= "particle_wave0";
+const char NAME_PARTICLE_WAVE1[]			= "particle_wave1";
+const char NAME_PARTICLE_WAVE2[]			= "particle_wave2";
+const char NAME_PARTICLE_WAVE3[]			= "particle_wave3";
+const char NAME_PARTICLE_GEAR[]				= "particle_gear";
+const char NAME_TRIGGER_WAVE0[]				= "trigger_wave0";
+const char NAME_TRIGGER_WAVE1[]				= "trigger_wave1";
+const char NAME_TRIGGER_WAVE2[]				= "trigger_wave2";
+const char NAME_TRIGGER_WAVE3[]				= "trigger_wave3";
+const char NAME_SOUND_AIRPLANE[]			= "airplane";
+const char NAME_EVACUATE_PATHS[]			= "evacuate";
+const char NAME_CHILD_EXPLOSION[]			= "explosion";
+const char NAME_WRECK_PLANE[]				= "wreckplane";
+const char NAME_TERMINALSHOP[]				= "terminalshop";
+const char NAME_INHOUSE_PERSON1[]			= "pinh1";
+const char NAME_INHOUSE_PERSON2[]			= "pinh2";
+const char NAME_PARTICLE_SMOKE[]			= "smoke";
+const char NAME_VO_INSIDE_AIRPORT[]			= "vo_inside_airport";
+const char NAME_VO_GATE[]					= "vo_gate";
+
+const char NAME_SOUND_AIRPLANE_FLY[]			= "mod:Audio/FX/Vehicles/airplane01.wav";
+const char NAME_SOUND_AIRPLANE_RETARD[]			= "mod:Audio/FX/misc/landing_m11.wav";
+const char NAME_SOUND_AIRPLANE_BREAK[]			= "mod:Audio/FX/Vehicles/Tyresqueal02.wav";
+const char NAME_SOUND_AIRPLANE_CRASH1[]			= "mod:Audio/FX/destruction/tiredamage01.wav";
+const char NAME_SOUND_AIRPLANE_CRASH2[]			= "mod:Audio/FX/destruction/traincrash03.wav";
+const char NAME_SOUND_AIRPLANE_CRASH3[]			= "mod:Audio/FX/destruction/explosion03.wav";
+const char NAME_SOUND_AIRPLANE_CRASH4[]			= "mod:Audio/FX/destruction/misc_explosion_great.wav";
+const char NAME_SOUND_AIRPLANE_BOOM1[]			= "mod:Audio/FX/destruction/explosion02.wav";
+const char NAME_SOUND_AIRPLANE_BOOM2[]			= "mod:Audio/FX/destruction/explosion01.wav";
+
+const char OBJECTIVE_TRANSPORT_INJURED[]	= "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]		= "EXTINGUISH_FIRES";
+const char OBJECTIVE_EVACUATE_TERMINAL[]	= "M11_EVACUATE_TERMINAL";
+const char OBJECTIVE_EVACUATE_TOWER[]		= "M11_EVACUATE_TOWER";
+
+const char COUNTER_BURNING_OBJECTS[]		= "Burning Objects";
+const char COUNTER_BURNING_HOUSES[]			= "Burning Houses";
+const char COUNTER_INJURED_PERSONS[]		= "Injured Persons";
+const char COUNTER_DEAD_PERSONS[]			= "Dead Persons";
+const char COUNTER_CIVIL_DEATHS[]			= "Civil deaths";
+
+const char HINT_GATE_OPEN[]					= "HINT_11_GATE_OPEN";				//0
+const char HINT_RESCUE_PILOT[]				= "HINT_11_RESCUE_PILOT";			//1
+const char HINT_PLANE_WARNING[]				= "HINT_11_LANDING";				//2
+const char HINT_TOWER[]						= "HINT_11_TOWER";					//3
+const char HINT_LADDER[]					= "HINT_11_LADDER";					//4
+const char HINT_FIRES_OUT_OF_CONTROL[]		= "HINT_11_FIRES_OUT_OF_CONTROL";	//5
+const char HINT_TOO_MANY_INJURED[]			= "HINT_11_TOO_MANY_INJURED";		//6
+const char HINT_GATE[]						= "HINT_11_GATE";					//7
+
+const char TIMER_NAME_AREA1[]				= "t_area1";
+const float TIMER_TIME_AREA1				= 3.f;
+const char TIMER_NAME_AREA2[]				= "t_area2";
+const float TIMER_TIME_AREA2				= 3.f;
+const char TIMER_NAME_UPDATE_ROOF[]			= "t_u_roof";
+const float TIMER_TIME_UPDATE_ROOF			= 1.f;
+const char TIMER_NAME_HINT2[]				= "t_hint2";
+const float TIMER_TIME_HINT2				= 11.f * 60.f;	// Warnung vor dem Flugzeug
+const char TIMER_NAME_PLANE[]				= "t_plane";
+const float TIMER_TIME_PLANE				= 14.f * 60.f;	// Flugzeug landet
+const char TIMER_NAME_CUTSCENE[]			= "t_cs";
+const float TIMER_TIME_CUTSCENE				= 0.5f;
+const char TIMER_NAME_CRASH[]				= "t_crash";
+const char TIMER_NAME_CRASH2[]				= "t_crash2";
+const char TIMER_NAME_CRASH3[]				= "t_crash3";
+const char TIMER_NAME_CRASH4[]				= "t_crash4";
+const char TIMER_NAME_CRASH5[]				= "t_crash5";
+const float TIMER_TIME_CRASH				= 1.0f;
+const float TIMER_TIME_CRASH2				= 0.3f;
+const float TIMER_TIME_CRASH3				= 0.3f;
+const float TIMER_TIME_CRASH4				= 0.3f;
+const float TIMER_TIME_CRASH5				= 2.0f;
+const char TIMER_NAME_PLANE_EXPLODE[]		= "t_plane_exp";
+const float TIMER_TIME_PLANE_EXPLODE		= 1.f;
+const char TIMER_NAME_PLANE_SOUND[]			= "t_plane_sound";
+const float TIMER_TIME_PLANE_SOUND			= 0.1f;
+
+enum
+{
+	TRANSITION_NONE,
+	TRANSITION_PLANE_LANDING
+};
+
+object Mission11 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mTooManyDied;
+	bool mFireOutOfControl;
+	bool mPlaneExploded;
+	GameObject mGate1;
+	GameObject mGate2;
+	GameObject mSwitch1;
+	GameObject mSwitch2;
+	Actor mArea1;
+	Actor mArea2;
+	GameObject mTerminalRoof;
+	OpenHouse mTower;
+	bool mCivilsInTerminal;
+	const char * mBlockedNames[MAX_BLOCKED_PERSONS];
+	const char * mDebrisNames[MAX_BLOCKED_PERSONS];
+	Person mBlocked[MAX_BLOCKED_PERSONS];
+	GameObject mDebris[MAX_BLOCKED_PERSONS];
+	Vector mOutsideTargetPos;
+	Actor mInsideAirport;
+
+	GameObject mPlane;
+	GameObject mPlaneFrame[COUNT_PLANE_FRAMES];
+	GameObject mPlaneFrameCS[COUNT_PLANE_FRAMES_CS];
+	GameObjectList mParticleWave0;
+	GameObjectList mParticleWave1;
+	GameObjectList mParticleWave2;
+	GameObjectList mParticleWave3;
+	GameObjectList mParticleGear;
+	GameObjectList mParticleSmoke;
+	float mSmokeTime;
+	int mCurrentTransition;
+	bool mDebrisCauseCrash;
+	Path mEvacuatePaths[MAX_EVACUATE_PATHS];
+	int mEvacuatePathCount;
+	OpenHouse mWreckPlane;
+	OpenHouse mShop;
+	float mPlaneSoundVolume;
+	int mPlaneSound;
+
+	Mission11()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mTooManyDied = false;
+		mFireOutOfControl = false;
+		mPlaneExploded = false;
+		mCivilsInTerminal = true;
+		mDebrisCauseCrash = false;
+		mBlockedNames[0] = NAME_BLOCKED1;
+		mBlockedNames[1] = NAME_BLOCKED2;
+		mBlockedNames[2] = NAME_BLOCKED3;
+		mBlockedNames[3] = NAME_BLOCKED4;
+		mDebrisNames[0] = NAME_DEBRIS1;
+		mDebrisNames[1] = NAME_DEBRIS2;
+		mDebrisNames[2] = NAME_DEBRIS3;
+		mDebrisNames[3] = NAME_DEBRIS4;
+		mCurrentTransition = TRANSITION_NONE;
+		mEvacuatePathCount = 0;
+		mPlaneSoundVolume = 0.0f;
+		mPlaneSound = 0;
+	}
+
+	~Mission11()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M11 Start");
+
+		mParticleWave0 = Game::GetGameObjects(NAME_PARTICLE_WAVE0);
+		for (int i = 0; i < mParticleWave0.GetNumObjects(); i++)
+		{
+			mParticleWave0.GetObject(i)->StopParticleEffect();
+		}
+		mParticleWave1 = Game::GetGameObjects(NAME_PARTICLE_WAVE1);
+		for (int i = 0; i < mParticleWave1.GetNumObjects(); i++)
+		{
+			mParticleWave1.GetObject(i)->StopParticleEffect();
+		}
+		mParticleWave2 = Game::GetGameObjects(NAME_PARTICLE_WAVE2);
+		for (int i = 0; i < mParticleWave2.GetNumObjects(); i++)
+		{
+			mParticleWave2.GetObject(i)->StopParticleEffect();
+		}
+		mParticleWave3 = Game::GetGameObjects(NAME_PARTICLE_WAVE3);
+		for (int i = 0; i < mParticleWave3.GetNumObjects(); i++)
+		{
+			mParticleWave3.GetObject(i)->StopParticleEffect();
+		}
+		mParticleGear = Game::GetGameObjects(NAME_PARTICLE_GEAR);
+		for (int i = 0; i < mParticleGear.GetNumObjects(); i++)
+		{
+			mParticleGear.GetObject(i)->StopParticleEffect();
+		}
+		mParticleSmoke = Game::GetGameObjects(NAME_PARTICLE_SMOKE);
+		for (int i = 0; i < mParticleSmoke.GetNumObjects(); i++)
+		{
+			//mParticleSmoke.GetObject(i)->StopParticleEffect();
+		}
+
+		ActorList actList1 = Game::GetActors(ACTOR_PATH);
+		for (int i = 0; i < actList1.GetNumActors(); i++)
+		{
+			Actor *ac = actList1.GetActor(i);
+			if (ac->HasNamePrefix(NAME_EVACUATE_PATHS))
+			{
+				mEvacuatePaths[mEvacuatePathCount] = Path(ac);
+				mEvacuatePathCount++;
+				if (mEvacuatePathCount > MAX_EVACUATE_PATHS)
+					System::Error("M08: Too many evacuate pathes");
+			}
+		}
+
+		ActorList actList1 = Game::GetActors(NAME_VO_INSIDE_AIRPORT);
+		if (actList1.GetNumActors() > 0)
+			mInsideAirport = actList1.GetActor(0);
+		ActorList actList2 = Game::GetActors(NAME_VO_GATE);
+		if (actList2.GetNumActors() > 0)
+			mOutsideTargetPos = actList2.GetActor(0)->GetPosition();
+
+		System::Log("Starte Mission Mogadischu");
+		GameObjectList list = Game::GetGameObjects();
+		list.GetObject(0)->SetUserData(19);
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		int count = 0;
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_GATE1))
+				mGate1 = *obj;
+			else if (obj->HasName(NAME_GATE2))
+				mGate2 = *obj;
+			else if (obj->HasName(NAME_SWITCH1))
+			{
+				mSwitch1 = *obj;
+				mSwitch1.EnableSpecialLights(true);
+				mSwitch1.SetFlag(OF_USABLE);
+			}
+			else if (obj->HasName(NAME_SWITCH2))
+			{
+				mSwitch2 = *obj;
+				mSwitch2.EnableSpecialLights(true);
+				mSwitch2.SetFlag(OF_USABLE);
+			}
+			else if (obj->HasName(NAME_TERMINAL_ROOF))
+				mTerminalRoof = *obj;
+			else if (obj->HasName(NAME_TOWER))
+				mTower = OpenHouse(obj);
+			else if (obj->HasName(NAME_TERMINALSHOP))
+				mShop = OpenHouse(obj);
+			else if (obj->HasName(NAME_WRECK_PLANE))
+				mWreckPlane = OpenHouse(obj);
+			else if (obj->HasName(NAME_PLANE))
+			{
+				mPlane = obj;
+				//mPlane.EnablePhysicsSimulation();
+				//mPlane.ActivateOBBCollision();
+				mPlane.SetCollisionResponseByForces(5.0f);				
+				mPlane.SetCollisionMode(PHYSIC_COLLISION_NONE);
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_PLANE1))
+				mPlaneFrame[0] = obj;
+			else if (obj->HasName(NAME_PLANE2))
+				mPlaneFrame[1] = obj;
+			else if (obj->HasName(NAME_PLANE3))
+				mPlaneFrame[2] = obj;
+			else if (obj->HasName(NAME_PLANE4))
+				mPlaneFrame[3] = obj;
+			else if (obj->HasName(NAME_PLANE5))
+				mPlaneFrame[4] = obj;
+			else if (obj->HasName(NAME_PLANE6))
+				mPlaneFrame[5] = obj;
+			else if (obj->HasName(NAME_PLANE5CS))
+				mPlaneFrameCS[0] = obj;
+			else if (obj->HasName(NAME_PLANE6CS))
+				mPlaneFrameCS[1] = obj;
+			else if (obj->HasName(NAME_PLANE7CS))
+				mPlaneFrameCS[2] = obj;
+			else
+			{
+				for(int j = 0; j < MAX_BLOCKED_PERSONS; j++)
+				{
+					if (obj->HasName(mBlockedNames[j]))
+					{
+						mBlocked[j] = Person(obj);
+						mBlocked[j].SetFlag(OF_BLOCKED);
+						break;
+					}
+					else if (obj->HasName(mDebrisNames[j]))
+					{
+						mDebris[j] = Person(obj);
+						break;
+					}
+				}
+			}
+		}
+		System::Log("M11: %d evacuate pathes found", mEvacuatePathCount);
+		PersonList pList1(NAME_INHOUSE_PERSON1);
+		for (int i = 0; i < pList1.GetNumPersons(); i++)
+		{
+			pList1.GetPerson(i)->SetEnteredHouseID(mWreckPlane.GetID());
+		}
+		mBlocked[3].SetEnteredHouseID(mWreckPlane.GetID());
+		PersonList pList2(NAME_INHOUSE_PERSON2);
+		for (int i = 0; i < pList2.GetNumPersons(); i++)
+		{
+			pList2.GetPerson(i)->SetEnteredHouseID(mShop.GetID());
+		}
+		mBlocked[0].SetEnteredHouseID(mShop.GetID());
+		mBlocked[1].SetEnteredHouseID(mShop.GetID());
+		mBlocked[2].SetEnteredHouseID(mShop.GetID());
+
+		if (!mPlane.IsValid())
+			System::Error("M11: s2_plane is missing!", i);
+		for (int i = 0; i < COUNT_PLANE_FRAMES; i++)
+		{
+			if (!mPlaneFrame[i].IsValid())
+				System::Error("M11: s2_plane%d is missing!", i);
+			//mPlaneFrame[i].ActivateOBBCollision();
+			mPlaneFrame[i].Hide();
+		}
+		for (int i = 0; i < COUNT_PLANE_FRAMES_CS; i++)
+		{
+			if (!mPlaneFrameCS[i].IsValid())
+				System::Error("M11: s2_plane%dcs is missing!", i);
+			//mPlaneFrameCS[i].ActivateOBBCollision();
+			mPlaneFrameCS[i].Hide();
+		}
+
+		ActorList list1(NAME_AREA1);
+		if (list1.GetNumActors() > 0)
+			mArea1 = *list1.GetActor(0);
+		ActorList list2(NAME_AREA2);
+		if (list2.GetNumActors() > 0)
+			mArea2 = *list2.GetActor(0);
+
+		// set userdata of all objects in the terminal to 1 to prevent them from beeing autotargeted
+		GameObjectList list3;
+		Game::CollectObstaclesOnVirtualObject(NAME_AREA_ROOF, list3, ACTOR_OBJECT); // mehr?
+		for(int i = 0; i < list3.GetNumObjects(); i++)
+			list3.GetObject(i)->SetUserData(1);
+
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+		Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+		//Mission::AddObjective(OBJECTIVE_EVACUATE_TERMINAL);
+		//Mission::AddObjective(OBJECTIVE_EVACUATE_TOWER);
+
+		mSmokeTime = 0.0f;
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_ROOF, TIMER_TIME_UPDATE_ROOF);
+		Mission::StartSingleTimer(TIMER_NAME_HINT2, TIMER_TIME_HINT2);
+		Mission::StartSingleTimer(TIMER_NAME_PLANE, TIMER_TIME_PLANE);
+
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_BREAK));
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_RETARD));
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_BOOM1));
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_BOOM2));		
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH1));
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH2));
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH3));
+		Audio::StopSample(Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH4));
+
+		Audio::PlaySoundtrack("11", 0.0f);
+
+		//mPlane.SetChildEnabled(NAME_MAIN_GEAR_SMOKE, true);
+		//mPlane.SetChildEnabled(NAME_FRONT_GEAR_SMOKE, true);
+		//mPlane.SetChildEnabled(NAME_LEFT_ENGINE_EXPLOSION, true);
+		//mPlane.SetChildEnabled(NAME_TANK_EXPLOSION, true);
+		//mPlane.SetChildEnabled(NAME_RIGHT_ENGINE_EXPLOSION, true);
+		//mPlane.SetChildEnabled(NAME_FUEL_EXPLOSION, true);
+		//mPlane.PreloadChildParticleEffects();
+	}
+
+	void OnCollision(GameObject *objA, GameObject *objB)
+	{
+		if (!objB)
+			return;
+		GameObject hitObject;
+		if (objA->GetID() == mPlane.GetID())
+			hitObject = objB;
+		if (objB->GetID() == mPlane.GetID())
+			hitObject = objA;
+
+		if (hitObject.IsValid() && mDebrisCauseCrash)
+		{
+			if (hitObject.GetType() == ACTOR_PERSON)
+			{
+				Person ps(&hitObject);
+				ps.Kill();				
+			}
+			if (hitObject.GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle vc(&hitObject);
+				if (!vc.IsDestroyed())
+					vc.Explode();
+			}
+			if (hitObject.GetType() == ACTOR_PERSON || hitObject.GetType() == ACTOR_VEHICLE || hitObject.HasName(NAME_DEBRIS))
+				if (!hitObject.IsPhysicsSimulationEnabled())
+					hitObject.EnablePhysicsSimulation();
+		}
+	}
+
+	bool floatEqual(float f1, float f2)
+	{
+		if (f1 >= f2 - 0.01f && f1 <= f2 + 0.01f)
+			return true;
+		return false;
+	}
+
+	bool OnPostCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		if (Cmd == "MoveTo")
+		{
+			if (mSwitch1.IsFlagSet(OF_USABLE) && mSwitch2.IsFlagSet(OF_USABLE))
+			{
+				if (mInsideAirport.IsInsideVirtualObject(Game::GetCommandPos()))
+				{
+					System::Log("Clicked inside airport");
+					Caller->ClearActions();
+					Caller->PushActionMove(ACTION_NEWLIST, mOutsideTargetPos);
+				}
+			}
+			return;
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionMoveToPoint":
+				{
+					if (floatEqual(Data_->Parameters[0].fValue, SPEED_PLANE))
+					{
+						//Vector pos;
+						//Camera::FollowTarget(&mPlane, pos, true);
+						//Camera::LookAtTarget(&mPlane, true, 50.0f, 10.0f);
+						//Camera::Rotate(-10000, 0, 0, -2);
+					}
+					else if (floatEqual(Data_->Parameters[0].fValue, SPEED_PLANE - 3*DECELERATION_PLANE))
+					{
+						//mPlane.StartChildParticleEffect(NAME_MAIN_GEAR_SMOKE);
+						for (int i = 0; i < mParticleGear.GetNumObjects(); i++)
+						{
+							mParticleGear.GetObject(i)->StartParticleEffect();
+						}
+						System::Log("main gear smoke");
+						mPlane.ActivateOBBCollision();
+						if (mDebrisCauseCrash)
+						{							
+							mPlane.SetCollisionMode(PHYSIC_COLLISION_ALL);
+							Mission::StartSingleTimer(TIMER_NAME_CRASH, TIMER_TIME_CRASH);
+							//Mission::StartSingleTimer("t_physics", 2.0f, true);
+							Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH1);
+						}
+						Audio::PlaySample(NAME_SOUND_AIRPLANE_BREAK);
+					}
+					else if (floatEqual(Data_->Parameters[0].fValue, SPEED_PLANE - 4*DECELERATION_PLANE))
+					{
+						//mPlane.SetChildEnabled(NAME_FRONT_GEAR_SMOKE, true);
+						System::Log("front gear smoke");
+						//Audio::PlaySample(NAME_SOUND_AIRPLANE_RETARD_SOUND);
+					}
+				}
+				break;
+			case "EActionPull":
+				{
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.IsValid() && target.GetType() == ACTOR_OBJECT)
+					{
+						for(int i = 0; i < MAX_BLOCKED_PERSONS; i++)
+						{
+							if (target.GetID() == mDebris[i].GetID())
+							{
+								mBlocked[i].ClearFlag(OF_BLOCKED);
+								break;
+							}
+						}
+					}
+				}
+				break;
+			case "EActionUse":
+				{
+					if(Data_->Parameters[0].iValue == mSwitch1.GetID())
+					{
+						mSwitch1.ClearFlag(OF_USABLE);
+						mSwitch1.EnableSpecialLights(false);
+						if (mHintCounter[0] == 0)
+							ShowHint(0);
+						mGate1.SetAnimation("open");
+						Mission::StartSingleTimer(TIMER_NAME_AREA1, TIMER_TIME_AREA1);
+					}
+					else if(Data_->Parameters[0].iValue == mSwitch2.GetID())
+					{
+						mSwitch2.ClearFlag(OF_USABLE);
+						mSwitch2.EnableSpecialLights(false);
+						if (mHintCounter[0] == 0)
+							ShowHint(0);
+						mGate2.SetAnimation("open");
+						Mission::StartSingleTimer(TIMER_NAME_AREA2, TIMER_TIME_AREA2);
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionEvacuate":
+				{
+					if (Data_->Parameters[0].iValue == -1)
+					{
+						System::Log("M11: Evacuate");
+						StartEvacuation();
+						Mission::PlayHint("ID_EVACUATE");
+						return ACTION_SKIP;
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	bool OnCheckCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		switch(Cmd_)
+		{
+			case "Extinguish":
+			case "Cool":
+				{
+					if (Caller_->GetType() == ACTOR_VEHICLE && Target_->GetUserData() == 1)
+						return false;
+				}
+		}
+		return true;
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path, GameObject *Obj)
+	{
+		System::Log("M11: End of path: %s",Path);
+		if (Game::HasNamePrefix(Path, NAME_EVACUATE_PATHS))
+		{
+			Person person(Obj);
+			person.SetStandardPath("");
+			person.SetEscapePath("");
+			person.SetFleeing(false);
+			person.SetBehaviour(BEHAVIOUR_CIVILIAN_NORMAL);
+			person.SetNeverResort(false);
+			return PATH_STOP;
+		}
+		return PATH_DEFAULT;
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_NAME_PLANE_SOUND:
+				Audio::UpdatePos(mPlaneSound, mPlane.GetPosition(), true);
+				//mPlaneSoundVolume += 0.1f;
+				//if (mPlaneSoundVolume <= 1.0f)
+				//	Audio::SetVolume(mPlaneSound, mPlaneSoundVolume);
+				//else
+				//{
+				//	Audio::SetVolume(mPlaneSound, 1.0f);
+				//	Mission::StopTimer(TIMER_NAME_PLANE_SOUND);
+				//}
+				break;
+			case "t_physics":
+				mPlane.ActivateOBBCollision();
+				break;
+			case TIMER_NAME_AREA1:
+				{
+					mArea1.SetVirtualObjectTerrain(NAME_TERRAIN);
+				}
+				break;
+			case TIMER_NAME_AREA2:
+				{
+					mArea2.SetVirtualObjectTerrain(NAME_TERRAIN);
+				}
+				break;
+			case TIMER_NAME_UPDATE_ROOF:
+				{
+					GameObjectList list;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_ROOF, list, ACTOR_PERSON);
+					if (list.ContainsSquad() || mWreckPlane.GetSquadPersonsInside().GetNumPersons() > 0)
+						mTerminalRoof.Hide();
+					else
+						mTerminalRoof.Show();
+					mCivilsInTerminal = list.ContainsNonSquad();
+					if (mSmokeTime >= 0.0f)
+					{
+						mSmokeTime += TIMER_TIME_UPDATE_ROOF;
+						bool endSmoke = (mSmokeTime > TIME_FADEOUT_BEGIN_SMOKE + TIME_FADEOUT_DURATION_SMOKE);
+						if (mSmokeTime > TIME_FADEOUT_BEGIN_SMOKE)
+						{
+							float strength;
+							if (endSmoke)
+								strength = 0.0f;
+							else 
+								strength = 1.0f - (mSmokeTime - TIME_FADEOUT_BEGIN_SMOKE)/TIME_FADEOUT_DURATION_SMOKE;
+							for (int i = 0; i < mParticleSmoke.GetNumObjects(); i++)
+							{
+								mParticleSmoke.GetObject(i)->SetParticleEffectStrength(strength);
+							}
+						}
+						if (endSmoke)
+							mSmokeTime = -1.0f;
+					}
+				}
+				break;
+			case TIMER_NAME_HINT2:
+				{
+					ShowHint(2);
+				}
+				break;
+			case TIMER_NAME_PLANE:
+				// 10 units per tick ~ 14,4 km/h				
+				if (DebrisAreOnRunway())
+				{
+					mDebrisCauseCrash = true;
+				}
+				Mission::StartSingleTimer(TIMER_NAME_CUTSCENE, TIMER_TIME_CUTSCENE);
+				float speed = SPEED_PLANE;
+				mPlane.Show();
+				mPlane.SetSpeed(speed);
+				mPlane.PushActionMoveToPoint(ACTION_NEWLIST, &mPlaneFrame[0], speed);
+				bool stop = false;
+				int i = 1;
+				while (!stop)
+				{					
+					if (mDebrisCauseCrash && i >= 4)
+					{
+						speed -= DECELERATION_PLANE*2;
+						mPlane.PushActionMoveToPoint(ACTION_APPEND, &mPlaneFrameCS[i - 4], speed);
+						if (i == 4 + COUNT_PLANE_FRAMES_CS - 1)
+							stop = true;
+					}
+					else
+					{
+						speed -= DECELERATION_PLANE;
+						//if (i != 3)
+							mPlane.PushActionMoveToPoint(ACTION_APPEND, &mPlaneFrame[i], speed);
+						if (i == COUNT_PLANE_FRAMES - 1)
+							stop = true;
+					}
+					i++;
+				}
+				break;
+			case TIMER_NAME_CUTSCENE:
+				Mission::StartCutScene(false);
+				Mission::ShowBlackBars();
+				Camera::SetShakingEnabled(false);
+				//Game::SetMapBoundsBlockCamera(false);
+				Camera::StartTransition(NAME_CS_TRANSITION1, 3.0f);
+				mCurrentTransition = TRANSITION_PLANE_LANDING;
+				if (mDebrisCauseCrash)
+					Audio::SetMusicLevel(0.4f);
+				else
+					Audio::SetMusicLevel(0.5f);
+				mPlaneSound = Audio::PlaySample3D(NAME_SOUND_AIRPLANE_RETARD, mPlane.GetPosition());
+				Mission::StartIntervalTimer(TIMER_NAME_PLANE_SOUND, TIMER_TIME_PLANE_SOUND);
+				break;
+			case TIMER_NAME_CRASH:
+				//mPlane.StartChildParticleEffect(NAME_LEFT_ENGINE_EXPLOSION);
+				mPlane.SetChildEnabled(NAME_LEFT_ENGINE_EXPLOSION, true);
+				Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH2);
+				Mission::StartSingleTimer(TIMER_NAME_CRASH2, TIMER_TIME_CRASH2);
+				break;
+			case TIMER_NAME_CRASH2:
+				//mPlane.StartChildParticleEffect(NAME_TANK_EXPLOSION);
+				//Audio::PlaySample(NAME_SOUND_AIRPLANE_BOOM1);
+				Mission::StartSingleTimer(TIMER_NAME_CRASH3, TIMER_TIME_CRASH3);
+				break;
+			case TIMER_NAME_CRASH3:
+				//mPlane.StartChildParticleEffect(NAME_RIGHT_ENGINE_EXPLOSION);
+				mPlane.SetChildEnabled(NAME_RIGHT_ENGINE_EXPLOSION, true);
+				//Audio::PlaySample(NAME_SOUND_AIRPLANE_BOOM1);
+				Mission::StartSingleTimer(TIMER_NAME_CRASH4, TIMER_TIME_CRASH4);
+				break;
+			case TIMER_NAME_CRASH4:
+				//mPlane.StartChildParticleEffect(NAME_FUEL_EXPLOSION);
+				Audio::PlaySample(NAME_SOUND_AIRPLANE_BOOM2);
+				Mission::StartSingleTimer(TIMER_NAME_CRASH5, TIMER_TIME_CRASH5);
+				break;
+			case TIMER_NAME_CRASH5:
+				mPlaneExploded = true;
+				break;
+			case TIMER_NAME_PLANE_EXPLODE:
+				mPlaneExploded = true;	// parkendes Flugzeug ist explodiert
+				break;
+		}
+	}
+
+	void UpdateCutScene()
+	{
+		//Audio::UpdatePos(mPlaneSound, mPlane.GetPosition(), true);
+	}
+
+	bool DebrisAreOnRunway()
+	{
+		GameObjectList list;
+		Game::CollectObstaclesOnVirtualObject(NAME_DEBRIS_AREA, list, ACTOR_OBJECT + ACTOR_VEHICLE);
+		for (int i = 0; i < list.GetNumObjects(); i++)
+		{
+			if (list.GetObject(i)->GetType() == ACTOR_VEHICLE || list.GetObject(i)->HasName(NAME_DEBRIS))
+				return true;
+		}
+		return false;
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		switch(Trigger)
+		{
+			case NAME_TRIGGER_CAMERA:
+				if (Collider->GetID() == mPlane.GetID())
+				{
+					Vector pos;
+					Camera::FollowTarget(&mPlane, pos, true);
+					Camera::Rotate(-10000, 0, 0, -2);
+					Game::DeactivateTrigger(NAME_TRIGGER_CAMERA);
+					//Audio::PlaySample(NAME_SOUND_AIRPLANE_RETARD);
+				}
+				break;
+			case NAME_TRIGGER_WAVE0:
+				if (mDebrisCauseCrash && Collider->GetID() == mPlane.GetID())
+				{
+					for (int i = 0; i < mParticleWave0.GetNumObjects(); i++)
+					{
+						mParticleWave0.GetObject(i)->StartParticleEffect();
+					}
+					Audio::PlaySample(NAME_SOUND_AIRPLANE_BOOM2);
+				}
+				break;
+			case NAME_TRIGGER_WAVE1:
+				if (mDebrisCauseCrash && Collider->GetID() == mPlane.GetID())
+				{
+					for (int i = 0; i < mParticleWave1.GetNumObjects(); i++)
+					{
+						mParticleWave1.GetObject(i)->StartParticleEffect();
+					}
+					Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH2);
+				}
+				break;
+			case NAME_TRIGGER_WAVE2:
+				if (mDebrisCauseCrash && Collider->GetID() == mPlane.GetID())
+				{
+					for (int i = 0; i < mParticleWave2.GetNumObjects(); i++)
+					{
+						mParticleWave2.GetObject(i)->StartParticleEffect();
+					}
+					Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH3);
+				}
+				break;
+			case NAME_TRIGGER_WAVE3:
+				if (mDebrisCauseCrash && Collider->GetID() == mPlane.GetID())
+				{
+					for (int i = 0; i < mParticleWave3.GetNumObjects(); i++)
+					{
+						mParticleWave3.GetObject(i)->StartParticleEffect();
+					}
+					Audio::PlaySample(NAME_SOUND_AIRPLANE_CRASH4);
+				}
+				if (mDebrisCauseCrash)
+					Mission::EndCutScene(false);
+				else
+				{
+					Mission::EndCutScene(true, 4.0f);
+					Camera::SetShakingEnabled(true);
+				}
+				Mission::StopTimer(TIMER_NAME_PLANE_SOUND);
+				Mission::HideBlackBars();
+				break;
+			case NAME_TRIGGER_HINT1:
+				{
+					if (Collider->GetType() == ACTOR_PERSON)
+					{
+						Person p(Collider);
+						if (p.GetRole() == ROLE_SQUAD)
+						{
+							ShowHint(1);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT1);
+						}
+					}
+					else if (Collider->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(Collider);
+						if (!v.IsCivilCar())
+						{
+							ShowHint(1);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT1);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_HINT3:
+				{
+					if (Collider->GetType() == ACTOR_PERSON)
+					{
+						Person p(Collider);
+						if (p.GetRole() == ROLE_SQUAD)
+						{
+							ShowHint(3);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT3);
+						}
+					}
+					else if (Collider->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(Collider);
+						if (!v.IsCivilCar())
+						{
+							ShowHint(3);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT3);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_HINT4:
+				{
+					if (Collider->GetType() == ACTOR_PERSON)
+					{
+						Person p(Collider);
+						if (p.GetRole() == ROLE_SQUAD)
+						{
+							ShowHint(4);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT4);
+						}
+					}
+					else if (Collider->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(Collider);
+						if (!v.IsCivilCar())
+						{
+							ShowHint(4);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT4);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_HINT7:
+				{
+					if (Collider->GetType() == ACTOR_PERSON)
+					{
+						Person p(Collider);
+						if (p.GetRole() == ROLE_SQUAD)
+						{
+							ShowHint(7);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT7);
+						}
+					}
+					else if (Collider->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(Collider);
+						if (!v.IsCivilCar())
+						{
+							ShowHint(7);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT7);
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	void OnSquadArrived(Person *squad_)
+	{
+		if (squad_->HasCommand("MoveTo"))
+		{
+			System::Log("M11: Assigned command EnterStation.");
+			squad_->AssignCommand("M11EnterStation");
+			squad_->RemoveCommand("EnterHouse");
+		}
+	}
+
+	void OnSquadVehicleArrived(Vehicle *vehicle_)
+	{
+		if (vehicle_->HasCommand("Evacuate"))
+		{
+			System::Log("M11: Assigned command EvacuateStation.");
+			vehicle_->RemoveCommand("Evacuate");
+			vehicle_->AssignCommand("M11EvacuateStation");
+		}
+		vehicle_->SetIgnoreUserData(1);
+	}
+
+	bool OnStartBurning(GameObject *Obj)
+	{
+		if (Obj->HasName(NAME_FAIL_BUILDING))
+			mFireOutOfControl = true;
+		else if (Obj->HasName(NAME_OBJECT_HINT5) && mHintCounter[5] == 0)
+			ShowHint(5);
+		return true;
+	}
+
+	void OnObjectFullburned(GameObject *Obj)
+	{
+		if (Obj->HasName(NAME_FAIL_PLANE))
+			mFireOutOfControl = true;
+		if (Obj->GetID() == mTower.GetID())
+		{
+			if (mTower.GetNonSquadPersonsInside().GetNumPersons() > 0)
+				ShowHint(3);
+		}
+		else if (Obj->HasName(NAME_SOUND_AIRPLANE) && !Mission::TimerIsStarted(TIMER_NAME_PLANE_EXPLODE))
+		{
+			Obj->SetChildEnabled(NAME_CHILD_EXPLOSION, true);
+			Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE);
+		}
+	}
+
+	void StartEvacuation()
+	{
+		System::Log("M11: Evacuation started.");
+		GameObjectList civilians;
+		Game::CollectObstaclesOnVirtualObject(NAME_AREA_ROOF, civilians);
+		for(int i = 0; i < civilians.GetNumObjects(); ++i)
+		{
+			GameObject *obj = civilians.GetObject(i);
+			Person person(obj);
+			EvacuatePerson(person);
+		}		
+	}
+
+	void EvacuatePerson(Person &person)
+	{
+		if (person.IsValid() && /*person.HasName(NAME_PERSON_EVACUATE) &&*/ !person.IsFlagSet(OF_HIDDEN)
+			&& !person.IsInjured() && (person.GetRole()==ROLE_CIVILIAN)
+			&& !person.IsArrested() && !person.IsCarried())// && (person.GetBehaviour()!=BEHAVIOUR_CIVILIAN_PANIC))
+		{
+			Vector pos =  person.GetPosition();
+			int pathNum = -1;
+			float maxDist = 1e30f;
+			for(int j = 0; j < mEvacuatePathCount; ++j)
+			{
+				if(!mEvacuatePaths[j].IsValid())
+				{
+					System::Log("M11: evacuation path %i is not valid.", j+1);
+					continue;
+				}
+				float dist = mEvacuatePaths[j].GetDistance(pos);
+				if (dist < maxDist)
+				{
+					pathNum = j;
+					maxDist = dist;
+				}
+			}
+			if (pathNum == -1)
+			{
+				System::Log("M11: no nearest evacuation path found.");
+				continue;
+			}
+			float time = (Math::rand() % 2) + (maxDist / 50.0f);
+			person.PushActionWait(ACTION_NEWLIST, time);			
+			//person.SetStandardPath(mEvacuatePathName[pathNum]);
+			person.SetObjectPath(&mEvacuatePaths[pathNum]);
+			person.SetBehaviour(BEHAVIOUR_CIVILIAN_GAZER);
+			person.SetFleeing(true);
+			person.SetNeverResort(true);
+			System::Log("M11: Set person on evacuate path %i",pathNum);
+		}
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M11: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+		case 0:
+			Mission::PlayHint(HINT_GATE_OPEN);
+			break;
+		case 1:
+			Mission::PlayHint(HINT_RESCUE_PILOT);
+			break;
+		case 2:
+			Mission::PlayHint(HINT_PLANE_WARNING);
+			Audio::SetMusicLevel(0.1f);
+			break;
+		case 3:
+			Mission::PlayHint(HINT_TOWER);
+			break;
+		case 4:
+			Mission::PlayHint(HINT_LADDER);
+			break;
+		case 5:
+			Mission::PlayHint(HINT_FIRES_OUT_OF_CONTROL);
+			Audio::SetMusicLevel(0.3f);
+			break;
+		case 6:
+			Mission::PlayHint(HINT_TOO_MANY_INJURED);
+			Audio::SetMusicLevel(0.2f);
+			break;
+		case 7:
+			Mission::PlayHint(HINT_GATE);
+			break;
+		}
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (Mission::IsCutSceneRunning())
+		{
+			switch (mCurrentTransition)
+			{
+				case TRANSITION_PLANE_LANDING:
+				{
+					//Vector pos;
+					//Camera::FollowTarget(&mPlane, pos, true);
+					//Camera::LookAtTarget(&mPlane, true);//, 50.0f, 10.0f);
+					//Camera::Rotate(-100000, 0, 0, -10);
+				}
+				break;
+			}
+			mCurrentTransition = TRANSITION_NONE;
+		}
+	}
+
+	MissionState GetMissionState()
+	{
+		if (Mission::IsCutSceneRunning())
+			MISSION_RUNNING;
+		if (Mission::GetCounter(COUNTER_BURNING_OBJECTS) > 0 || Mission::GetCounter(COUNTER_BURNING_HOUSES) > 0)
+		{
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRE1");
+			}
+		}
+		else 
+		{			
+			if(!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+				Audio::SetMusicLevel(0.1f);
+			}
+		}
+
+		if (Mission::GetCounter(COUNTER_INJURED_PERSONS) + Mission::GetCounter(COUNTER_DEAD_PERSONS) == 0)
+		{			
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED2");
+			}
+		}
+		else
+		{			
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		/*if (mTower.NumNonSquadPersonsInside() > 0)
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_EVACUATE_TOWER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EVACUATE_TOWER, false);
+				Mission::PlayComment("M11_NEW_PERSONS_IN_TOWER");
+			}
+		}
+		else
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_EVACUATE_TOWER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EVACUATE_TOWER, true);
+				Mission::PlayComment("M11_TOWER_EVACUATED");
+			}
+		}*/
+
+		/*if (mCivilsInTerminal)
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_EVACUATE_TERMINAL))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EVACUATE_TERMINAL, false);
+				Mission::PlayComment("M11_NEW_PERSONS_IN_TERMINAL");
+			}
+		}
+		else
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_EVACUATE_TERMINAL))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EVACUATE_TERMINAL, true);
+				Mission::PlayComment("M11_TERMINAL_EVACUATED");
+			}
+		}*/
+
+		if (mHintCounter[6] == 0 && Mission::GetCounter(COUNTER_DEAD_PERSONS) >= MAX_DEAD_PERSONS_HINT6)
+			ShowHint(6);
+
+		if (mPlaneExploded || mFireOutOfControl)
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_CIVIL_DEATHS) > MAX_DEAD_CIVILS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+		if (mPlaneExploded)
+			return "M11_PLANE_EXPLODED";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M11_FAIL01";
+		if (mFireOutOfControl)
+			return "SUPERV_M11_FAIL02";
+		if (mPlaneExploded)
+			return "SUPERV_M11_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M11_RES01";
+		if (scoring->Efficiency < 0.9f && mHintCounter[5] > 0)
+			return "SUPERV_M11_RES02";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		return 1.f;
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mTooManyDied);
+		serializer_->Write(mFireOutOfControl);
+
+		serializer_->Write(mPlaneExploded);
+		serializer_->Write(mGate1);
+		serializer_->Write(mGate2);
+		serializer_->Write(mSwitch1);
+		serializer_->Write(mSwitch2);
+		serializer_->Write(mArea1);
+		serializer_->Write(mArea2);
+		serializer_->Write(mTerminalRoof);
+		serializer_->Write(mTower);
+		serializer_->Write(mCivilsInTerminal);
+		serializer_->Write((int)MAX_BLOCKED_PERSONS);
+		for(int i = 0; i < MAX_BLOCKED_PERSONS; i++)
+		{
+			serializer_->Write(mBlocked[i]);
+			serializer_->Write(mDebris[i]);
+		}
+		serializer_->Write(mPlane);
+		for(int i = 0; i < COUNT_PLANE_FRAMES; i++)
+			serializer_->Write(mPlaneFrame[i]);
+		for(int i = 0; i < COUNT_PLANE_FRAMES_CS; i++)
+			serializer_->Write(mPlaneFrameCS[i]);
+		serializer_->Write(mParticleWave0);
+		serializer_->Write(mParticleWave1);
+		serializer_->Write(mParticleWave2);
+		serializer_->Write(mParticleWave3);
+		serializer_->Write(mParticleGear);
+		serializer_->Write(mParticleSmoke);
+		serializer_->Write(mSmokeTime);
+		serializer_->Write(mCurrentTransition);
+		serializer_->Write(mDebrisCauseCrash);
+		serializer_->Write(mWreckPlane);
+		serializer_->Write(mShop);
+		serializer_->Write(mEvacuatePathCount);
+		for(int i = 0; i < mEvacuatePathCount; i++)
+			serializer_->Write(mEvacuatePaths[i]);
+		serializer_->Write(mPlaneSound);
+		serializer_->Write(mPlaneSoundVolume);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mTooManyDied = serializer_->ReadBool();
+		mFireOutOfControl = serializer_->ReadBool();
+
+		mPlaneExploded = serializer_->ReadBool();
+		serializer_->Read(mGate1);
+		serializer_->Read(mGate2);
+		serializer_->Read(mSwitch1);
+		serializer_->Read(mSwitch2);
+		serializer_->Read(mArea1);
+		serializer_->Read(mArea2);
+		serializer_->Read(mTerminalRoof);
+		serializer_->Read(mTower);
+		mCivilsInTerminal = serializer_->ReadBool();
+		int numBlocked = 0;
+		serializer_->Read((int)numBlocked);
+		if (numBlocked != MAX_BLOCKED_PERSONS)
+		{
+			System::Log("M11: savegames has different MAX_BLOCKED_PERSONS");
+			return false;
+		}
+		for(int i = 0; i < numBlocked; i++)
+		{
+			serializer_->Read(mBlocked[i]);
+			serializer_->Read(mDebris[i]);
+		}
+		serializer_->Read(mPlane);
+		for(int i = 0; i < COUNT_PLANE_FRAMES; i++)
+			serializer_->Read(mPlaneFrame[i]);
+		for(int i = 0; i < COUNT_PLANE_FRAMES_CS; i++)
+			serializer_->Read(mPlaneFrameCS[i]);
+		serializer_->Read(mParticleWave0);
+		serializer_->Read(mParticleWave1);
+		serializer_->Read(mParticleWave2);
+		serializer_->Read(mParticleWave3);
+		serializer_->Read(mParticleGear);
+		serializer_->Read(mParticleSmoke);
+		serializer_->Read(mSmokeTime);
+		serializer_->Read(mCurrentTransition);
+		mDebrisCauseCrash = serializer_->ReadBool();
+		serializer_->Read(mWreckPlane);
+		serializer_->Read(mShop);
+		serializer_->Read(mEvacuatePathCount);
+		for(int i = 0; i < mEvacuatePathCount; i++)
+			serializer_->Read(mEvacuatePaths[i]);
+		serializer_->Read(mPlaneSound);
+		serializer_->Read(mPlaneSoundVolume);
+
+		return true;
+	}
+
+};

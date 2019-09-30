@@ -1,0 +1,169 @@
+// rufe_stw.script V0.4 by manuelt
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freien STW (oder MTW) ...
+
+// Ein freier STW:
+// steht an der Basis oder
+// wurde gerade alamiert oder
+// fährt streife und
+// hat min. einen Polizisten an Bord und
+// hat keinen Gefangenen an Board und
+// wurde vom Spieler nicht per Hand an einen Ort geschickt
+
+// STWs kommen immer vor dem MTW
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+object rufe_pol : CommandScript
+{
+
+	int stw; //ObjectID des gefundenen STWs
+	bool kriterien_erfuellt; //Ist dieser STW gerade frei?
+	float target_x, target_y, target_z, obj_x, obj_y, obj_z; // Position von Ziel und STW
+	float abstand, minimum; // Abstand und kürzester Abstand zwischen STW und Ziel...
+
+   rufe_pol()
+   {
+      SetValidTargets(ACTOR_FLOOR);
+      SetIcon("rufe_streife");
+      SetCursor("rufe_streife");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+      MoveResult mr;
+      GameObject Called;
+      Vector TargetPos=Game::GetCommandPos();
+	Vector FzPos;
+	Vector MinFz;
+	Vector Abstand;
+      //Suche alle GameObjects auf der Krte
+      GameObjectList l0 = Game::GetGameObjects();
+      //Welche davon sind STWs ?
+      stw = -1;
+      for(int i=0; i<l0.GetNumObjects(); i++)
+      {
+      	//Aktuelles Objekt
+		GameObject *Obj = l0.GetObject(i);
+		if (Obj->HasCommand("ich_bin_ein_stw") && !Obj->HasCommand("ich_bin_nicht_frei"))
+		{
+
+			kriterien_erfuellt = false;
+			Vehicle v(Obj);
+
+			//Ist mind. ein Polizist an Bord?
+			PersonList pol = v.GetPassengers();
+			if (pol.GetNumPersons() >= 1)
+				kriterien_erfuellt = true;
+
+			//Nur ohne Gefangenen möglich...
+			PersonList gef = v.GetTransports();
+			if (gef.GetNumPersons() > 0)
+				kriterien_erfuellt = false;
+
+			//Abstand dieses STWs zum Ziel?
+			if (kriterien_erfuellt == true)
+			{
+//				//Abstand dieses STWs zum Ziel?
+//				FzPos=v.GetPosition();
+//				abstand = Math::dist(FzPos, TargetPos);
+
+//				//1. Abstand = Minimum
+//				if (stw == -1)
+//					Vector minimum = abstand;
+
+//				if (abstand <= minimum)
+//				{
+//					minimum = abstand;
+					//Ein STW ist gefunden
+					stw = i;
+//				}
+			}
+		}
+
+	  }
+
+	  //Kein STW gefunden, versuche MTW
+	  if (stw == -1)
+	  {
+	  	for(int i=0; i<l0.GetNumObjects(); i++)
+    	{
+	      	//Aktuelles Objekt
+			GameObject *Obj = l0.GetObject(i);
+			if (Obj->HasCommand("ich_bin_ein_mtw") && !Obj->HasCommand("ich_bin_nicht_frei"))
+			{
+
+				kriterien_erfuellt = false;
+
+				Vehicle v(Obj);
+
+				//Ist mind. ein Polizist an Bord?
+				PersonList pol = v.GetPassengers();
+				if (pol.GetNumPersons() >= 1)
+					kriterien_erfuellt = true;
+
+				//Nur ohne Gefangenen möglich...
+				PersonList gef = v.GetTransports();
+				if (gef.GetNumPersons() > 0)
+					kriterien_erfuellt = false;
+
+				if (kriterien_erfuellt == true)
+				{
+					//Abstand dieses STWs zum Ziel?
+//					v.GetPosition(obj_x,obj_y,obj_z);
+//					abstand = Math::dist(obj_x, obj_y, obj_z, target_x, target_y, target_z);
+
+//					//1. Abstand = Minimum
+//					if (stw == -1)
+//						minimum = abstand;
+
+//					if (abstand <= minimum)
+//					{
+//						minimum = abstand;
+//						MinFz = FzPos;
+						//Ein STW ist gefunden
+						stw = i;
+//					}
+				}
+			}
+
+	  	}
+	  }
+
+	  //Ab hier gehts nur mit einem weiter...
+	  if (stw < 0)
+	  {
+	  	Mission::PlayHint("KEIN_STW");
+	  	return;
+	  }
+
+	  GameObject *Obj = l0.GetObject(stw);
+
+	  //Finde Position
+	  Game::FindFreePosition(Obj, TargetPos,50);
+
+	  Obj->EnableSpecialLights(false);
+	  Obj->EnableBreakLights(false);
+   	  Obj->EnableCommand("WarningLightOn", true);
+   	  Obj->RemoveCommand("WarningLightOff");
+	  //FZG ist nicht mehr verfügbar.
+	Obj->AssignCommand("ich_bin_nicht_frei");
+	Obj->PushActionExecuteCommand(ACTION_NEWLIST,"VCmdSiren",Obj,0,false);//Einsatzfahrt
+	Obj->PushActionMove(ACTION_APPEND, TargetPos);
+	Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false); //childID 1: Blaulichter bleiben an...
+   }
+};

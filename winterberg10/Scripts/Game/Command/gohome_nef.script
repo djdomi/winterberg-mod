@@ -1,0 +1,185 @@
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object gohome_nef : CommandScript
+{
+	Vector Wache;
+	Actor nef;
+
+	gohome_nef()
+	{
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(90);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		//Freeplay oder nicht?
+		Actor ReinforcementArea1;
+		ActorList l1("ReinforcementArea1");
+		if(l1.GetNumActors() < 1)
+			return false;
+		//Freeplay oder nicht?
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		if (v.HasCommand("DUMMYHasWarningLights"))
+		{
+ 			v.EnableBlinker(BLT_NONE);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+		}
+		if(!nef.IsValid())
+		{
+			ActorList l1;
+			l1=Game::GetActors("nef");
+			if(l1.GetNumActors() > 0)
+			{
+
+				nef = *l1.GetActor(0);
+				Mission::PlayHint("NEF-Standort gefunden");
+
+			} else {
+
+				System::Error("Streife CommandScript: Kann Basis nicht finden!");
+
+			}
+		}
+
+		Wache=nef.GetPosition();
+
+		//Fahrzeug kann gerufen werden....
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_DISABLE, Caller, 1, false);
+		Caller->RemoveCommand("ich_bin_nicht_frei");	
+		Game::FindFreePosition(Caller, Wache);
+		Caller->PushActionLightOn(ACTION_APPEND,false);
+		Caller->PushActionMove(ACTION_APPEND, Wache + Vector(0, -150, 0)); // Fahre zum Wendepunkt
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+		Caller->PushActionTurnTo(ACTION_APPEND, Wache + Vector(0, -300, 0)); // Wende
+		Caller->PushActionMove(ACTION_APPEND, Wache); // Einparken
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+		//Leeres NEF bekommt am KH einen neuen NA...
+		Vehicle v(Caller);
+		PersonList persons = v.GetPassengers();
+		//Ist kein NA an Bord?
+		int anzahl_na = 0;
+		for(int j=0; j<persons.GetNumPersons(); j++)
+		{
+			if (persons.GetPerson(j)->HasCommand("ich_bin_ein_notarzt"))
+				anzahl_na++;
+		}
+
+		if (anzahl_na == 0)
+		{
+			Mission::PlayHint("Es fehlt der Notarzt.");
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionNeuerNA", Caller, 0, false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionCheckNAinNEF", Caller, 0, false);
+		}
+	}
+};
+
+object ActionNeuerNA : CommandScript
+{
+	Vector TargetPos;
+
+	ActionNeuerNA()
+	{
+		SetIcon("naholen");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (!Caller->IsCollidingWithTrigger("aufnahme"))
+			return false;
+
+	   if (Caller->GetID() != Target->GetID())
+		return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+        	mPlaceList = Game::GetActors("hospital_entry");
+		Mission::PlayHint("Notarzt wird geschickt.");
+        	if (mPlaceList.GetNumActors() > 0)
+        	TargetPos=mPlaceList.GetActor(0)->GetPosition();
+
+        	int zufall = rand()%2;
+
+		switch(zufall)
+		{
+			case 0:
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_f.e4p", "winterberg_na");
+			break;
+			case 1:
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_m.e4p", "winterberg_na");
+			break;
+		}
+		p.SetEquipment(EQUIP_EMERGENCY_CASE);
+		p.AssignCommand("ich_bin_ein_notarzt");
+
+		GameObjectList lna = Game::GetGameObjects("winterberg_na");
+		for(int i=0; i<lna.GetNumObjects(); i++)
+		{
+			GameObject *Obj1 = lna.GetObject(i);
+
+		}
+		Game::FindFreePosition(Obj1, TargetPos,100);
+
+		Obj1->SetPosition(TargetPos);
+		Obj1->SetCommandable(true);
+		Obj1->PushActionExecuteCommand(ACTION_NEWLIST,"entercar",Target,0,true);
+	}
+};
+
+object ActionCheckNAinNEF : CommandScript
+{
+	ActionCheckNAinNEF()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		//RTH: Nur am KH mit passengers != 3
+		Vehicle rth(Caller);
+		PersonList passengers = rth.GetPassengers();
+		if (rth.HasCommand("ich_bin_ein_rth") && (!rth.IsCollidingWithTrigger("aufnahme") || passengers.GetNumPersons() == 3)))
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle vec(Target);
+		PersonList persons = vec.GetPassengers();
+		
+		//Ist kein NA an Bord?
+		int anzahl_na = 0;
+		for(int j=0; j<persons.GetNumPersons(); j++)
+		{
+			if (persons.GetPerson(j)->HasCommand("ich_bin_ein_notarzt"))
+				anzahl_na++;
+		}
+
+		if (anzahl_na == 0)
+		{
+			vec.PushActionExecuteCommand(ACTION_NEWLIST,"ActionCheckNAinNEF",Caller,0,true);
+		}
+		else
+		{
+			Audio::PlaySample("mod:/Audio/FX/voices/hints/FUNKFREI.wav");
+		}
+	}
+};

@@ -1,0 +1,953 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script d02
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+/* TODO
+- Dorfbrunnenlogik--
+- Uhrzeit ändern--
+- DesertDust abstellen--
+- Abbruchbedingungen--
+- Objectives--
+- Hints--
+- Supervisor--
+- Serialisierung--
+*/
+
+const int MAX_HINTS						= 6;
+const int MAX_PERSON_DEATHS				= 6;
+const int MAX_CONTAMINATED				= 12;
+const int MIN_PERSON_DEATHS_FOR_EFFICIENCY = 4;
+const int MAX_CONTAMINATED_HINT3		= 7;
+const int MAX_PERSON_DEATHS_HINT4		= 4;
+const int MAX_DRINKER					= 20;
+const int MAX_INJURED_NOT_IN_CAR_FOR_DUSK = 5;
+const float DOG_PERCEPTION_RANGE		= 4000.f;
+const int MAX_ROCKS						= 20;
+const float CAM_SHAKE_DURATION			= 8.f;
+const float CAM_SHAKE_STRENGTH			= 25.f;
+const float TRANSITION1_DURATION		= 4.f;
+const float TRANSITION2_DURATION		= 8.f;
+const float PUMP_OFF_TIME				= 4.f;
+const int MAX_INJURED_PERSONS			= 22;
+
+const char HINT_USE_BULLDOZER[]			= "HINT_D02_USE_BULLDOZER";		//0
+const char HINT_USE_BHC[]				= "HINT_D02_USE_BHC";			//1
+const char HINT_FOUNTAIN[]				= "HINT_D02_FOUNTAIN";			//2
+const char HINT_CONTAGION[]				= "HINT_D02_CONTAGION";			//3
+const char HINT_TOO_MANY_VICTIMS[]		= "HINT_D02_TOO_MANY_VICTIMS";	//4
+const char HINT_QUAKE[]					= "HINT_D02_QUAKE";				//5
+const char HINT_WELL_CLOSED[]			= "HINT_D02_WELL_CLOSED";		//6
+
+const char OBJECTIVE_DECONTAMINATE[]	= "OBJECTIVE_D02_DECONTAMINATE";
+const char OBJECTIVE_RESCUE_INJURED[]	= "OBJECTIVE_D02_RESCUE_INJURED";
+const char DECONTAMINATE_ACCOMPLISHED[]	= "SUPERV_D02_COMMENT1";
+const char DECONTAMINATE_REOPEN[]		= "SUPERV_D02_COMMENT2";
+const char RESCUE_ACCOMPLISHED[]		= "SUPERV_D02_COMMENT3";
+const char RESCUE_REOPEN[]				= "SUPERV_D02_COMMENT4";
+
+const char COUNTER_CONTAMINATED_PERSONS[]	= "Contaminated Persons";
+const char COUNTER_PERSON_DEATHS[]			= "Person deaths";
+const char COUNTER_INJURED_PERSONS[]		= "Injured Persons";
+const char COUNTER_NOTINCAR[]				= "Not in car";
+
+const char NAME_TRIGGER_STREET[]		= "t_street";
+const char NAME_TRIGGER_LANDSLIP[]		= "t_landslip";
+const char NAME_TRIGGER_VILLAGE_SQUARE[]= "t_village";
+const char NAME_EFFECT_DESERT_DUSK[]	= "desertdusk";
+const char NAME_PREFIX_DRINKER[]		= "drinker";
+const char NAME_DRINKER0[]				= "drinker01";
+const char NAME_DRINKER1[]				= "drinker02";
+const char NAME_DRINKER2[]				= "drinker03";
+const char NAME_DRINKER3[]				= "drinker04";
+const char NAME_DRINKER4[]				= "drinker05";
+const char NAME_DRINKER5[]				= "drinker06";
+const char NAME_DRINKER6[]				= "drinker07";
+const char NAME_DRINKER7[]				= "drinker08";
+const char NAME_DRINKER8[]				= "drinker09";
+const char NAME_DRINKER9[]				= "drinker10";
+const char NAME_DRINKER10[]				= "drinker11";
+const char NAME_DRINKER11[]				= "drinker12";
+const char NAME_DRINKER12[]				= "drinker13";
+const char NAME_DRINKER13[]				= "drinker14";
+const char NAME_DRINKER14[]				= "drinker15";
+const char NAME_DRINKER15[]				= "drinker16";
+const char NAME_DRINKER16[]				= "drinker17";
+const char NAME_DRINKER17[]				= "drinker18";
+const char NAME_DRINKER18[]				= "drinker19";
+const char NAME_DRINKER19[]				= "drinker20";
+const char NAME_PATH_DRINKER0[]			= "pathdrinker01";
+const char NAME_PATH_DRINKER1[]			= "pathdrinker02";
+const char NAME_PATH_DRINKER2[]			= "pathdrinker03";
+const char NAME_PATH_DRINKER3[]			= "pathdrinker04";
+const char NAME_PATH_DRINKER4[]			= "pathdrinker05";
+const char NAME_PATH_DRINKER5[]			= "pathdrinker06";
+const char NAME_PATH_DRINKER6[]			= "pathdrinker07";
+const char NAME_PATH_DRINKER7[]			= "pathdrinker08";
+const char NAME_PATH_DRINKER8[]			= "pathdrinker09";
+const char NAME_PATH_DRINKER9[]			= "pathdrinker10";
+const char NAME_PATH_DRINKER10[]		= "pathdrinker11";
+const char NAME_PATH_DRINKER11[]		= "pathdrinker12";
+const char NAME_PATH_DRINKER12[]		= "pathdrinker13";
+const char NAME_PATH_DRINKER13[]		= "pathdrinker14";
+const char NAME_PATH_DRINKER14[]		= "pathdrinker15";
+const char NAME_PATH_DRINKER15[]		= "pathdrinker16";
+const char NAME_PATH_DRINKER16[]		= "pathdrinker17";
+const char NAME_PATH_DRINKER17[]		= "pathdrinker18";
+const char NAME_PATH_DRINKER18[]		= "pathdrinker19";
+const char NAME_PATH_DRINKER19[]		= "pathdrinker20";
+const char NAME_PATH_BUCKET[]			= "pathbucket";
+const char NAME_BUCKET[]				= "bucket";
+const char NAME_ANIMATION_BUCKET[]		= "drink";
+const char NAME_ANIMATION_DRINK[]		= "drink_from_bucket";
+const char NAME_PUMP[]					= "townpump";
+const char NAME_ANIMATION_PUMP[]		= "pump";
+const char NAME_ANIMATION_PUMPING_WATER[]	= "pumping_water";
+const char NAME_PUMPING_EFFECTS[]		= "pumpwater";
+const char NAME_ANIMATION_NONE[]		= "none";
+const char NAME_PANIC_PERSON[]			= "panic";
+const char NAME_PATH_PANIC[]			= "panic01";
+const char MESSAGEGROUP_CONTAMINATED[]	= "contaminated";
+const char NAME_ROCK[]					= "rock";
+const char NAME_ROCK_CHILD[]			= "dust";
+const char NAME_EARTHQUAKE_SOUND[]		= "mod:Audio/FX/misc/earthquake.wav";
+const char NAME_LOCATION_CS1[]			= "cs1";
+const char NAME_LOCATION_CS2[]			= "cs2";
+const char ANIMATION_CONTAM[]			= "contam";
+const char ANIMATION_IDLE[]				= "idle";
+
+const char TIMER_NAME_DRINK0[]			= "t_0";
+const char TIMER_NAME_DRINK1[]			= "t_1";
+const char TIMER_NAME_DRINK2[]			= "t_2";
+const char TIMER_NAME_DRINK3[]			= "t_3";
+const char TIMER_NAME_DRINK4[]			= "t_4";
+const char TIMER_NAME_DRINK5[]			= "t_5";
+const char TIMER_NAME_DRINK6[]			= "t_6";
+const char TIMER_NAME_DRINK7[]			= "t_7";
+const char TIMER_NAME_DRINK8[]			= "t_8";
+const char TIMER_NAME_DRINK9[]			= "t_9";
+const char TIMER_NAME_DRINK10[]			= "t_10";
+const char TIMER_NAME_DRINK11[]			= "t_11";
+const char TIMER_NAME_DRINK12[]			= "t_12";
+const char TIMER_NAME_DRINK13[]			= "t_13";
+const char TIMER_NAME_DRINK14[]			= "t_14";
+const char TIMER_NAME_DRINK15[]			= "t_15";
+const char TIMER_NAME_DRINK16[]			= "t_16";
+const char TIMER_NAME_DRINK17[]			= "t_17";
+const char TIMER_NAME_DRINK18[]			= "t_18";
+const char TIMER_NAME_DRINK19[]			= "t_19";
+
+const float TIMER_TIME_DRINK0			= 1.f * 60.f;	// 1 Minute
+const float TIMER_TIME_DRINK1			= 2.f * 60.f;
+const float TIMER_TIME_DRINK2			= 2.5f * 60.f;
+const float TIMER_TIME_DRINK3			= 4.5f * 60.f;
+const float TIMER_TIME_DRINK4			= 5.5f * 60.f;
+const float TIMER_TIME_DRINK5			= 7.f * 60.f;
+const float TIMER_TIME_DRINK6			= 8.f * 60.f;
+const float TIMER_TIME_DRINK7			= 9.5f * 60.f;
+const float TIMER_TIME_DRINK8			= 10.f * 60.f;
+const float TIMER_TIME_DRINK9			= 11.f * 60.f;
+const float TIMER_TIME_DRINK10			= 13.f * 60.f;
+const float TIMER_TIME_DRINK11			= 13.5f * 60.f;
+const float TIMER_TIME_DRINK12			= 14.5f * 60.f;
+const float TIMER_TIME_DRINK13			= 16.f * 60.f;
+const float TIMER_TIME_DRINK14			= 16.5f * 60.f;
+const float TIMER_TIME_DRINK15			= 18.f * 60.f;
+const float TIMER_TIME_DRINK16			= 100.f * 60.f;
+const float TIMER_TIME_DRINK17			= 100.f * 60.f;
+const float TIMER_TIME_DRINK18			= 100.f * 60.f;
+const float TIMER_TIME_DRINK19			= 100.f * 60.f;
+
+const char TIMER_NAME_DUSK[]			= "t_dusk";
+const float TIMER_TIME_DUSK				= 5.f;
+const int TIME_TILL_DUSK				= 5;	// Minuten bis es 19.30 Uhr wird.
+const char TIMER_NAME_INIT[]			= "t_init";
+const float TIMER_TIME_INIT				= 1.f;
+const char TIMER_NAME_EARTHQUAKE[]		= "t_quake";
+const float TIMER_TIME_EARTHQUAKE		= 10.f * 60.f;
+const char TIMER_NAME_UPDATE_ROCKS[]	= "t_rocks";
+const float TIMER_TIME_UPDATE_ROCKS		= 1.f;
+const char TIMER_NAME_ENDMISSION[]		= "t_end";
+const float TIMER_TIME_ENDMISSION		= 1.f;
+const char TIMER_NAME_WAIT[]			= "t_wait";
+const float TIMER_TIME_WAIT				= 5.f;
+const char TIMER_CS_HIDEHINTS[]			= "HideHints";
+const float TIME_CS_HIDEHINTS			= 3.0f;
+
+object MissionD02 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mTooManyVictims;
+	bool mTooManyContaminated;
+	bool mEffectsStopped;
+	bool mDuskStarted;
+	const char * mNameDrinker[MAX_DRINKER];
+	const char * mNamePathDrinker[MAX_DRINKER];
+	Person mDrinker[MAX_DRINKER];
+	GameObject mBucket;
+	GameObject mPump;
+	GameObject mPumpEffects;
+	GameObject mRocks[MAX_ROCKS];
+	bool mCutscene;
+	int mTransition;
+	
+	MissionD02()
+	{
+		mTooManyVictims = false;
+		mTooManyContaminated = false;
+		mEffectsStopped = false;
+		mDuskStarted = false;
+		mCutscene = false;
+		mTransition = 0;
+
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+
+		mNameDrinker[0] = NAME_DRINKER0;
+		mNameDrinker[1] = NAME_DRINKER1;
+		mNameDrinker[2] = NAME_DRINKER2;
+		mNameDrinker[3] = NAME_DRINKER3;
+		mNameDrinker[4] = NAME_DRINKER4;
+		mNameDrinker[5] = NAME_DRINKER5;
+		mNameDrinker[6] = NAME_DRINKER6;
+		mNameDrinker[7] = NAME_DRINKER7;
+		mNameDrinker[8] = NAME_DRINKER8;
+		mNameDrinker[9] = NAME_DRINKER9;
+		mNameDrinker[10] = NAME_DRINKER10;
+		mNameDrinker[11] = NAME_DRINKER11;
+		mNameDrinker[12] = NAME_DRINKER12;
+		mNameDrinker[13] = NAME_DRINKER13;
+		mNameDrinker[14] = NAME_DRINKER14;
+		mNameDrinker[15] = NAME_DRINKER15;
+		mNameDrinker[16] = NAME_DRINKER16;
+		mNameDrinker[17] = NAME_DRINKER17;
+		mNameDrinker[18] = NAME_DRINKER18;
+		mNameDrinker[19] = NAME_DRINKER19;
+
+		mNamePathDrinker[0] = NAME_PATH_DRINKER0;
+		mNamePathDrinker[1] = NAME_PATH_DRINKER1;
+		mNamePathDrinker[2] = NAME_PATH_DRINKER2;
+		mNamePathDrinker[3] = NAME_PATH_DRINKER3;
+		mNamePathDrinker[4] = NAME_PATH_DRINKER4;
+		mNamePathDrinker[5] = NAME_PATH_DRINKER5;
+		mNamePathDrinker[6] = NAME_PATH_DRINKER6;
+		mNamePathDrinker[7] = NAME_PATH_DRINKER7;
+		mNamePathDrinker[8] = NAME_PATH_DRINKER8;
+		mNamePathDrinker[9] = NAME_PATH_DRINKER9;
+		mNamePathDrinker[10] = NAME_PATH_DRINKER10;
+		mNamePathDrinker[11] = NAME_PATH_DRINKER11;
+		mNamePathDrinker[12] = NAME_PATH_DRINKER12;
+		mNamePathDrinker[13] = NAME_PATH_DRINKER13;
+		mNamePathDrinker[14] = NAME_PATH_DRINKER14;
+		mNamePathDrinker[15] = NAME_PATH_DRINKER15;
+		mNamePathDrinker[16] = NAME_PATH_DRINKER16;
+		mNamePathDrinker[17] = NAME_PATH_DRINKER17;
+		mNamePathDrinker[18] = NAME_PATH_DRINKER18;
+		mNamePathDrinker[19] = NAME_PATH_DRINKER19;
+	}
+	
+	~MissionD02()
+	{
+	}
+	
+	void Start()
+	{		
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasNamePrefix(NAME_PREFIX_DRINKER))
+			{
+				for(int j = 0; j < MAX_DRINKER; j++)
+				{
+					if (obj->HasName(mNameDrinker[j]))
+					{
+						mDrinker[j] = Person(obj);
+						break;
+					}
+				}
+			}
+			else if (obj->HasName(NAME_BUCKET))
+				mBucket = *obj;
+			else if (obj->HasName(NAME_PUMP))
+				mPump = *obj;
+			else if (obj->HasName(NAME_PUMPING_EFFECTS))
+			{
+				mPumpEffects = *obj;
+				mPumpEffects.StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_PANIC_PERSON))
+			{
+				Person p(obj);
+				p.SetFleeing(true);
+			}
+		}
+
+		GameObjectList rocks = Game::GetGameObjects(NAME_ROCK);
+		for(int i = 0; i < rocks.GetNumObjects() && i < MAX_ROCKS; i++)
+		{
+			mRocks[i] = *rocks.GetObject(i);
+		}
+
+		Mission::AddObjective(OBJECTIVE_DECONTAMINATE, DECONTAMINATE_REOPEN,DECONTAMINATE_ACCOMPLISHED);
+		Mission::AddObjective(OBJECTIVE_RESCUE_INJURED, RESCUE_REOPEN, RESCUE_ACCOMPLISHED);
+
+		Mission::StartSingleTimer(TIMER_NAME_DRINK0, TIMER_TIME_DRINK0);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK1, TIMER_TIME_DRINK1);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK2, TIMER_TIME_DRINK2);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK3, TIMER_TIME_DRINK3);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK4, TIMER_TIME_DRINK4);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK5, TIMER_TIME_DRINK5);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK6, TIMER_TIME_DRINK6);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK7, TIMER_TIME_DRINK7);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK8, TIMER_TIME_DRINK8);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK9, TIMER_TIME_DRINK9);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK10, TIMER_TIME_DRINK10);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK11, TIMER_TIME_DRINK11);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK12, TIMER_TIME_DRINK12);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK13, TIMER_TIME_DRINK13);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK14, TIMER_TIME_DRINK14);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK15, TIMER_TIME_DRINK15);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK16, TIMER_TIME_DRINK16);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK17, TIMER_TIME_DRINK17);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK18, TIMER_TIME_DRINK18);
+		Mission::StartSingleTimer(TIMER_NAME_DRINK19, TIMER_TIME_DRINK19);
+		Mission::StartSingleTimer(TIMER_NAME_INIT, TIMER_TIME_INIT);
+		Mission::StartSingleTimer(TIMER_NAME_EARTHQUAKE, TIMER_TIME_EARTHQUAKE);
+
+		Mission::SetCounter(COUNTER_NOTINCAR, 0);
+		Game::SetNavigatorCounter(COUNTER_NOTINCAR);
+
+		Audio::PlaySoundtrack("24", 0.f);
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionUse":
+				{
+					if (Data->Parameters[0].iValue == mPump.GetID())
+					{
+						float *time = reinterpret_cast<float*>(Data->Parameters[2].pValue);
+						*time = (float) PUMP_OFF_TIME;
+						mPump.ClearFlag(OF_USABLE);
+						Game::DeactivateTrigger(NAME_TRIGGER_VILLAGE_SQUARE);
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionTag":
+				{
+					if (Data->Owner->GetType() == ACTOR_PERSON)
+					{
+						Person p(Data->Owner);
+						p.ExposeContamination(CONTAMINATION_CHEMICAL);
+						p.SetMessageGroup(MESSAGEGROUP_CONTAMINATED);
+					}
+				}
+				break;
+			case "EActionUse":
+				{
+					if (Data->Parameters[0].iValue == mPump.GetID())
+					{
+						ShowHint(6);
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		switch(Timer)
+		{
+			case TIMER_NAME_DUSK:
+				{
+					int hour, minute, second;
+					Game::GetTime( hour, minute, second );					
+					if ((hour = 19 && minute >= 30) || hour > 19)
+					{
+						System::Log("Stop TIMER_NAME_DUSK");
+						Game::SetTimeSpeed(0);
+						Mission::StopTimer(TIMER_NAME_DUSK);
+					}
+					else if (!mEffectsStopped && (hour > 18 || (hour == 18 && minute >= 30)))
+					{
+						mEffectsStopped = true;
+						GameObjectList list = Game::GetGameObjects(NAME_EFFECT_DESERT_DUSK);
+						for (int i = 0; i < list.GetNumObjects(); i++)
+							list.GetObject(i)->StopParticleEffect();
+					}
+				}
+				break;
+			case TIMER_NAME_DRINK0:
+				StartDrinker(0);
+				break;
+			case TIMER_NAME_DRINK1:
+				StartDrinker(1);
+				break;
+			case TIMER_NAME_DRINK2:
+				StartDrinker(2);
+				break;
+			case TIMER_NAME_DRINK3:
+				StartDrinker(3);
+				break;
+			case TIMER_NAME_DRINK4:
+				StartDrinker(4);
+				break;
+			case TIMER_NAME_DRINK5:
+				StartDrinker(5);
+				break;
+			case TIMER_NAME_DRINK6:
+				StartDrinker(6);
+				break;
+			case TIMER_NAME_DRINK7:
+				StartDrinker(7);
+				break;
+			case TIMER_NAME_DRINK8:
+				StartDrinker(8);
+				break;
+			case TIMER_NAME_DRINK9:
+				StartDrinker(9);
+				break;
+			case TIMER_NAME_DRINK10:
+				StartDrinker(10);
+				break;
+			case TIMER_NAME_DRINK11:
+				StartDrinker(11);
+				break;
+			case TIMER_NAME_DRINK12:
+				StartDrinker(12);
+				break;
+			case TIMER_NAME_DRINK13:
+				StartDrinker(13);
+				break;
+			case TIMER_NAME_DRINK14:
+				StartDrinker(14);
+				break;
+			case TIMER_NAME_DRINK15:
+				StartDrinker(15);
+				break;
+			case TIMER_NAME_DRINK16:
+				StartDrinker(16);
+				break;
+			case TIMER_NAME_DRINK17:
+				StartDrinker(17);
+				break;
+			case TIMER_NAME_DRINK18:
+				StartDrinker(18);
+				break;
+			case TIMER_NAME_DRINK19:
+				StartDrinker(19);
+				break;
+			case TIMER_NAME_INIT:
+				{
+					GameObjectList list = Game::GetGameObjects(ACTOR_PERSON);
+					for(int i = 0; i < list.GetNumObjects(); i++)
+					{
+						Person p(list.GetObject(i));
+						if (p.IsRescueDog())
+							p.SetDogPerceptionRange(DOG_PERCEPTION_RANGE);
+					}
+				}
+				break;
+			case TIMER_NAME_EARTHQUAKE:
+				{
+					//Camera::StartCamShake(CAM_SHAKE_DURATION, CAM_SHAKE_STRENGTH);
+					ShowHint(5);
+					for(int i = 0; i < MAX_ROCKS; i++)
+					{
+						if (mRocks[i].IsValid())
+						{
+							mRocks[i].SetChildEnabled(NAME_ROCK_CHILD, true);
+							//mRocks[i].EnablePhysicsSimulation();
+							//mRocks[i].EnablePhysics();
+							mRocks[i].UnfreezePhysics();
+						}
+					}
+					Audio::PlaySample(NAME_EARTHQUAKE_SOUND);
+					Mission::StartIntervalTimer(TIMER_NAME_UPDATE_ROCKS, TIMER_TIME_UPDATE_ROCKS);
+					mCutscene = true;
+					Mission::StartCutScene();
+					Mission::ShowBlackBars(0.8f);
+					Camera::StartTransition(NAME_LOCATION_CS1, TRANSITION1_DURATION);
+					mTransition = 1;
+				}
+				break;
+			case TIMER_NAME_UPDATE_ROCKS:
+				{
+					int validrocks = 0;
+					for(int i = 0; i < MAX_ROCKS; i++)
+					{
+						if (mRocks[i].IsValid())
+						{
+							validrocks++;
+							if (mRocks[i].IsPhysicsFreezed())
+							{
+								//System::Log("MD02: Disable child on rock %d", i);
+								//mRocks[i].SetChildEnabled(NAME_ROCK_CHILD, false);
+								mRocks[i].PauseParticleEffectChild(NAME_ROCK_CHILD);
+								mRocks[i] = GameObject();
+								validrocks--;
+							}
+						}
+					}	
+					if (validrocks == 0)
+					{
+						//System::Log("MD02: Stop Timer TIMER_NAME_UPDATE_ROCKS");
+						Mission::StopTimer(TIMER_NAME_UPDATE_ROCKS);
+					}
+				}
+				break;
+			case TIMER_NAME_ENDMISSION:
+				{
+					Mission::HideBlackBars(0.7f);
+					Mission::EndCutScene();				
+					System::Log("MD02: End Cutscene");
+				}
+				break;
+			case TIMER_NAME_WAIT:
+				{
+					Audio::PlaySample(NAME_EARTHQUAKE_SOUND);
+					Camera::StartTransition(NAME_LOCATION_CS2, TRANSITION2_DURATION);
+				}
+				break;
+			case TIMER_CS_HIDEHINTS:
+				{
+					ScriptInterface::CloseTutorialInstruction();
+					ScriptInterface::HideMouseCursor(true);
+				}
+				break;
+		}
+	}
+
+	void OnCollision(GameObject *a, GameObject *b)
+	{
+		if (a && a->HasName(NAME_ROCK))
+		{
+			if (b && b->GetType() == ACTOR_PERSON)
+			{
+				Person p(b);
+				if (!p.IsDead())
+					p.Kill();
+			}
+		}
+		else if (b && b->HasName(NAME_ROCK))
+		{
+			if (a && a->GetType() == ACTOR_PERSON)
+			{
+				Person p(a);
+				if (!p.IsDead())
+					p.Kill();
+			}
+		}
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		System::Log("MD02:OnCameraTransitionFinished");
+		if (Mission::IsCutSceneRunning())
+		{
+			if (mCutscene)
+			{
+				if (mTransition == 1)
+				{
+					//Camera::StartTransition(NAME_LOCATION_CS2, TRANSITION2_DURATION);
+					Camera::StartCamShake(CAM_SHAKE_DURATION, CAM_SHAKE_STRENGTH);
+					//Audio::PlaySample(NAME_EARTHQUAKE_SOUND);
+					Mission::StartSingleTimer(TIMER_NAME_WAIT, TIMER_TIME_WAIT);
+					mTransition = 2;
+				}
+				else if (mTransition == 2)
+				{
+					//Camera::StartCamShake(CAM_SHAKE_DURATION, CAM_SHAKE_STRENGTH);
+					// TODO : Hint
+					/*for(int i = 0; i < MAX_ROCKS; i++)
+					{
+						if (mRocks[i].IsValid())
+						{
+							//mRocks[i].EnablePhysicsSimulation();
+							//mRocks[i].EnablePhysics();
+							mRocks[i].UnfreezePhysics();
+							mRocks[i].SetChildEnabled(NAME_ROCK_CHILD, true);
+						}
+					}*/
+					//Audio::PlaySample(NAME_EARTHQUAKE_SOUND);
+					//Mission::StartIntervalTimer(TIMER_NAME_UPDATE_ROCKS, TIMER_TIME_UPDATE_ROCKS);
+					//Mission::HideBlackBars(1.f);				
+					Mission::StartSingleTimer(TIMER_NAME_ENDMISSION, TIMER_TIME_ENDMISSION);
+					mCutscene = false;
+				}
+			}
+		}
+	}
+
+	void OnTrigger(const char *Trigger_, Actor *Collider_)
+	{
+		switch (Trigger_)
+		{
+			case NAME_TRIGGER_STREET:
+				{
+					if (mHintCounter[0] == 0)
+					{
+						ShowHint(0);
+						Game::DeactivateTrigger(NAME_TRIGGER_STREET);
+					}
+				}
+				break;
+			case NAME_TRIGGER_LANDSLIP:
+				{
+					if (mHintCounter[1] == 0)
+					{
+						ShowHint(1);
+						Game::DeactivateTrigger(NAME_TRIGGER_LANDSLIP);
+					}
+				}
+				break;
+			case NAME_TRIGGER_VILLAGE_SQUARE:
+				{
+					if (mHintCounter[2] == 0)
+					{
+						ShowHint(2);
+						Game::DeactivateTrigger(NAME_TRIGGER_VILLAGE_SQUARE);
+					}
+				}
+				break;
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path_, GameObject *Caller_)
+	{
+		switch(Path_)
+		{
+			case NAME_PATH_DRINKER0:
+			case NAME_PATH_DRINKER1:
+			case NAME_PATH_DRINKER2:
+			case NAME_PATH_DRINKER3:
+			case NAME_PATH_DRINKER4:
+			case NAME_PATH_DRINKER5:
+			case NAME_PATH_DRINKER6:
+			case NAME_PATH_DRINKER7:
+			case NAME_PATH_DRINKER8:
+			case NAME_PATH_DRINKER9:
+			case NAME_PATH_DRINKER10:
+			case NAME_PATH_DRINKER11:
+			case NAME_PATH_DRINKER12:
+			case NAME_PATH_DRINKER13:
+			case NAME_PATH_DRINKER14:
+			case NAME_PATH_DRINKER15:
+			case NAME_PATH_DRINKER16:
+			case NAME_PATH_DRINKER17:
+			case NAME_PATH_DRINKER18:
+			case NAME_PATH_DRINKER19:
+				if (Caller_->IsForwardOnPath())
+				{
+					if (mPump.IsFlagSet(OF_USABLE))
+					{
+						Caller_->PushActionSwitchAnim(ACTION_NEWLIST, NAME_ANIMATION_PUMPING_WATER);
+						Caller_->PushActionWait(ACTION_APPEND, 10.f); // TODO
+						Caller_->PushActionSwitchAnim(ACTION_APPEND, ANIMATION_IDLE);
+						Caller_->PushActionUsePath(ACTION_APPEND, NAME_PATH_BUCKET);
+						mPump.SetAnimation(NAME_ANIMATION_NONE);
+						mPump.SetAnimation(NAME_ANIMATION_PUMP);
+						mPumpEffects.StartParticleEffect();
+						Audio::PlaySample3D("mod:Audio/FX/misc/waterpump01.wav", Caller_->GetPosition());
+					}
+					else
+						Caller_->PushActionUsePath(ACTION_NEWLIST, Path_, 0.f, false);
+					return PATH_STOP;
+				}
+				break;
+			case NAME_PATH_BUCKET:
+				{
+					int i = -1;
+					for(i = 0; i < MAX_DRINKER; i++)
+					{
+						if (mDrinker[i].GetID() == Caller_->GetID())
+							break;
+					}
+					Caller_->PushActionSwitchAnim(ACTION_NEWLIST, NAME_ANIMATION_DRINK);
+					Caller_->PushActionWait(ACTION_APPEND, 8.f); // TODO
+					Caller_->PushActionSwitchAnim(ACTION_APPEND, ANIMATION_IDLE);
+					Caller_->PushActionWait(ACTION_APPEND, 2.f); // TODO
+					Caller_->PushActionTag(ACTION_APPEND, ANIMATION_CONTAM);
+					Caller_->PushActionUsePath(ACTION_APPEND, mNamePathDrinker[i], 0.f, false);
+					mBucket.SetAnimation(NAME_ANIMATION_NONE);
+					mBucket.SetAnimation(NAME_ANIMATION_BUCKET);
+					Audio::PlaySample3D("mod:Audio/FX/misc/drinking01.wav", Caller_->GetPosition());
+					return PATH_STOP;
+				}
+				break;
+		}
+		
+		return PATH_DEFAULT;
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int diff = max - min;
+		if (diff <= 0)
+			return min;
+		int res = Math::rand() % diff;
+		return res + min;
+	}
+
+	void StartDusk()
+	{
+		int hour, minute, second;
+		Game::GetTime( hour, minute, second );
+		System::Log("Time: %d %d %d", hour, minute, second );
+		if ( hour < 21)
+		{
+			int hoursLeft = 19 - hour;
+			int minutesLeft = 60 * hoursLeft + (30 - minute);
+			Game::SetTimeSpeed(minutesLeft/TIME_TILL_DUSK);
+			System::Log("timespeed: %d ", minutesLeft/TIME_TILL_DUSK );
+			Mission::StartIntervalTimer(TIMER_NAME_DUSK, TIMER_TIME_DUSK);
+			mDuskStarted = true;
+		}
+	}
+
+	void StartDrinker(int i)
+	{
+		if (i < 0 || i > 19)
+			return;
+		if (IsValidPerson(&mDrinker[i]))
+		{
+			mDrinker[i].SetObjectPath(mNamePathDrinker[i]);
+		}
+	}
+
+	bool IsValidPerson(Person *p)
+	{
+		if (!p || !p->IsValid())
+			return false;
+		return !p->IsInjured() && !p->IsLinkedWithPerson() && !p->IsArrested() && (p->GetEnteredCarID()==-1) && !p->IsResorting();
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Collider1, Actor *Collider2)
+	{
+		return MCC_HALT_CONTINUE;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("MD02: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Mission::PlayHint(HINT_USE_BULLDOZER);
+				break;
+			case 1:
+				Mission::PlayHint(HINT_USE_BHC);
+				break;
+			case 2:
+				Mission::PlayHint(HINT_FOUNTAIN);
+				break;
+			case 3:
+				Audio::SetMusicLevel(0.2f);
+				Mission::PlayHint(HINT_CONTAGION);
+				break;
+			case 4:
+				Audio::SetMusicLevel(0.3f);
+				Mission::PlayHint(HINT_TOO_MANY_VICTIMS);
+				break;
+			case 5:
+				Audio::SetMusicLevel(0.4f);
+				//Mission::PlayHint(HINT_QUAKE);
+				Mission::StopTimer(TIMER_CS_HIDEHINTS);
+				ScriptInterface::ShowTutorialInstruction(HINT_QUAKE, -1);
+				Mission::StartSingleTimer(TIMER_CS_HIDEHINTS, TIME_CS_HIDEHINTS);
+				break;
+			case 6:
+				Mission::PlayHint(HINT_WELL_CLOSED);
+				break;
+		}
+	}
+	
+	MissionState GetMissionState()
+	{
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_PERSON_DEATHS) >= MAX_PERSON_DEATHS)
+		{
+			mTooManyVictims = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_CONTAMINATED_PERSONS) >= MAX_CONTAMINATED ||
+			Mission::GetCounter(COUNTER_INJURED_PERSONS) > MAX_INJURED_PERSONS)
+		{
+			mTooManyContaminated = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (!mDuskStarted && Game::GetNumInjuredPersonNotOnTransport(true) <= MAX_INJURED_NOT_IN_CAR_FOR_DUSK)
+		{
+			StartDusk();
+		}
+
+		if (mHintCounter[3] == 0 && Mission::GetCounter(COUNTER_CONTAMINATED_PERSONS) > MAX_CONTAMINATED_HINT3)
+			ShowHint(3);
+
+		if (mHintCounter[4] == 0 && Mission::GetCounter(COUNTER_PERSON_DEATHS) >= MAX_PERSON_DEATHS_HINT4)
+			ShowHint(4);
+
+		if (Mission::GetCounter(COUNTER_CONTAMINATED_PERSONS) == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE))
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE, true);
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE))
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE, false);
+		}
+
+		int numNotInCar = Game::GetNumInjuredPersonNotOnTransport(true);
+		Mission::SetCounter(COUNTER_NOTINCAR, numNotInCar);
+		if (numNotInCar == 0)
+		{
+			if(!Mission::IsObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED, true);
+			}
+		}
+		else
+		{
+			if(	Mission::IsObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED, false);
+			}
+		}
+		
+		if(Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.8f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{		
+		if (mTooManyVictims)
+			return "MD02_TOO_MANY_VICTIMS";
+		else if (mTooManyContaminated)
+			return "MD02_TOO_MANY_CONTAMINATED";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyVictims)
+		{
+			if (Mission::GetCounter(COUNTER_CONTAMINATED_PERSONS) == 0)
+				return "SUPERV_MD02_FAIL01";
+			else
+				return "SUPERV_MD02_FAIL02";
+		}
+		else if (mTooManyContaminated)
+			return "SUPERV_MD02_FAIL03";
+		
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_MD02_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f && mHintCounter[3] > 0)
+			return "SUPERV_MD02_RES02";
+		if (scoring->Efficiency < 0.6f && Mission::GetCounter(COUNTER_PERSON_DEATHS) >= MIN_PERSON_DEATHS_FOR_EFFICIENCY)
+			return "SUPERV_MD02_RES03";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mTooManyVictims);
+		serializer_->Write(mTooManyContaminated);
+		serializer_->Write(mEffectsStopped);
+		serializer_->Write(mDuskStarted);
+		serializer_->Write(MAX_DRINKER);
+		for(int i = 0; i < MAX_DRINKER; i++)
+			serializer_->Write(mDrinker[i]);
+		serializer_->Write(mBucket);
+		serializer_->Write(mPump);
+		serializer_->Write(mPumpEffects);
+		serializer_->Write(MAX_ROCKS);
+		for(int i = 0; i < MAX_ROCKS; i++)
+			serializer_->Write(mRocks[i]);
+		serializer_->Write(mCutscene);
+		serializer_->Write(mTransition);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		System::Log("MD02: SerializeFrom");
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mTooManyVictims = serializer_->ReadBool();
+		mTooManyContaminated = serializer_->ReadBool();
+		mEffectsStopped = serializer_->ReadBool();
+		mDuskStarted = serializer_->ReadBool();
+		int temp = -1;
+		serializer_->Read(temp);
+		if (temp != MAX_DRINKER)
+			return false;
+		for(int i = 0; i < MAX_DRINKER; i++)
+			serializer_->Read(mDrinker[i]);
+		serializer_->Read(mBucket);
+		serializer_->Read(mPump);
+		serializer_->Read(mPumpEffects);
+		serializer_->Read(temp);
+		if (temp != MAX_ROCKS)
+			return false;
+		for(int i = 0; i < MAX_ROCKS; i++)
+			serializer_->Read(mRocks[i]);
+		mCutscene = serializer_->ReadBool();
+		serializer_->Read(mTransition);
+
+		return true;
+	}
+};

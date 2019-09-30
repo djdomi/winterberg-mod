@@ -1,0 +1,1090 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script 7
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+// Mission 7: "Katastrophe im Tagebau-Werk!"
+
+enum 
+{
+	TIME_HINT_MISSING_PERSON = 300,
+	TIME_HINT_MISSING_PERSON_REPEAT = 120,
+	TIME_HINT_MISSING_LORRY = 600,
+	LORRY_SMOKE_LEVEL_DURATION = 30,	// there are 10 levels - this is the time to go up or down 1 smokelevel
+	MAX_TIME_TOWCAR = 15,
+	HINT_DEADS = 1,				// >=
+	HINT_INJURED = 10,			// >=
+	HINT_BURNING_HOUSES = 3,	// >=
+
+	MAX_DEAD_CIVILS	= 2,		// >
+	MAX_INJURED = 11,			// >
+	MAX_HOUSES_BURNING = 7,		// >
+
+	// Normale wagons - ohne tankwagen. Nur ändern wenn im Editor die Anzahl wagen geändert wird
+	MAX_WAGGONS1 = 3,
+	MAX_WAGGONS2 = 4,
+	MAX_WAGGONS3 = 3,
+
+	TIME_CS1_DURATION = 2,		// sec. duration of cutscene 1
+	TIME_CS2_DURATION = 2,		// sec. duration of cutscene 2
+
+	MAX_HINTS = 6,		// numer of hints - don't change
+};
+
+const char NAME_LORRY_SEA[]			= "lorrySea";
+const char NAME_LORRY_SMOKE[]		= "lorrySmoke";
+const char NAME_LORRY_EFFECT[]		= "whirlpool";
+const char NAME_LORRY3[]			= "lorry3";
+const char NAME_SIGNAL1[]			= "signal1";
+const char NAME_SIGNAL2[]			= "signal2";
+const char NAME_SIGNAL3[]			= "signal3";
+const char NAME_HOUSE_FIRE_HINT[]	= "house_hint";
+const char NAME_HOUSE_FIRE_FAIL[]	= "house_fail";
+const char NAME_TRAIN1[]			= "train1";
+const char NAME_WAGGON1[]			= "waggon1";
+const char NAME_TANKER1[]			= "tanker1";
+const char NAME_TRAIN2[]			= "train2";
+const char NAME_WAGGON2[]			= "waggon2";
+const char NAME_TRAIN3[]			= "train3";
+const char NAME_WAGGON3[]			= "waggon3";
+const char NAME_TANKER3[]			= "tanker3";
+const char NAME_STOPLIGHT1[]		= "stoplight1";
+const char NAME_STOPLIGHT2[]		= "stoplight2";
+const char NAME_STOPLIGHT3[]		= "stoplight3";
+const char NAME_PATH1[]				= "trainpath1";
+const char NAME_PATH2[]				= "trainpath2";
+const char NAME_PATH3[]				= "trainpath3";
+const char OBJECTIVE_TRANSPORT_INJURED[] = "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]	= "EXTINGUISH_FIRES";
+const char NAME_CS1_CAM[]			= "cs1";
+const char NAME_CS2_CAM[]			= "cs2";
+const char NAME_INJURED1[]			= "lorrydriver1";
+const char NAME_INJURED2[]			= "BucketDriver";
+
+
+const char TIMER_HINT_MISSING_PERSON[]			= "missing_person";
+const char TIMER_HINT_MISSING_PERSON_REPEAT[]	= "missing_person repeat"; 
+const char TIMER_HINT_MISSING_LORRY[]			= "missing_lorry";
+const char TIMER_LORRY_EXPLODE[]				= "bang";
+const char TIMER_CS1_DURATION[]					= "tcs1";
+const char TIMER_CS2_DURATION[]					= "tcs2";
+
+const char NAME_COUNTER_BURNT_HOUSES[]			= "Burnt Houses";
+const char NAME_COUNTER_BURNT_OBJECTS[]			= "Burnt Objects";
+const char NAME_COUNTER_DEAD_PERSONS[]			= "Dead Persons";
+
+// states for cutscenes
+enum CS_STATE
+{
+	CS_NOT_STARTED = 0,
+	CS_START_TRANSITION,
+	CS_RUNNING,
+	CS_END_TRANSITION,
+	CS_FINISHED,
+};
+
+object Mission07 : MissionScript
+{
+	int				mHintCounter[MAX_HINTS];
+	Vehicle			mLorrySmoke;	// qualmend
+	Vehicle			mLorrySea;		// im See
+	Vehicle			mLorry3;	
+
+	Vehicle			mTrain1;	// Lok
+	Vehicle			mTrain2;
+	Vehicle			mTrain3;
+	GameObject		mTanker1;	// tankwagen
+	GameObject		mTanker3;	
+	GameObject		mWaggons1[MAX_WAGGONS1];	// normale waggons
+	GameObject		mWaggons2[MAX_WAGGONS2];
+	GameObject		mWaggons3[MAX_WAGGONS3];
+	GameObject		mSignal1;	// schalter für gleisanlagen
+	GameObject		mSignal2;	// schalter für gleisanlagen
+	GameObject		mSignal3;	// schalter für gleisanlagen
+	bool			mHasUsedSignal1;
+	bool			mHasUsedSignal2;
+	bool			mHasUsedSignal3;
+	GameObject		mStopLight1;
+	GameObject		mStopLight2;
+	GameObject		mStopLight3;
+	GameObject		mInjured1;
+	GameObject		mInjured2;
+	GameObject		mLorryEffect;
+
+	CS_STATE		mStateCs1;
+	CS_STATE		mStateCs2;
+	Vector			mOldCamPos;
+	float			mOldCamYaw, mOldCamPitch, mOldCamRoll;
+
+	//GameObject		mHouseFail;	// Fabrikgebäude für abbruch wegen feuer
+	GameObject		mHouseHint;	// Gebäude für Hint wegen Feuer
+
+	bool			mIsLorrySeaLifted;
+	bool			mIsSmokingLorryTransported;
+	GameObject		mLorryTransporter;
+	
+	bool			mFailTooManyVictims;
+	bool			mFailFireOufOfControl;
+	bool			mFailFireFactory;
+
+	Mission07()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mFailTooManyVictims = false;
+		mFailFireOufOfControl = false;
+		mFailFireFactory = false;
+		mIsLorrySeaLifted = false;
+		mStateCs1 = CS_NOT_STARTED;
+		mStateCs2 = CS_NOT_STARTED;
+		mHasUsedSignal1 = false;
+		mHasUsedSignal2 = false;
+		mHasUsedSignal3 = false;
+		mIsSmokingLorryTransported = false;
+	}
+	
+	~Mission07()
+	{
+	}
+	
+	void Start()
+	{
+		System::Log("M07: Start");
+
+		int countWaggons1 = 0;
+		int countWaggons2 = 0;
+		int countWaggons3 = 0;
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_HOUSE_FIRE_HINT))
+				mHouseHint = obj;
+			/*else if ( obj->HasName(NAME_HOUSE_FIRE_FAIL))
+				mHouseFail = obj;*/
+			else if ( obj->HasName(NAME_SIGNAL1))
+			{
+				mSignal1 = obj;
+				mSignal1.EnableSpecialLights(true);
+			}
+			else if ( obj->HasName(NAME_SIGNAL2))
+			{
+				mSignal2 = obj;
+				mSignal2.EnableSpecialLights(true);
+			}
+			else if ( obj->HasName(NAME_SIGNAL3))
+			{
+				mSignal3 = obj;
+				mSignal3.EnableSpecialLights(true);
+			}
+			else if ( obj->HasName(NAME_TANKER1) )
+			{
+				mTanker1 = obj;
+				mTanker1.GetFireChild("explosion").SetActive(false);
+			}
+			else if ( obj->HasName(NAME_TANKER3) )
+			{
+				mTanker3 = obj;
+				mTanker3.GetFireChild("explosion").SetActive(false);
+			}
+			else if ( obj->HasName(NAME_WAGGON1) )
+			{
+				if ( countWaggons1 <= MAX_WAGGONS1 )
+				{
+					mWaggons1[countWaggons1] = obj;
+					++countWaggons1;
+				}
+				else
+				{
+					System::Log("M07 - to many waggons for train 1");
+				}
+			}
+			else if ( obj->HasName(NAME_WAGGON2) )
+			{
+				if ( countWaggons2 <= MAX_WAGGONS2 )
+				{
+					mWaggons2[countWaggons2] = obj;
+					++countWaggons2;
+				}
+				else
+				{
+					System::Log("M07 - to many waggons for train 2");
+				}
+			}
+			else if ( obj->HasName(NAME_WAGGON3) )
+			{
+				if ( countWaggons3 <= MAX_WAGGONS3 )
+				{
+					mWaggons3[countWaggons3] = obj;
+					++countWaggons3;
+				}
+				else
+				{
+					System::Log("M07 - to many waggons for train 3");
+				}
+			}
+			else if ( obj->HasName(NAME_STOPLIGHT1) )
+			{
+				mStopLight1 = obj;
+			}
+			else if ( obj->HasName(NAME_STOPLIGHT2) )
+			{
+				mStopLight2 = obj;
+			}
+			else if ( obj->HasName(NAME_STOPLIGHT3) )
+			{
+				mStopLight3 = obj;
+			}
+			else if ( obj->HasName(NAME_INJURED1))
+			{
+				mInjured1 = obj;
+			}
+			else if ( obj->HasName(NAME_INJURED2))
+			{
+				mInjured2 = obj;
+			}
+			else if ( obj->HasName(NAME_LORRY_EFFECT))
+			{
+				mLorryEffect = obj;
+			}
+
+			if ( obj->GetType() == ACTOR_VEHICLE )
+			{
+				Vehicle v(obj);
+				if ( v.HasName(NAME_LORRY_SEA) )
+					mLorrySea = v;
+				else if ( v.HasName(NAME_LORRY_SMOKE) )
+				{
+					mLorrySmoke = v;
+					mLorrySmoke.SetSmokeLevelDuration(LORRY_SMOKE_LEVEL_DURATION);
+					mLorrySmoke.SetSmoking(true);
+				}
+				else if ( v.HasName(NAME_LORRY3) )
+					mLorry3 = v;
+				else if ( v.HasName(NAME_TRAIN1) )
+				{
+					mTrain1 = v;
+				}
+				else if ( v.HasName(NAME_TRAIN2) )
+				{
+					mTrain2 = v;
+				}
+				else if ( v.HasName(NAME_TRAIN3) )
+				{
+					mTrain3 = v;
+				}
+			}
+		}
+
+		System::Log("M07: AddObjective");
+
+		Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+		Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+
+		Mission::StartSingleTimer(TIMER_HINT_MISSING_PERSON, TIME_HINT_MISSING_PERSON);
+		Mission::StartSingleTimer(TIMER_HINT_MISSING_LORRY, TIME_HINT_MISSING_LORRY);
+		
+		CheckForValidObjects();
+
+		Audio::PlaySoundtrack("7", 0.0f);
+
+		System::Log("M07: started");
+
+		// uncomment for debugging both cutscenes
+		//mTanker1.Burn();
+	};
+
+	void CheckForValidObjects()
+	{
+		if (!mHouseHint.IsValid())			System::Log("M07: house_hint is missing");
+		//if (!mHouseFail.IsValid())			System::Log("M07: house_fail is missing");
+		if (!mSignal1.IsValid())			System::Log("M07: signal1 is missing");
+		if (!mSignal2.IsValid())			System::Log("M07: signal2 is missing");
+		if (!mSignal3.IsValid())			System::Log("M07: signal3 is missing");
+		if (!mLorrySea.IsValid())			System::Log("M07: lorry_sea is missing");
+		if (!mLorrySmoke.IsValid())			System::Log("M07: lorry_smoke is missing");
+		if (!mLorry3.IsValid())				System::Log("M07: lorry3 is missing");
+
+		if (!mTrain1.IsValid())				System::Log("M07: train1 is missing");
+		if (!mTrain2.IsValid())				System::Log("M07: train2 is missing");
+		if (!mTrain3.IsValid())				System::Log("M07: train3 is missing");
+		if (!mTanker1.IsValid())			System::Log("M07: tanker1 is missing");
+		if (!mTanker3.IsValid())			System::Log("M07: tanker3 is missing");
+		for ( int i=0; i < MAX_WAGGONS1; ++i )
+			if (!mWaggons1[i].IsValid())	System::Log("M07: waggon1 is missing");
+		for ( int i=0; i < MAX_WAGGONS2; ++i )
+			if (!mWaggons2[i].IsValid())	System::Log("M07: waggon2 is missing");
+		for ( int i=0; i < MAX_WAGGONS3; ++i )
+			if (!mWaggons3[i].IsValid())	System::Log("M07: waggon3 is missing");
+		if ( !mStopLight1.IsValid())		System::Log("M07: stoplight1 is missing");
+		if ( !mStopLight2.IsValid())		System::Log("M07: stoplight2 is missing");
+		if ( !mStopLight3.IsValid())		System::Log("M07: stoplight3 is missing");
+		if ( !mInjured1.IsValid())		System::Log("M07: Injured1 is missing");
+		if ( !mInjured2.IsValid())		System::Log("M07: Injured2 is missing");
+		if ( !mLorryEffect.IsValid())		System::Log("M07: LorryEffect is missing");
+	}
+
+	void Update()
+	{
+		if ( !mHintCounter[0] && ( Mission::GetCounter("Person deaths") >= HINT_DEADS
+								|| Mission::GetCounter("Injured Persons") >= HINT_INJURED) )
+		{
+			ShowHint(0);
+		}
+		if ( !mHintCounter[1] && mHouseHint.IsBurning() )
+		{
+			ShowHint(1);
+		}
+		if ( !mHintCounter[2] && Mission::GetCounter("Burning Houses") >= HINT_BURNING_HOUSES)
+		{
+			ShowHint(2);
+		}
+
+		if ( mStateCs1 == CS_NOT_STARTED 
+			&& mTanker1.IsBurning() 
+			&& mTanker1.GetBurningStatus() == OBS_HALFBURNED )
+		{
+			RunCutscene1();
+		}
+
+		if ( mStateCs2 == CS_NOT_STARTED 
+			&& mTanker3.IsBurning() 
+			&& mTanker3.GetBurningStatus() == OBS_HALFBURNED )
+		{
+			RunCutscene2();
+		}
+
+		if ( mInjured1.IsValid() && !mInjured1.IsHidden())
+			mInjured1.ClearFlag(OF_BLOCKED);
+		if ( mInjured2.IsValid() && !mInjured2.IsHidden())
+			mInjured2.ClearFlag(OF_BLOCKED);
+	}
+
+	bool OnExplode( GameObject *obj_ )
+	{
+		if ( !obj_ )
+			return true;
+
+		if ( obj_->GetID() == mTanker1.GetID() && mStateCs1 < CS_RUNNING)
+		{
+			if ( mStateCs1 == CS_NOT_STARTED )
+				RunCutscene1();
+
+			return false;
+		}
+		if ( obj_->GetID() == mTanker3.GetID() && mStateCs2 < CS_RUNNING)
+		{
+			if ( mStateCs2 == CS_NOT_STARTED )
+				RunCutscene2();
+
+			return false;
+		}
+
+		return true;
+	}
+
+	void RunCutscene1()
+	{
+		if ( mStateCs1 != CS_NOT_STARTED )
+			return;
+
+		if (	mStateCs2 >= CS_START_TRANSITION
+			&&	mStateCs2 <= CS_END_TRANSITION )
+			return;
+
+		mStateCs1 = CS_START_TRANSITION;
+
+		Audio::SetMusicLevel(0.3f);
+		Mission::StartCutScene();
+		mOldCamPos = Camera::Get();
+		Camera::GetRotation(mOldCamYaw, mOldCamPitch, mOldCamRoll);
+		Camera::StartTransition(NAME_CS1_CAM, 3.f);
+		Mission::ShowBlackBars();
+	}
+
+	void RunCutscene2()
+	{
+		if ( mStateCs2 != CS_NOT_STARTED )
+			return;
+
+		if (	mStateCs1 >= CS_START_TRANSITION
+			&&	mStateCs1 <= CS_END_TRANSITION )
+			return;
+
+		mStateCs2 = CS_START_TRANSITION;
+
+		Audio::SetMusicLevel(0.3f);
+		Mission::StartCutScene();
+		mOldCamPos = Camera::Get();
+		Camera::GetRotation(mOldCamYaw, mOldCamPitch, mOldCamRoll);
+		Camera::StartTransition(NAME_CS2_CAM, 3.f);
+		Mission::ShowBlackBars();
+	}
+
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_LORRY_EXPLODE:
+			{
+				if ( mIsSmokingLorryTransported )
+				{
+					mIsSmokingLorryTransported = false;
+					mLorryTransporter.Explode();
+					mLorrySmoke.Explode();
+				}
+			}
+			break;
+			case TIMER_HINT_MISSING_PERSON:
+			{
+				Mission::StartIntervalTimer(TIMER_HINT_MISSING_PERSON_REPEAT, TIME_HINT_MISSING_PERSON_REPEAT);
+			}
+			break;
+			case TIMER_HINT_MISSING_PERSON_REPEAT:
+			{
+				int nrBlocked = Game::GetNrObjectsWithFlagSet(OF_BLOCKED);
+				System::Log("M07: Nr of blocked people: %d", nrBlocked);
+				if ( nrBlocked > 0 )
+				{
+					ShowHint(3);
+				}
+				else
+					Mission::StopTimer(TIMER_HINT_MISSING_PERSON_REPEAT);
+			}
+			break;
+			case TIMER_HINT_MISSING_LORRY:
+			{
+				if ( !mIsLorrySeaLifted )
+				{
+					ShowHint(4);
+				}
+			}
+			break;
+			case TIMER_CS1_DURATION:
+			{
+				Camera::StartTransition(mOldCamPos, mOldCamYaw, mOldCamPitch, mOldCamRoll, 3.f);
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+				mStateCs1 = CS_END_TRANSITION;
+			}
+			break;
+			case TIMER_CS2_DURATION:
+			{
+				Camera::StartTransition(mOldCamPos, mOldCamYaw, mOldCamPitch, mOldCamRoll, 3.f);
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+				mStateCs2 = CS_END_TRANSITION;
+			}
+			break;
+
+		}
+	}
+
+	void DisableTrainFireObjects(int Train)
+	{
+		int n = 0;
+		FireObject FObj;
+		switch(Train)
+		{
+			case 1 :
+			{
+				for (int i=0; i<MAX_WAGGONS1; ++i)
+				{
+					int WaggonFireChilds = mWaggons1[i].GetNumFireChilds();
+					for(n=0; n<WaggonFireChilds; n++)
+					{
+						FObj = mWaggons1[i].GetFireChild(n);
+						FObj.SetActive(false);
+					}
+				}
+				int TankerFireChilds = mTanker1.GetNumFireChilds();
+				for(n=0; n<TankerFireChilds; n++)
+				{
+					FObj = mTanker1.GetFireChild(n);
+					FObj.SetActive(false);
+				}
+		
+				int TrainFireChilds = mTrain1.GetNumFireChilds();
+				for(n=0; n<TrainFireChilds; n++)
+				{
+					FObj = mTrain1.GetFireChild(n);
+					FObj.SetActive(false);
+				}
+			}
+			break;
+			
+			case 2 :
+			{
+				for (int i=0; i<MAX_WAGGONS2; ++i)
+				{
+					int WaggonFireChilds = mWaggons2[i].GetNumFireChilds();
+					for(n=0; n<WaggonFireChilds; n++)
+					{
+						FObj = mWaggons2[i].GetFireChild(n);
+						FObj.SetActive(false);
+					}
+				}
+		
+				int TrainFireChilds = mTrain2.GetNumFireChilds();
+				for(n=0; n<TrainFireChilds; n++)
+				{
+					FObj = mTrain2.GetFireChild(n);
+					FObj.SetActive(false);
+				}
+			}
+			break;
+			
+			case 3 :
+			{
+				for (int i=0; i<MAX_WAGGONS3; ++i)
+				{
+					int WaggonFireChilds = mWaggons3[i].GetNumFireChilds();
+					for(n=0; n<WaggonFireChilds; n++)
+					{
+						FObj = mWaggons3[i].GetFireChild(n);
+						FObj.SetActive(false);
+					}
+				}
+				int TankerFireChilds = mTanker3.GetNumFireChilds();
+				for(n=0; n<TankerFireChilds; n++)
+				{
+					FObj = mTanker3.GetFireChild(n);
+					FObj.SetActive(false);
+				}
+		
+				int TrainFireChilds = mTrain3.GetNumFireChilds();
+				for(n=0; n<TrainFireChilds; n++)
+				{
+					FObj = mTrain3.GetFireChild(n);
+					FObj.SetActive(false);
+				}
+			}
+			break;
+		}
+	}
+	
+	void StartTrain1()
+	{
+		DisableTrainFireObjects(1);
+		for ( int i=0; i<MAX_WAGGONS1; ++i)
+			mTrain1.AddTrainWaggon(&mWaggons1[i]);
+		mTrain1.AddTrainWaggon(&mTanker1);
+		mTrain1.SetObjectPath(NAME_PATH1);
+	}
+
+	void StartTrain2()
+	{
+		DisableTrainFireObjects(2);
+		for ( int i=0; i<MAX_WAGGONS2; ++i)
+			mTrain2.AddTrainWaggon(&mWaggons2[i]);
+		mTrain2.SetObjectPath(NAME_PATH2);
+	}
+
+	void StartTrain3()
+	{
+		DisableTrainFireObjects(3);
+		for ( int i=0; i<MAX_WAGGONS3; ++i)
+			mTrain3.AddTrainWaggon(&mWaggons3[i]);
+		mTrain3.AddTrainWaggon(&mTanker3);
+		mTrain3.SetObjectPath(NAME_PATH3);
+	}
+
+	bool IsTrainBurning(int Train)
+	{
+		switch(Train)
+		{
+			case 1 :
+			{
+				if(mTrain1.IsBurning())
+					return true;
+				for(int i=0; i<MAX_WAGGONS1; ++i)
+				{
+					if(mWaggons1[i].IsBurning())
+						return true;
+				}
+				if(mTanker1.IsBurning())
+					return true;				
+			}
+			break;
+
+			case 2 :
+			{
+				if(mTrain2.IsBurning())
+					return true;
+				for(int i=0; i<MAX_WAGGONS2; ++i)
+				{
+					if(mWaggons2[i].IsBurning())
+						return true;
+				}
+			}
+			break;
+
+			case 3 :
+			{
+				if(mTrain3.IsBurning())
+					return true;
+				for(int i=0; i<MAX_WAGGONS3; ++i)
+				{
+					if(mWaggons3[i].IsBurning())
+						return true;
+				}
+				if(mTanker3.IsBurning())
+					return true;				
+			}
+			break;
+		}
+		return false;
+	}
+	
+	ActionCallbackResult OnPreAction(const char *action_, ActionCallback* data_)
+	{
+		switch(action_)
+		{
+			case "EActionUse" :
+			{
+				if(data_->Parameters[0].iValue == mSignal1.GetID() && !IsTrainBurning(1))
+					DisableTrainFireObjects(1);
+				else
+				if(data_->Parameters[0].iValue == mSignal2.GetID() && !IsTrainBurning(2))
+					DisableTrainFireObjects(2);
+				else
+				if(data_->Parameters[0].iValue == mSignal3.GetID() && !IsTrainBurning(3))
+					DisableTrainFireObjects(3);
+			}
+			break;
+		}
+
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPostAction(const char *action_, ActionCallback* data_)
+	{
+		switch(action_ )
+		{
+			case "EActionLiftWithCrane":
+			{
+				if ( data_->Parameters[0].iValue == mLorrySea.GetID() )
+				{
+					System::Log("M07 - mIsLorrySeaLifted is true now");
+					mIsLorrySeaLifted = true;
+					mLorryEffect.StopParticleEffect();
+				}
+				break;
+			}
+
+			case "EActionLoadUp" :
+			{
+				if(		data_->Parameters[0].iValue == mLorrySmoke.GetID()
+					&&	mLorrySmoke.IsSmoking() )
+				{
+					ShowHint(5);
+					mIsSmokingLorryTransported = true;
+					mLorryTransporter = data_->Owner;
+					if ( !Mission::TimerIsStarted(TIMER_LORRY_EXPLODE) )
+					{
+						Mission::StartSingleTimer(TIMER_LORRY_EXPLODE, MAX_TIME_TOWCAR );
+					}
+					else
+					{
+						Mission::ResumeTimer(TIMER_LORRY_EXPLODE);
+					}
+				}
+			}
+			break;
+
+			case "EActionUnload":
+			{
+				if ( mIsSmokingLorryTransported && data_->Owner->GetID() == mLorryTransporter.GetID() )
+				{
+					Mission::PauseTimer(TIMER_LORRY_EXPLODE);
+					mIsSmokingLorryTransported = false;
+				}
+			}
+			break;
+
+			case "EActionUse":
+			{
+				if (!mHasUsedSignal1 && data_->Parameters[0].iValue == mSignal1.GetID())
+				{
+					if(IsTrainBurning(1))
+					{
+						Mission::PlayHint("HINT_M07_TRAIN_BURNING");
+					} else
+					{
+						mHasUsedSignal1 = true;
+						mSignal1.EnableSpecialLights(false);
+						mStopLight1.SetAnimation("open");
+						StartTrain1();
+					}
+				}
+				else if (!mHasUsedSignal2 && data_->Parameters[0].iValue == mSignal2.GetID())
+				{
+					if(IsTrainBurning(2))
+					{
+						Mission::PlayHint("HINT_M07_TRAIN_BURNING");
+					} else
+					{
+						mHasUsedSignal2 = true;
+						mSignal2.EnableSpecialLights(false);
+						mStopLight2.SetAnimation("open");
+						StartTrain2();
+					}
+				}
+				else if (!mHasUsedSignal3 && data_->Parameters[0].iValue == mSignal3.GetID())
+				{
+					if(IsTrainBurning(3))
+					{
+						Mission::PlayHint("HINT_M07_TRAIN_BURNING");
+					} else
+					{
+						mHasUsedSignal3 = true;
+						mSignal3.EnableSpecialLights(false);
+						mStopLight3.SetAnimation("open");
+						StartTrain3();
+					}
+				}
+			}
+		}
+		
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnAbortAction(const char *action_, ActionCallback* data_)
+	{
+		switch(action_)
+		{
+			case "EActionUnload":
+			{
+				if (	mIsSmokingLorryTransported 
+					&&	data_->Owner->GetID() == mLorryTransporter.GetID() 
+					)
+				{
+					Vehicle v = &mLorryTransporter;
+					if ( !v.HasVehicleUploaded() )
+					{
+						Mission::PauseTimer(TIMER_LORRY_EXPLODE);
+						mIsSmokingLorryTransported = false;
+					}
+				}
+			}
+			break;
+		}
+
+		return ACTION_CONTINUE;
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if ( mStateCs1 == CS_START_TRANSITION )
+		{
+			mStateCs1 = CS_RUNNING;
+			mTanker1.GetFireChild("explosion").SetActive(true);
+			mTanker1.Explode();
+			Mission::StartSingleTimer(TIMER_CS1_DURATION, TIME_CS1_DURATION);
+		}
+		else if ( mStateCs1 == CS_END_TRANSITION )
+		{
+			mStateCs1 = CS_FINISHED;
+		}
+		else if ( mStateCs2 == CS_START_TRANSITION )
+		{
+			mStateCs2 = CS_RUNNING;
+			mTanker3.GetFireChild("explosion").SetActive(true);
+			mTanker3.Explode();
+			Mission::StartSingleTimer(TIMER_CS2_DURATION, TIME_CS2_DURATION);
+		}
+		else if ( mStateCs2 == CS_END_TRANSITION )
+		{
+			mStateCs2 = CS_FINISHED;
+		}
+	}
+
+	bool OnStartBurning(GameObject *obj)
+	{
+		if (obj->HasName(NAME_HOUSE_FIRE_FAIL))
+		{
+			mFailFireOufOfControl = true;
+			mFailFireFactory = true;
+		}
+		return true;
+	}
+
+	MissionState GetMissionState()	
+	{
+		if ( Mission::GetCounter("Burning Objects")+Mission::GetCounter("Burning Houses") > 0 )
+		{
+			if ( !Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE) )
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRE2");
+			}
+		}
+		else 
+		{
+			if(		Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Audio::SetMusicLevel(0.4f);
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED2");
+			}
+		}
+
+		if (Mission::GetCounter("Injured Persons") + Mission::GetCounter(NAME_COUNTER_DEAD_PERSONS) == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		if (	Mission::GetCounter("Civil deaths") > MAX_DEAD_CIVILS
+			||	Mission::GetCounter("Person injuries") > MAX_INJURED )
+		{
+			Audio::SetMusicLevel(0.5f);
+			mFailTooManyVictims = true;
+			return MISSION_FAILED;
+		}
+
+		if (	Mission::GetCounter("Burning Houses") + Mission::GetCounter(NAME_COUNTER_BURNT_HOUSES) > MAX_HOUSES_BURNING
+			||	mFailFireOufOfControl )
+		{
+			Audio::SetMusicLevel(0.5f);
+			mFailFireOufOfControl = true;
+			return MISSION_FAILED;
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mFailTooManyVictims)
+			return "TOO_MANY_DIED";
+		if (mFailFireOufOfControl)
+			return "TOO_MANY_FIRES";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailTooManyVictims)
+			return "SUPERV_M07_FAIL01";
+		if (mFailFireFactory)
+			return "SUPERV_M07_FAIL02";
+		if (mFailFireOufOfControl)
+			return "SUPERV_M07_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M07_RES01";
+		if (scoring->Efficiency < 0.9f
+			&& Mission::GetCounter(NAME_COUNTER_BURNT_HOUSES) >= 6
+			&& Mission::GetCounter(NAME_COUNTER_BURNT_OBJECTS) >= 100)
+			return "SUPERV_M07_RES02";
+		if (scoring->Efficiency < 0.9f
+			&& Mission::GetCounter(NAME_COUNTER_DEAD_PERSONS) >= 3)
+			return "SUPERV_M07_RES03";
+
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M07: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Audio::SetMusicLevel(0.2f);
+				//Hint "zuviele Opfer"
+				Mission::PlayHint("HINT_M07_TOO_MANY_VICTIMS");
+				break;
+			case 1:
+				Audio::SetMusicLevel(0.1f);
+				// Hint "Gefahr Brandausbreitung"
+				Mission::PlayHint("HINT_M07_DANGER_FIRE_SPREAD");
+				break;
+			case 2:
+				// Hint "Brände ausser Kontrolle"
+				Mission::PlayHint("HINT_M07_FIRES_OUT_OF_CONTROL");
+				break;
+			case 3:
+				// Hint "Noch jemand vermisst"
+				Mission::PlayHint("HINT_M07_MISSING_PERSON");
+				break;
+			case 4:
+				// Hint "LKW fehlt noch"
+				Mission::PlayHint("HINT_M07_MISSING_CAR");
+				break;
+			case 5:
+				// Hint "LKW brennt noch"
+				Mission::PlayHint("HINT_M07_LORRY_BURNING");
+				break;
+			case 6:
+				Mission::PlayHint("HINT_M07_TRAIN_BURNING");
+				break;
+		}
+	}
+
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+		
+		for ( int i=0;i < MAX_HINTS; i++ )
+			Serializer->Write(mHintCounter[i]);
+
+		Serializer->Write(mLorrySmoke);
+		Serializer->Write(mLorrySea);
+		Serializer->Write(mLorry3);
+
+		Serializer->Write(mTrain1);
+		Serializer->Write(mTrain2);
+		Serializer->Write(mTrain3);
+		Serializer->Write(mTanker1);
+		Serializer->Write(mTanker3);
+		for ( int i=0; i < MAX_WAGGONS1; i++ )
+			Serializer->Write(mWaggons1[i]);
+		for ( int i=0; i < MAX_WAGGONS2; i++ )
+			Serializer->Write(mWaggons2[i]);
+		for ( int i=0; i < MAX_WAGGONS3; i++ )
+			Serializer->Write(mWaggons3[i]);
+		Serializer->Write(mSignal1);
+		Serializer->Write(mSignal2);
+		Serializer->Write(mSignal3);
+		Serializer->Write(mHasUsedSignal1);
+		Serializer->Write(mHasUsedSignal2);
+		Serializer->Write(mHasUsedSignal3);
+		Serializer->Write(mStopLight1);
+		Serializer->Write(mStopLight2);
+		Serializer->Write(mStopLight3);
+
+		Serializer->Write((int)mStateCs1);
+		Serializer->Write((int)mStateCs2);
+		Serializer->Write(mOldCamPos);
+		Serializer->Write(mOldCamYaw);
+		Serializer->Write(mOldCamPitch);
+		Serializer->Write(mOldCamRoll);
+
+		//Serializer->Write(mHouseFail);
+		Serializer->Write(mHouseHint);
+
+		Serializer->Write(mIsLorrySeaLifted);
+		Serializer->Write(mIsSmokingLorryTransported);
+		Serializer->Write(mLorryTransporter);
+
+		Serializer->Write(mFailTooManyVictims);
+		Serializer->Write(mFailFireOufOfControl);
+		Serializer->Write(mFailFireFactory);
+
+		Serializer->Write(mInjured1);
+		Serializer->Write(mInjured2);
+		Serializer->Write(mLorryEffect);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		for ( int i=0; i < MAX_HINTS; i++ )
+			Serializer->Read(mHintCounter[i]);
+
+		Serializer->Read(mLorrySmoke);
+		Serializer->Read(mLorrySea);
+		Serializer->Read(mLorry3);
+
+		Serializer->Read(mTrain1);
+		Serializer->Read(mTrain2);
+		Serializer->Read(mTrain3);
+		Serializer->Read(mTanker1);
+		Serializer->Read(mTanker3);
+		for ( int i=0; i < MAX_WAGGONS1; i++ )
+			Serializer->Read(mWaggons1[i]);
+		for ( int i=0; i < MAX_WAGGONS2; i++ )
+			Serializer->Read(mWaggons2[i]);
+		for ( int i=0; i < MAX_WAGGONS3; i++ )
+			Serializer->Read(mWaggons3[i]);
+		Serializer->Read(mSignal1);
+		Serializer->Read(mSignal2);
+		Serializer->Read(mSignal3);
+		mHasUsedSignal1 = Serializer->ReadBool();
+		mHasUsedSignal2 = Serializer->ReadBool();
+		mHasUsedSignal3 = Serializer->ReadBool();
+		Serializer->Read(mStopLight1);
+		Serializer->Read(mStopLight2);
+		Serializer->Read(mStopLight3);
+
+		int dummy;
+		Serializer->Read(dummy);
+		mStateCs1 = (CS_STATE)dummy;
+		Serializer->Read(dummy);
+		mStateCs2 = (CS_STATE)dummy;
+		Serializer->Read(mOldCamPos);
+		Serializer->Read(mOldCamYaw);
+		Serializer->Read(mOldCamPitch);
+		Serializer->Read(mOldCamRoll);
+
+		//Serializer->Read(mHouseFail);
+		Serializer->Read(mHouseHint);
+
+		mIsLorrySeaLifted = Serializer->ReadBool();
+		mIsSmokingLorryTransported = Serializer->ReadBool();
+		Serializer->Read(mLorryTransporter);
+
+	
+		mFailTooManyVictims = Serializer->ReadBool();
+		mFailFireOufOfControl = Serializer->ReadBool();
+		mFailFireFactory = Serializer->ReadBool();
+
+		Serializer->Read(mInjured1);
+		Serializer->Read(mInjured2);
+		Serializer->Read(mLorryEffect);
+
+		return true;
+	}
+};

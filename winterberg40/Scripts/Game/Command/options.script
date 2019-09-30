@@ -1,0 +1,139 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script options
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+object eplus : CommandScript
+{
+
+   eplus()
+   {
+     	SetIcon("bma");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int freq=Game::GetGlobalEventFrequencyFactor();
+	freq=freq*150/100;
+	Game::SetGlobalEventFrequencyFactor(freq);
+   }
+};
+
+object eminus : CommandScript
+{
+
+   eminus()
+   {
+     	SetIcon("bma");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int freq=Game::GetGlobalEventFrequencyFactor();
+	freq=freq*100/150;
+	Game::SetGlobalEventFrequencyFactor(freq);
+   }
+};
+
+object switch_fms : CommandScript
+{
+
+   switch_fms()
+   {
+     	SetIcon("funkmast");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::ExecuteCommand("fms_umschalten",Caller);
+   }
+};
+
+
+object kamera_grenze_an : CommandScript
+{
+
+   kamera_grenze_an()
+   {
+     	SetIcon("lighton");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::SetMapBoundsBlockCamera(false);
+   }
+};
+
+object kamera_grenze_aus : CommandScript
+{
+
+   kamera_grenze_aus()
+   {
+     	SetIcon("lightoff");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::SetMapBoundsBlockCamera(true);
+   }
+};
+
+object feueraus : CommandScript
+{
+
+   feueraus()
+   {
+     	SetIcon("notaus");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::ExtinguishAllFires();
+	Vector Posabc=Game::GetCommandPos();
+	int cheat=Game::ShowEvent("Buuuh! Feuer-Aus Knopf gedrueckt!", Posabc);
+	Game::SetEventFinished(cheat, true, -5000);
+   }
+};

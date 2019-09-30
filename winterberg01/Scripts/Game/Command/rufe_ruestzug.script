@@ -1,0 +1,124 @@
+// rufe_loeschzug.script V0.2 by manuelt
+// Basis: Garagenausfahrt by BigBob
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object rufe_ruestzug : CommandScript
+{
+   rufe_ruestzug()
+   {
+      SetValidTargets(ACTOR_FLOOR);
+      SetIcon("ruestzug");
+      SetCursor("ruestzug");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+      MoveResult mr;
+      GameObject Called;
+	
+	Mission::PlayHint("Ruestzug wird alarmiert.");
+
+	GameObjectList l0 = Game::GetGameObjects();
+	
+      int loeschzug = 0; // Für den Hint am Schluss des Skripts
+
+      for(int i=0; i<l0.GetNumObjects(); i++)
+      {
+         GameObject *Obj = l0.GetObject(i);
+
+         bool kriterien_erfuellt = false;
+
+         if (Obj->HasCommand("ruestzug_teilnehmer") && !Obj->HasCommand("ich_bin_nicht_frei"))
+         {
+		Vehicle v(Obj);
+	        //Ein FWler an Bord?
+		    PersonList fw = v.GetPassengers();
+		    if (fw.GetNumPersons() > 0)
+				kriterien_erfuellt = true;
+         }
+
+         if (kriterien_erfuellt == true)
+         {
+		Vehicle v(Caller);
+         	loeschzug++;
+
+        	//Nicht mehr verfügbar...
+			Obj->AssignCommand("ich_bin_nicht_frei");
+
+					if (v.HasCommand("DUMMYHasWarningLights"))
+		{
+ 			v.EnableBlinker(BLT_NONE);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+		}
+		if (v.HasCommand("DUMMYHasUmfeld"))
+		{
+			v.RemoveCommand("DUMMYHasUmfeld");
+		}
+		v.PushActionExecuteCommand(ACTION_NEWLIST, "DUMMYEnableLights", Caller, 2, false);
+
+     		//Lichtmast
+     		if (Obj->HasCommand("LightOff"))
+		{
+	     		Obj->PushActionLightOn(ACTION_NEWLIST,false);
+     		}
+     		else
+     		{
+     			Obj->PushActionWait(ACTION_NEWLIST,0);
+     		}
+
+     		//Reihenfolge für das Ausrücken...
+
+
+     		// 2. LF
+     		if(Obj->HasCommand("fl_8442"))
+     		{
+     			Obj->PushActionWait(ACTION_APPEND,4);
+     			Obj->PushActionExecuteCommand(ACTION_APPEND,"status_raus");
+     		}
+
+
+     		// 4. DLK
+     		if(Obj->HasCommand("fl_8511"))
+     		{
+     			Obj->PushActionWait(ACTION_APPEND,0);
+     			Obj->PushActionExecuteCommand(ACTION_APPEND,"FS8511_raus");
+     		}
+
+
+            //Finde Position
+  		Vector TargetPos=Game::GetCommandPos();
+		Game::FindFreePosition(Obj, TargetPos,50);
+		Obj->PushActionExecuteCommand(ACTION_APPEND,"VCmdSiren",Obj,0,false);//Einsatzfahrt
+		Obj->PushActionMove(ACTION_APPEND, TargetPos);
+		Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false); //childID 1: Blaulichter bleiben an...
+         }
+      }
+      //Rufe RTW
+	Game::ExecuteCommand("rufe_rtw",Caller,Target);
+
+      //Rufe NEF
+	Game::ExecuteCommand("rufe_nef",Caller,Target);
+
+      //Rufe STW
+     	Game::ExecuteCommand("rufe_pol",Caller,Target);
+	if (loeschzug < 1)
+		Mission::PlayHint("KEIN_RZ");
+   }
+};

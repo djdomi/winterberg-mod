@@ -1,0 +1,56 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script repair
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+object bma_repair : CommandScript
+{
+	bma_repair()
+	{
+		SetIcon("bma");
+		SetCursor("bma");
+		// SetGroupID(3);
+	}
+
+	   bool CheckGroupVisibility(GameObject *Caller)
+	   {
+		return true;
+
+	   }
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		bool ok=false;
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			ok=v.GetVehicleType()==VT_THW_FGRR_RL || (v.GetVehicleType()==VT_NOSQUAD && v.HasNamePrefix("8"));
+			if (ok)
+				ok=v.GetEnergy()<v.GetMaxEnergy();
+		}
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObject defekt(Target);
+		GameObject ersatz=Game::CreateVehicle(defekt.GetPrototypeFileName(),Target->GetName());
+		ersatz.SetUserData(defekt.GetUserData());
+		ersatz.SetPosition(&defekt);
+		defekt.PushActionDeleteOwner(ACTION_NEWLIST);
+		ersatz.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",&ersatz,11,false);
+		ersatz.PushActionExecuteCommand(ACTION_APPEND,"wt_bma_scharf",&ersatz,0,false);
+	}
+};
+

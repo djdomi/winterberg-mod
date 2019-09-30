@@ -1,0 +1,40 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script mp_challenge
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+// Winterberger Em4 Start-Script by WitchDoc
+// basiert auf start V0.1a by manuelt
+// Rotation function by bass-ti
+//
+// Revision:
+// 16.7.2006 : Doppelte Ausführung verhindern
+
+	void alles_auf_start()
+	{
+		GameObjectList ol("platz1");
+		GameObject obj=ol.GetObject(0);
+		Game::ExecuteCommand("wem_init",&obj);
+	};
+
+bool OnLoad()
+{
+	alles_auf_start();
+	Process::Kill();
+	return true;
+}
+

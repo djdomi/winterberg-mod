@@ -1,0 +1,2171 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script 18
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+const int MAX_HINTS = 22;
+const int MAX_DEAD = 2;		// max dead civils + dead squads -> fail
+const int MAX_INJURED = 18;		// max injured civils + injured squads + injured gangsters -> fail
+const float GUARD_ACTION_RADIUS = 1.f * 50.f;	// 15 Meter
+const int HINT0_MAX_DEAD_PERSONS = 3;	// hint ausgeben
+const int HINT0_MAX_INJURED = 10;	// hint ausgeben
+const float POWER_GRENADE = 1050.0f; // schaden der granate
+const float DURATION_NEGOTIATE = 40.0f; // Dauer der Verhandlung des Profilers in Sek.
+const float DURATION_FUELCAR = 15.0f; // Dauer für das Ausschalten des Tankwagens in Sek.
+
+const char NAME_GUARD1[]						= "guard_outside1";
+const char NAME_GUARD2[]						= "guard_outside2";
+const char NAME_TRIGGER_HINT3[]					= "trigger h3";
+const char NAME_FUEL_CAR1[]						= "tankwaggon1";
+const char NAME_FUEL_CAR2[]						= "tankwaggon2";
+const char NAME_FUEL_CAR3[]						= "waggon_3";
+const char NAME_FUEL_CAR_MAN1[]					= "fuel_assistant1";
+const char NAME_FUEL_CAR_MAN2[]					= "fuel_assistant2";
+const char NAME_TRIGGER_GANGWAY[]				= "trigger gangway";
+const char NAME_TRIGGER_WARNING[]				= "trigger_warning";
+const char NAME_PLANE[]							= "plane";
+const char NAME_PLANE2[]						= "plane2";
+const char NAME_GANGSTER_STORM[]				= "guard_storm";
+const char NAME_PATH_STORM[]					= "stormpath";
+const char NAME_PATH_THROW[]					= "throw_path";
+const char NAME_AREA_GRENADE_TARGET[]			= "grenade";
+const char NAME_GRENADE_EXPLOSION[]				= "gren_explosion";
+const char NAME_GANGSTER_DOOR[]					= "guard_entrance";
+const char NAME_GANGSTER_DOOR2[]				= "guard_entrance2";
+const char NAME_COLONEL[]						= "colonel";
+const char NAME_FUEL_MAN[]						= "fuel_man";
+const char NAME_PATH_FLIGHT[]					= "flightpath";
+const char NAME_TRIGGER_COCKPIT[]				= "trigger cockpit";
+const char NAME_HINT1[]							= "hint1";
+const char NAME_TERMINAL[]						= "terminal";
+const char NAME_AREA_FLIGHTPOS[]				= "flight_pos";
+const char NAME_TRANSITION_CS_BOMB[]			= "cutscene_bomb";
+const char NAME_TRANSITION_CS_ROLL[]			= "cutscene_roll";
+const char NAME_TRANSITION_CS_THROW[]			= "cutscene_throw";
+const char NAME_TRANSITION_CS_BURN[]			= "cutscene_burn";
+const char NAME_TRANSITION_CS_BURN2[]			= "cutscene_burn2";
+const char NAME_TANK_PIPE1[]					= "tank_pipe1";
+const char NAME_TANK_PIPE2[]					= "tank_pipe2";
+const char NAME_GANGWAY[]						= "gangway";
+const char NAME_PLANE_DOOR[]					= "airplane_door";
+const char NAME_PARTICLE_FLICKERING[]			= "particle_flickering";
+const char NAME_FIREOBJECT_GRENADE[]			= "fire_grenade";
+const char NAME_FIREOBJECT_TAIL[]				= "fire_tail";
+const char NAME_PATH_FUEL_CAR1A[]				= "path_fuel_car1a";
+const char NAME_PATH_FUEL_CAR1B[]				= "path_fuel_car1b";
+const char NAME_PATH_FUEL_CAR2A[]				= "path_fuel_car2a";
+const char NAME_PATH_FUEL_CAR2B[]				= "path_fuel_car2b";
+const char NAME_GRENADE_EMITTER[]				= "emitter_grenade";
+const char NAME_VO_SCOUT[]						= "scout";
+const char NAME_CS_BOMB_DEBRIS1[]				= "s2_debris_bomb1";
+const char NAME_CS_BOMB_DEBRIS2[]				= "s2_debris_bomb2";
+const char NAME_CS_BOMB_PARTICLE1[]				= "particle_bomb1";
+const char NAME_CS_BOMB_PARTICLE2[]				= "particle_bomb2";
+const char NAME_CS_BOMB_PARTICLE3[]				= "particle_bomb3";
+const char NAME_CS_BOMB_PARTICLE4[]				= "particle_bomb4";
+const char NAME_CS_BOMB_PARTICLE5[]				= "particle_bomb5";
+const char NAME_CS_ROLL_FRAME1[]				= "s2_plane1";
+const char NAME_CS_ROLL_FRAME2[]				= "s2_plane2";
+const char NAME_CS_THROW_PERSON[]				= "cs_throw";
+const char NAME_CS_THROW_PERSON_PLACE[]			= "cs_throw_place";
+const char NAME_CS_BURN_PARTICLE[]				= "particle_burn";
+const char NAME_FUELCAR1_PATH[]					= "waggon_path1";
+const char NAME_FUELCAR2_PATH[]					= "waggon_path2";
+const char NAME_AREA_LIGHTS[]					= "area_lights";
+const char NAME_KAZONKA[]						= "kazonka";
+const char NAME_VO_NOVEHICLES[]					= "novehicles";
+const char NAME_PATH_GUARD_FLEE[]				= "guardflee";
+const char PATH_NAME_GANGWAY[]					= "path_gangway";
+
+const char NAME_SOUND_EXPLOSION1[]				= "mod:Audio/FX/destruction/misc_explosion_small.wav";
+const char NAME_SOUND_EXPLOSION2[]				= "mod:Audio/FX/destruction/misc_explosion_mid_var.wav";
+const char NAME_SOUND_EXPLOSION3[]				= "mod:Audio/FX/destruction/misc_explosion_great.wav";
+const char NAME_SOUND_PUMP_FUEL[]				= "mod:Audio/FX/misc/mission_tanker.wav";
+const char NAME_SOUND_TURBINE[]					= "mod:Audio/FX/misc/misc_planeturbine_running_loop.wav";
+
+const char ENTER_HOUSE_COMMAND[]				= "EnterHouse";
+
+const char OBJECTIVE_RESCUE_INJURED[]			= "RESCUE_INJURED";
+const char OBJECTIVE_STOP_PLANE[]				= "M18_STOP_PLANE";
+const char OBJECTIVE_CATCH_GANGSTER[]			= "M18_CATCH_GANGSTER";
+const char OBJECTIVE_EXTINGUISH_FIRES[]			= "EXTINGUISH_FIRES";
+
+const char COUNTER_PERSON_DEATHS[]				= "Person deaths";
+const char COUNTER_CIVIL_DEATHS[]				= "Civil deaths";
+const char COUNTER_SQUAD_DEATHS[]				= "Squad deaths";
+const char COUNTER_INJURED_PERSONS[]			= "Injured Persons";
+const char COUNTER_INJURED_CIVILS[]				= "Injured Civils";
+const char COUNTER_INJURED_SQUADS[]				= "Injured Squads";
+const char COUNTER_INJURED_GANGSTERS[]			= "Injured Gangsters";
+const char COUNTER_BURNING_OBJECTS[]			= "Burning Objects";
+const char COUNTER_BURNING_HOUSES[]				= "Burning Houses";
+
+const char TIMER_NAME_UPDATE_GUARDS[]			= "t_guards";
+const float TIMER_TIME_UPDATE_GUARDS			= 1.f;
+const char TIMER_NAME_UPDATE_PLANE_AREA[]		= "t_planearea";
+const float TIMER_TIME_UPDATE_PLANE_AREA		= 1.f;
+const char TIMER_NAME_START_PLANE[]				= "t_plane";
+const float TIMER_TIME_START_PLANE				= 7.f * 60.f;	// nach 8 min Abflug des Flugzeugs
+const char TIMER_NAME_HINT14[]					= "t_hint14";
+const float TIMER_TIME_HINT14					= 3.f * 60.f;	// Hint Betankung halb abgeschlossen
+const char TIMER_NAME_HINT15[]					= "t_hint15";
+const float TIMER_TIME_HINT15					= 4.5f * 60.f;	// Hint Betankung fast abgeschlossen
+const char TIMER_NAME_PLANE_EXPLODE[]			= "t_explode";
+const float TIMER_TIME_PLANE_EXPLODE			= 4.f;			// Cutscene Flugzeug explodiert
+const float TIMER_TIME_PLANE_EXPLODE_NEG		= 60.f;			// Cutscene Flugzeug explodiert, wenn Guards was passiert ist
+const float TIMER_TIME_PLANE_EXPLODE_TRIGGER	= 60.f;			// Cutscene Flugzeug explodiert, wenn Einheit in Trigger
+const int TIME_TILL_DUSK = 10;	// minuten bis es 20 Uhr wird.
+const char TIMER_NAME_DUSK[]					= "t_dusk";
+const float TIMER_TIME_DUSK						= 5.f;
+const char TIMER_NAME_KILL_HOSTAGE[]			= "t_kill";
+const char NAME_KILL_PERSON[]					= "t_kill_person";
+const float TIMER_TIME_KILL_HOSTAGE				= 2.0f * 60.f;	// alle 4 min eine Geisel töten
+const char TIMER_NAME_WARN_KILL[]				= "t_warn";
+const float TIMER_TIME_WARN_KILL				= 0.5f * 60.f;	// eine min vorher vor Erschiesung warnen
+const char TIMER_NAME_STORM_GANGSTER[]			= "t_storm";
+const float TIMER_TIME_STORM_GANGSTER			= 3.f;			// Gangster stürmt Kabine
+const char TIMER_NAME_COLONEL_FLIGHT[]			= "t_flight";
+const float TIMER_TIME_COLONEL_FLIGHT			= 3.f;
+const char TIMER_NAME_PLANE_BOMB[]				= "t_bomb";
+const float TIMER_TIME_PLANE_BOMB				= 5.f;			// Oberst zündet Bombe
+const char NAME_TIMER_CS_BOMB_END[]				= "t_cs_bomb_end";
+const float NAME_TIME_CS_BOMB_END				= 5.0f;
+const char NAME_TIMER_CS_ROLL_END[]				= "t_cs_roll_end";
+const float NAME_TIME_CS_ROLL_END				= 8.0f;
+const char NAME_TIMER_CS_THROW_END[]			= "t_cs_throw_end";
+const float NAME_TIME_CS_THROW_END				= 3.0f;
+const char NAME_TIMER_CS_THROW_SECOND_PHASE[]	= "t_cs_throw_second";
+const float NAME_TIME_CS_THROW_SECOND_PHASE		= 0.4f;
+const char NAME_TIMER_CS_THROW_DELETE[]			= "t_cs_throw_delete";
+const float NAME_TIME_CS_THROW_DELETE			= 8.0f;
+const char NAME_TIMER_CS_THROW_FREEZE[]			= "t_cs_throw_freeze";
+const float NAME_TIME_CS_THROW_FREEZE			= 4.0f;
+const char NAME_TIMER_CS_BURN_END[]				= "t_cs_burn_end";
+const float NAME_TIME_CS_BURN_END				= 4.0f;			// Dauer der Cutscene Sprengung am Heck
+const float NAME_TIME_CS_BURN_END2				= 8.0f;			// Dauer der Cutscene Sprengung am Heck mit Betankung(Kaboom)
+const char NAME_TIMER_CS_BURN_LOOSE[]			= "t_cs_burn_end_mission";
+const float NAME_TIME_CS_BURN_LOOSE				= 15.0f;
+const char NAME_TIMER_CS_BOMB_PARTICLE2[]		= "t_cs_bomb_particle2";
+const float NAME_TIME_CS_BOMB_PARTICLE2			= 0.8f;
+const char NAME_TIMER_CS_BOMB_PARTICLE3[]		= "t_cs_bomb_particle3";
+const float NAME_TIME_CS_BOMB_PARTICLE3			= 1.0f;
+const char NAME_TIMER_CS_BOMB_PARTICLE4[]		= "t_cs_bomb_particle4";
+const float NAME_TIME_CS_BOMB_PARTICLE4			= 1.2f;
+const char NAME_TIMER_CS_BOMB_PARTICLE5[]		= "t_cs_bomb_particle5";
+const float NAME_TIME_CS_BOMB_PARTICLE5			= 1.4f;
+const char NAME_TIMER_GRENADE_FIRE[]			= "t_grenade_fire";
+const float TIMER_TIME_GRENADE_FIRE				= 2.5f;
+const char TIMER_NAME_RETURN_GUARD1[]			= "t_return_guard1";  // Zeit, bis Guard 1 zurück läuft zur Gangway
+const float TIMER_TIME_RETURN_GUARD1			= 7.0f;
+const char TIMER_NAME_RETURN_GUARD2[]			= "t_return_guard2";  // Zeit, bis Guard 2 zurück läuft zur Gangway
+const float TIMER_TIME_RETURN_GUARD2			= 7.0f;
+const char TIMER_NAME_BURN_WAGGONS[]			= "t_burn_waggons";
+const float TIMER_TIME_BURN_WAGGONS				= 1.f;				  // Zeit, bis die Tankwagen explodieren
+const char TIMER_NAME_BURN_WAGGON3[]			= "t_burn_waggon3";
+const float TIMER_TIME_BURN_WAGGON3				= 2.f;				  // Zeit, bis der 3. Tankwagen explodiert
+const char TIMER_NAME_BURN_PLANE_NEAR[]			= "t_burn_plane_near";
+const float TIMER_TIME_BURN_PLANE_NEAR			= 3.f;				  // Zeit, bis das Nachbarflugzeug brennt	
+const char TIMER_NAME_BURN_TERMINAL[]			= "t_burn_terminal";
+const float TIMER_TIME_BURN_TERMINAL			= 20.f;				  // Zeit, bis das Terminal brennt
+const char TIMER_NAME_HINT_CATCH_LEADER[]		= "t_hint_catch_leader";
+const float TIME_HINT_CATCH_LEADER				= 15.0f;
+
+enum TransitionState
+{
+	TRANSITION_NONE,
+	TRANSITION_PLANE_BOMB,
+	TRANSITION_PLANE_ROLL,
+	TRANSITION_PLANE_THROW,
+	TRANSITION_PLANE_BURN
+};
+
+object Mission18 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mFireOutOfControl;
+	bool mTooManyDied;
+	bool mGangsterLeft;
+	bool mPlaneStarted;
+	bool mSquadMissing;
+	bool mFuelStopped;
+	bool mFuel1Stopped;
+	bool mFuel2Stopped;
+	int mNumActiveGangster;
+	int mNumDoctors;
+	int mNumDoctorsCurrent;
+	int mNumPolicemen;
+	int mNumPolicemenCurrent;
+	int mNumEngineers;
+	int mNumEngineersCurrent;
+	Person mGuard1;
+	Person mGuard2;
+	Vector mGuard1Pos;
+	Vector mGuard2Pos;
+	Person mPsychologist;
+	bool mGuardHit;
+	Vehicle mFuelCar1;
+	Vehicle mFuelCar2;
+	Vehicle mFuelCar3;
+	OpenHouse mPlane;
+	int mNegotiateLevel;
+	bool mSquadEnteredPlane;
+	Person mGangsterStorm;
+	FireObject mGrenadeExplosion;
+	Person mGangsterDoor, mGangsterDoor2;
+	Person mColonel;
+	bool mFlightStarted;
+	bool mBombExploded;
+	bool mPlaneBurnt;
+	float mTimeNegotiate;
+	int mCurrentThrowPerson;
+	GameObject mPlane2;
+	GameObject mTerminal;
+	GameObject mScout;
+	Person mFuelCarMan1;
+	Person mFuelCarMan2;
+	bool mPlaneOpen;
+	bool mExplosionUnstoppable;
+	bool mColonelCheck;
+
+	int mCurrentTransition;
+	int mPersonThrownCounter;
+	GameObject mTankPipe1, mTankPipe2;
+	PersonList mThrowPersonList;
+	GameObject mGangway;
+	Vector mPersonThrowPosition;
+	GameObject mPersonThrow;
+	GameObjectList mBombParticleList[5];
+	GameObjectList mBombDebrisList[2];
+	GameObject mPlaneFrames[2];
+	GameObjectList mBurnParticleList;
+	GameObject mParticleGrenade;
+	GameObjectList mAreaLights;
+	ActorList mFireObjectList;
+	int mTankPipe1Sound;
+	int mTankPipe2Sound;
+
+	Mission18()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mFireOutOfControl = false;
+		mTooManyDied = false;
+		mGangsterLeft = false;
+		mPlaneStarted = false;
+		mSquadMissing = false;
+		mFuelStopped = false;
+		mFuel1Stopped = false;
+		mFuel2Stopped = false;
+		mNumActiveGangster = 0;
+		mNumDoctors = 0;
+		mNumDoctorsCurrent = 0;
+		mNumPolicemen = 0;
+		mNumPolicemenCurrent = 0;
+		mNumEngineers = 0;
+		mNumEngineersCurrent = 0;
+		mGuardHit = false;
+		mNegotiateLevel = 0;
+		mPersonThrownCounter = 0;
+		mTimeNegotiate = 0.0f;
+		mCurrentThrowPerson = 0;
+		mSquadEnteredPlane = false;
+		mFlightStarted = false;
+		mBombExploded = false;
+		mPlaneBurnt = false;
+		mPlaneOpen = false;
+		mExplosionUnstoppable = false;
+		mColonelCheck = false;
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	~Mission18()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M18 Start");
+
+		GameObjectList list = Game::GetGameObjects();
+		list.GetObject(0)->SetUserData(19);
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		int pipenr = 0;
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_GUARD1))
+			{
+				mGuard1 = Person(obj);
+				mGuard1.SetEnteredHouseID(-1);
+				mGuard1Pos = mGuard1.GetPosition();
+			}
+			else if (obj->HasName(NAME_GUARD2))
+			{
+				mGuard2 = Person(obj);
+				mGuard2.SetEnteredHouseID(-1);
+				mGuard2Pos = mGuard2.GetPosition();
+			}
+			else if (obj->HasName(NAME_FUEL_CAR1))
+			{
+				mFuelCar1 = Vehicle(obj);
+				mFuelCar1.SetFlag(OF_USABLE);
+			}
+			else if (obj->HasName(NAME_FUEL_CAR2))
+			{
+				mFuelCar2 = Vehicle(obj);
+				mFuelCar2.SetFlag(OF_USABLE);
+			}
+			else if (obj->HasName(NAME_FUEL_CAR3))
+			{
+				mFuelCar3 = Vehicle(obj);
+			}
+			else if (obj->HasName(NAME_FUEL_CAR_MAN1))
+			{
+				mFuelCarMan1 = Person(obj);
+			}
+			else if (obj->HasName(NAME_FUEL_CAR_MAN2))
+			{
+				mFuelCarMan2 = Person(obj);
+			}
+			else if (obj->HasName(NAME_PLANE))
+				mPlane = OpenHouse(obj);
+			else if (obj->HasName(NAME_GANGSTER_STORM))
+				mGangsterStorm = Person(obj);
+			else if (obj->HasName(NAME_GANGSTER_DOOR))
+			{
+				mGangsterDoor = Person(obj);
+				mGangsterDoor.SetShootAtPsychologist(true);
+			}
+			else if (obj->HasName(NAME_GANGSTER_DOOR2))
+			{
+				mGangsterDoor2 = Person(obj);
+				mGangsterDoor2.SetRole(ROLE_CIVILIAN);
+				mGangsterDoor2.Hide();
+			}
+			else if (obj->HasName(NAME_COLONEL))
+				mColonel = Person(obj);
+			else if (obj->HasName(NAME_CS_THROW_PERSON_PLACE))
+			{
+				Vector pos = obj->GetPosition();
+				pos.z += 5.0f;
+				obj->SetPosition(pos);
+				mPersonThrowPosition = obj->GetPosition();
+				mPersonThrow = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_TANK_PIPE1))
+			{
+				mTankPipe1 = obj;
+			}
+			else if (obj->HasName(NAME_TANK_PIPE2))
+			{
+				mTankPipe2 = obj;
+			}
+			else if (obj->HasName(NAME_GANGWAY))
+			{
+				mGangway = obj;
+			}
+			else if (obj->HasName(NAME_GRENADE_EMITTER))
+			{
+				mParticleGrenade = obj;
+				obj->StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_PLANE2))
+			{
+				mPlane2 = obj;
+			}
+			else if (obj->HasName(NAME_TERMINAL))
+			{
+				mTerminal = obj;
+			}
+			//else if (obj->HasName(NAME_PLANE_DOOR))
+			//{
+			//	obj->SetCollisionMode(PHYSIC_COLLISION_NONE);
+			//}
+			//else if (obj->HasName(NAME_FUEL_MAN))
+			//{
+			//	Person ps = Person(obj);
+			//}
+		}
+
+		PersonList pList1(NAME_CS_THROW_PERSON);
+		mThrowPersonList = pList1;
+		for (int i = 0; i < mThrowPersonList.GetNumPersons(); i++)
+		{
+			mThrowPersonList.GetPerson(i)->Hide();
+		}
+		mBombParticleList[0] = Game::GetGameObjects(NAME_CS_BOMB_PARTICLE1);
+		mBombParticleList[1] = Game::GetGameObjects(NAME_CS_BOMB_PARTICLE2);
+		mBombParticleList[2] = Game::GetGameObjects(NAME_CS_BOMB_PARTICLE3);
+		mBombParticleList[3] = Game::GetGameObjects(NAME_CS_BOMB_PARTICLE4);
+		mBombParticleList[4] = Game::GetGameObjects(NAME_CS_BOMB_PARTICLE5);
+		for (int j = 0; j < 5; j++)
+		{
+			for (int i = 0; i < mBombParticleList[j].GetNumObjects(); i++)
+			{
+				mBombParticleList[j].GetObject(i)->StopParticleEffect();
+			}
+		}
+		mBombDebrisList[0] = Game::GetGameObjects(NAME_CS_BOMB_DEBRIS1);
+		mBombDebrisList[1] = Game::GetGameObjects(NAME_CS_BOMB_DEBRIS2);
+		for (int j = 0; j < 2; j++)
+		{
+			for (int i = 0; i < mBombDebrisList[j].GetNumObjects(); i++)
+			{
+				mBombDebrisList[j].GetObject(i)->Hide();
+			}
+		}
+		mBurnParticleList = Game::GetGameObjects(NAME_CS_BURN_PARTICLE);
+		for (int i = 0; i < mBurnParticleList.GetNumObjects(); i++)
+		{
+			mBurnParticleList.GetObject(i)->StopParticleEffect();
+		}
+		mPlaneFrames[0] = Game::GetGameObjects(NAME_CS_ROLL_FRAME1).GetObject(0);
+		mPlaneFrames[1] = Game::GetGameObjects(NAME_CS_ROLL_FRAME2).GetObject(0);
+		for (int i = 0; i < 2; i++)
+		{
+			mPlaneFrames[i].Hide();
+		}
+
+		//mFireObjectList = Game::GetActors(NAME_KAZONKA);
+
+		ActorList fos(NAME_GRENADE_EXPLOSION);
+		if (fos.GetNumActors() > 0)
+			mGrenadeExplosion = FireObject(fos.GetActor(0));
+
+		if (!mGuard1.IsValid())
+			System::Log("M18: guard1 is missing");
+		if (!mGuard2.IsValid())
+			System::Log("M18: guard2 is missing");
+
+		Game::DeactivateTrigger(NAME_TRIGGER_COCKPIT);
+
+		mGangsterStorm.SetCivilsFleeRange(0.0f);
+		mGangsterDoor.SetCivilsFleeRange(0.0f);
+		mGuard1.SetCivilsFleeRange(0.0f);
+		mGuard2.SetCivilsFleeRange(0.0f);
+		mColonel.SetCivilsFleeRange(0.0f);
+		mGuard1.SetShootAtPsychologist(false);
+		mGuard2.SetShootAtPsychologist(false);
+
+		mTankPipe1.EnableSpecialLights(true);
+		mTankPipe2.EnableSpecialLights(true);
+
+		mPlane.SetDoorCollision(mPlane.GetEntranceDoorID(), false);
+
+		for (int i = 0; i < mPlane.GetNonSquadPersonsInside().GetNumPersons(); i++)
+		{
+			mPlane.GetNonSquadPersonsInside().GetPerson(i)->SetNeverResort(true);
+		}
+
+		Game::CreateAreaLightsAroundTrigger(NAME_TRIGGER_WARNING, NAME_AREA_LIGHTS, 400.0f);
+		mAreaLights = Game::GetGameObjects(NAME_AREA_LIGHTS);
+		SwitchAreaLights(&mAreaLights, false);
+
+		PersonList personSquads = PersonList(ROLE_SQUAD);
+		for (int i = 0; i < personSquads.GetNumPersons(); i++)
+		{
+			if (personSquads.GetPerson(i)->IsEngineer())
+			{
+				mNumEngineers++;
+				mNumEngineersCurrent++;
+			}
+			else if (personSquads.GetPerson(i)->HasCommand("Heal"))
+			{
+				mNumDoctors++;
+				mNumDoctorsCurrent++;
+			}
+			else if (personSquads.GetPerson(i)->HasCommand("Arrest")
+				|| personSquads.GetPerson(i)->HasCommand("Shoot")
+				|| personSquads.GetPerson(i)->HasCommand("Aim"))
+			{
+				mNumPolicemen++;
+				mNumPolicemenCurrent++;
+			}
+		}
+
+		Mission::AddObjective(OBJECTIVE_RESCUE_INJURED);
+		Mission::AddObjective(OBJECTIVE_STOP_PLANE);
+		//Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRES);
+		Mission::AddObjective(OBJECTIVE_CATCH_GANGSTER);
+
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_PLANE_AREA, TIMER_TIME_UPDATE_PLANE_AREA);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_GUARDS, TIMER_TIME_UPDATE_GUARDS);
+		//Mission::StartSingleTimer(TIMER_NAME_KILL_HOSTAGE, TIMER_TIME_KILL_HOSTAGE);
+		//Mission::StartSingleTimer(TIMER_NAME_WARN_KILL, TIMER_TIME_WARN_KILL);
+		Mission::StartSingleTimer(TIMER_NAME_HINT14, TIMER_TIME_HINT14);
+		Mission::StartSingleTimer(TIMER_NAME_HINT15, TIMER_TIME_HINT15);
+		Mission::StartSingleTimer(TIMER_NAME_START_PLANE, TIMER_TIME_START_PLANE);
+
+		int hour, minute, second;
+		Game::GetTime( hour, minute, second );
+		System::Log("Time: %d %d %d", hour, minute, second );
+		if ( hour < 20)
+		{
+			int hoursLeft = 20 - hour;
+			int minutesLeft = 60 * hoursLeft + (60 - minute);
+			Game::SetTimeSpeed(minutesLeft/TIME_TILL_DUSK);
+			System::Log("timespeed: %d ", minutesLeft/TIME_TILL_DUSK );
+			Mission::StartIntervalTimer(TIMER_NAME_DUSK, TIMER_TIME_DUSK);
+		}		
+		mTankPipe1Sound = Audio::PlaySample3D(NAME_SOUND_PUMP_FUEL, mTankPipe1.GetPosition(), true);
+		mTankPipe2Sound = Audio::PlaySample3D(NAME_SOUND_PUMP_FUEL, mTankPipe2.GetPosition(), true);
+
+		Audio::PlaySoundtrack("18", 0.0f);
+		//Mission::StartSingleTimer("test", 90.0f);
+	}
+
+	void Update()
+	{
+
+	}
+
+	void SwitchAreaLights(GameObjectList *lights_, bool enable_)
+	{
+		for ( int i=0; i<lights_->GetNumObjects(); ++i )
+		{
+			if ( enable_ )
+				lights_->GetObject(i)->Show();
+			else
+				lights_->GetObject(i)->Hide();
+		}
+	}
+
+	void RunCutscene_PlaneThrow()
+	{
+		//mGangsterDoor2.SetObjectPath(NAME_PATH_THROW);
+		if (mPersonThrownCounter == 0)
+			mGangsterDoor2.Show();
+		System::Log("Show gangster 2");
+		for (int i = 0; i < mThrowPersonList.GetNumPersons(); i++)
+		{
+			if (mThrowPersonList.GetPerson(i)->IsValid() && mThrowPersonList.GetPerson(i)->IsHidden())
+			{
+				mThrowPersonList.GetPerson(i)->Show();
+				mThrowPersonList.GetPerson(i)->SetTerrain(TERRAIN_ANYTHING);
+				mPersonThrow.Show();
+				mThrowPersonList.GetPerson(i)->SetPosition(&mPersonThrow);
+				mThrowPersonList.GetPerson(i)->SetRotation(&mPersonThrow);
+				mThrowPersonList.GetPerson(i)->SetAnimationTime(0.0f);
+				mThrowPersonList.GetPerson(i)->StopAnimation();
+				mPersonThrow.Hide();
+				//mThrowPersonList.GetPerson(i)->SetPosition(mPersonThrowPosition);
+				mCurrentThrowPerson = i;
+				break;
+			}
+		}
+		System::Log("Chosen thrown person: %d", mCurrentThrowPerson);
+		mPlaneOpen = (mPlane.IsCeilingOpen() && mPlane.NumSquadPersonsInside() == 0);
+		mPlane.ShowCeiling(true, false, true);		
+		if (mScout.IsValid())
+			mScout.PushActionWait(ACTION_INSERT, 6.0f + NAME_TIME_CS_THROW_SECOND_PHASE + NAME_TIME_CS_THROW_END);
+		mPersonThrownCounter++;
+		if (mPersonThrownCounter == 1)
+		{
+			Mission::StartCutScene();
+			Mission::ShowBlackBars();
+			mCurrentTransition = TRANSITION_PLANE_THROW;
+			Camera::StartTransition(NAME_TRANSITION_CS_THROW, 4.0f);
+			Audio::SetMusicLevel(0.1f);
+		}
+		else
+		{
+			CutsceneFirstPhase_PlaneThrow();
+			//Mission::StartSingleTimer(NAME_TIMER_CS_THROW_SECOND_PHASE, NAME_TIME_CS_THROW_SECOND_PHASE + 4.0f);
+		}
+	}
+
+	void CutsceneFirstPhase_PlaneThrow()
+	{		
+		mPlane.OpenDoor(mPlane.GetEntranceDoorID());
+		Mission::StartSingleTimer(NAME_TIMER_CS_THROW_SECOND_PHASE, NAME_TIME_CS_THROW_SECOND_PHASE);
+	}
+
+	void CutsceneSecondPhase_PlaneThrow()
+	{
+		GameObjectList list;
+		Game::CollectObstaclesOnTrigger(NAME_TRIGGER_GANGWAY, list, ACTOR_PERSON);
+		for (int i=0; i < list.GetNumObjects(); i++)
+		{
+			if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+			{
+				Person p = list.GetObject(i);
+				if (p.GetRole() == ROLE_SQUAD)
+				{
+					p.SetObjectPath(PATH_NAME_GANGWAY);
+				}
+			}
+		}
+		//Injure(INJUREREASON_ENERGY);
+		//mThrowPersonList.GetPerson(mCurrentThrowPerson)->SetHealth(0.0f);
+		//mThrowPersonList.GetPerson(mCurrentThrowPerson)->SetLife(0.0f);
+		mThrowPersonList.GetPerson(mCurrentThrowPerson)->Kill();
+		Mission::StartSingleTimer(NAME_KILL_PERSON, 2.0f);
+		Mission::StartSingleTimer(NAME_TIMER_CS_THROW_END, NAME_TIME_CS_THROW_END);
+		System::Log("M18: EnablePhysics for thrown person");
+		mThrowPersonList.GetPerson(mCurrentThrowPerson)->EnablePhysicsSimulation();
+		//mThrowPersonList.GetPerson(mCurrentThrowPerson)->SetCollisionMode(PHYSIC_COLLISION_ALL);
+		Vector dir = mThrowPersonList.GetPerson(mCurrentThrowPerson)->GetLookatDir();// mGangway.GetPosition() - mPersonThrowPosition;
+		dir.z = 0.5f;
+		mThrowPersonList.GetPerson(mCurrentThrowPerson)->ApplyForce(3, mPersonThrowPosition, dir.GetNormal()*2500.0f);
+		mThrowPersonList.GetPerson(mCurrentThrowPerson)->ApplyForce(13, mPersonThrowPosition, dir.GetNormal()*2500.0f);
+		System::Log("Throw person");
+		Mission::StartSingleTimer(NAME_TIMER_CS_THROW_FREEZE, NAME_TIME_CS_THROW_FREEZE);
+		Mission::StartSingleTimer(NAME_TIMER_CS_THROW_DELETE, NAME_TIME_CS_THROW_DELETE);
+	}
+
+	void CutsceneEnding_PlaneThrow()
+	{
+		if (mPersonThrownCounter == 1)
+		{
+			Mission::HideBlackBars();
+			Mission::EndCutScene();
+		}
+		if (mPlaneOpen)
+		{
+			mPlane.ShowCeiling(false, true, false);
+			System::Log("Open plane for scout after cutscene.");
+		}
+		else
+			mPlane.ShowCeiling(true, false, false);
+	}
+
+	void RunCutscene_PlaneBomb()
+	{
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		mCurrentTransition = TRANSITION_PLANE_BOMB;
+		Camera::StartTransition(NAME_TRANSITION_CS_BOMB, 4.0f);
+		Audio::SetMusicLevel(0.6f);
+	}
+
+	void CutsceneFirstPhase_PlaneBomb()
+	{
+		ScriptInterface::ShowTutorialInstruction("HINT_M18_EXPLOSION");
+		Mission::StartSingleTimer(NAME_TIMER_CS_BOMB_PARTICLE2, NAME_TIME_CS_BOMB_PARTICLE2);
+		Mission::StartSingleTimer(NAME_TIMER_CS_BOMB_PARTICLE3, NAME_TIME_CS_BOMB_PARTICLE3);
+		Mission::StartSingleTimer(NAME_TIMER_CS_BOMB_PARTICLE4, NAME_TIME_CS_BOMB_PARTICLE4);
+		Mission::StartSingleTimer(NAME_TIMER_CS_BOMB_PARTICLE5, NAME_TIME_CS_BOMB_PARTICLE5);
+		Mission::StartSingleTimer(NAME_TIMER_CS_BOMB_END, NAME_TIME_CS_BOMB_END);
+		for (int i = 0; i < mBombParticleList[0].GetNumObjects(); i++)
+		{
+			mBombParticleList[0].GetObject(i)->StartParticleEffect();
+		}
+		Audio::PlaySample(NAME_SOUND_EXPLOSION1);		
+	}
+
+	void CutsceneEnding_PlaneBomb()
+	{
+		ScriptInterface::CloseTutorialInstruction();
+		mBombExploded = true;
+	}
+
+	void RunCutscene_PlaneRoll()
+	{
+		Audio::StopSample(mTankPipe1Sound);
+		Audio::StopSample(mTankPipe2Sound);
+		Audio::PlaySample3D(NAME_SOUND_TURBINE, mPlane.GetPosition(), true);
+		mPlane.ShowCeiling(true, true, true);
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		mCurrentTransition = TRANSITION_PLANE_ROLL;
+		Camera::StartTransition(NAME_TRANSITION_CS_ROLL, 4.0f);
+		mTankPipe1.Hide();
+		mTankPipe2.Hide();
+		GameObjectList list;
+		Game::CollectObstaclesOnVirtualObject(NAME_VO_NOVEHICLES, list, ACTOR_VEHICLE | ACTOR_PERSON);
+		for (int i = 0; i < list.GetNumObjects(); i++)
+		{
+			if (list.GetObject(i)->GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle vc = Vehicle(list.GetObject(i));
+				if (vc.GetVehicleType() != VT_NOSQUAD)
+				{
+					list.GetObject(i)->ClearActions();
+					list.GetObject(i)->Hide();
+				}
+			}
+			if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+			{
+				Person ps;
+				ps = list.GetObject(i);
+				if (ps.GetRole() == ROLE_SQUAD)
+				{
+					list.GetObject(i)->ClearActions();
+					list.GetObject(i)->Hide();
+				}
+			}
+		}
+		Audio::SetMusicLevel(0.5f);
+	}
+
+	void CutsceneFirstPhase_PlaneRoll()
+	{
+		mPlane.SetSpeed(2.0f);
+		//mPlane.SetCollisionResponseByForces(50.0f);
+		//mPlane.ActivateOBBCollision();
+		mPlane.ShowCeiling(true);
+		for (int i = 0; i < mPlane.GetNonSquadPersonsInside().GetNumPersons(); i++)
+		{
+			mPlane.GetNonSquadPersonsInside().GetPerson(i)->Hide();
+		}
+		for (int i = 0; i < mPlane.GetSquadPersonsInside().GetNumPersons(); i++)
+		{
+			mPlane.GetSquadPersonsInside().GetPerson(i)->Hide();
+		}
+		mPlane.PushActionMoveToPoint(ACTION_NEWLIST, &mPlaneFrames[0], 50.0f);
+		mPlane.PushActionMoveToPoint(ACTION_APPEND, &mPlaneFrames[1], 100.0f);
+		if (!mGuard1.IsInjured() && !mGuard1.IsArrested())
+		{
+			mGuard1.SetFleeing(true, true);
+			mGuard1.SetObjectPath(NAME_PATH_GUARD_FLEE);
+		}
+		if (!mGuard2.IsInjured() && !mGuard2.IsArrested())
+		{
+			mGuard2.SetFleeing(true, true);
+			mGuard2.SetObjectPath(NAME_PATH_GUARD_FLEE);
+		}
+		Mission::StartSingleTimer(NAME_TIMER_CS_ROLL_END, NAME_TIME_CS_ROLL_END);
+	}
+
+	void CutsceneEnding_PlaneRoll()
+	{
+		mPlaneStarted = true;
+	}
+
+	void RunCutscene_PlaneBurn()
+	{
+		mPlaneBurnt = true;
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		if (mFuelStopped)
+		{
+			mCurrentTransition = TRANSITION_PLANE_BURN;
+			Camera::StartTransition(NAME_TRANSITION_CS_BURN, 4.0f);
+		}
+		else
+		{
+			mCurrentTransition = TRANSITION_PLANE_BURN;
+			Camera::StartTransition(NAME_TRANSITION_CS_BURN2, 4.0f);
+		}
+		Audio::SetMusicLevel(0.3f);
+	}
+
+	void CutsceneFirstPhase_PlaneBurn()
+	{		
+		for (int i = 0; i < mBurnParticleList.GetNumObjects(); i++)
+		{
+			mBurnParticleList.GetObject(i)->StartParticleEffect();
+		}
+		mPlane.SetFireObjectBurning(NAME_FIREOBJECT_TAIL);
+		mPlane.GetFireChild(NAME_FIREOBJECT_TAIL).SetTemperature(mPlane.GetFireChild(NAME_FIREOBJECT_TAIL).GetMaxMaterialTemperature());
+		mPlane.SetFireObjectBurning(NAME_FIREOBJECT_GRENADE);
+		mPlane.GetFireChild(NAME_FIREOBJECT_GRENADE).SetTemperature(mPlane.GetFireChild(NAME_FIREOBJECT_GRENADE).GetMaxMaterialTemperature());
+		Audio::PlaySample(NAME_SOUND_EXPLOSION2);		
+		if (!mFuelStopped)
+		{
+			Mission::StartSingleTimer(TIMER_NAME_BURN_WAGGONS, TIMER_TIME_BURN_WAGGONS);
+			Mission::StartSingleTimer(TIMER_NAME_BURN_WAGGON3, TIMER_TIME_BURN_WAGGON3);
+			Mission::StartSingleTimer(TIMER_NAME_BURN_PLANE_NEAR, TIMER_TIME_BURN_PLANE_NEAR);
+			Mission::StartSingleTimer(TIMER_NAME_BURN_TERMINAL, TIMER_TIME_BURN_TERMINAL);
+			Mission::StartSingleTimer(NAME_TIMER_CS_BURN_END, NAME_TIME_CS_BURN_END2);
+		}
+		else
+			Mission::StartSingleTimer(NAME_TIMER_CS_BURN_END, NAME_TIME_CS_BURN_END);
+	}
+
+	void CutsceneEnding_PlaneBurn()
+	{
+		GameObjectList list;
+		Game::CollectObstaclesOnTrigger(NAME_TRIGGER_COCKPIT, list, ACTOR_PERSON);
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			Person ps(list.GetObject(i));
+			ps.Injure(INJUREREASON_ENERGY);
+		}
+		Mission::HideBlackBars();
+		Mission::EndCutScene();
+		Mission::StartSingleTimer(NAME_TIMER_CS_BURN_LOOSE, NAME_TIME_CS_BURN_LOOSE);
+		mColonelCheck = true;
+	}
+
+	void OnSquadArrived(Person *squad_)
+	{
+		if (squad_->HasCommand(ENTER_HOUSE_COMMAND))
+		{
+			if (squad_->GetPersonType() == PT_PSYCHOLOGIST)
+			{
+				squad_->RemoveCommand(ENTER_HOUSE_COMMAND);
+			}
+		}
+	}
+
+	bool OnPostCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		if (!Cmd)
+			return;
+		if (Cmd == "ScoutHouse")
+		{
+			System::Log("scout house command");
+			//Vector pos = mPlane.GetEntrancePosition(false, -500.f);
+			Vector pos;
+			ActorList fpos(NAME_VO_SCOUT);
+			if (fpos.GetNumActors() > 0)
+				pos = fpos.GetActor(0)->GetPosition();
+			Caller->PushActionMove(ACTION_NEWLIST, pos, false);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target, 1.f);
+			Caller->PushActionScoutHouse(ACTION_APPEND, Target);
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionEnterCar" :
+				{
+					if(Data_->Parameters[0].iValue == mFuelCar1.GetID())
+					{
+						PathList pathList(NAME_FUELCAR1_PATH);
+						if (pathList.GetNumPaths() > 0)
+						{
+							Vector p = pathList.GetPath(0)->GetPoint(pathList.GetPath(0)->GetNumPoints() - 1);							
+							mFuelCar1.PushActionMove(ACTION_NEWLIST, p, true);
+						}
+						//mFuelCar1.SetObjectPath(NAME_FUELCAR1_PATH);
+					}
+					else if(Data_->Parameters[0].iValue == mFuelCar2.GetID())
+					{
+						PathList pathList(NAME_FUELCAR2_PATH);
+						if (pathList.GetNumPaths() > 0)
+						{
+							Vector p = pathList.GetPath(0)->GetPoint(pathList.GetPath(0)->GetNumPoints() - 1);							
+							mFuelCar2.PushActionMove(ACTION_NEWLIST, p, true);
+						}
+						//mFuelCar2.SetObjectPath(NAME_FUELCAR2_PATH);
+					}
+				}
+				break;
+			case "EActionLoadUp":
+				{
+					System::Log("Action EActionLoadUp");
+					if (!mFuel1Stopped && Data_->Parameters[0].iValue == mFuelCar1.GetID() && mFuelCar1.GetBurningStatus() != OBS_FULLBURNED)
+					{
+						// Flugzeug sprengen
+						ShowHint(13);
+						Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE);
+						mExplosionUnstoppable = true;
+					}
+					else if (!mFuel2Stopped && Data_->Parameters[0].iValue == mFuelCar2.GetID() && mFuelCar2.GetBurningStatus() != OBS_FULLBURNED)
+					{
+						// Flugzeug sprengen
+						ShowHint(13);
+						Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE);
+						mExplosionUnstoppable = true;
+					}
+				}
+				break;
+			case "EActionUse":
+				{					
+					if (!mFuel1Stopped && Data_->Parameters[0].iValue == mFuelCar1.GetID())
+					{
+						mFuel1Stopped = true;
+						mFuelCar1.ClearFlag(OF_USABLE);
+						mTankPipe1.Hide();
+						Audio::StopSample(mTankPipe1Sound);
+						mFuelCarMan1.PushActionMove(ACTION_NEWLIST, &mFuelCar1, TARGET_PASSENGERDOOR);
+						mFuelCarMan1.PushActionEnterCar(ACTION_APPEND, &mFuelCar1);						
+						if (mFuel2Stopped)
+						{
+							mFuelStopped = true;
+							ShowHint(4);
+							//int hour, minute, second;
+							//Game::GetTime( hour, minute, second );
+							//System::Log("Time: %d %d %d", hour, minute, second );
+							//if ( hour < 20)
+							//{
+							//	int hoursLeft = 20 - hour;
+							//	int minutesLeft = 60 * hoursLeft + (60 - minute);
+							//	Game::SetTimeSpeed(minutesLeft/TIME_TILL_DUSK);
+							//	System::Log("timespeed: %d ", minutesLeft/TIME_TILL_DUSK );
+							//	Mission::StartIntervalTimer(TIMER_NAME_DUSK, TIMER_TIME_DUSK);
+							//}
+						}
+						mTankPipe1.EnableSpecialLights(false);
+					}
+					else if (!mFuel2Stopped && Data_->Parameters[0].iValue == mFuelCar2.GetID())
+					{
+						mFuel2Stopped = true;
+						mFuelCar2.ClearFlag(OF_USABLE);
+						mTankPipe2.Hide();
+						Audio::StopSample(mTankPipe2Sound);
+						mFuelCarMan2.PushActionMove(ACTION_NEWLIST, &mFuelCar2, TARGET_PASSENGERDOOR);
+						mFuelCarMan2.PushActionEnterCar(ACTION_APPEND, &mFuelCar2);
+						if (mFuel1Stopped)
+						{
+							mFuelStopped = true;
+							ShowHint(4);
+							//int hour, minute, second;
+							//Game::GetTime( hour, minute, second );
+							//System::Log("Time: %d %d %d", hour, minute, second );
+							//if ( hour < 20)
+							//{
+							//	int hoursLeft = 20 - hour;
+							//	int minutesLeft = 60 * hoursLeft + (60 - minute);
+							//	Game::SetTimeSpeed(minutesLeft/TIME_TILL_DUSK);
+							//	System::Log("timespeed: %d ", minutesLeft/TIME_TILL_DUSK );
+							//	Mission::StartIntervalTimer(TIMER_NAME_DUSK, TIMER_TIME_DUSK);
+							//}
+						}
+						mTankPipe2.EnableSpecialLights(false);
+					}
+					if (mFuelStopped)
+					{
+						if (!Mission::TimerIsStarted(TIMER_NAME_KILL_HOSTAGE))
+						{
+							Mission::StartSingleTimer(TIMER_NAME_KILL_HOSTAGE, TIMER_TIME_KILL_HOSTAGE);
+							Mission::StartSingleTimer(TIMER_NAME_WARN_KILL, TIMER_TIME_WARN_KILL);
+						}
+					}
+				}
+				break;
+			case "EActionTag":
+				{
+					mPsychologist = Person();
+				}
+				break;
+			case "EActionNegotiate":
+				{
+					if (Data_->Parameters[0].iValue == mPlane.GetID() && mFuelStopped && !mSquadEnteredPlane)
+					{
+						switch(mNegotiateLevel)
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+								{
+									ShowHint(5 + mNegotiateLevel);
+									Mission::StartSingleTimer(TIMER_NAME_KILL_HOSTAGE, TIMER_TIME_KILL_HOSTAGE);
+									Mission::StartSingleTimer(TIMER_NAME_WARN_KILL, TIMER_TIME_WARN_KILL);
+									mNegotiateLevel++;
+								}
+								break;
+							case 5:
+								{
+									ShowHint(10);
+									mNegotiateLevel++;
+								}
+								break;
+						}
+					}
+				}
+				break;
+			case "EActionEnterHouse":
+				{
+					if (!mSquadEnteredPlane && Data_->Parameters[0].iValue == mPlane.GetID())
+					{
+						mSquadEnteredPlane = true;
+						SwitchAreaLights(&mAreaLights, false);
+						GameObjectList list = Game::GetGameObjects();
+						for(int i=0; i<list.GetNumObjects(); i++)
+						{
+							GameObject *obj = list.GetObject(i);
+							if (obj->GetType() == ACTOR_PERSON)
+							{
+								Person ps(obj);
+								if (ps.GetPersonType() == PT_PSYCHOLOGIST)
+								{
+									ps.AssignCommand(ENTER_HOUSE_COMMAND);
+								}
+							}
+						}
+						Mission::RemoveObjective(OBJECTIVE_STOP_PLANE);
+						Mission::StartSingleTimer(TIMER_NAME_STORM_GANGSTER, TIMER_TIME_STORM_GANGSTER);
+						Mission::StopTimer(TIMER_NAME_KILL_HOSTAGE);
+						Mission::StopTimer(TIMER_NAME_WARN_KILL);
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionScout":
+				{
+					if (mHintCounter[11] == 0 && Data_->Parameters[0].iValue == mPlane.GetID())
+						ShowHint(11);
+					mScout = Data_->Owner;
+				}
+				break;
+			case "EActionNegotiate":
+				{
+					if (Data_->Parameters[0].iValue == mGuard1.GetID() || Data_->Parameters[0].iValue == mGuard2.GetID())
+					{
+						Mission::PlayHint("M18_WATCHMEN01");
+						if (mTimeNegotiate <= 0.0f)
+							mTimeNegotiate = DURATION_NEGOTIATE;
+					}
+				}
+			case "EActionUse":
+				{
+					if (Data_->Parameters[0].iValue == mFuelCar1.GetID()
+						|| Data_->Parameters[0].iValue == mFuelCar2.GetID())
+					{
+						float *time = reinterpret_cast<float*>(Data_->Parameters[2].pValue);
+						*time = DURATION_FUELCAR;
+						if (mTimeNegotiate <= 0.0f)
+						{
+							if (Data_->Parameters[0].iValue == mFuelCar1.GetID())
+							{
+								if (!mGuard1.IsInjured() && !mGuard1.IsArrested())
+								{
+									mGuard1.SetFleeing(true);
+									mGuard1.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+									mGuard1.SetObjectPath(NAME_PATH_FUEL_CAR1A);
+								}
+								if (!mGuard2.IsInjured() && !mGuard1.IsArrested())
+								{
+									mGuard2.SetFleeing(true);
+									mGuard2.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+									mGuard2.SetObjectPath(NAME_PATH_FUEL_CAR1B);									
+								}
+							}
+							else
+							{
+								if (!mGuard1.IsInjured() && !mGuard1.IsArrested())
+								{
+									mGuard1.SetFleeing(true);
+									mGuard1.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+									mGuard1.SetObjectPath(NAME_PATH_FUEL_CAR2A);
+								}
+								if (!mGuard2.IsInjured() && !mGuard1.IsArrested())
+								{
+									mGuard2.SetFleeing(true);
+									mGuard2.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+									mGuard2.SetObjectPath(NAME_PATH_FUEL_CAR2B);
+								}
+							}
+						}
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void OnSquadVehicleArrived(Vehicle *Vehicle_)
+	{
+		if (mHintCounter[5] == 0)
+			ShowHint(5);
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case "test":
+				//RunCutscene_PlaneThrow();
+				//RunCutscene_PlaneBurn();
+				//RunCutscene_PlaneBomb();
+				RunCutscene_PlaneRoll();
+			break;
+			case NAME_TIMER_CS_THROW_FREEZE:
+				{
+					mThrowPersonList.GetPerson(mCurrentThrowPerson)->FreezePhysics();
+				}
+				break;
+			case NAME_TIMER_CS_THROW_DELETE:
+				{		
+					if (mPersonThrownCounter == 1)
+						mGangsterDoor2.Hide();
+					System::Log("Hide gangster 2");					
+					mThrowPersonList.GetPerson(mCurrentThrowPerson)->PushActionDisappear(ACTION_NEWLIST, 12.0f, 0.0f, true);
+				}
+				break;
+			case TIMER_NAME_HINT_CATCH_LEADER:
+				{
+					ShowHint(21);
+					Audio::SetMusicLevel(0.3f);
+				}
+				break;
+			case NAME_KILL_PERSON:
+				{
+					System::Log("M18: Kill thrown person");
+					if (mPersonThrownCounter == 1)
+						mGangsterDoor2.SetObjectPath(NAME_PATH_THROW);
+					System::Log("Set path gangster 2");
+					//mThrowPersonList.GetPerson(mCurrentThrowPerson)->Kill();
+				}
+				break;
+			case TIMER_NAME_RETURN_GUARD1:
+				if ((mGuard1.GetPosition() - mFuelCar1.GetPosition()).GetLen()
+					< (mGuard1.GetPosition() - mFuelCar2.GetPosition()).GetLen())
+				{
+					if (!mGuard1.IsInjured() && !mGuard1.IsArrested())
+						mGuard1.SetObjectPath(NAME_PATH_FUEL_CAR1A, 0.0f, false);
+				}
+				else
+				{
+					if (!mGuard1.IsInjured() && !mGuard1.IsArrested())
+						mGuard1.SetObjectPath(NAME_PATH_FUEL_CAR2A, 0.0f, false);
+				}
+				break;
+			case TIMER_NAME_RETURN_GUARD2:
+				if ((mGuard2.GetPosition() - mFuelCar1.GetPosition()).GetLen()
+					< (mGuard2.GetPosition() - mFuelCar2.GetPosition()).GetLen())
+				{
+					if (!mGuard2.IsInjured() && !mGuard2.IsArrested())
+						mGuard2.SetObjectPath(NAME_PATH_FUEL_CAR1B, 0.0f, false);
+				}
+				else
+				{
+					if (!mGuard2.IsInjured() && !mGuard2.IsArrested())
+						mGuard2.SetObjectPath(NAME_PATH_FUEL_CAR2B, 0.0f, false);
+				}
+				break;
+			case NAME_TIMER_GRENADE_FIRE:
+				mGangsterStorm.SetEquipment(EQUIP_PISTOL);
+				mParticleGrenade.StartParticleEffect();
+				Audio::PlaySample(NAME_SOUND_EXPLOSION1);
+				GameObjectList list;
+				Game::CollectObstaclesOnVirtualObject(NAME_AREA_GRENADE_TARGET, list, ACTOR_PERSON);
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					Person ps(list.GetObject(i));
+					ps.Injure(INJUREREASON_ENERGY);
+				}
+				mGangsterStorm.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+				mGangsterStorm.SetShootAtPsychologist(true);
+				//mPlane.SetFireObjectBurning(NAME_FIREOBJECT_GRENADE);
+				break;
+			case NAME_TIMER_CS_BURN_END:
+				CutsceneEnding_PlaneBurn();
+				break;
+			case NAME_TIMER_CS_BURN_LOOSE:
+				//mFireOutOfControl = true;
+				break;				
+			case NAME_TIMER_CS_THROW_SECOND_PHASE:
+				CutsceneSecondPhase_PlaneThrow();
+				break;
+			case NAME_TIMER_CS_BOMB_PARTICLE2:
+				for (int i = 0; i < mBombParticleList[1].GetNumObjects(); i++)
+				{
+					mBombParticleList[1].GetObject(i)->StartParticleEffect();
+				}
+				Audio::PlaySample(NAME_SOUND_EXPLOSION2);
+				break;
+			case NAME_TIMER_CS_BOMB_PARTICLE3:
+				for (int i = 0; i < mBombParticleList[2].GetNumObjects(); i++)
+				{
+					mBombParticleList[2].GetObject(i)->StartParticleEffect();
+				}				
+				break;
+			case NAME_TIMER_CS_BOMB_PARTICLE4:
+				for (int i = 0; i < mBombParticleList[3].GetNumObjects(); i++)
+				{
+					mBombParticleList[3].GetObject(i)->StartParticleEffect();
+				}
+				Audio::PlaySample(NAME_SOUND_EXPLOSION1);
+				break;
+			case NAME_TIMER_CS_BOMB_PARTICLE5:
+				for (int i = 0; i < mBombParticleList[4].GetNumObjects(); i++)
+				{
+					mBombParticleList[4].GetObject(i)->StartParticleEffect();
+				}
+				Audio::PlaySample(NAME_SOUND_EXPLOSION3);
+				break;
+			case NAME_TIMER_CS_BOMB_END:
+				CutsceneEnding_PlaneBomb();
+				break;
+			case NAME_TIMER_CS_ROLL_END:
+				CutsceneEnding_PlaneRoll();
+				break;
+			case NAME_TIMER_CS_THROW_END:
+				CutsceneEnding_PlaneThrow();
+				break;
+			case TIMER_NAME_UPDATE_PLANE_AREA:
+				{
+					if (!mSquadEnteredPlane && (!((mGuard1.IsInjured() || mGuard1.IsArrested())
+						|| (mGuard2.IsInjured() || mGuard2.IsArrested()))))
+					{
+						GameObjectList list;
+						Game::CollectObstaclesOnTrigger(NAME_TRIGGER_WARNING, list, ACTOR_PERSON | ACTOR_VEHICLE);
+						bool triggerWarning = false;
+						for(int i = 0; i < list.GetNumObjects(); i++)
+						{
+							if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+							{
+								Person ps(list.GetObject(i));
+								if (ps.GetPersonType() == PT_PSYCHOLOGIST)
+								{
+								}
+								else if (ps.GetPersonType() == PT_ENGINEER && !ps.IsInjured())
+								{
+									if (mTimeNegotiate <= 0.0f)
+										triggerWarning = true;
+								}
+								else if (ps.GetPersonType() != PT_NOSQUAD && !ps.IsInjured())
+									triggerWarning = true;
+							}
+							else
+							{
+								Vehicle vc(list.GetObject(i));
+								if (vc.GetVehicleType() != VT_NOSQUAD && !vc.IsDestroyed())
+									triggerWarning = true;
+							}
+						}
+						if (!triggerWarning)
+						{
+							if (Mission::TimerIsStarted(TIMER_NAME_PLANE_EXPLODE) && !mExplosionUnstoppable)
+							{
+								Mission::StopTimer(TIMER_NAME_PLANE_EXPLODE);
+								SwitchAreaLights(&mAreaLights, false);
+								System::Log("M18: Plane explode timer stopped.");
+							}
+						}
+						else if (!Mission::TimerIsStarted(TIMER_NAME_PLANE_EXPLODE))
+						{
+							Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE_TRIGGER);
+							SwitchAreaLights(&mAreaLights, true);
+							ShowHint(20);
+						}
+					}
+				}
+				break;
+			case TIMER_NAME_UPDATE_GUARDS:
+				{
+					if (mTimeNegotiate > 0.0f)
+					{
+						mTimeNegotiate -= TIMER_TIME_UPDATE_GUARDS;
+					}
+					if (mHintCounter[19] == 0 && (mGuard1.IsInjured() || mGuard1.IsArrested())
+						&& (mGuard2.IsInjured() || mGuard2.IsArrested()))
+					{
+						ShowHint(19);
+					}
+					if (mGuard1.IsInjured() && mGuard2.IsInjured() && !mFuelStopped)
+					{
+						if (!Mission::TimerIsStarted(TIMER_NAME_KILL_HOSTAGE))
+						{
+							Mission::StartSingleTimer(TIMER_NAME_KILL_HOSTAGE, TIMER_TIME_KILL_HOSTAGE);
+							Mission::StartSingleTimer(TIMER_NAME_WARN_KILL, TIMER_TIME_WARN_KILL);
+						}
+					}
+					//if (!mPsychologist.IsValid())
+					//{
+					//	GameObjectList persons = mGuard1.GetObjectsInRange(GUARD_ACTION_RADIUS, ACTOR_PERSON);
+					//	for(int i = 0; i < persons.GetNumObjects(); i++)
+					//	{
+					//		if (persons.GetObject(i)->HasCommand("Negotiate"))
+					//		{
+					//			mPsychologist = Person(persons.GetObject(i));
+					//			if (!mGuard1.IsInjured())
+					//				mGuard1.PushActionMove(ACTION_NEWLIST, &mPsychologist, TARGET_FOLLOW);
+					//			if (!mGuard2.IsInjured())
+					//				mGuard2.PushActionMove(ACTION_NEWLIST, &mPsychologist, TARGET_FOLLOW);
+					//			break;
+					//		}
+					//	}
+					//}
+					//else
+					//{
+					//	Vector g1pos = mGuard1.GetPosition();
+					//	Vector g2pos = mGuard2.GetPosition();
+					//	if ((g1pos - mGuard1Pos).GetLen() > 3.f * GUARD_ACTION_RADIUS || (g2pos - mGuard2Pos).GetLen() > 3.f * GUARD_ACTION_RADIUS)
+					//	{
+					//		if (!mGuard1.IsInjured())
+					//		{
+					//			mGuard1.PushActionMove(ACTION_NEWLIST, mGuard1Pos);
+					//			mGuard1.PushActionTag(ACTION_APPEND, "return");
+					//		}
+					//		if (!mGuard2.IsInjured())
+					//		{
+					//			mGuard2.PushActionMove(ACTION_NEWLIST, mGuard2Pos);
+					//			mGuard2.PushActionTag(ACTION_APPEND, "return");
+					//		}
+					//		break;
+					//	}
+					//	if (mPsychologist.IsTriggering(NAME_TRIGGER_GANGWAY) || mPsychologist.GetEnteredHouseID() != -1)
+					//		return;
+					//	float mat[9];
+					//	mPsychologist.GetRotation(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5], mat[6], mat[7], mat[8]);
+					//	Vector offset(0.f, 80.f, 0.f);
+					//	Math::RotateVector(offset.x, offset.y, offset.z, mat);
+					//	if (mGuard1.IsIdle() && !mGuard1.IsInjured())
+					//	{
+					//		Vector pos = mPsychologist.GetPosition();
+					//		pos = pos + offset;
+					//		mGuard1.PushActionMove(ACTION_NEWLIST, pos);
+					//	}
+					//	if (mGuard2.IsIdle() && !mGuard2.IsInjured())
+					//	{
+					//		Vector pos = mPsychologist.GetPosition();
+					//		pos = pos - offset;
+					//		mGuard2.PushActionMove(ACTION_NEWLIST, pos);
+					//	}
+					//}
+				}
+				break;
+			case TIMER_NAME_START_PLANE:
+				{
+					if (!mFuelStopped && !mSquadEnteredPlane && !mPlane.IsBurning())
+					{
+						RunCutscene_PlaneRoll();
+					}
+				}
+				break;
+			case TIMER_NAME_HINT14:
+				{
+					if (!Mission::IsObjectiveAccomplished(OBJECTIVE_STOP_PLANE))
+						ShowHint(14);
+				}
+				break;
+			case TIMER_NAME_HINT15:
+				{
+					if (!Mission::IsObjectiveAccomplished(OBJECTIVE_STOP_PLANE))
+						ShowHint(15);
+				}
+				break;
+			case TIMER_NAME_PLANE_EXPLODE:
+				{
+					if (!mSquadEnteredPlane)
+						RunCutscene_PlaneBomb();
+				}
+				break;
+			case TIMER_NAME_DUSK:
+				{
+					int hour, minute, second;
+					Game::GetTime( hour, minute, second );					
+					if ( hour >= 20)
+					{
+						System::Log("Stop TIMER_NAME_DUSK");
+						Game::SetTimeSpeed(0);
+						Mission::StopTimer(TIMER_NAME_DUSK);
+					}
+					else if ( hour >= 19)
+					{
+						GameObjectList list = Game::GetGameObjects(NAME_PARTICLE_FLICKERING);
+						for (int i = 0; i < list.GetNumObjects(); i++)
+							list.GetObject(i)->StopParticleEffect();
+					}
+				}
+				break;
+			case TIMER_NAME_KILL_HOSTAGE:
+				{
+					if (!mSquadEnteredPlane && !Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER))
+					{
+						RunCutscene_PlaneThrow();
+						Mission::StartSingleTimer(TIMER_NAME_KILL_HOSTAGE, TIMER_TIME_KILL_HOSTAGE);
+						Mission::StartSingleTimer(TIMER_NAME_WARN_KILL, TIMER_TIME_WARN_KILL);
+						mHintCounter[16] = 0;
+						mHintCounter[17] = 0;
+					}
+				}
+				break;
+			case TIMER_NAME_WARN_KILL:
+				{
+					if (!mSquadEnteredPlane && !Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER))
+					{
+						if (mHintCounter[16] == 0 && mHintCounter[17] == 0)
+						{
+							if (Math::rand() < Math::RANDMAX * 0.5)
+								ShowHint(16);
+							else
+								ShowHint(17);
+						}
+					}
+				}
+				break;
+			case TIMER_NAME_STORM_GANGSTER:
+				{
+					if (!mGangsterStorm.IsArrested() && !mGangsterStorm.IsInjured())
+					{
+						mGangsterStorm.SetFleeing(true);
+						mGangsterStorm.SetObjectPath(NAME_PATH_STORM);
+						mGangsterStorm.SetEquipment(EQUIP_FLASHGRENADE);
+						mGangsterStorm.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+					}
+					Mission::StartSingleTimer(TIMER_NAME_COLONEL_FLIGHT, TIMER_TIME_COLONEL_FLIGHT);
+					mPlane.SetAnimation("open");
+					Game::ActivateTrigger(NAME_TRIGGER_COCKPIT);
+					mFlightStarted = true;
+					//Mission::StopTimer(TIMER_NAME_KILL_HOSTAGE);
+					//Mission::StopTimer(TIMER_NAME_WARN_KILL);
+				}
+				break;
+			case TIMER_NAME_COLONEL_FLIGHT:
+				{
+					Vector pos;
+					ActorList fpos(NAME_AREA_FLIGHTPOS);
+					if (fpos.GetNumActors() > 0)
+						pos = fpos.GetActor(0)->GetPosition();
+					else
+						pos = mColonel.GetPosition();
+					if (!Game::FindAvailablePosition(&mColonel, pos, 300.f, false))
+						System::Log("NO pos found");
+					if (!mColonel.IsArrested() && !mColonel.IsInjured())
+					{
+						mColonel.SetPosition(pos);
+						mColonel.SetEnteredHouseID(-1);
+						mColonel.UpdatePlacement();
+						mColonel.SetFleeing(true);
+						mColonel.SetObjectPath(NAME_PATH_FLIGHT);
+					}
+					Mission::StartSingleTimer(TIMER_NAME_HINT_CATCH_LEADER, TIME_HINT_CATCH_LEADER);
+				}
+				break;
+			case TIMER_NAME_BURN_WAGGONS:
+				{
+					System::Log("M18: Let Fuel car 1 and 2 explode");
+					mFuelCar1.Explode();
+					mFuelCar2.Explode();
+					Audio::PlaySample(NAME_SOUND_EXPLOSION1);
+				}
+				break;
+			case TIMER_NAME_BURN_WAGGON3:
+				{
+					System::Log("M18: Let Fuel car 3 explode");
+					mFuelCar3.Explode();
+					Audio::PlaySample(NAME_SOUND_EXPLOSION1);
+				}
+				break;
+			case TIMER_NAME_BURN_PLANE_NEAR:
+				{
+					if (mPlane2.IsValid())
+					{
+						System::Log("M18: Start burning plane2 with %d fire children", mPlane2.GetNumFireChilds());
+						for (int i = 0; i < mPlane2.GetNumFireChilds(); i++)
+						{
+							mPlane2.GetFireChild(i).Burn();
+							mPlane2.GetFireChild(i).SetTemperature(mPlane2.GetFireChild(i).GetMaxMaterialTemperature());
+						}
+					}
+					for (int i = 0; i < mFireObjectList.GetNumActors(); i++)
+					{
+						FireObject f(mFireObjectList.GetActor(i));
+						f.Burn();
+						f.SetTemperature(f.GetMaxMaterialTemperature());
+					}
+				}
+				break;
+			case TIMER_NAME_BURN_TERMINAL:
+				{
+					//System::Log("M18: Start burning terminal with %d fire children", mTerminal.GetNumFireChilds());
+					//for (int i = 0; i < mTerminal.GetNumFireChilds(); i++)
+					//{
+					//	mTerminal.GetFireChild(i).Burn();
+					//	mTerminal.GetFireChild(i).SetTemperature(mTerminal.GetFireChild(i).GetMaxMaterialTemperature());
+					//}
+				}
+				break;
+			case TIMER_NAME_PLANE_BOMB:
+				{
+					RunCutscene_PlaneBurn();
+				}
+				break;
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char* Path_, GameObject *Obj_)
+	{
+		System::Log("M18: OnPathFinished() for path %s", Path_);
+		switch(Path_)
+		{
+			case NAME_PATH_FUEL_CAR1A:
+			case NAME_PATH_FUEL_CAR2A:
+				{
+					System::Log("M18: Guard a finished path.");
+					mGuard1.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+					Mission::StartSingleTimer(TIMER_NAME_RETURN_GUARD1, TIMER_TIME_RETURN_GUARD1);
+				}
+				break;
+			case NAME_PATH_FUEL_CAR1B:			
+			case NAME_PATH_FUEL_CAR2B:
+				{
+					System::Log("M18: Guard b finished path.");
+					mGuard2.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+					Mission::StartSingleTimer(TIMER_NAME_RETURN_GUARD2, TIMER_TIME_RETURN_GUARD2);
+				}
+				break;
+			case NAME_PATH_STORM:
+				{
+					mGangsterStorm.SetFleeing(false);
+					mGangsterStorm.SetObjectPath(NULL);
+					Vector targetPos;
+					ActorList targets(NAME_AREA_GRENADE_TARGET);
+					if (targets.GetNumActors() > 0)
+					{
+						targetPos = targets.GetActor(0)->GetPosition();
+						//mGangsterStorm.PushActionThrowMolotov(ACTION_NEWLIST, targetPos, POWER_GRENADE);
+						mGangsterStorm.SetAnimation("throwgrenade02");
+						mGangsterStorm.PushActionInterruptAnim(ACTION_NEWLIST, "throwgrenade01", 0.0f, false);
+						//mGangsterStorm.PushActionInterruptAnim(ACTION_APPEND, "throwgrenade02", 0.0f, false);
+						Mission::StartSingleTimer(NAME_TIMER_GRENADE_FIRE, TIMER_TIME_GRENADE_FIRE);						
+					}
+					ShowHint(12);
+
+					return PATH_STOP;
+				}
+				break;
+			case NAME_PATH_FLIGHT:
+				{
+					mGangsterLeft = true;
+				}
+				break;
+		}
+		return PATH_DEFAULT;
+	}
+
+	bool OnExplode(GameObject *obj)
+	{
+		if (!Mission::IsCutSceneRunning() && (obj->GetID() == mFuelCar1.GetID() || obj->GetID() == mFuelCar2.GetID()))
+		{
+			// Flugzeug sprengen
+			if (!Mission::TimerIsStarted(TIMER_NAME_PLANE_EXPLODE))
+			{
+				ShowHint(13);
+				Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE);
+				mExplosionUnstoppable = true;
+			}
+			if (obj->GetID() == mFuelCar1.GetID())
+			{
+				Audio::StopSample(mTankPipe1Sound);
+				mFuelCar1.ClearFlag(OF_USABLE);
+			}
+			if (obj->GetID() == mFuelCar2.GetID())
+			{
+				Audio::StopSample(mTankPipe2Sound);
+				mFuelCar2.ClearFlag(OF_USABLE);
+			}
+		}
+		return true;
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_PLANE_BOMB:
+				{
+					CutsceneFirstPhase_PlaneBomb();
+				}
+				break;
+			case TRANSITION_PLANE_ROLL:
+				{
+					CutsceneFirstPhase_PlaneRoll();
+				}
+				break;
+			case TRANSITION_PLANE_THROW:
+				{
+					CutsceneFirstPhase_PlaneThrow();
+				}
+				break;
+			case TRANSITION_PLANE_BURN:
+				{
+					CutsceneFirstPhase_PlaneBurn();
+				}
+				break;
+		}
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	bool OnStartBurning(GameObject *obj)
+	{
+		if (mHintCounter[1] == 0 && obj->HasName(NAME_HINT1))
+			ShowHint(1);
+		if (obj->HasName(NAME_TERMINAL))// && !Mission::IsCutSceneRunning() && !Mission::TimerIsStarted(NAME_TIMER_CS_BURN_LOOSE))
+		{
+			System::Log("Terminal is burning");
+			mFireOutOfControl = true;
+		}
+		return true;
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		switch(Trigger)
+		{
+			case NAME_TRIGGER_HINT3:
+				{
+					if (mHintCounter[3] > 0)
+						return;
+					if (Collider->GetType() == ACTOR_PERSON)
+					{
+						Person p(Collider);
+						if (p.GetRole() == ROLE_SQUAD)
+						{
+							ShowHint(3);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT3);
+						}
+					}
+					else if (Collider->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(Collider);
+						if (!v.IsCivilCar())
+						{
+							ShowHint(3);
+							Game::DeactivateTrigger(NAME_TRIGGER_HINT3);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_COCKPIT:
+				{
+					if (mHintCounter[18] > 0)
+						return;
+					if (mFlightStarted && Collider->GetType() == ACTOR_PERSON)
+					{
+						if (!mColonel.IsInjured() && !mColonel.IsArrested())
+						{
+							Person p(Collider);
+							if (p.GetRole() == ROLE_SQUAD)
+							{
+								ShowHint(18);
+								Game::DeactivateTrigger(NAME_TRIGGER_COCKPIT);
+							}
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *obj1, Actor *actor_)
+	{
+		if (obj1->GetID() == mGangsterDoor2.GetID())
+			return MCC_IGNORE_CONTINUE;
+		if (obj1->GetID() == mFuelCarMan1.GetID())
+			return MCC_IGNORE_CONTINUE;
+		if (obj1->GetID() == mFuelCarMan2.GetID())
+			return MCC_IGNORE_CONTINUE;
+		return MCC_HALT_CONTINUE;
+	}
+
+	void OnPersonInjured(Person *p)
+	{
+		if (p->HasCommand("Heal"))
+			mNumDoctorsCurrent--;
+		else if (p->HasCommand("Arrest") || p->HasCommand("Shoot") || p->HasCommand("Aim"))
+			mNumPolicemenCurrent--;
+		else if (p->IsEngineer())
+			mNumEngineersCurrent--;
+	}
+
+	bool OnHit(GameObject *Shooter_, GameObject *HitObject_, Vector *hitPoint_)
+	{
+		if (!mGuardHit)
+		{
+			if (HitObject_->GetID() == mGuard1.GetID())
+			{
+				mGuardHit = true;
+				GameObjectList list;
+				Game::CollectObstaclesOnTrigger(NAME_TRIGGER_HINT3, list, ACTOR_PERSON);
+				bool found = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetID() == mGuard1.GetID())
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					// Flugzeug sprengen
+					//if (!Mission::TimerIsStarted(TIMER_NAME_PLANE_EXPLODE))
+					//{
+					//	ShowHint(13);
+					//	Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE);
+					//}
+				}
+			}
+			else if (HitObject_->GetID() == mGuard2.GetID())
+			{
+				mGuardHit = true;
+				GameObjectList list;
+				Game::CollectObstaclesOnTrigger(NAME_TRIGGER_HINT3, list, ACTOR_PERSON);
+				bool found = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetID() == mGuard2.GetID())
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					// Flugzeug sprengen
+					//if (!Mission::TimerIsStarted(TIMER_NAME_PLANE_EXPLODE))
+					//{
+					//	ShowHint(13);
+					//	Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE);
+					//}
+				}
+			}
+		}
+		if (!mFuel1Stopped && mFuelCar1.GetBurningStatus() != OBS_FULLBURNED && HitObject_->GetID() == mFuelCar1.GetID())
+		{
+			//mFuelCar1.Explode();
+		}
+		else if (!mFuel2Stopped && mFuelCar2.GetBurningStatus() != OBS_FULLBURNED && HitObject_->GetID() == mFuelCar2.GetID())
+		{
+			//mFuelCar2.Explode();
+		}
+		return true;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M18: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Mission::PlayHint("HINT_M18_HURRY_UP");
+				break;
+			case 1:
+				Mission::PlayHint("HINT_M18_DANGER_FIRES");
+				break;
+			case 2:
+				Mission::PlayHint("HINT_M18_GANGSTER_REMOTE");
+				break;
+			case 3:
+				Mission::PlayHint("HINT_M18_CAREFUL_NEAR_PLANE");
+				break;
+			case 4:
+				Mission::PlayHint("HINT_M18_FUEL_STOPPED");
+				//Mission::PlayComment("SUPERV_M18_OBJ02");
+				break;
+			case 5:
+				Mission::PlayHint("HINT_M18_NEGOTIATE1");
+				break;
+			case 6:
+				Mission::PlayHint("HINT_M18_NEGOTIATE2");
+				break;
+			case 7:
+				Mission::PlayHint("HINT_M18_NEGOTIATE3");
+				break;
+			case 8:
+				Mission::PlayHint("HINT_M18_NEGOTIATE4");
+				break;
+			case 9:
+				Mission::PlayHint("HINT_M18_NEGOTIATE5");
+				break;
+			case 10:
+				Mission::PlayHint("HINT_M18_NEGOTIATE6");
+				break;
+			case 11:
+				Mission::PlayHint("HINT_M18_DOOR_GUARDED");
+				break;
+			case 12:
+				Mission::PlayHint("HINT_M18_GRENADE");
+				break;
+			case 13:
+				//Mission::PlayHint("HINT_M18_EXPLOSION");
+				break;
+			case 14:
+				Mission::PlayHint("HINT_M18_FUEL_HALF");
+				break;
+			case 15:
+				Mission::PlayHint("HINT_M18_FUEL_CLOSE");
+				break;
+			case 16:
+				Mission::PlayHint("HINT_M18_KILL_CLOSE");
+				break;
+			case 17:
+				Mission::PlayHint("HINT_M18_KILL_CLOSE2");
+				break;
+			case 18:
+				//Mission::PlayHint("HINT_M18_CATCH_LEADER");
+				break;
+			case 19:
+				Mission::PlayHint("HINT_M18_ATTACK");
+				break;
+			case 20:
+				Mission::PlayHint("HINT_M18_WARNING");
+				break;
+			case 21:
+				Mission::PlayHint("HINT_M18_CATCH_LEADER");
+				break;
+		}
+	}
+
+	bool IsGangsterSafe(Person &person)
+	{
+		return person.IsInjured() || person.IsArrested() || person.GetEnteredCarID() != -1;
+	}
+
+	MissionState GetMissionState()
+	{
+		if ( Mission::GetCounter(COUNTER_BURNING_OBJECTS) + Mission::GetCounter(COUNTER_BURNING_HOUSES) > 0 )
+		{
+			if (!Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRES))
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRES);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRESAGAIN");
+			}
+		}
+		else 
+		{			
+			if(		Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRES)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRES, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+			}
+		}
+
+		//System::Log("GetNumInjuredPersonNotOnTransport: %d", Game::GetNumInjuredPersonNotOnTransport());
+		if (Game::GetNumInjuredPersonNotOnTransport() == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED, true);
+				Mission::PlayComment("SUPERV_M18_OBJ01");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RESCUE_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		if (IsGangsterSafe(mGuard1) && IsGangsterSafe(mGuard2) && IsGangsterSafe(mGangsterDoor) && IsGangsterSafe(mGangsterStorm) && mColonelCheck && IsGangsterSafe(mColonel))
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER, true);
+				Mission::PlayComment("SUPERV_M18_OBJ03");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER, false);
+				//Mission::PlayComment("M18_CATCH_GANGSTERS");
+			}
+		}
+
+		if (mHintCounter[0] == 0 && (Mission::GetCounter(COUNTER_PERSON_DEATHS) > HINT0_MAX_DEAD_PERSONS || Mission::GetCounter(COUNTER_INJURED_PERSONS) > HINT0_MAX_INJURED))
+			ShowHint(0);
+
+		if (!Mission::TimerIsStarted(TIMER_NAME_PLANE_EXPLODE) && !Mission::IsCutSceneRunning()
+			&& !mPlaneBurnt && (mFuelCar1.IsDestroyed() || mFuelCar2.IsDestroyed()))
+		{
+			Mission::StopTimer(TIMER_NAME_START_PLANE);
+			Mission::StopTimer(TIMER_NAME_UPDATE_PLANE_AREA);
+			Mission::StartSingleTimer(TIMER_NAME_PLANE_EXPLODE, TIMER_TIME_PLANE_EXPLODE);
+			mExplosionUnstoppable = true;
+		}
+		if ((mFuelStopped
+			|| mSquadEnteredPlane || mPlane.IsBurning())
+			&& !Mission::IsObjectiveAccomplished(OBJECTIVE_STOP_PLANE))
+		{
+			Mission::SetObjectiveAccomplished(OBJECTIVE_STOP_PLANE, true);
+			Mission::PlayComment("SUPERV_M18_OBJ02");
+			Mission::StopTimer(TIMER_NAME_START_PLANE);
+		}
+
+		/*if (mNumActiveGangster == 0 && !Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER))
+			Mission::SetObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER, true);*/
+
+		if (mNumDoctors > 0 && mNumDoctorsCurrent == 0 && Mission::GetCounter(COUNTER_INJURED_PERSONS) > 0)
+		{
+			mSquadMissing = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (mNumPolicemen > 0 && mNumPolicemenCurrent == 0 && !Mission::IsObjectiveAccomplished(OBJECTIVE_CATCH_GANGSTER))//mNumActiveGangster > 0)
+		{
+			mSquadMissing = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		//if (mNumEngineers > 0 && mNumEngineersCurrent == 0 && !mFuelStopped)
+		//{
+		//	mSquadMissing = true;
+		//	Audio::SetMusicLevel(0.7f);
+		//	return MISSION_FAILED;
+		//}
+
+		if (mFlightStarted && mHintCounter[2] == 0 && (mColonel.IsInjured() || mColonel.IsArrested()))
+		{
+			ShowHint(2);
+			Mission::StartSingleTimer(TIMER_NAME_PLANE_BOMB, TIMER_TIME_PLANE_BOMB);
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_CIVIL_DEATHS)
+			+ Mission::GetCounter(COUNTER_SQUAD_DEATHS) > MAX_DEAD)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_INJURED_CIVILS)
+			+ Mission::GetCounter(COUNTER_INJURED_SQUADS)
+			+ Mission::GetCounter(COUNTER_INJURED_GANGSTERS) > MAX_INJURED)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (mFireOutOfControl || mGangsterLeft || mPlaneStarted)
+		{
+			if (mGangsterLeft)
+				Audio::SetMusicLevel(0.7f);
+			return MISSION_FAILED;
+		}
+
+		if (mBombExploded)
+			return MISSION_FAILED;
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() && mPlaneBurnt)
+		{
+			Audio::SetMusicLevel(0.8f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied || mBombExploded)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+		if (mGangsterLeft)
+			return "M18_GANGSTER_LEFT";
+		if (mPlaneStarted)
+			return "M18_PLANE_STARTED";
+		if (mSquadMissing)
+			return "M18_SQUADS_MISSING";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied && !mSquadEnteredPlane)
+			return "SUPERV_M18_FAIL01";
+		if (mTooManyDied && mSquadEnteredPlane && !mPlaneBurnt)
+			return "SUPERV_M18_FAIL02";
+		if (mTooManyDied && mSquadEnteredPlane && mPlaneBurnt)
+			return "SUPERV_M18_FAIL03";
+		if (mFireOutOfControl)
+			return "SUPERV_M18_FAIL04";
+		if (mGangsterLeft)
+			return "SUPERV_M18_FAIL05";
+		if (mPlaneStarted)
+			return "SUPERV_M18_FAIL06";
+		if (mSquadMissing)
+			return "SUPERV_M18_FAIL02";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M18_RES01";
+		if (Mission::GetCounter(COUNTER_PERSON_DEATHS) >= 3)
+			return "SUPERV_M18_RES02";
+
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		return 1.0f;
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0101;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mFireOutOfControl);
+		serializer_->Write(mTooManyDied);
+		serializer_->Write(mGangsterLeft);
+		serializer_->Write(mPlaneStarted);
+		serializer_->Write(mSquadMissing);
+		serializer_->Write(mFuelStopped);
+		serializer_->Write(mFuel1Stopped);
+		serializer_->Write(mFuel2Stopped);
+		serializer_->Write(mNumActiveGangster);
+		serializer_->Write(mNumDoctors);
+		serializer_->Write(mNumDoctorsCurrent);
+		serializer_->Write(mNumPolicemen);
+		serializer_->Write(mNumPolicemenCurrent);
+		serializer_->Write(mNumEngineers);
+		serializer_->Write(mNumEngineersCurrent);
+		serializer_->Write(mGuard1);
+		serializer_->Write(mGuard2);
+		serializer_->Write(mGuard1Pos);
+		serializer_->Write(mGuard2Pos);
+		serializer_->Write(mPsychologist);
+		serializer_->Write(mGuardHit);
+		serializer_->Write(mFuelCar1);
+		serializer_->Write(mFuelCar2);
+		serializer_->Write(mFuelCar3);
+		serializer_->Write(mFuelCarMan1);
+		serializer_->Write(mFuelCarMan2);
+		serializer_->Write(mPlane);
+		serializer_->Write(mNegotiateLevel);
+		serializer_->Write(mSquadEnteredPlane);
+		serializer_->Write(mGangsterStorm);
+		serializer_->Write(mGrenadeExplosion);
+		serializer_->Write(mGangsterDoor);
+		serializer_->Write(mGangsterDoor2);
+		serializer_->Write(mColonel);
+		serializer_->Write(mFlightStarted);
+		serializer_->Write(mTimeNegotiate);
+		serializer_->Write(mCurrentThrowPerson);
+		serializer_->Write(mPlane2);
+		serializer_->Write(mTerminal);
+		serializer_->Write(mScout);
+
+		serializer_->Write(mBombExploded);
+		serializer_->Write(mPlaneBurnt);
+		serializer_->Write(mPlaneOpen);
+		serializer_->Write(mCurrentTransition);
+		serializer_->Write(mPersonThrownCounter);
+		serializer_->Write(mTankPipe1);
+		serializer_->Write(mTankPipe2);
+		serializer_->Write(mThrowPersonList);
+		serializer_->Write(mGangway);
+		serializer_->Write(mPersonThrowPosition);
+		serializer_->Write(mPersonThrow);
+		serializer_->Write(mBurnParticleList);
+		for (int i = 0; i < 5; i++)
+			serializer_->Write(mBombParticleList[i]);
+		for (int i = 0; i < 2; i++)
+			serializer_->Write(mBombDebrisList[i]);
+		for (int i = 0; i < 2; i++)
+			serializer_->Write(mPlaneFrames[i]);
+		serializer_->Write(mTankPipe1Sound);
+		serializer_->Write(mTankPipe2Sound);
+		serializer_->Write(mAreaLights);
+		serializer_->Write(mFireObjectList);
+		serializer_->Write(mExplosionUnstoppable);
+		serializer_->Write(mColonelCheck);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mFireOutOfControl = serializer_->ReadBool();
+		mTooManyDied = serializer_->ReadBool();
+		mGangsterLeft = serializer_->ReadBool();
+		mPlaneStarted = serializer_->ReadBool();
+		mSquadMissing = serializer_->ReadBool();
+		mFuelStopped = serializer_->ReadBool();
+		mFuel1Stopped = serializer_->ReadBool();
+		mFuel2Stopped = serializer_->ReadBool();
+		serializer_->Read(mNumActiveGangster);
+		serializer_->Read(mNumDoctors);
+		serializer_->Read(mNumDoctorsCurrent);
+		serializer_->Read(mNumPolicemen);
+		serializer_->Read(mNumPolicemenCurrent);
+		serializer_->Read(mNumEngineers);
+		serializer_->Read(mNumEngineersCurrent);
+		serializer_->Read(mGuard1);
+		serializer_->Read(mGuard2);
+		serializer_->Read(mGuard1Pos);
+		serializer_->Read(mGuard2Pos);
+		serializer_->Read(mPsychologist);
+		mGuardHit = serializer_->ReadBool();
+		serializer_->Read(mFuelCar1);
+		serializer_->Read(mFuelCar2);
+		serializer_->Read(mFuelCar3);
+		serializer_->Read(mFuelCarMan1);
+		serializer_->Read(mFuelCarMan2);
+		serializer_->Read(mPlane);
+		serializer_->Read(mNegotiateLevel);
+		mSquadEnteredPlane = serializer_->ReadBool();
+		serializer_->Read(mGangsterStorm);
+		serializer_->Read(mGrenadeExplosion);
+		serializer_->Read(mGangsterDoor);
+		serializer_->Read(mGangsterDoor2);
+		serializer_->Read(mColonel);
+		mFlightStarted = serializer_->ReadBool();
+		serializer_->Read(mTimeNegotiate);
+		serializer_->Read(mCurrentThrowPerson);
+		serializer_->Read(mPlane2);
+		serializer_->Read(mTerminal);
+		serializer_->Read(mScout);
+
+		mBombExploded = serializer_->ReadBool();
+		mPlaneBurnt = serializer_->ReadBool();
+		mPlaneOpen = serializer_->ReadBool();
+		serializer_->Read(mCurrentTransition);
+		serializer_->Read(mPersonThrownCounter);
+		serializer_->Read(mTankPipe1);
+		serializer_->Read(mTankPipe2);
+		serializer_->Read(mThrowPersonList);
+		serializer_->Read(mGangway);
+		serializer_->Read(mPersonThrowPosition);
+		serializer_->Read(mPersonThrow);
+		serializer_->Read(mBurnParticleList);
+		for (int i = 0; i < 5; i++)
+			serializer_->Read(mBombParticleList[i]);
+		for (int i = 0; i < 2; i++)
+			serializer_->Read(mBombDebrisList[i]);
+		for (int i = 0; i < 2; i++)
+			serializer_->Read(mPlaneFrames[i]);
+		serializer_->Read(mTankPipe1Sound);
+		serializer_->Read(mTankPipe2Sound);
+		serializer_->Read(mAreaLights);
+		serializer_->Read(mFireObjectList);
+		mExplosionUnstoppable = serializer_->ReadBool();
+		if (Version >= 0x0101)
+			mColonelCheck = serializer_->ReadBool();
+
+		mPlane.SetDoorCollision(mPlane.GetEntranceDoorID(), false);
+
+		return true;
+	}
+
+};

@@ -1,0 +1,119 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script removefirehose
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+object RemoveFirehose : CommandScript
+{
+	RemoveFirehose()
+	{
+		SetValidTargets(ACTOR_PERSON|ACTOR_VEHICLE|ACTOR_OBJECT);
+		SetGroupID(CGROUP_FIREHOSE);
+		SetRestrictions2(RESTRICT2_ISHYDRANTORSELF);
+		SetPriority(1000);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return Caller->GetFirehoseID() != 0;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid())
+			return false;
+				
+		if (Caller->GetEquipment()==EQUIP_FIREHOSE && Caller->GetType() == ACTOR_PERSON && Caller->GetFirehoseID() != 0)
+		{
+			if (Caller->GetID()==Target->GetID())
+				return true;
+			GameObject obj(Target);
+			if (obj.GetType() == ACTOR_OBJECT && obj.IsHydrant() && obj.IsHydrantInUse() && (Caller->GetFirehoseID() == obj.GetFirehoseID()))
+				return true;
+			else if (obj.GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle v(Target);
+				if (v.IsUsingConnector(Caller))
+					return true;
+			}
+			return false;
+		}
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject hydrant = Caller->GetHydrant();
+		if (!hydrant.IsValid())
+			return;
+		Vector TargetPos;	
+		if (hydrant.GetType() == ACTOR_OBJECT)
+			TargetPos = hydrant.GetTargetPoint(Caller, TARGET_FIREHOSE_HOOKUP);
+		else if (hydrant.GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(&hydrant);
+			if (!v.GetUsedConnectorPosition(Caller, TargetPos))
+				return;
+		}
+
+		switch (childID)
+		{
+			case 8331: // Zweig Uninstall im DLK Korb
+				Caller->PushActionUseEquipment(ACTION_INSERT, &hydrant, childID, 10.0f);
+				hydrant.Hide();
+				Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Deconnect",&hydrant,0,false);
+				break;
+			default:
+				Person p(Caller);
+				if (childID == 0)
+					Caller->PushActionWait(ACTION_NEWLIST,0.1f);
+				Caller->PushActionMoveWithHose(ACTION_INSERT, TargetPos);
+				Caller->PushActionUseEquipment(ACTION_INSERTAFTERFIRST, &hydrant, 0, 10.0f);
+				if (p.GetEnteredHouseID()>1)
+				{
+					Actor a=Game::GetActor(p.GetEnteredHouseID());
+					OpenHouse oh(&a);
+					Caller->PushActionLeaveHouse(ACTION_INSERT,&oh);
+					Caller->PushActionMove(ACTION_INSERT,oh.GetEntrancePosition(true,0.0),true);
+				}
+				break;
+		}
+	}
+};
+
+object Deconnect : CommandScript
+{
+	Deconnect()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		v.PushActionDeleteOwner(ACTION_NEWLIST);
+	}
+};

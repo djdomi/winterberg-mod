@@ -1,0 +1,292 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script leitstelle
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+#pragma compile
+
+// Leitstellenroutine -> legt die E-Stelle fest und alarmiert die Kraefte
+
+object lst_estelle : CommandScript
+{
+	lst_estelle()
+	{
+		SetIcon("faz");
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+GameObject faeswitch;
+
+object lst_einschalten : CommandScript
+{
+
+	lst_einschalten()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Log("Lst einschalten %s",Caller->GetName());
+		GameObjectList lfz;
+	
+		lfz=Game::GetGameObjectsWithPrefix("platz");
+		for (int i=0;i<4;i++)
+			lfz.GetObject(i)->SetCommandable(true);
+		GameObjectList ol("start");
+		faeswitch=ol.GetObject(0);
+		faeswitch.SetUserData(0);
+		System::Log("System Init FAE SWitch : %s", faeswitch.GetName());
+	}
+};
+
+object lst_alarmieren : CommandScript
+{
+
+	lst_alarmieren()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		// System::Log("Leitstelle Start");
+		Vector TargetPos=Target->GetPosition();
+		GameObject ziel(Target);
+		bool neue_estelle=true;
+		int TargetID=Caller->GetUserData();
+		int ecode;
+
+		if (childID < 99)
+		{
+			ecode=(faeswitch.GetUserData() & 15);
+			if (Input::LShiftPressed())
+				ecode=1;
+			else if (Input::RShiftPressed())
+				ecode=6;
+			else if (Input::RCtrlPressed() && ecode!=15)
+				ecode=7;
+			ecode+=100;
+		} else 
+			ecode=childID;
+
+
+		bool fuenfton=((faeswitch.GetUserData() & 16)==0) && !Input::LCtrlPressed();
+
+		switch (Target->GetType())
+		{
+			case ACTOR_OBJECT:
+				GameObject p(Target);
+				neue_estelle=!p.HasCommand("lst_estelle") && !p.HasNamePrefix("wm_");
+				if (neue_estelle)
+					TargetID=p.GetUserData();
+				else
+					TargetID=p.GetID();
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				if (v.HasCommand("lst_estelle"))
+					TargetID=v.GetID();
+				else
+					TargetID=v.GetUserData();
+				neue_estelle=v.IsFirefighter() && TargetID==0 && !v.HasCommand("lst_estelle");
+				break;
+			case ACTOR_PERSON:
+				GameObject p(Target);
+				neue_estelle=!p.HasCommand("fuehrung");
+				TargetID=p.GetUserData();
+				break;
+		}
+				
+		if (neue_estelle)
+		{
+			// System::Log("Leitstelle Neue Estelle %u",TargetID);
+			Vehicle pv= Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/fsammel.e4p", "estelle");
+			if (TargetID==0)
+				pv.AssignCommand("lst_estelle");
+			else {
+				pv.RemoveCommand("lst_estelle");
+				pv.SetFlag(FLAG_TL);
+			}
+			GameObject p(&pv);
+			p.ClearFlags();
+			if (Game::IsMultiplayer())
+				p.SetPlayerMP(Caller->GetPlayerMP());
+			// System::Log("Leitstelle Estelle platzieren");
+			Game::FindFreePosition(&p,TargetPos);
+			p.SetPosition(TargetPos);
+			p.SetCommandable(true);
+			p.SetSelectable(false);
+			p.SetUserData(TargetID);		
+			// System::Log("Leitstelle EStelle Debung");
+			bungarext::debung (Target);
+		} else {
+			Actor a=Game::GetActor(TargetID);
+			GameObject p(&a);
+			if (p.HasNamePrefix("wm_"))
+				p.AssignCommand("lst_estelle");
+		}
+		
+		switch (ecode)
+		{	
+			case 305:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",&p,305,false); 
+				break;
+			case 306:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",&p,306,false);
+				break;
+			case 999:
+				p.PushActionExecuteCommand(ACTION_INSERT,"alarmfueralle",&p,0,false);
+				break;
+			default:
+				lst_func::alarmierung(&p,&p,ecode,childID,!fuenfton);
+				break;
+		}
+		faeswitch.SetUserData(0);
+   	}
+};
+
+
+class lst_func : CommandScript
+{
+
+	void alarmierung (GameObject *Caller, Actor *Target, int zugtyp, int wache, bool sir)
+	{
+		System::Log("Leitstelle mit Alarm Code %u auf %s",zugtyp,Target->GetName());
+		int alarmtype=101;
+		int cid=1000*wache;
+		int zug21,zug22;
+
+		GameObject p(Target);
+		bool alarmstufe1=!p.IsFlagSet(OF_LOCKED);
+		char * aao="                                                                                                                                                                                                                                                                     ";
+		char *aoname="            ";
+		snprintf(aoname,12,"DOC_ALARM%u",zugtyp);
+		Game::GetGameString(aoname,aao,250);
+		System::Log("Leitstelle Alarm Wache %u %s %s",wache,aoname,aao);
+		bool dosir;
+		bool dofirst;
+		bool keinewache;
+		bool alarm;
+		bool neuerzug;
+
+		int fzcode=int(aao[0]);
+		p.PushActionWait(ACTION_NEWLIST,0.1);
+		sir=sir || ((fzcode&1)>0);
+		fzcode=fzcode&254;
+			
+
+		switch (fzcode)
+		{
+			case 64:
+				alarmtype=101;
+				if (sir)
+					alarmtype=201;
+				break;
+			case 80:
+				if (sir)
+					alarmtype=301;
+				break;
+			case 96:
+				alarmtype=121;
+				break;
+			case 72:
+				alarmtype=108;
+				p.PushActionExecuteCommand(ACTION_NEWLIST,"senden",&p,101,false);	// Zugsequenz einschalten
+				break;
+		}
+
+		// System::Log("Neue Alarmierung Zugtype %u %s",alarmtype,aao);
+		char *aaoanal="    ";
+	
+		p.PushActionExecuteCommand(ACTION_APPEND,"senden",&p,alarmtype,false);	// Zugsequenz einschalten
+		for (int c=1;int(aao[c])>32;c++)
+		{
+				
+			fzcode=int(aao[c]);
+			aaoanal[0]=aao[c];
+			dosir=(fzcode&1)>0;
+			dofirst=(fzcode&2)>0;
+			keinewache=(fzcode&4)>0;
+			neuerzug=(fzcode&8)>0;
+
+			c++;
+			aaoanal[1]=aao[c];
+			fzcode=int(aao[c])-48;
+			c++;
+			aaoanal[2]=aao[c];
+			fzcode=fzcode*10+int(aao[c])-48;
+			c++;
+			aaoanal[3]=aao[c];
+			fzcode=fzcode*10+int(aao[c])-48;
+
+			alarm=true;
+			if (dosir)
+				alarm=sir;
+			if (dofirst)
+				alarm=alarm&&alarmstufe1;
+
+			// System::Log("AlarmString %s",aaoanal);
+			// System::Log("Alarmcode Fz %u dosir %u dofirst %u Wacheunabhängig %u",fzcode,int(dosir),int(dofirst),int(keinewache));
+
+			if (keinewache || neuerzug)
+				cid=99000;
+			if (neuerzug)
+				p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,10,false); 
+			if (alarm)
+				p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,cid+fzcode,false); 
+		}
+		p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,2,false);	// AlarmDummy Loeschen	
+		p.SetFlag(OF_LOCKED);
+		// System::Log("Neue Alarmierung Ende");
+	}
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;
+const int FLAG_P_NEU=OF_HAS_FIREAXE * 32;
+const int FLAG_NOMOVE=OF_HAS_FIREAXE * 64;
+
+class bungarext : CommandScript
+{
+
+	GameObject hierhin (Vector cp)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		//obj.Hide();
+		return obj;
+	}
+	
+	void debung (Actor *bung)
+	{
+		// System::Log("Bungar Debung Modul Leitstelle %s",bung->GetName());
+		if (bung->HasNamePrefix("bungar"))
+		{
+			GameObject db(bung);
+			db.PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+		// System::Log("Debunged");
+	}
+};

@@ -1,0 +1,67 @@
+object FS8741_raus : CommandScript
+{
+	FS8741_raus()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Audio::PlaySample("mod:/Audio/FX/voices/8-74-1_raus.wav");
+	}
+};
+
+object FS8921_raus : CommandScript
+{
+	FS8921_raus()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Audio::PlaySample("mod:/Audio/FX/voices/8-92-1_raus.wav");
+	}
+};
+
+object FS8511_raus : CommandScript
+{
+	FS8511_raus()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Audio::PlaySample("mod:/Audio/FX/voices/8-51-1_raus.wav");
+	}
+};
+
+object status_raus : CommandScript
+{
+	status_raus()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/FUNKFREI.wav");
+	}
+};

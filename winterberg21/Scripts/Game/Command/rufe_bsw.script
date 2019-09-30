@@ -1,0 +1,89 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script rufe_bsw
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// rufe_bsw.script V0.2 by manuelt
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freies Bestattungsunternehmen...
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+object rufe_bsw : CommandScript
+{
+
+	int asf; //ObjectID des gefundenen ASFs
+	bool kriterien_erfuellt; //Ist dieser ASF gerade frei?
+
+   rufe_bsw()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON);
+	SetCursor("gowache");
+	SetIcon("gowache");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,600,false);
+   }
+};
+
+// rufe_bsw.script V0.2 by manuelt
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freies Bestattungsunternehmen...
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+object rufe_bsw : CommandScript
+{
+
+	int asf; //ObjectID des gefundenen ASFs
+	bool kriterien_erfuellt; //Ist dieser ASF gerade frei?
+
+   rufe_bsw()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON);
+	SetCursor("gowache");
+	SetIcon("gowache");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,600,false);
+   }
+};

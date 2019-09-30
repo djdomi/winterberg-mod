@@ -1,0 +1,232 @@
+// Winterberger für Em4 
+// umziehen v1.0 by WitchDoctor
+// basiert auf Umzieh.script für Em3 by manuelt
+//
+// Revision
+// 14.6.06 : Final für Rel 1.0
+
+object ChangeToMask: CommandScript
+{
+	ChangeToMask()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson())
+    			return false;
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand("ich_fuehre_pa"))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+
+		Caller->PushActionMove(ACTION_NEWLIST, &v, TARGET_EQUIPMENTDOOR);
+		Caller->PushActionTurnTo(ACTION_APPEND, &v);
+                Caller->PushActionExecuteCommand(ACTION_APPEND, "DummyChange", &v, 1, false);
+	}
+};
+
+object ChangeToABC: CommandScript
+{
+	ChangeToABC()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+    		if (p.IsCarryingPerson())
+    			return false;
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand("ich_fuehre_csa"))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		Caller->PushActionMove(ACTION_NEWLIST, &v, TARGET_EQUIPMENTDOOR);
+		Caller->PushActionTurnTo(ACTION_APPEND, &v);
+                Caller->PushActionExecuteCommand(ACTION_APPEND, "DummyChange", &v, 2, false);
+	}
+};
+
+object ChangeToDiver: CommandScript
+{
+	ChangeToDiver()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+		Person p(Caller);
+		if (p.IsCarryingPerson())
+			return false;
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand("ich_fuehre_tauchgeraet"))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		Caller->PushActionMove(ACTION_NEWLIST, &v, TARGET_EQUIPMENTDOOR);
+		Caller->PushActionTurnTo(ACTION_APPEND, &v);
+                Caller->PushActionExecuteCommand(ACTION_APPEND, "DummyChange", &v, 3, false);
+	}
+};
+
+object ChangeToFireFighter: CommandScript
+{
+	ChangeToFireFighter()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsCarryingPerson())
+			return false;
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.IsFirefighter())
+		{
+			return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		Caller->PushActionMove(ACTION_NEWLIST, &v, TARGET_EQUIPMENTDOOR);
+		Caller->PushActionTurnTo(ACTION_APPEND, &v);
+                Caller->PushActionExecuteCommand(ACTION_APPEND, "DummyChange", &v, 4, false);
+	}
+};
+
+object seg: CommandScript
+{
+	seg()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		Vehicle v(Target);
+		if (p.IsCarryingPerson())
+			return false;
+		if (v.HasCommand("seg_fz"))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_EQUIPMENTDOOR);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+                Caller->PushActionExecuteCommand(ACTION_APPEND, "DummyChange", Target, 5, false);
+	}
+};
+
+
+object DummyChange: CommandScript
+{
+	DummyChange()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+                Vector Pos;
+                float r[9];
+                Person p;
+		int enter = 0;
+                Pos=Caller->GetPosition();
+                Caller->GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                Caller->PushActionSwitchAnim(ACTION_NEWLIST,"useobjmid");
+		Caller->PushActionWait(ACTION_APPEND, 5.f);
+                Caller->SetCommandable(false);
+		Caller->PushActionDeleteOwner(ACTION_APPEND);
+                if(childID == 1)
+                {
+                        p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p", Target->GetName());
+                }
+
+                if(childID == 2)
+                {
+                        p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighterabc_upgraded2.e4p", Target->GetName());
+                }
+
+                if(childID == 3)
+                {
+                        p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/diver_upgraded2.e4p", Target->GetName());
+                }
+
+                if(childID == 4)
+                {
+                        p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighternorm_upgrade2.e4p", Target->GetName());
+                }
+
+                if(childID == 5)
+                {
+                        p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/drk_helfer.e3p", Target->GetName());
+                }
+                p.SetPosition(Pos);
+                p.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                p.Hide();
+		p.PushActionWait(ACTION_NEWLIST, 5.f);
+		p.PushActionShowHide(ACTION_APPEND, false);
+		Vehicle v(Target);
+		if (v.HasCommand("freiwillige"))
+		{
+			p.PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,true);
+		}
+	}
+};

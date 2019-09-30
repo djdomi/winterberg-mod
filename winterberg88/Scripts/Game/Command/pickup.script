@@ -1,0 +1,188 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script pickup
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+object PickUp : CommandScript
+{
+	PickUp()
+	{
+		SetIcon("liftwithcrane");
+		SetCursor("liftwithcrane");
+		// Vehicle wird fürs Motorboot gebraucht
+		SetValidTargets(ACTOR_OBJECT | ACTOR_PERSON | ACTOR_VEHICLE);
+		// SetRestrictions2(RESTRICT2_CANBEPICKEDUP);
+		SetGroupID(CGROUP_PICKUP);
+		SetPossibleEquipment(EQUIP_NONE);
+		SetGroupLeader(true);
+		SetPriority(100);
+		SetActivationByLeftClick(true);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid())
+			return false;
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_THW_FGRR_RL)
+				return !v.IsCarryingAnything();
+			return true;
+		}
+		return !Caller->IsCarryingAnything();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid())
+			return false;
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_FMB)
+			{
+				return v.GetFreeTransports() > 0 && (Game::ExistsNormalObjectWithFlagSet(OF_FLOTSAM) || Game::ExistsDrowningPerson());
+			}
+			else if (v.GetVehicleType() == VT_THW_FGRR_RL)
+			{
+				return !v.IsCarryingAnything() && Game::ExistsNormalObjectWithFlagSet(OF_CARRYABLE_BY_BULLDOZER);
+			}
+		}
+		if ( Caller->GetType() == ACTOR_PERSON)
+		{
+			Person p(Caller);
+			if ( p.GetArrestedID() != -1 )
+				return false;
+		}
+		if (Caller->IsCarryingAnything())
+			return false;
+		if (Caller->HasCommand("Extinguish"))
+			return Game::ExistsInstalledJumppad() || Game::ExistsPickableAnimal();
+		else 
+			return Caller->HasCommand("DrawWeapon");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || Caller->GetID()==Target->GetID())
+			return false;
+	
+		Vehicle v(Caller);
+		// (dg) special code for rl
+		if (v.IsValid() && (v.GetVehicleType() == VT_THW_FGRR_RL))
+		{
+			GameObjectList l = v.GetCarriedObjects();
+			int numObjects = l.GetNumObjects();
+			if (numObjects > 0)
+				return false;
+			GameObject obj(Target);
+			if (obj.IsValid() && obj.IsFlagSet(OF_CARRYABLE_BY_BULLDOZER))
+				return true;
+		}
+		// (uw) special code for fmb		
+		else if (v.IsValid() && (v.GetVehicleType() == VT_FIREFIGHTERS_FMB))
+		{
+			GameObjectList l = v.GetCarriedObjects();
+			int numObjects = l.GetNumObjects();
+			// Kann FMB noch was aufnehmen?
+			if (v.GetFreeTransports() <= 0)
+			{
+				return false;
+			}			
+		
+			Person p(Target);
+			GameObject obj(Target);
+			if ((obj.IsValid() && obj.IsFlagSet(OF_FLOTSAM)) || 
+				(p.IsValid() && p.IsDrowning()) )
+			{
+				return true;
+			}		
+		
+		} else if (Target->GetType() == ACTOR_VEHICLE)
+			return false;
+
+		if (Caller->IsCarryingAnything())
+			return false;
+			
+		GameObject obj(Target);
+
+		// don't pickup jumppad which is in use
+		if ( obj.IsJumppad() && obj.HasAnyAction() )
+			return false;
+
+		if (obj.IsValid() 
+			&& (obj.IsJumppad() || obj.IsRoadblock() || obj.IsFlagSet(OF_RECOVERABLE))
+			&& obj.GetObjectType()!= TYPE_PERSON 
+			&& obj.GetObjectType()!= TYPE_VEHICLE)
+		{
+			return true;
+		}
+		if (obj.GetType() == ACTOR_PERSON && obj.IsFlagSet(OF_PULLABLE))
+		{
+			Person p(Target);
+			if (p.IsDead() && p.GetRole() == ROLE_ANIMAL)
+				return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		GameObject ggv(Target);
+
+		if (v.GetVehicleType() == VT_FIREFIGHTERS_FMB)
+		{
+			Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_FOLLOW);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			Caller->PushActionPickUp(ACTION_APPEND, Target);
+		}
+		else
+		{
+			Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_ANY);
+			
+			Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			if (v.GetVehicleType() == VT_THW_FGRR_RL)
+				if (v.IsBucketUp())
+				{
+					Caller->PushActionMoveBucket(ACTION_APPEND, Target, false);
+				}
+			if (ggv.HasName("witchbomb"))
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufloesen",Target,0,false);
+			else
+				Caller->PushActionPickUp(ACTION_APPEND, Target);
+			if (v.GetVehicleType() == VT_THW_FGRR_RL)
+			{
+				Caller->PushActionMoveBucket(ACTION_APPEND, Target, true);
+			}
+		}
+		ggv.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",Caller,3,false);
+	}
+};
+
+object aufloesen : CommandScript
+{
+
+	aufloesen()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		GameObject ggv(Target);
+		ggv.PushActionExecuteCommand(ACTION_NEWLIST,"ggv_check",Caller,3,false);
+		ggv.PushActionWait(ACTION_APPEND,2.0);
+		ggv.PushActionDeleteOwner(ACTION_APPEND);
+	}
+};

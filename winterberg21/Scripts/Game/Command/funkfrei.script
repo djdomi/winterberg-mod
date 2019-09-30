@@ -1,0 +1,34 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.0
+// ## 
+// ## Script funkfrei
+// ## 
+// ## Stand : 06.8.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+object Funkfrei : CommandScript
+{
+	Funkfrei()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetIcon("funkfrei");
+		SetCursor("funkfrei");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FzFrei",Caller,0,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"SoSiOff",Caller,0,false);
+	}
+};

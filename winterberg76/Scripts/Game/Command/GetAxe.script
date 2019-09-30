@@ -1,0 +1,58 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script GetAxe
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+object GetAxe : CommandScript
+{
+	GetAxe()
+	{
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetRestrictions(RESTRICT_NOTDESTROYED | RESTRICT_NOTBURNING | RESTRICT_HASFIREAXE);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetNeedsCarWithFlagSet(OF_HAS_FIREAXE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		GameObject obj(Target);
+		if (Caller->GetObjectType()==TYPE_PERSON && Caller->GetEquipment()!=EQUIP_FIREAXE && obj.IsValid() && obj.IsFlagSet(OF_HAS_FIREAXE))
+		{
+			Person p(Caller);
+			if(p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+				return false;
+			
+			return true;
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_EQUIPMENTDOOR);
+		if (childID == 0)
+			Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+		else
+			Caller->PushActionMove(ACTION_INSERT, TargetPos);
+
+		Caller->PushActionGetEquipment(ACTION_INSERTAFTERFIRST, Target, EQUIP_FIREAXE);
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST, Target);
+		System::Log("Axt herausgegeben");
+	}
+};

@@ -1,0 +1,1462 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script 10
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+/* TODO
+	- Cutscene
+	- Musik und Sound
+*/
+
+const int MAX_HINTS = 6;
+const int MAX_DEAD_CIVILS = 5;			// mehr Tote -> fail
+const int MAX_HOUSES_BURN = 10;			// mehr Häuser brennen oder sind abgebrannt -> fail
+const int MAX_INJURED_PERSONS = 30;		// mehr Verletzte -> fail
+const int MAX_BLOCKED_PERSONS = 1;		// Personen unter Trümmern
+const int MAX_HOUSES_FAIL = 40;			// Häuser die bei Brand zu Missionsabbruch führen
+const int MAX_HOUSES_HINT = 5;			// Häuser die bei in Brand geraten, Hint erzeugen
+const int MAX_HOUSES_FLIGHT = 4;		// Häuser die bei Brand Besitzer zur Flucht animieren
+const int MAX_FIREWORK_EFFECTS = 10;		// Anzahl Emitter für das Feuerwerk
+const int TIME_COLLAPSING_EFFECT_MIN = 10;	// minimale Zeit bis Mörteleffekt wieder gestartet wird
+const int TIME_COLLAPSING_EFFECT_MAX = 30;	// maximale Zeit ~
+const float TIME_CS1_TRANSITION = 3.0f;
+const int MAX_DEAD_HINT4 = 3;			// maximale Anzahl Toter, damit Hint 4 kommt
+const int MAX_INJURED_HINT4 = 25;		// maximale Anzahl Verletzter, damit Hint 4 kommt
+const float FACTORY_OWNER_ACTION_RANGE = 900.f;	// Besitzer checkt in dem Radius auf Polizisten
+const int COUNT_HOUSE_PIECE_GROUPS = 4;	// Anzahl der Gruppen von Trümmerstücken des Cutscene-Hauses
+const int MAX_SPARK_OBJECTS = 5;
+
+const float TIME_SPARK_1 = 60.0f;
+const float TIME_SPARK_2 = 30.0f;
+const float TIME_SPARK_3 = 20.0f;
+const float TIME_SPARK_4 = 15.0f;
+const float TIME_SPARK_5 = 10.0f;
+
+const char OBJECTIVE_TRANSPORT_INJURED[]		= "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]			= "EXTINGUISH_FIRES";
+const char OBJECTIVE_TRANSPORT_FACTORYOWNER[]	= "M10_TRANSPORT_FACTORYOWNER";
+
+const char HINT_FIRE_OUT_OF_CONTROL[]			= "HINT_10_FIRE_OUT_OF_CONTROL";
+const char HINT_INSTABLE_BUILDING[]				= "HINT_10_INSTABLE_BUILDING";
+const char HINT_HOUSE_WILL_CRASH[]				= "HINT_10_HOUSE_WILL_CRASH";
+const char HINT_FACTORY_OWNER[]					= "HINT_10_FACTORY_OWNER";
+const char HINT_TOO_MANY_INJUREDS[]				= "HINT_10_TOO_MANY_INJUREDS";
+const char HINT_SQUADS_IN_DANGER[]				= "HINT_10_SQUADS_IN_DANGER";
+
+const char NAME_FACTORY_OWNER[]					= "factory_owner";
+const char NAME_BLOCKED_PERSON[]				= "blocked"; //+ nr; Trümmerteil heisst genauso
+const char NAME_HOUSE_BURN_FAIL[]				= "fail_";
+const char NAME_HOUSE_BURN_HINT[]				= "hint_";
+const char NAME_FIREWORK_EFFECT[]				= "firework";
+const char NAME_FACTORY_FIREWORK[]				= "factoryfirework";
+const char NAME_TRIGGER_COLLAPSING_OUTER[]		= "collapse outer";
+const char NAME_TRIGGER_COLLAPSING_INNER[]		= "collapse inner";
+const char NAME_COLLAPSING_EFFECT[]				= "effect collapse";
+const char NAME_VAN[]							= "van";
+const char NAME_FLIGHTPATH[]					= "flight";
+const char NAME_FLIGHTPATH_HOUSE[]				= "flighthouse";
+const char NAME_HOUSE_BURN_FLIGHT[]				= "flight_";
+const char NAME_VILLA[]							= "villa";
+const char NAME_SILO[]							= "silo";
+const char NAME_BLOCKED_CAR[]					= "car_blocked";
+const char NAME_CS1_TRANSITION[]				= "cs1";
+const char NAME_CRASH_HOUSE[]					= "crash_house";
+const char NAME_CRASH_HOUSE_RUIN[]				= "crash_house_ruin";
+const char NAME_CS1_HOUSE_PIECE1[]				= "piece1";
+const char NAME_CS1_HOUSE_PIECE2[]				= "piece2";
+const char NAME_CS1_HOUSE_PIECE3[]				= "piece3";
+const char NAME_CS1_HOUSE_PIECE4[]				= "piece0";
+const char NAME_CS1_WALL_PARTICLE[]				= "particle_wall";
+const char NAME_CS1_ROOF_PARTICLE[]				= "particle_roof";
+const char NAME_CS1_DUSTCLOUD_PARTICLE[]		= "particle_dustcloud";
+const char NAME_SPARK_OBJECT1[] = "spark_object1";
+const char NAME_SPARK_EMIT1[] = "spark_emit1";
+const char NAME_SPARK_DEST1[] = "spark_dest1";
+const char NAME_SPARK_OBJECT2[] = "spark_object2";
+const char NAME_SPARK_EMIT2[] = "spark_emit2";
+const char NAME_SPARK_DEST2[] = "spark_dest2";
+const char NAME_SPARK_OBJECT3[] = "spark_object3";
+const char NAME_SPARK_EMIT3[] = "spark_emit3";
+const char NAME_SPARK_DEST3[] = "spark_dest3";
+const char NAME_SPARK_OBJECT4[] = "spark_object4";
+const char NAME_SPARK_EMIT4[] = "spark_emit4";
+const char NAME_SPARK_DEST4[] = "spark_dest4";
+const char NAME_SPARK_OBJECT5[] = "spark_object5";
+const char NAME_SPARK_EMIT5[] = "spark_emit5";
+const char NAME_SPARK_DEST5[] = "spark_dest5";
+const char NAME_BLOCKER_DEBRIS[] = "blocker_debris";
+
+const char COUNTER_BURNT_HOUSES[]			= "Burnt Houses";
+const char COUNTER_DEAD_PERSONS[]			= "Dead Persons";
+
+const char NAME_SOUND_FIREWORK1[] = "mod:Audio/FX/misc/fireworks01.wav";
+const char NAME_COLLAPSE1[] = "mod:Audio/FX/destruction/mission_building_breakdown2.wav";
+const char NAME_COLLAPSE2[] = "mod:Audio/FX/destruction/mission_tunnel_breakdown.wav";
+const char NAME_BEFORE_COLLAPSE[] = "mod:Audio/FX/destruction/mission_tunnel_ceiling.wav";
+
+const char TIMER_NAME_UPDATE_FIREWORK[]			= "t_firework";
+const float TIMER_TIME_UPDATE_FIREWORK			= 2.f;
+const char TIMER_NAME_LAST_ROCKET[]				= "t_rocket";
+const float TIMER_TIME_LAST_ROCKET				= 60.f;
+const char TIMER_NAME_COLLAPSING_EFFECT[]		= "t_effect_collapse";
+const char TIMER_NAME_COLLAPSE[]				= "t_collapse";
+const float TIMER_TIME_COLLAPSE					= 100.f;
+const char TIMER_NAME_FLIGHT_OWNER[]			= "t_owner";
+const float TIMER_TIME_FLIGHT_OWNER				= 20.f * 60.f;
+const char TIMER_NAME_HINT3[]					= "t_hint3";
+const float TIMER_TIME_HINT3					= 15.f * 60.f;
+const char TIMER_NAME_AGGRESIVE_OWNER[]			= "t_owner2";
+const float TIMER_TIME_AGGRESSIVE_OWNER			= 2.f;
+const char TIMER_NAME_UPDATE_OWNER[]			= "t_owner3";
+const float TIMER_TIME_UPDATE_OWNER				= 4.f;
+const char TIMER_NAME_CS_COLLAPSE0[]			= "t_collapse0"; // Cutscene-Timer, der von Beginn an läuft
+const float TIMER_TIME_CS_COLLAPSE0				= 12*60.0f;
+const char TIMER_NAME_CS_END[]					= "t_cs_end";
+const float TIMER_TIME_CS_END					= 3.0f;
+const char TIMER_NAME_CS_SHOW_RUIN[]			= "t_cs_ruin";
+const float TIMER_TIME_CS_SHOW_RUIN				= 3.5f;
+const char TIMER_NAME_UPDATE_TRIGGER[]			= "t_update_trigger";
+const float TIMER_TIME_UPDATE_TRIGGER			= 0.5f;
+
+enum
+{
+	TRANSITION_NONE,
+	TRANSITION_COLLAPSING_HOUSE
+};
+
+object Mission10 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mTooManyDied;
+	bool mFireOutOfControl;
+	bool mFactoryOwnerLeft;
+	Person mFactoryOwner;
+	bool mFactoryOwnerTransported;
+	Person mBlockedPersons[MAX_BLOCKED_PERSONS];
+	GameObject mBlockedDebris[MAX_BLOCKED_PERSONS];
+	int mNumBlockedPersons;
+	int mNumBlockedDebris;
+	GameObject mHousesFail[MAX_HOUSES_FAIL];
+	int mNumHousesFail;
+	GameObject mHousesHint[MAX_HOUSES_HINT];
+	int mNumHousesHint;
+	GameObject mFireworkEffects[MAX_FIREWORK_EFFECTS];
+	int mNumFireworkEffects;
+	float mFireworkIntensity;
+	int mExtinguishLevel;
+	GameObject mFactoryFirework;
+	bool mFirstFireworkExtinguish;
+	bool mFirstFinishedFirework;
+	bool mFireworkOff;
+	GameObject mCollapsingEffect;
+	Vehicle mVan;
+	GameObject mHousesFlight[MAX_HOUSES_FLIGHT];
+	int mNumHousesFlight;
+	bool mFactoryOwnerFleeing;
+	OpenHouse mVilla;
+	GameObject mSparkObj[MAX_SPARK_OBJECTS];
+	GameObject mSparkEmit[MAX_SPARK_OBJECTS];
+	GameObjectList mSparkDestList[MAX_SPARK_OBJECTS];
+	GameObject mBlockedCar;
+
+	int mCurrentTransition;
+	OpenHouse mCrashHouse;
+	GameObjectList mHousePieceList[COUNT_HOUSE_PIECE_GROUPS];
+	GameObjectList mDustCloudList;
+	GameObjectList mWallParticleList;
+	GameObjectList mRoofParticleList;
+	GameObjectList mBlockerDebrisList;
+	GameObject mCrashRuin;
+
+	Mission10()
+	{
+		for (int i = 0; i < MAX_HINTS; i++)
+		{
+			mHintCounter[i] = 0;
+		}
+		mTooManyDied = false;
+		mFireOutOfControl = false;
+		mFactoryOwnerLeft = false;
+		mFactoryOwnerTransported = false;
+		mNumBlockedPersons = 0;
+		mNumBlockedDebris = 0;
+		mNumHousesFail = 0;
+		mNumHousesHint = 0;
+		mNumFireworkEffects = 0;
+		mFireworkIntensity = 0.7f;
+		mExtinguishLevel = 0;
+		mFirstFireworkExtinguish = true;
+		mFirstFinishedFirework = false;
+		mFireworkOff = false;
+		mNumHousesFlight = 0;
+		mFactoryOwnerFleeing = false;
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	~Mission10()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M10 Start");
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_FACTORY_OWNER))
+				mFactoryOwner = Person(obj);
+			else if (obj->HasName(NAME_CRASH_HOUSE))
+			{
+				mCrashHouse = OpenHouse(obj);
+				//mCrashHouse.ShowCeiling(false);
+			}
+			else if (obj->HasNamePrefix(NAME_BLOCKED_PERSON))
+			{
+				if (obj->GetType() == ACTOR_PERSON && mNumBlockedPersons < MAX_BLOCKED_PERSONS)
+				{
+					mBlockedPersons[mNumBlockedPersons] = Person(obj);
+					mBlockedPersons[mNumBlockedPersons++].SetFlag(OF_BLOCKED);
+				}
+				else if (obj->GetType() == ACTOR_OBJECT && mNumBlockedDebris < MAX_BLOCKED_PERSONS)
+					mBlockedDebris[mNumBlockedDebris++] = *obj;
+				else
+					System::Log("M10: illegal blocked person/debris found: %2", obj->GetName());
+			}
+			else if (obj->HasNamePrefix(NAME_HOUSE_BURN_FAIL) && mNumHousesFail < MAX_HOUSES_FAIL)
+				mHousesFail[mNumHousesFail++] = *obj;
+			else if (obj->HasNamePrefix(NAME_HOUSE_BURN_HINT) && mNumHousesHint < MAX_HOUSES_HINT)
+				mHousesHint[mNumHousesHint++] = *obj;
+			else if (obj->HasName(NAME_FIREWORK_EFFECT) && mNumFireworkEffects < MAX_FIREWORK_EFFECTS)
+			{
+				mFireworkEffects[mNumFireworkEffects] = *obj;
+				mFireworkEffects[mNumFireworkEffects++].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_FACTORY_FIREWORK))
+				mFactoryFirework = *obj;
+			else if (obj->HasName(NAME_COLLAPSING_EFFECT))
+				mCollapsingEffect = *obj;
+			else if (obj->HasName(NAME_VAN))
+				mVan = Vehicle(obj);
+			else if (obj->HasNamePrefix(NAME_HOUSE_BURN_FLIGHT) && mNumHousesFlight < MAX_HOUSES_FLIGHT)
+				mHousesFlight[mNumHousesFlight++] = *obj;
+			else if (obj->HasName(NAME_CRASH_HOUSE_RUIN))
+				mCrashRuin = obj;
+			else if (obj->HasName(NAME_VILLA))
+				mVilla = OpenHouse(obj);
+			else if (obj->HasName(NAME_SPARK_OBJECT1))
+				mSparkObj[0] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT1))
+			{
+				mSparkEmit[0] = obj;
+				mSparkEmit[0].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT2))
+				mSparkObj[1] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT2))
+			{
+				mSparkEmit[1] = obj;
+				mSparkEmit[1].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT3))
+				mSparkObj[2] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT3))
+			{
+				mSparkEmit[2] = obj;
+				mSparkEmit[2].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT4))
+				mSparkObj[3] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT4))
+			{
+				mSparkEmit[3] = obj;
+				mSparkEmit[3].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT5))
+				mSparkObj[4] = obj;
+			else if (obj->HasName(NAME_SPARK_EMIT5))
+			{
+				mSparkEmit[4] = obj;
+				mSparkEmit[4].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_BLOCKED_CAR))
+			{
+				mBlockedCar = obj;
+				mBlockedCar.SetFlag(OF_BLOCKED);
+			}
+		}
+
+		if (!mBlockedCar.IsValid())
+			System::Log("Blocked car not found");
+		mHousePieceList[0] = Game::GetGameObjects(NAME_CS1_HOUSE_PIECE1);
+		mHousePieceList[1] = Game::GetGameObjects(NAME_CS1_HOUSE_PIECE2);
+		mHousePieceList[2] = Game::GetGameObjects(NAME_CS1_HOUSE_PIECE3);
+		mHousePieceList[3] = Game::GetGameObjects(NAME_CS1_HOUSE_PIECE4);
+		HideCrashHouseRoof();
+		mWallParticleList = Game::GetGameObjects(NAME_CS1_WALL_PARTICLE);
+		for(int i = 0; i < mWallParticleList.GetNumObjects(); i++)
+		{
+			mWallParticleList.GetObject(i)->StopParticleEffect();
+		}
+		mRoofParticleList = Game::GetGameObjects(NAME_CS1_ROOF_PARTICLE);
+		for(int i = 0; i < mRoofParticleList.GetNumObjects(); i++)
+		{
+			mRoofParticleList.GetObject(i)->StopParticleEffect();
+		}
+		mDustCloudList = Game::GetGameObjects(NAME_CS1_DUSTCLOUD_PARTICLE);
+		for(int i = 0; i < mDustCloudList.GetNumObjects(); i++)
+		{
+			mDustCloudList.GetObject(i)->StopParticleEffect();
+		}
+		mBlockerDebrisList = Game::GetGameObjects(NAME_BLOCKER_DEBRIS);
+
+		mSparkDestList[0] = Game::GetGameObjects(NAME_SPARK_DEST1);
+		mSparkDestList[1] = Game::GetGameObjects(NAME_SPARK_DEST2);
+		mSparkDestList[2] = Game::GetGameObjects(NAME_SPARK_DEST3);
+		mSparkDestList[3] = Game::GetGameObjects(NAME_SPARK_DEST4);
+		mSparkDestList[4] = Game::GetGameObjects(NAME_SPARK_DEST5);
+
+		mCrashRuin.SetPosition(&mCrashHouse);
+		mCrashRuin.SetRotation(&mCrashHouse);
+		mCrashRuin.Hide();
+
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+		//Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_FACTORYOWNER);
+
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_FIREWORK, TIMER_TIME_UPDATE_FIREWORK);
+		Mission::StartSingleTimer(TIMER_NAME_COLLAPSING_EFFECT, GetRandomValue(TIME_COLLAPSING_EFFECT_MIN, TIME_COLLAPSING_EFFECT_MAX));
+		Mission::StartSingleTimer(TIMER_NAME_FLIGHT_OWNER, TIMER_TIME_FLIGHT_OWNER);
+		Mission::StartSingleTimer(TIMER_NAME_HINT3, TIMER_TIME_HINT3);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_OWNER, TIMER_TIME_UPDATE_OWNER);
+		Mission::StartSingleTimer(TIMER_NAME_CS_COLLAPSE0, TIMER_TIME_CS_COLLAPSE0);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_TRIGGER, TIMER_TIME_UPDATE_TRIGGER);
+
+		Game::DeactivateTrigger(NAME_TRIGGER_COLLAPSING_OUTER);
+		Game::DeactivateTrigger(NAME_TRIGGER_COLLAPSING_INNER);
+		
+		Audio::PlaySoundtrack("10", 0.0f);
+		// uncomment for debugging cutscene
+		//Mission::StartSingleTimer("test", 5.0f);		
+	}
+	
+	bool OnCheckCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		switch(Cmd_)
+		{
+			//case "useshears":
+			//	{
+			//		if (Target_->GetID() == mBlockedCar.GetID() && mBlockedCar.IsFlagSet(OF_BLOCKED))
+			//			return false;					
+			//	}
+		}
+		return true;
+	}
+
+	void HideCrashHouseRoof()
+	{
+		for (int j = 0; j < COUNT_HOUSE_PIECE_GROUPS - 1; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->Hide();
+			}
+		}
+	}
+
+	void ShowCrashHouseRoof()
+	{
+		for (int j = 0; j < COUNT_HOUSE_PIECE_GROUPS - 1; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->Show();
+			}
+		}
+	}
+
+	void RunCutscene()
+	{
+		mCrashHouse.ShowCeiling(false);
+		mCrashHouse.SetCeilingCollision(false);
+		ShowCrashHouseRoof();
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		Camera::StartTransition(NAME_CS1_TRANSITION, TIME_CS1_TRANSITION);
+		mCurrentTransition = TRANSITION_COLLAPSING_HOUSE;
+		Audio::SetMusicLevel(0.2f);
+	}
+
+	void LookAtCrashHouse()
+	{
+		Vector p;
+		Vector dir;
+		Vector targetPoint;
+
+		p = Camera::Get();
+		Camera::GetDirection(dir.x, dir.y, dir.z);
+		targetPoint = p + dir*5000.0f;
+		Camera::LookAtPoint(targetPoint, true, 0.0f, 1.2f);
+	}
+
+	void CutsceneFirstPhase()
+	{		
+		for(int j = 0; j < COUNT_HOUSE_PIECE_GROUPS; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->EnablePhysicsSimulation();
+				if (j > 0)
+				{
+					mHousePieceList[j].GetObject(i)->FreezePhysics();
+					mHousePieceList[j].GetObject(i)->SetPhysicsStatic(true);
+				}
+				else
+					mHousePieceList[j].GetObject(i)->UnfreezePhysics();
+			}
+		}
+		for(int i = 0; i < mDustCloudList.GetNumObjects(); i++)
+		{
+			Vector pos = mDustCloudList.GetObject(i)->GetPosition();
+			pos.z += 80.0f;
+			mDustCloudList.GetObject(i)->SetPosition(pos);
+			mDustCloudList.GetObject(i)->StartParticleEffect();
+		}
+		mHousePieceList[0].GetObject(0)->StartPhysicsEvent(30);
+		mHousePieceList[0].GetObject(1)->StartPhysicsEvent(5);
+		//LookAtCrashHouse();
+		//Camera::Rotate(-25, 0, 0, -8);
+		Audio::PlaySample(NAME_COLLAPSE1);
+	}
+
+	void CutsceneSecondPhase()
+	{
+		System::Log("M10: Cutscene second phase");
+		for(int j = 1; j < 2; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->SetPhysicsStatic(false);
+				mHousePieceList[j].GetObject(i)->UnfreezePhysics();
+				Vector force = mCrashHouse.GetPosition() - mHousePieceList[j].GetObject(i)->GetPosition();
+				//mHousePieceList[j].GetObject(i)->ApplyForce(0, mHousePieceList[j].GetObject(i)->GetPosition(), force.GetNormal()*100.0f);
+			}
+		}
+		for(int i = 0; i < mWallParticleList.GetNumObjects(); i++)
+		{
+			mWallParticleList.GetObject(i)->StartParticleEffect();
+		}
+		mHousePieceList[1].GetObject(0)->StartPhysicsEvent(25);
+		System::Log("M10: %d civils in crash house", mCrashHouse.GetNonSquadPersonsInside().GetNumPersons());
+		System::Log("M10: %d squads in crash house", mCrashHouse.GetSquadPersonsInside().GetNumPersons());
+		for (int i = 0; i < mCrashHouse.GetNonSquadPersonsInside().GetNumPersons(); i++)
+		{
+			mCrashHouse.GetNonSquadPersonsInside().GetPerson(i)->Kill();
+			mCrashHouse.GetNonSquadPersonsInside().GetPerson(i)->PushActionWait(ACTION_NEWLIST, 1.0f);
+			mCrashHouse.GetNonSquadPersonsInside().GetPerson(i)->PushActionDeleteOwner(ACTION_APPEND);
+		}
+		for (int i = 0; i < mCrashHouse.GetSquadPersonsInside().GetNumPersons(); i++)
+		{
+			mCrashHouse.GetSquadPersonsInside().GetPerson(i)->Kill();
+			mCrashHouse.GetSquadPersonsInside().GetPerson(i)->PushActionWait(ACTION_NEWLIST, 1.0f);
+			mCrashHouse.GetSquadPersonsInside().GetPerson(i)->PushActionDeleteOwner(ACTION_APPEND);
+		}
+	}
+
+	void CutsceneThirdPhase()
+	{
+		System::Log("M10: Cutscene third phase");
+		for(int j = 2; j < 3; j++)
+		{
+			for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+			{
+				mHousePieceList[j].GetObject(i)->SetPhysicsStatic(false);
+				mHousePieceList[j].GetObject(i)->UnfreezePhysics();
+				//mHousePieceList[j].GetObject(i)->ApplyForce(0, mHousePieceList[j].GetObject(i)->GetPosition(), force.GetNormal()*100.0f);
+			}
+		}
+		Mission::StartSingleTimer(TIMER_NAME_CS_SHOW_RUIN, TIMER_TIME_CS_SHOW_RUIN);
+		Mission::StartSingleTimer(TIMER_NAME_CS_END, TIMER_TIME_CS_END);
+	}
+
+	void CutsceneEnding()
+	{
+		Mission::HideBlackBars();
+		Mission::EndCutScene();
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+		if (obj->GetID() == mHousePieceList[0].GetObject(0)->GetID())
+			CutsceneSecondPhase();
+		else if (obj->GetID() == mHousePieceList[1].GetObject(0)->GetID())
+			CutsceneThirdPhase();
+		else if (obj->GetID() == mHousePieceList[0].GetObject(1)->GetID())
+		{
+			for(int i = 0; i < mRoofParticleList.GetNumObjects(); i++)
+			{
+				mRoofParticleList.GetObject(i)->StartParticleEffect();
+			}
+		}
+	}
+
+	void OnCameraTransitionFinished()
+	{			
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_COLLAPSING_HOUSE:
+				CutsceneFirstPhase();
+				break;
+		}
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionPull":
+				{
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.IsValid() && target.GetType() == ACTOR_OBJECT && target.HasNamePrefix(NAME_BLOCKED_PERSON))
+					{
+						for(int i = 0; i < mNumBlockedPersons; i++)
+						{
+							if (mNumBlockedPersons[i].IsValid() && mNumBlockedPersons[i].HasName(target->GetName()))
+							{
+								mNumBlockedPersons[i].ClearFlag(OF_BLOCKED);
+								break;
+							}
+						}
+					}
+				}
+				break;
+			case "EActionExtinguish" :
+				{
+					if(Data_->Parameters[0].iValue == mFactoryFirework.GetID())
+						--mExtinguishLevel;
+				}			
+				break;
+
+			case "EActionCool" :
+				{
+					if(Data_->Parameters[0].iValue == mFactoryFirework.GetID())
+						--mExtinguishLevel;
+				}
+				break;
+			case "EActionEnterCar" :
+				{
+					if(Data_->Parameters[0].iValue == mVan.GetID())
+					{
+						mVan.PushActionWait(ACTION_NEWLIST, 2.f);
+						mVan.PushActionUsePath(ACTION_APPEND, NAME_FLIGHTPATH, 0.0f);
+					}
+				}
+				break;
+			case "EActionUpdateEnteredHouse" :
+				{
+					//PersonList list = mCrashHouse.GetSquadPersonsInside();
+					//if (list.GetNumPersons() > 0)
+					//	HideCrashHouseRoof();
+					//else
+					//	ShowCrashHouseRoof();
+				}
+				break;
+			case "EActionLiftWithCrane" :
+				{
+					System::Log("Action EActionLiftWithCrane");
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.HasName(NAME_SILO))
+						mBlockedCar.ClearFlag(OF_BLOCKED);
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void OnSquadArrived(Person *squad_)
+	{
+		if (squad_->HasCommand("EnterHouse"))
+		{
+			//squad_->AssignCommand("M10EnterHouse");
+			//squad_->RemoveCommand("EnterHouse");
+		}
+	}
+
+	void OnMissionLeft(GameObject *Object_)
+	{
+		if (Object_->GetID() == mFactoryOwner.GetID())
+		{
+			if (mFactoryOwner.GetEnteredCarID() == mVan.GetID())
+				mFactoryOwnerLeft = true;
+			else if (mFactoryOwner.GetEnteredCarID() != -1 && !mFactoryOwner.IsDead())
+				mFactoryOwnerTransported = true;
+		}
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Collider1_, Actor *Collider2_)
+	{
+		if (Collider1_->GetID() == mVan.GetID() && mFactoryOwnerFleeing)
+		{
+			if (!Mission::TimerIsStarted(TIMER_NAME_AGGRESIVE_OWNER))
+				Mission::StartSingleTimer(TIMER_NAME_AGGRESIVE_OWNER, TIMER_TIME_AGGRESSIVE_OWNER);
+		}
+		return MCC_HALT_CONTINUE;
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionExtinguish" :
+				{
+					if(Data->Parameters[0].iValue == mFactoryFirework.GetID())
+					{
+						System::Log("M10: Increase extinguish level");
+						++mExtinguishLevel;
+						if (mFirstFireworkExtinguish)
+						{
+							mFirstFireworkExtinguish = false;
+							mFireworkIntensity = 1.f;
+						}
+					}
+				}
+				break;
+			case "EActionCool" :
+				{
+					if(Data->Parameters[0].iValue == mFactoryFirework.GetID())
+					{
+						System::Log("M10: Increase extinguish level");
+						++mExtinguishLevel;
+						if (mFirstFireworkExtinguish)
+						{
+							mFirstFireworkExtinguish = false;
+							mFireworkIntensity = 1.f;
+						}
+					}
+				}
+				break;
+			case "EActionShoot" :
+				{
+					if (mHintCounter[5] == 0 && Data->Owner->GetID() == mFactoryOwner.GetID())
+						ShowHint(5);
+				}
+				break;
+			case "EActionLinkPerson" :
+			case "EActionArrest" :
+				{
+					if (Data->Parameters[0].iValue == mFactoryOwner.GetID() && mFactoryOwner.GetBehaviour() == BEHAVIOUR_GANGSTER_CIVILUNARMED)
+					{
+						System::Log("M10: Set fabrique owner to guard passage");
+						mFactoryOwner.SetRole(ROLE_GANGSTER);
+						mFactoryOwner.SetBehaviour(BEHAVIOUR_GANGSTER_GUARDPASSAGE);						
+						mFactoryOwner.SetStandardPath("");
+						mFactoryOwner.SetEscapePath(NAME_FLIGHTPATH_HOUSE);
+						mFactoryOwner.SetFleeing(true);
+						mFactoryOwner.PushActionEquipWeapon(ACTION_NEWLIST, true);
+						Mission::StopTimer(TIMER_NAME_UPDATE_OWNER);
+						Mission::StopTimer(TIMER_NAME_FLIGHT_OWNER);
+						return ACTION_SKIP;
+					}
+				}
+		}
+
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnAbortAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+		case "EActionExtinguish" :
+			{
+				if(Data->Parameters[0].iValue == mFactoryFirework.GetID())
+				{
+					System::Log("M10: Decrease extinguish level");
+					--mExtinguishLevel;
+				}
+			}
+			break;
+
+		case "EActionCool" :
+			{
+				if(Data->Parameters[0].iValue == mFactoryFirework.GetID())
+				{
+					System::Log("M10: Decrease extinguish level");
+					--mExtinguishLevel;
+				}
+			}
+			break;
+		}
+
+		return ACTION_CONTINUE;
+	}
+
+	PathFinishedAction OnPathFinished(const char* Path_, GameObject *Obj_)
+	{
+		switch(Path_)
+		{
+			case NAME_FLIGHTPATH_HOUSE:
+				{
+					mFactoryOwner.PushActionEnterHouse(ACTION_NEWLIST, &mVilla);
+					mFactoryOwner.SetStandardPath("");
+					mFactoryOwner.SetObjectPath(NULL);
+					mFactoryOwner.SetBehaviour(BEHAVIOUR_GANGSTER_GUARDPASSAGE);
+					mFactoryOwner.PushActionEquipWeapon(ACTION_NEWLIST, true);
+					return PATH_STOP;
+				}
+				break;
+			case NAME_FLIGHTPATH:
+				{
+					mFactoryOwnerLeft = true;
+				}
+				break;
+		}
+		return PATH_DEFAULT;
+	}
+
+	bool OnStartBurning(GameObject *burner_)
+	{
+		if (!burner_->IsValid())
+			return true;
+		if (burner_->HasNamePrefix(NAME_HOUSE_BURN_HINT))
+			ShowHint(0);
+		else if (!mFactoryOwnerFleeing && burner_->HasNamePrefix(NAME_HOUSE_BURN_FLIGHT))
+		{
+			Mission::StopTimer(TIMER_NAME_FLIGHT_OWNER);
+			StartFlight();
+		}
+		for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+		{
+			if (burner_->GetID() == mSparkObj[i].GetID())
+			{
+				mSparkEmit[i].StartParticleEffect();
+				if (i == 0)
+					Mission::StartSingleTimer("spark_timer1", TIME_SPARK_1);
+				else if (i == 1)
+					Mission::StartSingleTimer("spark_timer2", TIME_SPARK_2);
+				else if (i == 2)
+					Mission::StartSingleTimer("spark_timer3", TIME_SPARK_3);
+				else if (i == 3)
+					Mission::StartSingleTimer("spark_timer4", TIME_SPARK_4);
+				else if (i == 4)
+					Mission::StartSingleTimer("spark_timer5", TIME_SPARK_5);
+			}
+		}
+		return true;
+	}
+
+	bool OnStopBurning(GameObject *burner_)
+	{
+		if (burner_->IsValid())
+		{
+			for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+			{
+				if (burner_->GetID() == mSparkObj[i].GetID())
+				{
+					mSparkEmit[i].StopParticleEffect();
+					if (i == 0)
+						Mission::StopTimer("spark_timer1");
+					else if (i == 1)
+						Mission::StopTimer("spark_timer2");
+					else if (i == 2)
+						Mission::StopTimer("spark_timer3");
+					else if (i == 3)
+						Mission::StopTimer("spark_timer4");
+					else if (i == 4)
+						Mission::StopTimer("spark_timer5");
+				}
+			}
+		}
+		return true;
+	}
+
+	void OnTrigger(const char *Trigger_, Actor *Collider_)
+	{
+		switch(Trigger_)
+		{
+			case NAME_TRIGGER_COLLAPSING_OUTER:
+				{
+					if (!mCrashHouse.IsHidden() && Collider_->GetType() == ACTOR_PERSON)
+					{
+						Person p(Collider_);
+						if (p.GetRole() == ROLE_SQUAD)
+						{
+							ShowHint(1);
+							Game::DeactivateTrigger(NAME_TRIGGER_COLLAPSING_OUTER);
+						}
+					}
+					else if (!mCrashHouse.IsHidden() && Collider_->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(Collider);
+						if (!v.IsCivilCar())
+						{
+							ShowHint(1);
+							Game::DeactivateTrigger(NAME_TRIGGER_COLLAPSING_OUTER);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_COLLAPSING_INNER:
+				{
+					if (!mCrashHouse.IsHidden() && Collider_->GetType() == ACTOR_PERSON)
+					{
+						Person p(Collider_);
+						if (p.GetRole() == ROLE_SQUAD)
+						{
+							ShowHint(2);
+							Game::DeactivateTrigger(NAME_TRIGGER_COLLAPSING_INNER);
+							Mission::StartSingleTimer(TIMER_NAME_COLLAPSE, TIMER_TIME_COLLAPSE);
+							Mission::StopTimer(TIMER_NAME_CS_COLLAPSE0);
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		int sparkIndex = -1;
+		if (timer_ == "spark_timer1")
+			sparkIndex = 0;
+		else if (timer_ == "spark_timer2")
+			sparkIndex = 1;
+		else if (timer_ == "spark_timer3")
+			sparkIndex = 2;
+		else if (timer_ == "spark_timer4")
+			sparkIndex = 3;
+		else if (timer_ == "spark_timer5")
+			sparkIndex = 4;
+
+		if (sparkIndex > -1)
+		{
+			for (int i = 0; i < mSparkDestList[sparkIndex].GetNumObjects(); i++)
+				mSparkDestList[sparkIndex].GetObject(i)->Burn();
+		}
+
+		switch(timer_)
+		{
+			case "test":
+				{
+					RunCutscene();
+				}
+				break;
+			case TIMER_NAME_CS_SHOW_RUIN:
+				{
+					for(int j = 0; j < COUNT_HOUSE_PIECE_GROUPS; j++)
+					{
+						for (int i = 0; i < mHousePieceList[j].GetNumObjects(); i++)
+						{
+							mHousePieceList[j].GetObject(i)->FreezePhysics();
+							mHousePieceList[j].GetObject(i)->Hide();
+						}
+					}
+					for (int i = 0; i < mBlockerDebrisList.GetNumObjects(); i++)
+					{
+						mBlockerDebrisList.GetObject(i)->Hide();
+					}
+					mCrashHouse.Hide();
+					mCrashRuin.Show();
+				}
+				break;
+			case TIMER_NAME_UPDATE_FIREWORK:
+				{
+					if (mFactoryFirework.GetBurningStatus() == OBS_FULLBURNED)
+						break;
+					//System::Log("Firework intensity: %d", (int)(mFireworkIntensity*100.0f));
+					if (mExtinguishLevel > 0 || mFireworkOff)
+					{
+						if (mFireworkIntensity > 0.f)
+							mFireworkIntensity -= 0.02f;
+						//if (mFireworkIntensity < 0.f)
+						//	mFireworkIntensity = 0.f;
+					}
+					else if (!mFirstFireworkExtinguish)
+					{
+						mFireworkIntensity += 0.02f;
+						if (mFireworkIntensity > 1.f)
+							mFireworkIntensity = 1.f;
+					}
+					if (mFireworkIntensity > 0.0f)
+					{
+						if (!mFactoryFirework.IsBurning())
+						{
+							System::Log("Let factory burn again.");
+							for (int i = 0; i < mFactoryFirework.GetNumFireChilds(); i++)
+							{
+								mFactoryFirework.GetFireChild(i).Burn();
+								mFactoryFirework.GetFireChild(i).SetTemperature(mFactoryFirework.GetFireChild(i).GetMaxMaterialTemperature()*0.2f);
+							}
+						}
+					}
+					bool started = false;
+					Vector pos;
+					for(int i = 0; i < mNumFireworkEffects; i++)
+					{
+						if (mFireworkEffects[i].IsValid() && mFireworkEffects[i].HasParticleEffectEnded())
+						{
+							float intensity = mFireworkIntensity;
+							if (intensity < 0.f)
+								intensity = 0.f;
+							if (Math::rand() < (int)((float)Math::RANDMAX * intensity * 0.3f))
+							{								
+								mFireworkEffects[i].StartParticleEffect();
+								pos = mFireworkEffects[i].GetPosition();
+								started = true;
+							}
+							else
+								mFireworkEffects[i].StopParticleEffect();
+						}
+					}
+					if (started)
+						Audio::PlaySample3D(NAME_SOUND_FIREWORK1, pos);
+					if (!mFirstFinishedFirework && mFireworkIntensity <= 0.f)
+					{
+						mFireworkIntensity = -1.0f;
+						mFirstFinishedFirework = true;
+					}
+					if (mFireworkIntensity <= 0.f && mFireworkOff)
+					{
+						System::Log("Firework stopped, timer for last rocket started.");
+						Mission::StopTimer(TIMER_NAME_UPDATE_FIREWORK);
+						Mission::StartSingleTimer(TIMER_NAME_LAST_ROCKET, TIMER_TIME_LAST_ROCKET);
+					}
+				}
+				break;
+			case TIMER_NAME_LAST_ROCKET:
+				{
+					Mission::StopTimer(TIMER_NAME_UPDATE_FIREWORK);
+					int index = Math::rand() % mNumFireworkEffects;
+					if (mFireworkEffects[index].IsValid() && mFireworkEffects[index].HasParticleEffectEnded())
+					{
+						mFireworkEffects[index].StartParticleEffect();
+						break;
+					}
+					for(int i = 0; i < mNumFireworkEffects; i++)
+					{
+						if (mFireworkEffects[i].IsValid() && mFireworkEffects[i].HasParticleEffectEnded())
+						{
+							mFireworkEffects[i].StartParticleEffect();
+							break;
+						}
+					}
+				}
+				break;
+			case TIMER_NAME_COLLAPSING_EFFECT:
+				{
+					if (mCrashRuin.IsHidden())
+					{
+						mCollapsingEffect.StartParticleEffect();
+						Audio::PlaySample3D(NAME_BEFORE_COLLAPSE, mCollapsingEffect.GetPosition());
+						Mission::StartSingleTimer(TIMER_NAME_COLLAPSING_EFFECT, GetRandomValue(TIME_COLLAPSING_EFFECT_MIN, TIME_COLLAPSING_EFFECT_MAX));
+					}
+				}
+				break;
+			case TIMER_NAME_COLLAPSE:
+				{
+					mCollapsingEffect.StopParticleEffect();
+					Mission::StopTimer(TIMER_NAME_COLLAPSING_EFFECT);
+					RunCutscene();
+				}
+				break;
+			case TIMER_NAME_CS_END:
+				{
+					CutsceneEnding();
+				}
+				break;
+			case TIMER_NAME_FLIGHT_OWNER:
+				{
+					StartFlight();
+				}
+				break;
+			case TIMER_NAME_HINT3:
+				{
+					if (!mFactoryOwnerTransported && mFactoryOwner.IsValid()
+						&& !mFactoryOwner.IsArrested() && !mFactoryOwner.IsInjured())
+						ShowHint(3);
+				}
+				break;
+			case TIMER_NAME_AGGRESIVE_OWNER:
+				{
+					if (mVan.IsValid() && !mVan.IsMoving() && mFactoryOwner.IsValid())
+					{
+						System::Log("M10: Set fabrique owner to attack squad");
+						mFactoryOwner.SetRole(ROLE_GANGSTER);
+						mFactoryOwner.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+						mFactoryOwner.PushActionEquipWeapon(ACTION_NEWLIST, true);
+						mVan.ClearActions();
+						mVan.SetObjectPath(NULL);
+						mFactoryOwner.PushActionLeaveCar(ACTION_NEWLIST, &mVan);
+					}
+				}
+				break;
+			case TIMER_NAME_UPDATE_OWNER:
+				{
+					if (mFactoryOwner.IsValid() && mFactoryOwner.GetEnteredCarID() == -1 && mFactoryOwner.GetBehaviour() == BEHAVIOUR_GANGSTER_CIVILUNARMED)
+					{
+						if (mFactoryOwner.IsPoliceSquadInRange(FACTORY_OWNER_ACTION_RANGE)) // TODO radius
+						{
+							System::Log("M10: Set fabrique owner to guard passage");
+							mFactoryOwner.SetRole(ROLE_GANGSTER);
+							mFactoryOwner.SetStandardPath("");
+							mFactoryOwner.SetEscapePath(NAME_FLIGHTPATH_HOUSE);
+							mFactoryOwner.SetFleeing(true);
+							Mission::StopTimer(TIMER_NAME_UPDATE_OWNER);
+							Mission::StopTimer(TIMER_NAME_FLIGHT_OWNER);
+						}
+					}
+					else
+						Mission::StopTimer(TIMER_NAME_UPDATE_OWNER);
+				}
+				break;
+			case TIMER_NAME_CS_COLLAPSE0:
+				{
+					mCollapsingEffect.StopParticleEffect();
+					Mission::StopTimer(TIMER_NAME_COLLAPSING_EFFECT);
+					RunCutscene();
+				}
+				break;
+			case TIMER_NAME_UPDATE_TRIGGER:
+				{
+					if (mHintCounter[1] == 0)
+					{
+						GameObjectList list;
+						Game::CollectObstaclesOnTrigger(NAME_TRIGGER_COLLAPSING_OUTER, list, ACTOR_PERSON | ACTOR_VEHICLE);
+						for(int i = 0; i < list.GetNumObjects(); i++)
+						{						
+							GameObject obj = list.GetObject(i);
+							if (!mCrashHouse.IsHidden() && obj.GetType() == ACTOR_PERSON)
+							{
+								Person p(&obj);
+								if (p.GetRole() == ROLE_SQUAD)
+								{
+									ShowHint(1);
+									break;
+								}
+							}
+							else if (!mCrashHouse.IsHidden() && obj.GetType() == ACTOR_VEHICLE)
+							{
+								Vehicle v(&obj);
+								if (!v.IsCivilCar())
+								{
+									ShowHint(1);
+									break;
+								}
+							}
+						}
+					}
+					if (mHintCounter[2] == 0)
+					{
+						GameObjectList list;
+						Game::CollectObstaclesOnTrigger(NAME_TRIGGER_COLLAPSING_INNER, list, ACTOR_PERSON);
+						for(int i = 0; i < list.GetNumObjects(); i++)
+						{
+							Person p(list.GetObject(i));
+							if (p.GetRole() == ROLE_SQUAD)
+							{
+								ShowHint(2);								
+								Mission::StartSingleTimer(TIMER_NAME_COLLAPSE, TIMER_TIME_COLLAPSE);
+								Mission::StopTimer(TIMER_NAME_CS_COLLAPSE0);
+								break;
+							}
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	void StartFlight()
+	{
+		Mission::StopTimer(TIMER_NAME_UPDATE_OWNER);		
+		if (!mFactoryOwner.IsValid())
+		{
+			System::Log("Factory owner not found!");
+			return;
+		}
+		//if (mFactoryOwner.GetRole() != ROLE_CIVILIAN)
+		//{
+		//	mFactoryOwner.SetRole(ROLE_GANGSTER);
+		//	mFactoryOwner.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+		//}
+		mFactoryOwner.PushActionMove(ACTION_NEWLIST, &mVan, TARGET_PASSENGERDOOR);
+		mFactoryOwner.PushActionEnterCar(ACTION_APPEND, &mVan);
+		mFactoryOwnerFleeing = true;
+		System::Log("Factory owner flight started!");
+	}
+
+	MissionState GetMissionState()
+	{
+		if (Mission::GetCounter("Burning Houses") > 4 && mHintCounter[0] == 0)
+			ShowHint(0);
+		if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") > 0 )
+		{
+			if (!Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE) )
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRESAGAIN");
+			}
+		}
+		else 
+		{			
+			if(Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+				Audio::SetMusicLevel(0.4f);
+			}
+		}
+
+		if (Mission::GetCounter("Injured Persons") + Mission::GetCounter(COUNTER_DEAD_PERSONS) == 0)
+		{			
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+			}
+		}
+		else
+		{
+			if (!Mission::HasObjective(OBJECTIVE_TRANSPORT_INJURED) )
+				Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		if (mFactoryOwnerTransported)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_FACTORYOWNER))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_FACTORYOWNER, true);
+				Mission::PlayComment("SUPERV_M10_OBJ03");
+			}
+		}
+		if (((!mFactoryOwner.IsValid() && !mFactoryOwnerTransported) || mFactoryOwner.IsValid() && mFactoryOwner.IsDead()) &&
+			Mission::HasObjective(OBJECTIVE_TRANSPORT_FACTORYOWNER))
+		{
+			Mission::RemoveObjective(OBJECTIVE_TRANSPORT_FACTORYOWNER);
+			Mission::PlayComment("SUPERV_M10_OBJ06");
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Civil deaths") > MAX_DEAD_CIVILS || Mission::GetCounter("Person injuries") > MAX_INJURED_PERSONS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		int b = 0;
+		for(int i = 0; i < mNumHousesFail; i++)
+		{
+			if (mHousesFail[i].IsValid() && (mHousesFail[i].IsBurning() || mHousesFail[i].GetBurningStatus() == OBS_FULLBURNED))
+			{
+				b++;
+			}
+		}
+		if (b > 1 || (Mission::GetCounter("Burning Houses") + Mission::GetCounter(COUNTER_BURNT_HOUSES) >= MAX_HOUSES_BURN))
+		{
+			mFireOutOfControl = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+		for (int i = 0; i < mSparkDestList[0].GetNumObjects(); i++)
+		{
+			if (mSparkDestList[0].GetObject(i)->IsBurning())
+			{
+				mFireOutOfControl = true;
+				Audio::SetMusicLevel(0.5f);
+				return MISSION_FAILED;
+			}
+		}
+
+		if (mFactoryOwnerLeft)
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Burning Houses") <= 1 && Mission::GetCounter("Injured Persons") <= 3)
+		{
+			mFireworkIntensity -= 0.02f;
+			mFireworkOff = true;
+		}
+
+		if (mHintCounter[4] == 0 && (Mission::GetCounter("Person deaths") >= MAX_DEAD_HINT4 || Mission::GetCounter("Person injuries") > MAX_INJURED_HINT4))
+			ShowHint(4);
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+		if (mFactoryOwnerLeft)
+			return "M10_FACTORY_OWNER_LEFT";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M10_FAIL01";
+		if (mFireOutOfControl)
+			return "SUPERV_M10_FAIL02";
+		if (mFactoryOwnerLeft)
+			return "SUPERV_M10_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M10_RES01";
+		if (Mission::GetCounter(COUNTER_DEAD_PERSONS) >= 5)
+			return "SUPERV_M10_RES02";
+		if (Mission::GetCounter(COUNTER_BURNT_HOUSES) >= 10)
+			return "SUPERV_M10_RES03";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		if ((!mFactoryOwner.IsValid() && !mFactoryOwnerTransported) || mFactoryOwner.IsValid() && mFactoryOwner.IsDead())
+			return 0.85f;
+		return 1.0f;
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int res = Math::rand();
+		res %= max - min;
+		return res + min;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M10: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Mission::PlayHint(HINT_FIRE_OUT_OF_CONTROL);
+				Audio::SetMusicLevel(0.3f);
+				break;
+			case 1:
+				Mission::PlayHint(HINT_INSTABLE_BUILDING);
+				break;
+			case 2:
+				Mission::PlayHint(HINT_HOUSE_WILL_CRASH);
+				Audio::SetMusicLevel(0.1f);
+				break;
+			case 3:
+				Mission::PlayHint(HINT_FACTORY_OWNER);
+				break;
+			case 4:
+				Mission::PlayHint(HINT_TOO_MANY_INJUREDS);
+				break;
+			case 5:
+				Mission::PlayHint(HINT_SQUADS_IN_DANGER);
+				break;
+		}
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0101;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mTooManyDied);
+		serializer_->Write(mFireOutOfControl);
+		serializer_->Write(mFactoryOwnerLeft);
+		serializer_->Write(mFactoryOwner);
+		serializer_->Write(mFactoryOwnerTransported);
+		serializer_->Write(MAX_BLOCKED_PERSONS);
+		for(int i = 0; i < MAX_BLOCKED_PERSONS; i++)
+		{
+			serializer_->Write(mBlockedPersons[i]);
+			serializer_->Write(mBlockedDebris[i]);
+		}
+		serializer_->Write(mNumBlockedPersons);
+		serializer_->Write(mNumBlockedDebris);
+		serializer_->Write(MAX_HOUSES_FAIL);
+		for(int i = 0; i < MAX_HOUSES_FAIL; i++)
+			serializer_->Write(mHousesFail[i]);
+		serializer_->Write(mNumHousesFail);
+		serializer_->Write(MAX_HOUSES_HINT);
+		for(int i = 0; i < MAX_HOUSES_HINT; i++)
+			serializer_->Write(mHousesHint[i]);
+		serializer_->Write(mNumHousesHint);
+		serializer_->Write(MAX_FIREWORK_EFFECTS);
+		for(int i = 0; i < MAX_FIREWORK_EFFECTS; i++)
+			serializer_->Write(mFireworkEffects[i]);
+		serializer_->Write(mNumFireworkEffects);
+		serializer_->Write(mFireworkIntensity);
+		serializer_->Write(mExtinguishLevel);
+		serializer_->Write(mFactoryFirework);
+		serializer_->Write(mFirstFireworkExtinguish);
+		serializer_->Write(mFirstFinishedFirework);
+		serializer_->Write(mFireworkOff);
+		serializer_->Write(mCollapsingEffect);
+		serializer_->Write(mVan);
+		serializer_->Write(MAX_HOUSES_FLIGHT);
+		for(int i = 0; i < MAX_HOUSES_FLIGHT; i++)
+			serializer_->Write(mHousesFlight[i]);
+		serializer_->Write(mNumHousesFlight);
+		serializer_->Write(mFactoryOwnerFleeing);
+		serializer_->Write(mCurrentTransition);
+		serializer_->Write(mCrashHouse);
+		for (int i = 0; i < COUNT_HOUSE_PIECE_GROUPS; i++)
+			serializer_->Write(mHousePieceList[i]);
+		serializer_->Write(mDustCloudList);
+		serializer_->Write(mBlockerDebrisList);
+		serializer_->Write(mWallParticleList);
+		serializer_->Write(mRoofParticleList);
+		serializer_->Write(mCrashRuin);
+		for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+		{
+			serializer_->Write(mSparkObj[i]);
+			serializer_->Write(mSparkEmit[i]);
+			serializer_->Write(mSparkDestList[i]);
+		}
+		serializer_->Write(mBlockedCar);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version = -1;
+		int temp = -1;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mTooManyDied = serializer_->ReadBool();
+		mFireOutOfControl = serializer_->ReadBool();
+		mFactoryOwnerLeft = serializer_->ReadBool();
+		serializer_->Read(mFactoryOwner);
+		mFactoryOwnerTransported = serializer_->ReadBool();
+		serializer_->Read(temp);
+		if (temp != MAX_BLOCKED_PERSONS)
+		{
+			System::Log("M10: Error during SerializeFrom 0");
+			return false;
+		}
+		for(int i = 0; i < MAX_BLOCKED_PERSONS; i++)
+		{
+			serializer_->Read(mBlockedPersons[i]);
+			serializer_->Read(mBlockedDebris[i]);
+		}
+		serializer_->Read(mNumBlockedPersons);
+		serializer_->Read(mNumBlockedDebris);
+		serializer_->Read(temp);
+		if (temp != MAX_HOUSES_FAIL)
+		{
+			System::Log("M10: Error during SerializeFrom 1");
+			return false;
+		}
+		for(int i = 0; i < MAX_HOUSES_FAIL; i++)
+			serializer_->Read(mHousesFail[i]);
+		serializer_->Read(mNumHousesFail);
+		serializer_->Read(temp);
+		if (temp != MAX_HOUSES_HINT)
+		{
+			System::Log("M10: Error during SerializeFrom 2");
+			return false;
+		}
+		for(int i = 0; i < MAX_HOUSES_HINT; i++)
+			serializer_->Read(mHousesHint[i]);
+		serializer_->Read(mNumHousesHint);
+		serializer_->Read(temp);
+		if (temp != MAX_FIREWORK_EFFECTS)
+		{
+			System::Log("M10: Error during SerializeFrom 3");
+			return false;
+		}
+		for(int i = 0; i < MAX_FIREWORK_EFFECTS; i++)
+			serializer_->Read(mFireworkEffects[i]);
+		serializer_->Read(mNumFireworkEffects);
+		serializer_->Read(mFireworkIntensity);
+		serializer_->Read(mExtinguishLevel);
+		serializer_->Read(mFactoryFirework);
+		mFirstFireworkExtinguish = serializer_->ReadBool();
+		mFirstFinishedFirework = serializer_->ReadBool();
+		mFireworkOff = serializer_->ReadBool();
+		serializer_->Read(mCollapsingEffect);
+		serializer_->Read(mVan);
+		serializer_->Read(temp);
+		if (temp != MAX_HOUSES_FLIGHT)
+		{
+			System::Log("M10: Error during SerializeFrom 4");
+			return false;
+		}
+		for(int i = 0; i < MAX_HOUSES_FLIGHT; i++)
+			serializer_->Read(mHousesFlight[i]);
+		serializer_->Read(mNumHousesFlight);
+		mFactoryOwnerFleeing = serializer_->ReadBool();
+		serializer_->Read(mCurrentTransition);
+		serializer_->Read(mCrashHouse);
+		for (int i = 0; i < COUNT_HOUSE_PIECE_GROUPS; i++)
+			serializer_->Read(mHousePieceList[i]);
+		serializer_->Read(mDustCloudList);
+		serializer_->Read(mBlockerDebrisList);
+		serializer_->Read(mWallParticleList);
+		serializer_->Read(mRoofParticleList);
+		serializer_->Read(mCrashRuin);
+		for (int i = 0; i < MAX_SPARK_OBJECTS; i++)
+		{
+			serializer_->Read(mSparkObj[i]);
+			serializer_->Read(mSparkEmit[i]);
+			serializer_->Read(mSparkDestList[i]);
+		}
+		if (Version >= 0x0101)
+			serializer_->Read(mBlockedCar);
+		else
+		{
+			GameObjectList blockedCar(NAME_BLOCKED_CAR);
+			if (blockedCar.GetNumObjects() > 0)
+				mBlockedCar = *blockedCar.GetObject(0);
+		}
+
+		return true;
+	}
+};

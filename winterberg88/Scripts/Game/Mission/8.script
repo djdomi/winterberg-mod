@@ -1,0 +1,2263 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script 8
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+/* TODO
+	- Cutscene einstürzende Gebäude
+	- ICE Waggon mit Cutscene
+	- Serialisierung
+	- Musik und Sounds
+*/
+
+enum
+{
+	MAX_HINTS = 10,					// maximale Anzahl Hints
+	MAX_DEAD_CIVILS = 5,			// maximale Anzahl Tote bevor Missionsabbruch
+	MAX_SWITCHES = 3,				// Anzahl Schalter für Stromabschaltung
+	ELECTRICTY_MIN_TIME = 1,		// minimale Zeit bis nächster Stromschlag (in sek)
+	ELECTRICTY_MAX_TIME = 2,		// maximale Zeit bis nächster Stromschlag (in sek)
+	MAX_BARRELS = 16,				// maximale Anzahl Fässer
+	SPAWN_BARREL_MIN_TIME = 30,		// minimale Zeit bis neues Fass spawned
+	SPAWN_BARREL_MAX_TIME = 51,		// maximale Zeit bis neues Fass spawned
+	BARREL_LIVE_MIN_TIME = 20,		// minimale Zeit bis Fass scharf geschaltet
+	BARREL_LIVE_MAX_TIME = 71,		// maximale Zeit bis Fass scharf geschaltet
+	SPAWN_OBJECT_MIN_TIME = 15,		// minimale Zeit bis neues Objekt gespawnt wird
+	SPAWN_OBJECT_MAX_TIME = 46,		// maximale Zeit bis neues Objekt gespawnt wird
+	MAX_SPAWN_PROTOTYPES = 9,		// maximale Anzahl verschiedener Objekte die gespawnt werden
+	MAX_DIVEAREAS = 3,				// maximale Anzahl mit eingeschlossener Person
+	MAX_DROWNING_PERSONS = 6,		// maximale Anzahl an der Personen, die sich festklammern
+	MAX_PERSONS_ON_HOUSES = 13,		// maximale Anzahl an Personen auf Häusern (verletzt und unverletzt)
+	MAX_CRASHING_HOUSES = 2,		// maximale Anzahl einstürzender Häuser
+	MAX_SINKING_HOUSES = 2,			// maximale Anzahl untergehender Häuser
+	MAX_BARREL_PATHES = 10,			// maximale Anzahl von Fässer-Pfaden
+	MAX_SPAWN_OBJECT_PATHES = 10,	// maximale Anzahl von Spawn-Objekt-Pfaden
+};
+
+enum
+{
+	TRANSITION_NONE,
+	TRANSITION_COLLAPSING_HOUSE1,
+	TRANSITION_COLLAPSING_HOUSE2
+};
+
+struct BarrelInfo
+{
+	bool HasStarted;
+	float ExplodeTimer;
+	BarrelInfo()
+	{
+		HasStarted = false;
+		ExplodeTimer = 0.f;
+	}
+};
+
+const char NAME_AREA_BUILD_PONTON[]			= "ponton";
+const char NAME_AREA_ELECTRICITY_OUTER[]	= "el outer";
+const char NAME_AREA_ELECTRICITY_INNER[]	= "el inner";
+const char NAME_SWITCH1[]					= "el switch1";
+const char NAME_SWITCH2[]					= "el switch2";
+const char NAME_SWITCH3[]					= "el switch3";
+const char NAME_ELECTRICTY_EFFECT[]			= "el effect";
+const char NAME_ELECTRICTY_FULL_EFFECT[]	= "el full effect";
+const char NAME_BARREL[]					= "barrel";
+const char NAME_BARREL_PATH[]				= "barrel path";
+const char NAME_SPAWNED_OBJECT[]			= "spawned object";
+const char NAME_PATH_SPAWNED_OBJECTS[]		= "spawn path";
+const char NAME_PROTOTYPE1[]				= "mod:Prototypes/Objects/Missionspec/flood_brokentree02.e4p";
+const char NAME_PROTOTYPE2[]				= "mod:Prototypes/Objects/Missionspec/flood_brokentree02a.e4p";
+const char NAME_PROTOTYPE3[]				= "mod:Prototypes/Objects/Missionspec/flood_carwreck00.e4p";
+const char NAME_PROTOTYPE4[]				= "mod:Prototypes/Objects/Missionspec/flood_carwreck16.e4p";
+const char NAME_PROTOTYPE5[]				= "mod:Prototypes/Objects/Missionspec/flood_depot01_barrel01.e4p";
+const char NAME_PROTOTYPE6[]				= "mod:Prototypes/Objects/Missionspec/flood_enbankmentfrags02.e4p";
+const char NAME_PROTOTYPE7[]				= "mod:Prototypes/Objects/Missionspec/flood_cat.e4p";
+const char NAME_PROTOTYPE8[]				= "mod:Prototypes/Objects/Missionspec/flood_dead_cow.e4p";
+const char NAME_PROTOTYPE9[]				= "mod:Prototypes/Objects/Missionspec/flood_horse.e4p";
+const char NAME_VO_DIVEAREA1[]				= "vo divearea1";
+const char NAME_VO_DIVEAREA2[]				= "vo divearea2";
+const char NAME_VO_DIVEAREA3[]				= "vo divearea3";
+const char NAME_PERSON_DIVEAREA1[]			= "p divearea1";
+const char NAME_PERSON_DIVEAREA2[]			= "p divearea2";
+const char NAME_PERSON_DIVEAREA3[]			= "p divearea3";
+const char NAME_EFFECT_DIVEAREA1[]			= "dive1";
+const char NAME_EFFECT_DIVEAREA2[]			= "dive2";
+const char NAME_EFFECT_DIVEAREA3[]			= "dive3";
+const char NAME_DROWNING1[]					= "drowning1";
+const char NAME_DROWNING2[]					= "drowning2";
+const char NAME_DROWNING3[]					= "drowning3";
+const char NAME_DROWNING4[]					= "drowning4";
+const char NAME_DROWNING5[]					= "drowning5";
+const char NAME_DROWNING6[]					= "drowning6";
+const char NAME_DROWNING_PATH1[]			= "drowningpath1";
+const char NAME_DROWNING_PATH2[]			= "drowningpath2";
+const char NAME_DROWNING_PATH3[]			= "drowningpath3";
+const char NAME_DROWNING_PATH4[]			= "drowningpath4";
+const char NAME_DROWNING_PATH5[]			= "drowningpath5";
+const char NAME_DROWNING_PATH6[]			= "drowningpath6";
+const char NAME_DROWNING_TRIGGER1[]			= "drowningtrigger1";
+const char NAME_DROWNING_TRIGGER2[]			= "drowningtrigger2";
+const char NAME_DROWNING_TRIGGER3[]			= "drowningtrigger3";
+const char NAME_DROWNING_TRIGGER4[]			= "drowningtrigger4";
+const char NAME_DROWNING_TRIGGER5[]			= "drowningtrigger5";
+const char NAME_DROWNING_TRIGGER6[]			= "drowningtrigger6";
+const char NAME_PERSON_ON_HOUSE[]			= "onhouse";
+const char NAME_CRASHING_HOUSE1[]			= "crashing1";
+const char NAME_CRASHING_HOUSE2[]			= "crashing2";
+const char NAME_CRASHING_HOUSE2_A[]			= "crashing2a";
+const char NAME_CRASHING_HOUSE2_B[]			= "crashing2b";
+const char NAME_CRASHING_HOUSE2_C[]			= "crashing2c";
+const char NAME_CRASHING_HOUSE2_D[]			= "crashing2d";
+const char NAME_CRASHING_HOUSE2_E[]			= "crashing2e";
+const char NAME_CRASHING_HOUSE2_FRAMEA1[]	= "crashing2_a1";
+const char NAME_CRASHING_HOUSE2_FRAMEA2[]	= "crashing2_a2";
+const char NAME_CRASHING_HOUSE2_FRAMEA3[]	= "crashing2_a3";
+const char NAME_CRASHING_HOUSE2_FRAMEA4[]	= "crashing2_a4";
+const char NAME_CRASHING_HOUSE2_FRAMEB1[]	= "crashing2_b1";
+const char NAME_CRASHING_HOUSE2_FRAMEB2[]	= "crashing2_b2";
+const char NAME_CRASHING_HOUSE2_FRAMEB3[]	= "crashing2_b3";
+const char NAME_CRASHING_HOUSE2_FRAMEB4[]	= "crashing2_b4";
+const char NAME_CRASHING_HOUSE2_FRAMEC1[]	= "crashing2_c1";
+const char NAME_CRASHING_HOUSE2_FRAMEC2[]	= "crashing2_c2";
+const char NAME_CRASHING_HOUSE2_FRAMEC3[]	= "crashing2_c3";
+const char NAME_CRASHING_HOUSE2_FRAMEC4[]	= "crashing2_c4";
+const char NAME_CRASHING_HOUSE2_FRAMED1[]	= "crashing2_d1";
+const char NAME_CRASHING_HOUSE2_FRAMED2[]	= "crashing2_d2";
+const char NAME_CRASHING_HOUSE2_FRAMED3[]	= "crashing2_d3";
+const char NAME_CRASHING_HOUSE2_FRAMED4[]	= "crashing2_d4";
+const char NAME_CRASHING_HOUSE2_FRAMEE1[]	= "crashing2_e1";
+const char NAME_CRASHING_HOUSE2_FRAMEE2[]	= "crashing2_e2";
+const char NAME_CRASHING_HOUSE2_FRAMEE3[]	= "crashing2_e3";
+const char NAME_CRASHING_HOUSE2_FRAMEE4[]	= "crashing2_e4";
+const char NAME_CRASHING_HOUSE1_FLOOR[]		= "crashing1floor";
+const char NAME_PLANE_CRASHING_HOUSE1[]		= "crashing1plane";
+const char NAME_CRASHING_HOUSE2_FLOOR[]		= "crashing2floor";
+const char NAME_PLANE_CRASHING_HOUSE2[]		= "crashing2plane";
+const char NAME_SINKING_HOUSE1[]			= "sink house1";
+const char NAME_SINKING_HOUSE2[]			= "sink house2";
+const char NAME_VO_WATER_HOUSE1[]			= "water_house1";
+const char NAME_VO_WATER_HOUSE2[]			= "water_house2";
+const char NAME_VO_WATER_HOUSE3[]			= "water_house3";
+const char NAME_VO_WATER_HOUSE4[]			= "water_house4";
+const char NAME_WP_SINKING_HOUSE1[]			= "fmb1";
+const char NAME_WP_SINKING_HOUSE2[]			= "fmb2";
+const char NAME_SINKING_EFFECTA1[]			= "sink houseparticlea1";
+const char NAME_SINKING_EFFECTB1[]			= "sink houseparticleb1";
+const char NAME_SINKING_EFFECTC1[]			= "sink houseparticlec1";
+const char NAME_SINKING_EFFECTA2[]			= "sink houseparticlea2";
+const char NAME_SINKING_EFFECTB2[]			= "sink houseparticleb2";
+const char NAME_SINKING_EFFECTC2[]			= "sink houseparticlec2";
+const char NAME_SINKING_REFFECT1[]			= "sink turnoff1";
+const char NAME_SINKING_REFFECT2[]			= "sink turnoff2";
+const char NAME_SINKING_AREA1[]				= "sink housevo1";
+const char NAME_SINKING_AREA2[]				= "sink housevo2";
+const char NAME_AREA_HOUSE1[]				= "areahouse1";
+const char NAME_AREA_HOUSE2[]				= "areahouse2";
+const char NAME_WAGGON[]					= "waggon";
+const char NAME_WAGGON_PATH[]				= "waggon path";
+const char NAME_WAGGON_TRIGGER[]			= "trigger_waggon";
+const char NAME_PARTICLE_CRACK1[]			= "particle_crack1";
+const char NAME_PARTICLE_SPLASH1[]			= "particle_splash1";
+const char NAME_PARTICLE_CHUTE1[]			= "particle_chute1";
+const char NAME_PARTICLE_CRACK2[]			= "particle_crack2";
+const char NAME_PARTICLE_SPLASH2[]			= "particle_splash2";
+const char NAME_PARTICLE_CHUTE2[]			= "particle_chute2";
+const char NAME_PARTICLE_BUBBLE[]			= "particle_wbubble";
+const char NAME_AREA_WATER[]				= "areawater";
+const char NAME_AMBIENT_RAIN[]				= "rain";
+const char ANIM_DROWN1[]					= "drown1";
+const char NAME_AREA_HOUSE[]				= "house";
+const char NAME_HITBUILDING[]				= "hitBuilding";
+const char NAME_SOUND_CRASHING_HOUSE1[]		= "mod:Audio/FX/destruction/mission_building_breakdown.wav";
+const char NAME_SOUND_COLLISION_HOUSE2[]	= "mod:Audio/FX/destruction/traincrash03.wav";
+const char NAME_SOUND_KLONK[]				= "mod:Audio/FX/misc/klonk01.wav";
+const char NAME_SOUND_SPLASH[]				= "mod:Audio/FX/misc/watersplash01.wav";
+const char NAME_SOUND_SINK[]				= "mod:Audio/FX/misc/bubble01.wav";
+const char NAME_SOUND_ELECTRICITY[]			= "mod:Audio/FX/misc/electricity01.wav";
+
+const char NAME_COUNTER_DEAD_PERSONS[]		= "Dead Persons";
+
+const char OBJECTIVE_TRANSPORT_INJURED[]	= "TRANSPORT_INJURED";
+const char OBJECTIVE_RESCUE_PERSONS[]		= "M08_RESCUE_PERSONS";
+
+const char HINT_NEED_PONTON_BRIDGE[]		= "HINT_M08_NEED_PONTON_BRIDGE";
+const char HINT_DANGER_ELECTRICITY[]		= "HINT_M08_DANGER_ELECTRICITY";
+const char HINT_PERSONS_UNDERWATER[]		= "HINT_M08_PERSONS_UNDERWATER";
+const char HINT_PERSONS_IN_CURRENT[]		= "HINT_M08_PERSONS_IN_CURRENT";
+const char HINT_HOUSE_CAN_CRASH[]			= "HINT_M08_HOUSE_CAN_CRASH";
+const char HINT_OBJECTS_IN_CURRENT[]		= "HINT_M08_OBJECTS_IN_CURRENT";
+const char HINT_WAGGON_IN_CURRENT[]			= "HINT_M08_WAGGON_IN_CURRENT";
+const char HINT_WAGGON_ARRIVED[]			= "HINT_M08_WAGGON_ARRIVED";
+const char HINT_TOO_MANY_DEAD[]				= "HINT_M08_TOO_MANY_DEAD";
+const char HINT_POWER_OFF[]					= "HINT_M08_POWER_OFF";
+
+const char TIMER_NAME_WEATHER[]				= "t_weather";
+const float TIMER_TIME_WEATHER				= 10.f;
+const float WEATHER_OFF_TIME				= 4.f * 60.f;		// Zeit bis Regen aufhört
+const char TIMER_NAME_HINT0[]				= "t_hint0";
+const float TIMER_TIME_HINT0				= 1.3f;
+const char TIMER_NAME_ELECTRICITY[]			= "t_electricity";	// Timer für Verletzung innerhalb des Bereiches
+const float TIMER_TIME_ELECTRICITY			= 1.f;
+const char TIMER_NAME_EL_EFFECT[]			= "t_el effect";	// Timer für die zufälligen Entladungen
+const char TIMER_NAME_SPAWN_BARREL[]		= "t_barrel";		// Timer der neues Fass spawned
+const char TIMER_NAME_UPDATE_BARRELS[]		= "t_update_barrels"; // updated Status der Fässer
+const float TIMER_TIME_UPDATE_BARRELS		= 2.f;
+const char TIMER_NAME_SPAWN_OBJECT[]		= "t_object";		// Timer der neues Objekt spawned
+const char TIMER_NAME_HINT2[]				= "t_hint1";		// Wenn dann noch Personen unter Wasser hint abspielen
+const float TIMER_TIME_HINT2				= 10.f * 60.f;
+const char TIMER_NAME_UPDATE_DROWNING[]		= "t_drowning";		// Status der Personen im Wasser updaten
+const float TIMER_TIME_UPDATE_DROWNING		= 1.7f;
+const char TIMER_NAME_HOUSECRASH1[]			= "t_crash1";		// Timer für 1. Hauseinsturz
+const float TIMER_TIME_HOUSECRASH1			= 6.f * 60.f;
+const char TIMER_NAME_HOUSESINK1[]			= "t_sink1";		// Timer für 1. versinkendes Haus
+const float TIMER_TIME_HOUSESINK1			= 8.f * 60.f;
+const char TIMER_NAME_SINK1_EFFECTB[]		= "t_sink1_eb";		// Zeit für 2. Effekt nach Versinken
+const float TIMER_TIME_SINK1_EFFECTB		= 0.5f;
+const char TIMER_NAME_SINK1_EFFECTC[]		= "t_sink1_ec";		// Zeit für 3. Effekt nach Versinken
+const float TIMER_TIME_SINK1_EFFECTC		= 1.0f;
+const char TIMER_NAME_HOUSESINK2[]			= "t_sink2";		// Timer für 2. versinkendes Haus
+const float TIMER_TIME_HOUSESINK2			= 11.f * 60.f;
+const char TIMER_NAME_SINK2_EFFECTB[]		= "t_sink2_eb";		// Zeit für 2. Effekt nach Versinken
+const float TIMER_TIME_SINK2_EFFECTB		= 0.5f;
+const char TIMER_NAME_SINK2_EFFECTC[]		= "t_sink2_ec";		// Zeit für 3. Effekt nach Versinken
+const float TIMER_TIME_SINK2_EFFECTC		= 1.0f;
+const char TIMER_NAME_HINT_CRASH1[]			= "t_hint_crash1";	// Timer für den Hint vor 1. Einsturz
+const char TIMER_NAME_HINT_SINK1[]			= "t_hint_sink1";	// Timer für den Hint vor 1. Einsinken
+const char TIMER_NAME_HINT_SINK2[]			= "t_hint_sink2";	// Timer für den Hint vor 2. Einsinken
+const char TIMER_NAME_WAGGON[]				= "t_waggon";		// Waggon wird gestartet
+const float TIMER_TIME_WAGGON				= 9.f * 60.f;
+const char TIMER_NAME_HINT6[]				= "t_hint6";		// Warnt vor Waggon
+const char TIMER_CS2_WAGGON_SINK[]			= "t_waggonsink";
+const float TIME_CS2_WAGGON_SINK			= 1.0f;
+const char TIMER_NAME_UPDATE_ONHOUSE[]		= "t_onhouse";
+const float TIMER_TIME_UPDATE_ONHOUSE		= 1.3f;
+const char TIMER_BUBBLES_OFF[]				= "t_bubbles_off";
+const float TIME_BUBBLES_OFF				= 25.0f;
+
+const char TIMER_CS1_ENDING[]				= "CS1_Ending";		// Ende der Cutscene von crashing house 1
+const float TIME_CS1_ENDING					= 3.0f;
+const char TIMER_CS1_SECOND[]				= "CS1_Second";
+const float TIME_CS1_SECOND					= 1.0f;
+const char NAME_CS1_TRANSITION[]			= "CS1";
+const float TIME_CS1_TRANSITION				= 3.0f;
+const char TIMER_CS2_CRASH[]				= "CS2_Crash";
+const float TIME_CS2_CRASH					= 0.1f;
+const char TIMER_CS2_NOCOLLISION[]			= "CS2_NoCollision";
+const float TIME_CS2_NOCOLLISION			= 5.0f;
+const char NAME_CS2_TRANSITION[]			= "CS2";
+const float TIME_CS2_TRANSITION				= 3.0f;
+const char TIMER_CS2_ENDING[]				= "CS2_Ending";
+const float TIME_CS2_ENDING					= 3.0f;
+
+
+object Mission08 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mTooManyDied;
+	float mRainIntensity;
+	float mFlashIntensity;
+	float mRainVolume;
+	bool mSwitchPressed[MAX_SWITCHES];
+	GameObject mSwitches[MAX_SWITCHES];
+	const char * mSwitchNames[MAX_SWITCHES];
+	bool mElectricityTurnedOff;
+	GameObjectList mElectricityEffects;
+	GameObject mElectricityFullEffect;
+	GameObjectList mBarrels;
+	BarrelInfo mBarrelStates[MAX_BARRELS];
+	int mNextBarrelIndex;
+	Path mBarrelPathes[MAX_BARREL_PATHES];
+	int mBarrelPathCount;
+	int mLastUsedBarrelPath;
+	Path mSpawnObjectsPathes[MAX_SPAWN_OBJECT_PATHES];
+	int mSpawnObjectsPathCount;
+	const char * mPrototypeNames[MAX_SPAWN_PROTOTYPES];
+	int mLastUsedSpawnObjectPath;
+	const char * mDiveAreaNames[MAX_DIVEAREAS];
+	const char * mDiveAreaPersonNames[MAX_DIVEAREAS];
+	GameObject mDiveAreaPersons[MAX_DIVEAREAS];
+	Actor mDiveAreaVOs[MAX_DIVEAREAS];
+	bool mDiveAreaPersonFound[MAX_DIVEAREAS];
+	const char * mDrowningPersonNames[MAX_DROWNING_PERSONS];
+	Person mDrowningPersons[MAX_DROWNING_PERSONS];
+	float mDrowningTimers[MAX_DROWNING_PERSONS];
+	const char * mDrowningPathNames[MAX_DROWNING_PERSONS];
+	Path mDrowningPathes[MAX_DROWNING_PERSONS];
+	const char * mDrowningTriggerNames[MAX_DROWNING_PERSONS];
+	GameObject mPersonsOnHouses[MAX_PERSONS_ON_HOUSES];
+	int mNumPersonsOnHouses;
+	const char * mCrashingHouseNames[MAX_CRASHING_HOUSES];
+	GameObject mCrashingHouses[MAX_CRASHING_HOUSES];
+	const char *mCrashingHouseAreaNames[MAX_CRASHING_HOUSES];
+	GameObject mWaggon;
+	Vector mWaggonDir;
+	bool mDrowningPersonRescued[MAX_DROWNING_PERSONS];
+	int mSoundKlonk;
+
+	// cutscene
+	GameObjectList mFallingObjects;
+	GameObjectList mCollapsingHouseParts1;
+	GameObject mCollapsingHouseFloor1;
+	GameObject mCollapsingHousePlane1;
+	Actor mWaterVO1, mWaterVO2, mWaterVO3, mWaterVO4;
+	GameObject mCollapsingHouseParts2[5];
+	GameObject mCollapsingHouseParts2Frame[5][4];
+	GameObject mCollapsingHouseFloor2;
+	GameObject mCollapsingHousePlane2;
+	GameObjectList mParticlesCrack1;
+	GameObjectList mParticlesSplash1;
+	GameObjectList mParticlesChute1;
+	GameObjectList mParticlesCrack2;
+	GameObjectList mParticlesSplash2;
+	GameObjectList mParticlesChute2;
+	GameObjectList mParticlesBubble;
+	int mCurrentTransition;
+	float mWaggonSink;
+	bool mTrainHouseCrash;
+	bool mBubblesShown;
+
+	const char * mSinkingHouseNames[MAX_SINKING_HOUSES];
+	const char * mSinkingHouseWPNames[MAX_SINKING_HOUSES];
+	GameObject mSinkingHouses[MAX_SINKING_HOUSES];
+	const char * mSinkingEffectNamesA[MAX_SINKING_HOUSES];
+	const char * mSinkingEffectNamesB[MAX_SINKING_HOUSES];
+	const char * mSinkingEffectNamesC[MAX_SINKING_HOUSES];
+	GameObject mSinkingEffectsA[MAX_SINKING_HOUSES];
+	GameObject mSinkingEffectsB[MAX_SINKING_HOUSES];
+	GameObject mSinkingEffectsC[MAX_SINKING_HOUSES];
+	const char * mSinkingAreaNames[MAX_SINKING_HOUSES];
+	const char * mSinkingREffectNames[MAX_SINKING_HOUSES];
+
+	Mission08()
+	{
+		for(int i = 0; i < MAX_HINTS; i++)
+		{
+			mHintCounter[i] = 0;
+		}
+		for(int i = 0; i < MAX_SWITCHES; i++)
+		{
+			mSwitchPressed[i] = false;
+		}
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+		{
+			mDiveAreaPersonFound[i] = false;
+		}
+		mSwitchNames[0] = NAME_SWITCH1;
+		mSwitchNames[1] = NAME_SWITCH2;
+		mSwitchNames[2] = NAME_SWITCH3;
+		mPrototypeNames[0] = NAME_PROTOTYPE1;
+		mPrototypeNames[1] = NAME_PROTOTYPE2;
+		mPrototypeNames[2] = NAME_PROTOTYPE3;
+		mPrototypeNames[3] = NAME_PROTOTYPE4;
+		mPrototypeNames[4] = NAME_PROTOTYPE5;
+		mPrototypeNames[5] = NAME_PROTOTYPE6;
+		mPrototypeNames[6] = NAME_PROTOTYPE7;
+		mPrototypeNames[7] = NAME_PROTOTYPE8;
+		mPrototypeNames[8] = NAME_PROTOTYPE9;
+		mDiveAreaNames[0] = NAME_VO_DIVEAREA1;
+		mDiveAreaNames[1] = NAME_VO_DIVEAREA2;
+		mDiveAreaNames[2] = NAME_VO_DIVEAREA3;
+		mDiveAreaPersonNames[0] = NAME_PERSON_DIVEAREA1;
+		mDiveAreaPersonNames[1] = NAME_PERSON_DIVEAREA2;
+		mDiveAreaPersonNames[2] = NAME_PERSON_DIVEAREA3;
+		mDrowningPersonNames[0] = NAME_DROWNING1;
+		mDrowningPersonNames[1] = NAME_DROWNING2;
+		mDrowningPersonNames[2] = NAME_DROWNING3;
+		mDrowningPersonNames[3] = NAME_DROWNING4;
+		mDrowningPersonNames[4] = NAME_DROWNING5;
+		mDrowningPersonNames[5] = NAME_DROWNING6;
+		mDrowningPathNames[0] = NAME_DROWNING_PATH1;
+		mDrowningPathNames[1] = NAME_DROWNING_PATH2;
+		mDrowningPathNames[2] = NAME_DROWNING_PATH3;
+		mDrowningPathNames[3] = NAME_DROWNING_PATH4;
+		mDrowningPathNames[4] = NAME_DROWNING_PATH5;
+		mDrowningPathNames[5] = NAME_DROWNING_PATH6;
+		mCrashingHouseNames[0] = NAME_CRASHING_HOUSE1;
+		mCrashingHouseNames[1] = NAME_CRASHING_HOUSE2;
+		mCrashingHouseAreaNames[0] = NAME_AREA_HOUSE1;
+		mCrashingHouseAreaNames[1] = NAME_AREA_HOUSE2;
+		// Zeiten wann die Personen im Wasser loslassen
+		mDrowningTimers[0] = 5.f * 60.f;
+		mDrowningTimers[1] = 7.f * 60.f;
+		mDrowningTimers[2] = 9.f * 60.f;
+		mDrowningTimers[3] = 11.f * 60.f;
+		mDrowningTimers[4] = 13.f * 60.f;
+		mDrowningTimers[5] = 15.f * 60.f;
+		mTooManyDied = false;
+		mElectricityTurnedOff = false;
+		mNextBarrelIndex = 0;
+		mLastUsedBarrelPath = -1;
+		mLastUsedSpawnObjectPath = -1;
+		mNumPersonsOnHouses = 0;
+		mSinkingHouseNames[0] = NAME_SINKING_HOUSE1;
+		mSinkingHouseNames[1] = NAME_SINKING_HOUSE2;
+		mSinkingEffectNamesA[0] = NAME_SINKING_EFFECTA1;
+		mSinkingEffectNamesA[1] = NAME_SINKING_EFFECTA2;
+		mSinkingEffectNamesB[0] = NAME_SINKING_EFFECTB1;
+		mSinkingEffectNamesB[1] = NAME_SINKING_EFFECTB2;
+		mSinkingEffectNamesC[0] = NAME_SINKING_EFFECTC1;
+		mSinkingEffectNamesC[1] = NAME_SINKING_EFFECTC2;
+		mSinkingREffectNames[0] = NAME_SINKING_REFFECT1;
+		mSinkingREffectNames[1] = NAME_SINKING_REFFECT2;
+		mSinkingAreaNames[0] = NAME_SINKING_AREA1;
+		mSinkingAreaNames[1] = NAME_SINKING_AREA2;
+		mWaggonSink = -1.0f;
+		mRainVolume = 1.f;
+		for(int i = 0; i < MAX_DROWNING_PERSONS; i++)
+			mDrowningPersonRescued[i] = true;
+		mSinkingHouseWPNames[0] = NAME_WP_SINKING_HOUSE1;
+		mSinkingHouseWPNames[1] = NAME_WP_SINKING_HOUSE2;
+		mSoundKlonk = 0;
+		mBarrelPathCount = 0;
+		mSpawnObjectsPathCount = 0;
+	}
+
+	~Mission08()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M08 Start");
+
+		ActorList actList1 = Game::GetActors(ACTOR_PATH);
+		for (int i = 0; i < actList1.GetNumActors(); i++)
+		{
+			Actor *ac = actList1.GetActor(i);
+			if (ac->HasNamePrefix(NAME_BARREL_PATH))
+			{
+				mBarrelPathes[mBarrelPathCount] = Path(ac);
+				mBarrelPathCount++;
+				if (mBarrelPathCount > MAX_BARREL_PATHES)
+					System::Error("M08: Too many barrel pathes");
+			}
+			else if (ac->HasNamePrefix(NAME_PATH_SPAWNED_OBJECTS))
+			{
+				mSpawnObjectsPathes[mSpawnObjectsPathCount] = Path(ac);
+				mSpawnObjectsPathCount++;
+				if (mSpawnObjectsPathCount > MAX_SPAWN_OBJECT_PATHES)
+					System::Error("M08: Too many spawn object pathes");
+			}
+		}
+
+		ActorList actListVO1 = Game::GetActors(NAME_VO_WATER_HOUSE1);
+		if (actListVO1.GetNumActors() > 0)
+			mWaterVO1 = actListVO1.GetActor(0);
+		ActorList actListVO2 = Game::GetActors(NAME_VO_WATER_HOUSE2);
+		if (actListVO2.GetNumActors() > 0)
+			mWaterVO2 = actListVO2.GetActor(0);
+		ActorList actListVO3 = Game::GetActors(NAME_VO_WATER_HOUSE3);
+		if (actListVO3.GetNumActors() > 0)
+			mWaterVO3 = actListVO3.GetActor(0);
+		ActorList actListVO4 = Game::GetActors(NAME_VO_WATER_HOUSE4);
+		if (actListVO4.GetNumActors() > 0)
+			mWaterVO4 = actListVO4.GetActor(0);
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_ELECTRICTY_FULL_EFFECT))
+			{
+				mElectricityFullEffect = *obj;
+				continue;
+			}
+			else if (obj->HasName(NAME_PERSON_ON_HOUSE))
+			{
+				if (mNumPersonsOnHouses < MAX_PERSONS_ON_HOUSES)
+				{
+					mPersonsOnHouses[mNumPersonsOnHouses++] = *obj;
+				}
+				else
+					System::Log("M08: Too many persons on houses found");
+				continue;
+			}
+			else if (obj->HasName(NAME_WAGGON))
+			{
+				mWaggon = *obj;
+				continue;
+			}
+			for(int j = 0; j < MAX_SWITCHES; j++)
+			{
+				if (obj->HasName(mSwitchNames[j]))
+				{
+					mSwitches[j] = *obj;
+					mSwitches[j].EnableSpecialLights(true);
+					mSwitches[j].SetFlag(OF_USABLE);
+					continue;
+				}
+			}
+			for(int j = 0; j < MAX_DIVEAREAS; j++)
+			{
+				if (obj->HasName(mDiveAreaPersonNames[j]))
+				{
+					mDiveAreaPersons[j] = *obj;
+					mDiveAreaPersons[j].Hide();
+					continue;
+				}
+			}
+			for(int j = 0; j < MAX_DROWNING_PERSONS; j++)
+			{
+				if (obj->HasName(mDrowningPersonNames[j]))
+				{
+					mDrowningPersons[j] = Person(obj);
+					mDrowningPersons[j].SetAnimation("drown2");
+					mDrowningPersons[j].SetTerrain(TERRAIN_BOAT);
+					mDrowningPersons[j].SetFlag(OF_FLOTSAM);
+					mDrowningPersonRescued[j] = false;
+					continue;
+				}
+			}
+			for(int j = 0; j < MAX_CRASHING_HOUSES; j++)
+			{
+				if (obj->HasName(mCrashingHouseNames[j]))
+				{
+					mCrashingHouses[j] = *obj;
+					continue;
+				}
+			}
+			for(int j = 0; j < MAX_SINKING_HOUSES; j++)
+			{
+				if (obj->HasName(mSinkingHouseNames[j]))
+				{
+					mSinkingHouses[j] = *obj;
+					continue;
+				}
+				else if (obj->HasName(mSinkingEffectNamesA[j]))
+				{
+					mSinkingEffectsA[j] = *obj;
+					obj->StopParticleEffect();
+					continue;
+				}
+				else if (obj->HasName(mSinkingEffectNamesB[j]))
+				{
+					mSinkingEffectsB[j] = *obj;
+					obj->StopParticleEffect();
+					continue;
+				}
+				else if (obj->HasName(mSinkingEffectNamesC[j]))
+				{
+					mSinkingEffectsC[j] = *obj;
+					obj->StopParticleEffect();
+					continue;
+				}
+			}
+		}
+		ActorList list2(ACTOR_VIRTUAL);
+		for(int i = 0; i < list2.GetNumActors(); i++)
+		{
+			Actor *actor = list2.GetActor(i);
+			for(int j = 0; j < MAX_DIVEAREAS; j++)
+			{
+				if (actor->HasName(mDiveAreaNames[j]))
+				{
+					mDiveAreaVOs[j] = *actor;
+					break;
+				}
+			}
+		}
+		ActorList list3(ACTOR_PATH);
+		for(int i = 0; i < list3.GetNumActors(); i++)
+		{
+			Actor *actor = list3.GetActor(i);
+			for(int j = 0; j < MAX_DROWNING_PERSONS; j++)
+			{
+				if (actor->HasName(mDrowningPathNames[j]))
+				{
+					mDrowningPathes[j] = Path(actor);
+					break;
+				}
+			}
+		}
+
+		mCollapsingHouseParts1 = Game::GetGameObjects(NAME_CRASHING_HOUSE1);
+		if (mCollapsingHouseParts1.GetNumObjects() == 0)
+			System::Error("Crashing house 1 parts not found");
+
+		GameObjectList Floor1List(NAME_CRASHING_HOUSE1_FLOOR);
+		if (Floor1List.GetNumObjects() == 0)
+			System::Error("Crashing house 1 floor not found");
+		mCollapsingHouseFloor1 = Floor1List.GetObject(0);
+
+		GameObjectList planeList1 = Game::GetGameObjects(NAME_PLANE_CRASHING_HOUSE1);
+		if (planeList1.GetNumObjects() == 0)
+			System::Error("Crashing house 1 plane not found");
+		mCollapsingHousePlane1 = planeList1.GetObject(0);
+
+		mCollapsingHouseParts2[0] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_A).GetObject(0);
+		mCollapsingHouseParts2[1] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_B).GetObject(0);
+		mCollapsingHouseParts2[2] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_C).GetObject(0);
+		mCollapsingHouseParts2[3] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_D).GetObject(0);
+		mCollapsingHouseParts2[4] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_E).GetObject(0);
+
+		mCollapsingHouseParts2Frame[0][0] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEA1).GetObject(0);
+		mCollapsingHouseParts2Frame[0][1] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEA2).GetObject(0);
+		mCollapsingHouseParts2Frame[0][2] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEA3).GetObject(0);
+		mCollapsingHouseParts2Frame[0][3] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEA4).GetObject(0);
+		mCollapsingHouseParts2Frame[1][0] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEB1).GetObject(0);
+		mCollapsingHouseParts2Frame[1][1] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEB2).GetObject(0);
+		mCollapsingHouseParts2Frame[1][2] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEB3).GetObject(0);
+		mCollapsingHouseParts2Frame[1][3] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEB4).GetObject(0);
+		mCollapsingHouseParts2Frame[2][0] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEC1).GetObject(0);
+		mCollapsingHouseParts2Frame[2][1] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEC2).GetObject(0);
+		mCollapsingHouseParts2Frame[2][2] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEC3).GetObject(0);
+		mCollapsingHouseParts2Frame[2][3] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEC4).GetObject(0);
+		mCollapsingHouseParts2Frame[3][0] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMED1).GetObject(0);
+		mCollapsingHouseParts2Frame[3][1] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMED2).GetObject(0);
+		mCollapsingHouseParts2Frame[3][2] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMED3).GetObject(0);
+		mCollapsingHouseParts2Frame[3][3] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMED4).GetObject(0);
+		mCollapsingHouseParts2Frame[4][0] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEE1).GetObject(0);
+		mCollapsingHouseParts2Frame[4][1] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEE2).GetObject(0);
+		mCollapsingHouseParts2Frame[4][2] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEE3).GetObject(0);
+		mCollapsingHouseParts2Frame[4][3] = Game::GetGameObjects(NAME_CRASHING_HOUSE2_FRAMEE4).GetObject(0);
+
+		for (int i = 0; i < 5; i++)
+			for (int j = 0; j < 4; j++)
+				mCollapsingHouseParts2Frame[i][j].Hide();
+
+		GameObjectList Floor2List(NAME_CRASHING_HOUSE2_FLOOR);
+		if (Floor2List.GetNumObjects() == 0)
+			System::Error("Crashing house 2 floor not found");
+		mCollapsingHouseFloor2 = Floor2List.GetObject(0);
+
+		GameObjectList planeList2 = Game::GetGameObjects(NAME_PLANE_CRASHING_HOUSE2);
+		if (planeList2.GetNumObjects() == 0)
+			System::Error("Crashing house 2 plane not found");
+		mCollapsingHousePlane2 = planeList2.GetObject(0);
+
+		mParticlesCrack1 = Game::GetGameObjects(NAME_PARTICLE_CRACK1);
+		if (mParticlesCrack1.GetNumObjects() == 0)
+			System::Error("Particle crack1 not found");
+		for (int i = 0; i < mParticlesCrack1.GetNumObjects(); i++)
+		{
+			mParticlesCrack1.GetObject(i)->Hide();
+			mParticlesCrack1.GetObject(i)->StopParticleEffect();
+		}
+
+		mParticlesSplash1 = Game::GetGameObjects(NAME_PARTICLE_SPLASH1);
+		if (mParticlesSplash1.GetNumObjects() == 0)
+			System::Error("Particle splash1 not found");
+		for (int i = 0; i < mParticlesSplash1.GetNumObjects(); i++)
+		{
+			mParticlesSplash1.GetObject(i)->Hide();
+			mParticlesSplash1.GetObject(i)->StopParticleEffect();
+		}
+
+		mParticlesChute1 = Game::GetGameObjects(NAME_PARTICLE_CHUTE1);
+		if (mParticlesChute1.GetNumObjects() == 0)
+			System::Error("Particle Chute1 not found");
+
+		mParticlesCrack2 = Game::GetGameObjects(NAME_PARTICLE_CRACK2);
+		if (mParticlesCrack2.GetNumObjects() == 0)
+			System::Error("Particle crack2 not found");
+		for (int i = 0; i < mParticlesCrack2.GetNumObjects(); i++)
+		{
+			mParticlesCrack2.GetObject(i)->Hide();
+			mParticlesCrack2.GetObject(i)->StopParticleEffect();
+		}
+
+		mParticlesSplash2 = Game::GetGameObjects(NAME_PARTICLE_SPLASH2);
+		if (mParticlesSplash2.GetNumObjects() == 0)
+			System::Error("Particle splash2 not found");
+		for (int i = 0; i < mParticlesSplash2.GetNumObjects(); i++)
+		{
+			mParticlesSplash2.GetObject(i)->Hide();
+			mParticlesSplash2.GetObject(i)->StopParticleEffect();
+		}
+
+		mParticlesChute2 = Game::GetGameObjects(NAME_PARTICLE_CHUTE2);
+		if (mParticlesChute2.GetNumObjects() == 0)
+			System::Error("Particle chute2 not found");
+
+		mParticlesBubble = Game::GetGameObjects(NAME_PARTICLE_BUBBLE);
+		if (mParticlesBubble.GetNumObjects() == 0)
+			System::Error("Particle Bubble not found");
+		for (int i = 0; i < mParticlesBubble.GetNumObjects(); i++)
+		{
+			mParticlesBubble.GetObject(i)->Hide();
+			mParticlesBubble.GetObject(i)->StopParticleEffect();
+		}
+
+		mCurrentTransition = TRANSITION_NONE;
+
+		mElectricityEffects = Game::GetGameObjects(NAME_ELECTRICTY_EFFECT);
+		mBarrels = Game::GetGameObjects(NAME_BARREL);
+		//mBarrelPathes = PathList(NAME_BARREL_PATH);
+		//mSpawnObjectsPathes = PathList(NAME_PATH_SPAWNED_OBJECTS);
+
+		for(int i = 0; i < MAX_SWITCHES; i++)
+		{
+			if (!mSwitches[i].IsValid())
+				System::Log("M08: switch %d is missing", i);
+		}
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+		{
+			if (!mDiveAreaVOs[i].IsValid())
+				System::Log("M08: divearea %d is missing", i);
+			if (!mDiveAreaPersons[i].IsValid())
+				System::Log("M08: person for diverarea %d is missing", i);
+		}
+		for(int i = 0; i < MAX_DROWNING_PERSONS; i++)
+		{
+			if (!mDrowningPathes[i].IsValid())
+				System::Log("M08: path %d for drowning person is missing", i);
+			if (!mDrowningPersons[i].IsValid())
+				System::Log("M08: drowning person %d is missing", i);
+		}
+		if (!mElectricityFullEffect.IsValid())
+			System::Log("M08: full effect for electricity is missing");
+		if (!mWaggon.IsValid())
+			System::Log("M08: waggon is missing");
+		System::Log("%d electricity effects found", mElectricityEffects.GetNumObjects());
+		System::Log("%d barrels found", mBarrels.GetNumObjects());
+		System::Log("%d pathes for barrels found", mBarrelPathCount);
+		System::Log("%d pathes for spawned objects found", mSpawnObjectsPathCount);
+		System::Log("%d persons on houses found", mNumPersonsOnHouses);
+
+		mTrainHouseCrash = false;
+		mBubblesShown = false;
+
+		mRainIntensity = Weather::GetRainIntensity();
+		mFlashIntensity = Weather::GetFlashIntensity();
+
+		Mission::StartIntervalTimer(TIMER_NAME_WEATHER, TIMER_TIME_WEATHER);
+		Mission::StartIntervalTimer(TIMER_NAME_ELECTRICITY, TIMER_TIME_ELECTRICITY);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_BARRELS, TIMER_TIME_UPDATE_BARRELS);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_DROWNING, TIMER_TIME_UPDATE_DROWNING);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_ONHOUSE, TIMER_TIME_UPDATE_ONHOUSE);
+		Mission::StartSingleTimer(TIMER_NAME_EL_EFFECT, (float)GetRandomValue(ELECTRICTY_MIN_TIME, ELECTRICTY_MAX_TIME));
+		Mission::StartSingleTimer(TIMER_NAME_SPAWN_BARREL, (float)GetRandomValue(SPAWN_BARREL_MIN_TIME, SPAWN_BARREL_MAX_TIME));
+		Mission::StartSingleTimer(TIMER_NAME_SPAWN_OBJECT, (float)GetRandomValue(SPAWN_OBJECT_MIN_TIME, SPAWN_OBJECT_MAX_TIME));
+		Mission::StartSingleTimer(TIMER_NAME_HINT2, TIMER_TIME_HINT2);
+		Mission::StartSingleTimer(TIMER_NAME_HOUSECRASH1, TIMER_TIME_HOUSECRASH1);
+		Mission::StartSingleTimer(TIMER_NAME_HOUSESINK1, TIMER_TIME_HOUSESINK1);
+		Mission::StartSingleTimer(TIMER_NAME_HOUSESINK2, TIMER_TIME_HOUSESINK2);
+		Mission::StartSingleTimer(TIMER_NAME_HINT_CRASH1, TIMER_TIME_HOUSECRASH1 - 1.5f * 60.f);
+		Mission::StartSingleTimer(TIMER_NAME_HINT_SINK1, TIMER_TIME_HOUSESINK1 - 1.5f * 60.f);
+		Mission::StartSingleTimer(TIMER_NAME_HINT_SINK2, TIMER_TIME_HOUSESINK2 - 1.5f * 60.f);
+		Mission::StartSingleTimer(TIMER_NAME_HINT6, TIMER_TIME_WAGGON - 2.f * 60.f);
+		Mission::StartSingleTimer(TIMER_NAME_WAGGON, TIMER_TIME_WAGGON);
+
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+		Mission::AddObjective(OBJECTIVE_RESCUE_PERSONS);
+
+		Audio::PlaySoundtrack("8", 0.0f);
+
+		// for debugging
+		//RunCutsceneHouseCrash();
+	}
+
+	void Update()
+	{
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionUse":
+				{
+					if (!mElectricityTurnedOff)
+					{
+						for(int i = 0; i < MAX_SWITCHES; i++)
+						{
+							if (Data_->Parameters[0].iValue == mSwitches[i].GetID())
+							{
+								mSwitchPressed[i] = true;
+								mSwitches[i].EnableSpecialLights(false);
+								mSwitches[i].ClearFlag(OF_USABLE);
+								System::Log("M08: Switch %d pressed", i);
+								break;
+							}
+						}
+						bool turnedOff = true;
+						for(int i = 0; i < MAX_SWITCHES; i++)
+						{
+							turnedOff &= mSwitchPressed[i];
+						}
+						if (turnedOff)
+						{
+							ShowHint(9);
+							mElectricityTurnedOff = true;
+							Mission::StopTimer(TIMER_NAME_ELECTRICITY);
+							Mission::StopTimer(TIMER_NAME_EL_EFFECT);
+							mElectricityFullEffect.StopParticleEffect();
+							for (int i = 0; i < mElectricityEffects.GetNumObjects(); i++)
+							{
+								if (mElectricityEffects.GetObject(i)->IsValid())
+									mElectricityEffects.GetObject(i)->StopParticleEffect();
+							}
+						}
+					}
+					break;
+				}
+			case "EActionPickUp":
+				{
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.HasName(NAME_BARREL))
+					{
+						for(int i = 0; i < MAX_BARRELS; i++)
+						{
+							if (mBarrels.GetObject(i)->GetID() == target.GetID())
+							{
+								mBarrelStates[i].ExplodeTimer = -1.f;
+								Vehicle v(mBarrels.GetObject(i));
+								v.SetSmoking(false);
+								System::Log("M08: Barrel %d picked up", i);
+								break;
+							}
+						}
+					}
+					for (int i = 0; i < MAX_DROWNING_PERSONS; i++)
+					{
+						if (target.HasName(mDrowningPersonNames[i]))
+						{
+							mDrowningTimers[i] = -200.f;
+							mDrowningPersonRescued[i] = true;
+							mDrowningPersons[i].SetObjectPath(NULL);
+							System::Log("M08: drowning person %d picked up", i);
+							break;
+						}
+					}
+					break;
+				}
+			case "EActionDive":
+				{
+					for(int i = 0; i < MAX_DIVEAREAS; i++)
+					{
+						if (!mDiveAreaPersonFound[i] && mDiveAreaVOs[i].GetID() == Data_->Parameters[2].iValue)
+						{
+							switch(i)
+							{
+								case 0:
+									{
+										GameObjectList list(NAME_EFFECT_DIVEAREA1);
+										for (int j = 0; j < list.GetNumObjects(); j++)
+										{
+											list.GetObject(j)->StopParticleEffect();
+										}
+										break;
+									}
+								case 1:
+									{
+										GameObjectList list(NAME_EFFECT_DIVEAREA2);
+										for (int j = 0; j < list.GetNumObjects(); j++)
+										{
+											list.GetObject(j)->StopParticleEffect();
+										}
+										break;
+									}
+								case 2:
+									{
+										GameObjectList list(NAME_EFFECT_DIVEAREA3);
+										for (int j = 0; j < list.GetNumObjects(); j++)
+										{
+											list.GetObject(j)->StopParticleEffect();
+										}
+										break;
+									}
+							}
+							mDiveAreaPersons[i].Show();
+							//Data_->Owner->SetLinkedPersonID(mDiveAreaPersons[i].GetID());
+							Data_->Owner->PushActionLift(ACTION_APPEND, &mDiveAreaPersons[i]);
+							//Person p(&mDiveAreaPersons[i]);
+							//p.Arrested(true, Data_->Owner);
+							//p.SetAnimation("swimperson02");
+							mDiveAreaPersonFound[i] = true;
+							System::Log("M08: Person %d under water found", i);
+							bool found = true;
+							for(int j = 0; j < MAX_DIVEAREAS; j++)
+								found &= mDiveAreaPersonFound[i];
+							if (found)	// alle Personen gefunden
+								Mission::StopTimer(TIMER_NAME_HINT2);
+							break;
+						}
+					}
+					break;
+				}
+			/*case "EActionEvacuatePerson":
+			case "EActionLiftWithRope":
+				{
+					if (mNumPersonsOnHouses > 0)
+					{
+						for(int i = 0; i < MAX_PERSONS_ON_HOUSES; i++)
+						{
+							if (mPersonsOnHouses[i].IsValid() && mPersonsOnHouses[i].GetID() == Data_->Parameters[0].iValue && !mPersonOnHouseRescued[i])
+							{
+								mNumPersonsOnHouses--;
+								mPersonsOnHouses[i] = GameObject();
+								mPersonOnHouseRescued[i] = true;
+								System::Log("M08: Person %d on house rescued", i);
+								break;
+							}
+						}
+					}
+					break;
+				}*/
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionUse":
+				{
+					int id = Data_->Parameters[0].iValue;
+					for (int i = 0; i < MAX_SWITCHES; i++)
+					{
+						if(id == mSwitches[i].GetID())
+						{
+							float *time = reinterpret_cast<float*>(Data_->Parameters[2].pValue);
+							*time = (float) 3.f;
+							break;
+						}
+					}
+					break;
+				}
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void OnSquadVehicleArrived(Vehicle *Vehicle_)
+	{
+		if (mHintCounter[0] == 0)
+			ShowHint(0);
+	}
+
+	PathFinishedAction OnPathFinished(const char* Path_, GameObject *Obj_)
+	{
+		System::Log("M08: OnPathFinished() for path %s", Path_);
+		switch(Path_)
+		{
+			case NAME_DROWNING_PATH1:
+			case NAME_DROWNING_PATH2:
+			case NAME_DROWNING_PATH3:
+			case NAME_DROWNING_PATH4:
+			case NAME_DROWNING_PATH5:
+			case NAME_DROWNING_PATH6:
+				{
+					Mission::IncCounter("Civil Deaths");
+					break;
+				}
+		}
+
+		return PATH_DEFAULT;
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_BUBBLES_OFF:
+				{
+					for (int i = 0; i < mParticlesBubble.GetNumObjects(); i++)
+					{
+						mParticlesBubble.GetObject(i)->StopParticleEffect();
+					}
+				}
+				break;
+			case TIMER_NAME_WEATHER:
+				{
+					float rainIntensity = Weather::GetRainIntensity();
+					float flashIntensity = Weather::GetFlashIntensity();
+					rainIntensity -= 10.f/WEATHER_OFF_TIME * mRainIntensity;
+					flashIntensity -= 10.f/WEATHER_OFF_TIME * mFlashIntensity;
+					mRainVolume -= 10.f/WEATHER_OFF_TIME;
+					if (rainIntensity < 0.f)
+					{
+						rainIntensity = 0.f;
+						flashIntensity = 0.f;
+						Weather::SetRainVisible(false);
+						Weather::SetFlashVisible(false);
+						Game::StopAmbientSound(NAME_AMBIENT_RAIN);
+						Mission::StopTimer(TIMER_NAME_WEATHER);
+					}
+					if (flashIntensity < 0.f)
+						flashIntensity = 0.f;
+					Weather::SetRainIntensity(rainIntensity);
+					Weather::SetFlashIntensity(flashIntensity);
+					Game::SetAmbientSoundVolumeByName(NAME_AMBIENT_RAIN, mRainVolume);
+					break;
+				}
+			case TIMER_NAME_HINT0:
+				{
+					GameObjectList objs;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_BUILD_PONTON, objs, ACTOR_VEHICLE|ACTOR_PERSON);
+					for(int i = 0; i < objs.GetNumObjects(); i++)
+					{
+						GameObject *obj = objs.GetObject(i);
+						if (obj->GetType() == ACTOR_PERSON)
+						{
+							Person p(obj);
+							if (p.IsValid() && p.GetRole() == ROLE_SQUAD)
+							{
+								ShowHint(0);
+								Mission::StopTimer(TIMER_NAME_HINT0);
+								break;
+							}
+						}
+						else if (obj->GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(obj);
+							if (v.IsValid() && v.!IsCivilCar())
+							{
+								ShowHint(0);
+								Mission::StopTimer(TIMER_NAME_HINT0);
+								break;
+							}
+						}
+					}
+					break;
+				}
+			case TIMER_NAME_ELECTRICITY:
+				{
+					if (mHintCounter[1] == 0)
+					{
+						GameObjectList list;
+						Game::CollectObstaclesOnVirtualObject(NAME_AREA_ELECTRICITY_OUTER, list, ACTOR_VEHICLE|ACTOR_PERSON);
+						if (list.ContainsSquad())
+							ShowHint(1);
+					}
+					if (!mElectricityTurnedOff)
+					{
+						GameObjectList list;
+						Game::CollectObstaclesOnVirtualObject(NAME_AREA_ELECTRICITY_INNER, list, ACTOR_VEHICLE|ACTOR_PERSON);
+						for (int i = 0; i < list.GetNumObjects(); i++)
+						{
+							if (list.GetObject(i)->IsValid())
+							{
+								if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+								{
+									Person p(list.GetObject(i));
+									p.Hurt(INJUREREASON_ENERGY, p.GetMaxHealth() * 0.34f);
+									if (p.IsInjured())
+										p.PushActionDisappear(ACTION_NEWLIST, 1.f);
+								}
+								else if (list.GetObject(i)->GetType() == ACTOR_VEHICLE && !list.GetObject(i)->HasName(NAME_BARREL))
+								{
+									Vehicle v(list.GetObject(i));
+									v.Damage(v.GetMaxEnergy() * 0.34f);
+									if (v.IsDestroyed())
+										v.PushActionDisappear(ACTION_NEWLIST, 1.f);
+								}
+							}
+						}
+						if (list.GetNumObjects() == 0)
+							mElectricityFullEffect.StopParticleEffect();
+						else
+						{
+							mElectricityFullEffect.StartParticleEffect();
+							mElectricityFullEffect.SetPosition(list.GetObject(0));
+							Audio::PlaySample3D(NAME_SOUND_ELECTRICITY, mElectricityFullEffect.GetPosition());
+						}
+					}
+					break;
+				}
+			case TIMER_NAME_EL_EFFECT:
+				{
+					for (int i = 0; i < mElectricityEffects.GetNumObjects(); i++)
+					{
+						if (mElectricityEffects.GetObject(i)->IsValid())
+							mElectricityEffects.GetObject(i)->StopParticleEffect();
+					}
+					int index = GetRandomValue(0, mElectricityEffects.GetNumObjects());
+					if (index + 1 > mElectricityEffects.GetNumObjects())
+						return;
+					if (mElectricityEffects.GetObject(index)->IsValid())
+					{
+						mElectricityEffects.GetObject(index)->StartParticleEffect();
+						Audio::PlaySample3D(NAME_SOUND_ELECTRICITY, mElectricityEffects.GetObject(index)->GetPosition());
+					}
+					Mission::StartSingleTimer(TIMER_NAME_EL_EFFECT, (float)GetRandomValue(ELECTRICTY_MIN_TIME, ELECTRICTY_MAX_TIME));
+					break;
+				}
+			case TIMER_NAME_SPAWN_BARREL:
+				{
+					int j = mNextBarrelIndex;
+					for(; j < MAX_BARRELS; j++)
+					{
+						if (mBarrels.GetObject(j) && mBarrels.GetObject(j)->IsValid())
+						{
+							GameObject *obj = mBarrels.GetObject(j);
+							obj->SetTerrain(TERRAIN_BOAT);
+							int index = GetRandomValue(0, mBarrelPathCount);
+							if (index == mLastUsedBarrelPath)
+							{
+								for(int i = index + 1; i < mBarrelPathCount; i++)
+								{
+									if (mBarrelPathes[i].IsValid())
+									{
+										index = i;
+										break;
+									}
+								}
+								if (index == mLastUsedBarrelPath)
+								{
+									for(i = 0; i < index; i++)
+									{
+										if (mBarrelPathes[i].IsValid())
+										{
+											index = i;
+											break;
+										}
+									}
+								}
+							}
+							mLastUsedBarrelPath = index;
+							Vector start = mBarrelPathes[index].GetStartPosition();
+							Game::FindFreePosition(obj, start, 200.f);
+							start.z -= 250.f;
+							obj->SetPlacementNone();
+							obj->SetPosition(start);
+							obj->PushActionAppear(ACTION_NEWLIST, 25.f);
+							obj->SetObjectPath(&mBarrelPathes[index]);
+							mBarrelStates[j].HasStarted = true;
+							mBarrelStates[j].ExplodeTimer = (float)GetRandomValue(BARREL_LIVE_MIN_TIME, BARREL_LIVE_MAX_TIME);
+							mNextBarrelIndex = j + 1;
+							if(mNextBarrelIndex < MAX_BARRELS)
+								Mission::StartSingleTimer(TIMER_NAME_SPAWN_BARREL, (float)GetRandomValue(SPAWN_BARREL_MIN_TIME, SPAWN_BARREL_MAX_TIME));
+							break;
+						}
+					}
+					mNextBarrelIndex = j + 1;
+					//if (mNextBarrelIndex >= MAX_BARRELS)
+						//Mission::StopTimer(TIMER_NAME_UPDATE_BARRELS);
+					break;
+				}
+			case TIMER_NAME_UPDATE_BARRELS:
+				{
+					for(int i = 0; i < MAX_BARRELS; i++)
+					{
+						if (mBarrelStates[i].HasStarted && mBarrelStates[i].ExplodeTimer > 0.f)
+						{
+							mBarrelStates[i].ExplodeTimer -= time_;
+							if (mBarrelStates[i].ExplodeTimer <= 0.f && mBarrels.GetObject(i) && mBarrels.GetObject(i)->IsValid())
+							{
+								System::Log("M08: Barrel reached danger status");
+								if (mBarrels.GetObject(i)->IsValid() && mBarrels.GetObject(i)->GetBurningStatus() != OBS_FULLBURNED)
+								{
+									System::Log("M08: Barrel will blow up");
+									if (mBarrels.GetObject(i)->GetType() == ACTOR_VEHICLE)
+									{
+										Vehicle v(mBarrels.GetObject(i));
+										int p = 0;
+										for (; p < mBarrelPathCount; p++)
+										{
+											if (v.GetObjectPath().GetID() == mBarrelPathes[p].GetID())
+												break;
+										}
+										v.SetSmoking(true);
+										if (p < mBarrelPathCount)
+											v.SetObjectPath(&mBarrelPathes[p]);
+									}
+									else
+									{
+										mBarrels.GetObject(i)->Burn();
+										//mBarrels.GetObject(i)->Explode();
+									}
+								}
+							}
+						}
+					}
+					break;
+				}
+			case TIMER_NAME_SPAWN_OBJECT:
+				{
+					int index = GetRandomValue(0, MAX_SPAWN_PROTOTYPES);
+					GameObject obj = Game::CreateObject(mPrototypeNames[index], NAME_SPAWNED_OBJECT);
+					obj.SetTerrain(TERRAIN_BOAT);
+					obj.ClearFlag(OF_FLOTSAM);
+					int index = GetRandomValue(0, mSpawnObjectsPathCount);
+					if (index == mLastUsedSpawnObjectPath || !mSpawnObjectsPathes[index].IsValid())
+					{
+						for(int i = index + 1; i < mSpawnObjectsPathCount; i++)
+						{
+							if (mSpawnObjectsPathes[i].IsValid())
+							{
+								index = i;
+								break;
+							}
+						}
+						if (index == mLastUsedSpawnObjectPath)
+						{
+							for(i = 0; i < index; i++)
+							{
+								if (mSpawnObjectsPathes[i].IsValid())
+								{
+									index = i;
+									break;
+								}
+							}
+						}
+					}
+					mLastUsedSpawnObjectPath = index;
+					if (obj.IsValid())
+					{
+						obj.SetPosition(mSpawnObjectsPathes[index].GetStartPosition());
+						obj.SetObjectPath(&mSpawnObjectsPathes[index]);
+						obj.SetSpeed(mSpawnObjectsPathes[index].GetPathSpeed());
+					}
+					Mission::StartSingleTimer(TIMER_NAME_SPAWN_OBJECT, (float)GetRandomValue(SPAWN_OBJECT_MIN_TIME, SPAWN_OBJECT_MAX_TIME));
+					break;
+				}
+			case TIMER_NAME_HINT2:
+				{
+					if (mHintCounter[2] == 0)
+						ShowHint(2);
+					break;
+				}
+			case TIMER_NAME_UPDATE_DROWNING:
+				{
+					for(int i = 0; i < MAX_DROWNING_PERSONS; i++)
+					{
+						if (mDrowningTimers[i] > -100.f)
+						{
+							mDrowningTimers[i] -= TIMER_TIME_UPDATE_DROWNING;
+							if (mDrowningTimers[i] <= 0.f)
+							{
+								if (mDrowningPersons[i].IsValid())
+								{
+									mDrowningPersons[i].SetInsideWater(true);
+									mDrowningPersons[i].SetAnimation(ANIM_DROWN1);
+									mDrowningPersons[i].SetRole(ROLE_DROWNING);
+									mDrowningPersons[i].SetAnimation(ANIM_DROWN1);
+									mDrowningPersons[i].SetObjectPath(&mDrowningPathes[i]);
+									mDrowningPersons[i].SetInsideWater(true);
+								}
+								mDrowningTimers[i] = -200.f;
+							}
+						}
+					}
+					break;
+				}
+			case TIMER_NAME_HINT_CRASH1:
+			case TIMER_NAME_HINT_SINK1:
+			case TIMER_NAME_HINT_SINK2:
+				{
+					ShowHint(4);
+					break;
+				}
+			case TIMER_NAME_HOUSECRASH1:
+				{
+					// Cutscene Einsturz 1. Haus					
+					RunCutsceneHouseCrash();
+					break;
+				}
+			case TIMER_NAME_HOUSESINK1:
+				{
+					// versinken des 1. Hauses
+					Audio::SetMusicLevel(0.2f);
+					HouseSink(0);
+					break;
+				}
+			case TIMER_NAME_HOUSESINK2:
+				{
+					// versinken des 2. Hauses
+					Audio::SetMusicLevel(0.2f);
+					HouseSink(1);
+					break;
+				}
+			case TIMER_NAME_HINT6:
+				{
+					ShowHint(6);
+					break;
+				}
+			case TIMER_NAME_WAGGON:
+				{
+					ShowHint(7);
+					// Waggon losschicken
+					mWaggon.SetTerrain(TERRAIN_BOAT);
+					mWaggon.SetObjectPath(NAME_WAGGON_PATH, 12.0f);
+					System::Log("Start waggon");
+					break;
+				}
+			case TIMER_CS1_ENDING:
+				{
+					CutsceneHouseCrashEnding();
+					break;
+				}
+			case TIMER_CS1_SECOND:
+				{
+					CutSceneHouseCrashSecondPhase();
+					break;
+				}
+			case TIMER_CS2_CRASH:
+				{
+					mCollapsingHousePlane2.Hide();
+					mCollapsingHouseFloor2.EnablePhysicsSimulation();
+					mCollapsingHouseFloor2.UnfreezePhysics();
+					mCollapsingHouseFloor2.SetCollisionMode(PHYSIC_COLLISION_NONE);
+					System::Log("M08: Train collided with house");
+					Vector force;
+					force.x = mWaggonDir.x*50000.0f;
+					force.y = mWaggonDir.y*50000.0f;
+					force.z = 0.0f;
+					for(int i = 0; i < 5; i++)
+					{
+						mCollapsingHouseParts2[i].PushActionMoveToPoint(ACTION_NEWLIST, &mCollapsingHouseParts2Frame[i][0], 8.0f);
+						mCollapsingHouseParts2[i].SetCollisionMode(PHYSIC_COLLISION_NONE);
+						for (int j = 1; j < 4; j++)
+						{
+							mCollapsingHouseParts2[i].PushActionMoveToPoint(ACTION_APPEND, &mCollapsingHouseParts2Frame[i][j], 10.0f + 10.0f*j);
+						}
+					}
+					//for(int i = 0; i < mCollapsingHouseParts2.GetNumObjects(); i++)
+					//{
+					//	GameObject *obj = mCollapsingHouseParts2.GetObject(i);
+					//	obj->EnablePhysicsSimulation();
+					//	Vector pos = obj->GetPosition();
+					//	Vector houseDir = mCollapsingHouseFloor2.GetPosition() - pos;
+					//	//force.x = -houseDir.GetNormal().x*200000.0f;
+					//	//pos.y += houseDir.GetNormal().y*100.0f;
+					//	//obj->SetFloatage(0.7f);
+					//	pos = mCollapsingHouseFloor2.GetPosition();
+					//	pos.z = obj->GetPosition().z;
+					//	obj->ApplyForce(0, pos, force);
+					//	obj->SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+					//	obj->SetFloatage(0.15f);
+					//}
+					force.x = 0.0f;//-mWaggonDir.x*200000.0f;
+					force.y = -mWaggonDir.y*20000.0f;
+					force.z = 400000.0f;
+					Vector pos;
+					pos.x = -300.0f;
+					pos.y = 0.0f;
+					pos.z = 0.0f;
+					pos = mWaggon.RelativeToWorldPosition(pos);
+					mWaggon.ApplyForce(0, pos, force);
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_HOUSE2, mFallingObjects, ACTOR_PERSON);
+					for(int i = 0; i < mFallingObjects.GetNumObjects(); i++)
+					{
+						GameObject *obj = mFallingObjects.GetObject(i);
+						Person pers = (Person*)obj;
+						pers.Kill();
+						pers.EnablePhysicsSimulation();
+						//pers.SetCollisionMode(PHYSIC_COLLISION_NONE);
+						pers.PushActionWait(ACTION_NEWLIST, 5.f);
+						pers.PushActionDeleteOwner(ACTION_APPEND);
+						//pers.Injure(INJUREREASON_DROWN);
+					}
+					//mCollapsingHouseFloor2.AddExplosionForceField("explosion");					
+					Audio::PlaySample(NAME_SOUND_CRASHING_HOUSE1);
+					for(int i = 0; i < mParticlesCrack2.GetNumObjects(); i++)
+					{
+						GameObject *obj = mParticlesCrack2.GetObject(i);
+						obj->Show();
+						obj->StartParticleEffect();
+					}
+					
+					Mission::StartSingleTimer(TIMER_CS2_NOCOLLISION, TIME_CS2_NOCOLLISION, true);
+
+					break;
+				}
+			case TIMER_CS2_NOCOLLISION:
+				{
+					//for(int i = 0; i < mCollapsingHouseParts2.GetNumObjects(); i++)
+					//{
+					//	GameObject *obj = mCollapsingHouseParts2.GetObject(i);
+					//	obj->SetCollisionMode(PHYSIC_COLLISION_NONE);
+					//}
+					mWaterVO2.SetVirtualObjectTerrain("Deep Water");
+					mWaggonSink = 1.0f;
+					break;
+				}
+			case TIMER_CS2_WAGGON_SINK:
+				{
+					mWaggon.UnfreezePhysics();
+					mWaggon.SetCollisionMode(PHYSIC_COLLISION_NONE);
+				}
+				break;
+			case TIMER_CS2_ENDING:
+				{
+					Audio::SetMusicLevel(0.3f);
+					CutsceneWaggonCrashEnding();
+					break;
+				}
+			case TIMER_NAME_SINK1_EFFECTB:
+				{					
+					mSinkingEffectsB[0].StartParticleEffect();
+					Audio::PlaySample3D(NAME_SOUND_SINK, mSinkingEffectsB[0].GetPosition());
+					break;
+				}
+			case TIMER_NAME_SINK1_EFFECTC:
+				{
+					mSinkingEffectsC[0].StartParticleEffect();
+					break;
+				}
+			case TIMER_NAME_SINK2_EFFECTB:
+				{					
+					mSinkingEffectsB[1].StartParticleEffect();
+					Audio::PlaySample3D(NAME_SOUND_SINK, mSinkingEffectsB[1].GetPosition());
+					break;
+				}
+			case TIMER_NAME_SINK2_EFFECTC:
+				{
+					mSinkingEffectsC[1].StartParticleEffect();
+					break;
+				}
+			case TIMER_NAME_UPDATE_ONHOUSE:
+				{
+					//System::Log("M08: Updating onhouse");
+					mNumPersonsOnHouses = 0;
+					GameObjectList list0;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_HOUSE, list0, ACTOR_PERSON);
+					for(int i = 0; i < list0.GetNumObjects(); i++)
+					{
+						if (list0.GetObject(i)->HasName(NAME_PERSON_ON_HOUSE))
+							mNumPersonsOnHouses++;
+					}
+					GameObjectList list1;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_HOUSE1, list1, ACTOR_PERSON);
+					for(int i = 0; i < list1.GetNumObjects(); i++)
+					{
+						if (list1.GetObject(i)->HasName(NAME_PERSON_ON_HOUSE))
+							mNumPersonsOnHouses++;
+					}
+					GameObjectList list2;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_HOUSE2, list2, ACTOR_PERSON);
+					for(int i = 0; i < list2.GetNumObjects(); i++)
+					{
+						if (list2.GetObject(i)->HasName(NAME_PERSON_ON_HOUSE))
+							mNumPersonsOnHouses++;
+					}
+					GameObjectList list3;
+					Game::CollectObstaclesOnVirtualObject(NAME_SINKING_AREA1, list3, ACTOR_PERSON);
+					for(int i = 0; i < list3.GetNumObjects(); i++)
+					{
+						if (list3.GetObject(i)->HasName(NAME_PERSON_ON_HOUSE))
+							mNumPersonsOnHouses++;
+					}
+					GameObjectList list4;
+					Game::CollectObstaclesOnVirtualObject(NAME_SINKING_AREA2, list4, ACTOR_PERSON);
+					for(int i = 0; i < list4.GetNumObjects(); i++)
+					{
+						if (list4.GetObject(i)->HasName(NAME_PERSON_ON_HOUSE))
+							mNumPersonsOnHouses++;
+					}
+					break;
+				}
+		}
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		switch(Trigger)
+		{
+			case NAME_DROWNING_TRIGGER1:
+			case NAME_DROWNING_TRIGGER2:
+			case NAME_DROWNING_TRIGGER3:
+			case NAME_DROWNING_TRIGGER4:
+			case NAME_DROWNING_TRIGGER5:
+			case NAME_DROWNING_TRIGGER6:
+				{
+					ShowHint(3);
+					Game::DeactivateTrigger(Trigger);
+					break;
+				}
+			case NAME_WAGGON_TRIGGER:
+				{
+					if (!mWaggon.IsPhysicsSimulationEnabled() && Collider->GetID() == mWaggon.GetID())
+					{
+						RunCutsceneWaggonCrash();
+						Game::DeactivateTrigger(Trigger);
+					}
+					break;
+				}
+		}
+	}
+
+	void OnMissionLeft(GameObject *Obj)
+	{
+		
+	}
+
+	bool OnExplode(GameObject *Obj)
+	{
+		if (Obj->HasName(NAME_BARREL))
+		{
+			//Obj->PushActionWait(ACTION_NEWLIST, 2.f);
+			//Obj->PushActionDeleteOwner(ACTION_APPEND);
+			Obj->PushActionDisappear(ACTION_NEWLIST, 4.f, true);
+		}
+		return true;
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *obj1, Actor *actor_)
+	{
+		if (obj1->GetID() == mWaggon.GetID())
+		{			
+			if (actor_->IsValid() && actor_->GetType() == ACTOR_PERSON)
+			{
+				Person p(actor_);
+				p.Kill();
+				p.EnablePhysicsSimulation();
+				p.SetCollisionMode(PHYSIC_COLLISION_NONE);
+				p.PushActionWait(ACTION_NEWLIST, 5.f);
+				p.PushActionDeleteOwner(ACTION_APPEND);
+			}
+			else if (actor_->IsValid() && actor_->GetType() == ACTOR_VEHICLE)
+			{				
+				Vehicle v(actor_);
+				if (!v.IsPhysicsSimulationEnabled())
+				{
+					v.Explode();
+					v.EnablePhysicsSimulation();
+					v.SetCollisionMode(PHYSIC_COLLISION_NONE);
+					mWaggon.SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+					mCollapsingHouseFloor2.SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+				}
+			}
+			return MCC_IGNORE_CONTINUE;
+		}
+		else if (obj1->HasName(NAME_SPAWNED_OBJECT))
+		{
+			if (actor_->IsValid() && actor_->GetType() == ACTOR_PERSON)
+			{
+				Person p(actor_);
+				p.Hurt(INJUREREASON_ENERGY, p.GetMaxHealth() * 0.33f);
+				if (p.IsInjured())
+					p.PushActionDisappear(ACTION_NEWLIST, 1.f);
+			}
+			else if (actor_->IsValid() && actor_->GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle v(actor_);
+				v.Damage(v.GetMaxEnergy() * 0.33f);
+				if (v.IsDestroyed())
+					v.PushActionDisappear(ACTION_NEWLIST, 1.f);
+			}
+			if (mHintCounter[5] == 0)
+				ShowHint(5);
+			Path path = obj1->GetObjectPath();
+			int index = path.GetNearestPointIndex(obj1->GetPosition());
+			Vector target = path.GetPoint(index + 1);
+			obj1->PushActionMove(ACTION_INSERTAFTERFIRST, target); // um das Hinderniss herum bewegen
+			obj1->PushActionUsePath(ACTION_APPEND, &path, true, 0.f);
+			return MCC_HALT_DONE;
+		}
+		return MCC_HALT_CONTINUE;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M08: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+		case 0:
+			Mission::PlayHint(HINT_NEED_PONTON_BRIDGE);
+			break;
+		case 1:
+			Mission::PlayHint(HINT_DANGER_ELECTRICITY);
+			break;
+		case 2:
+			Mission::PlayHint(HINT_PERSONS_UNDERWATER);
+			break;
+		case 3:
+			Mission::PlayHint(HINT_PERSONS_IN_CURRENT);
+			break;
+		case 4:
+			Mission::PlayHint(HINT_HOUSE_CAN_CRASH);
+			Audio::SetMusicLevel(0.1f);
+			break;
+		case 5:
+			Mission::PlayHint(HINT_OBJECTS_IN_CURRENT);
+			break;
+		case 6:
+			Mission::PlayHint(HINT_WAGGON_IN_CURRENT);
+			break;
+		case 7:
+			Mission::PlayHint(HINT_WAGGON_ARRIVED);
+			break;
+		case 8:
+			Mission::PlayHint(HINT_TOO_MANY_DEAD);
+			break;
+		case 9:
+			Mission::PlayHint(HINT_POWER_OFF);
+			break;
+		}
+	}
+
+	void OnCameraTransitionFinished()
+	{			
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_COLLAPSING_HOUSE1:
+				mCurrentTransition = TRANSITION_NONE;
+				CutsceneHouseCrashFirstPhase();
+				break;
+			case TRANSITION_COLLAPSING_HOUSE2:
+				mCurrentTransition = TRANSITION_NONE;
+				CutsceneWaggonCrashFirstPhase();
+				break;
+		}
+	}
+
+	MissionState GetMissionState()
+	{
+		if (Mission::GetCounter("Injured Persons") + Mission::GetCounter(NAME_COUNTER_DEAD_PERSONS) == 0)
+		{			
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		//if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") == 0)
+		//{
+		//	if (Mission::HasObjective("EXTINGUISH_FIRES") && !Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+		//	{
+		//		Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+		//		Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+		//		//Audio::SetMusicLevel(0.5f);
+		//	}
+		//}
+		//else
+		//{
+		//	if (Mission::HasObjective("EXTINGUISH_FIRES"))
+		//	{
+		//		if (Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+		//		{
+		//			Mission::PlayComment("SUPERV_OBJ_FIRESAGAIN");
+		//		}
+		//	}
+		//	else
+		//	{
+		//		Mission::AddObjective("EXTINGUISH_FIRES");
+		//		//Audio::SetMusicLevel(0.3f);
+		//	}
+		//	Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", false);
+		//}
+
+		// Personen auf Dächern und im Wasser
+		int diveareapersons = 0;
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+			if (!mDiveAreaPersonFound[i])
+				diveareapersons++;
+		int drowning = 0;
+		for(int i = 0; i < MAX_DROWNING_PERSONS; i++)
+			if (!mDrowningPersonRescued[i])
+				drowning++;
+		Mission::IncCounter("Injured Persons", diveareapersons + drowning);
+		if (mNumPersonsOnHouses == 0 && diveareapersons == 0 && drowning == 0)
+		{
+			if(!Mission::IsObjectiveAccomplished(OBJECTIVE_RESCUE_PERSONS))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RESCUE_PERSONS, true);
+				Mission::PlayComment("SUPERV_M08_OBJ02");
+			}
+		}
+		/*if (diveareapersons)
+			System::Log("M08: Diveareas cleared!");
+		if (drowning)
+			System::Log("M08: Drowning rescued!");
+		System::Log("M08: onhouse: %d", mNumPersonsOnHouses);*/
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Civil deaths") > MAX_DEAD_CIVILS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M08_FAIL01";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M08_RES01";
+		if (Mission::GetCounter(NAME_COUNTER_DEAD_PERSONS) >= 4)
+			return "SUPERV_M08_RES02";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		return 1.0f;
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int diff = max - min;
+		if (diff <= 0)
+			return min;
+		int res = Math::rand() % diff;
+		return res + min;
+	}
+
+	void ShowWaggonBubbles()
+	{
+		//Vector rpos, pos;
+		//rpos.x = 300.0f;
+		//rpos.y = 50.0f;
+		//pos = mWaggon.RelativeToWorldPosition(rpos);
+		//pos.z = mParticlesSplash2.GetObject(0)->GetPosition().z;
+		//Game::DrawPermanentLine(pos, mWaggon.GetPosition(), 255, 0, 0);
+		//Game::PlayEmitter("mod:Prototypes/Objects/Particles/chute05.e4p", pos);
+		for (int i = 0; i < mParticlesBubble.GetNumObjects(); i++)
+		{
+			mParticlesBubble.GetObject(i)->Show();
+			mParticlesBubble.GetObject(i)->StartParticleEffect();
+		}
+		Audio::PlaySample3D(NAME_SOUND_SINK, mParticlesBubble.GetObject(0)->GetPosition());
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+		//if (mWaggonSink < 0.0f) || mWaggonSink > 0.2f)
+		{
+			Vector force;
+			Vector pos;
+			pos = obj->GetPosition();
+			if (!mTrainHouseCrash)
+			{
+				force = mCollapsingHouseFloor2.GetPosition() - pos;
+				force = force.GetNormal();
+				mWaggonDir = force;
+			}
+			else
+				force = mWaggonDir;
+			if (mWaggonSink > 0.0f)
+			{
+				force.x *= 50000.0f;//*mWaggonSink;
+				force.y *= 50000.0f;//*mWaggonSink;
+			}
+			else
+			{
+				force.x *= 60000.0f;
+				force.y *= 60000.0f;
+			}
+			force.z = 500.0f;
+			pos.z += 0.0f;
+			pos.y += 0.0f;
+			obj->ApplyForce(0, pos, force);
+		}
+		if (mWaggonSink > 0.0f)
+		{
+			mWaggonSink -= 0.01f;
+			//System::Log("Waggon sinks %d", (int)(mWaggonSink*100.0f));
+			//obj->SetFloatage(1.01f);// + (1.0f - mWaggonSink)*0.1f);
+			if (!mBubblesShown && mWaggonSink < 0.1f)
+			{
+				//mWaggon.SetCollisionMode(PHYSIC_COLLISION_ALL);
+				ShowWaggonBubbles();
+				mBubblesShown = true;
+				Mission::StartSingleTimer(TIMER_BUBBLES_OFF, TIME_BUBBLES_OFF);
+			}
+			if (mWaggonSink < 0.2f)
+			{
+				obj->SetFloatage(1.03f);
+				mWaggon.SetCollisionMode(PHYSIC_COLLISION_ALL);
+			}
+			obj->StartPhysicsEvent(3);
+		}
+		else if (mWaggonSink < -0.9f)
+			obj->StartPhysicsEvent(3);
+		else
+		{
+			Mission::StartSingleTimer(TIMER_CS2_WAGGON_SINK, TIME_CS2_WAGGON_SINK);
+		}
+	}
+
+	void OnCollision(GameObject *objA, GameObject *objB)
+	{
+		if (!objB)
+			return;
+		if (objA->GetID() == mWaggon.GetID() || objB->GetID() == mWaggon.GetID())
+		{
+			if (objA->GetID() == mCollapsingHouseFloor2.GetID() || objB->GetID() == mCollapsingHouseFloor2.GetID())
+			{
+				if (!mTrainHouseCrash)
+				{
+					for (int i = 0; i < mParticlesChute2.GetNumObjects(); i++)
+					{
+						mParticlesChute2.GetObject(i)->Hide();
+						mParticlesChute2.GetObject(i)->StopParticleEffect();
+					}
+					Mission::StartSingleTimer(TIMER_CS2_CRASH, TIME_CS2_CRASH);
+					Mission::StartSingleTimer(TIMER_CS2_ENDING, TIME_CS2_ENDING);
+					mTrainHouseCrash = true;
+					Audio::PlaySample(NAME_SOUND_COLLISION_HOUSE2);
+				}
+			}
+			else if (mSoundKlonk == 0 && (objA->HasName(NAME_HITBUILDING) || objB->HasName(NAME_HITBUILDING)))
+			{
+				//mSoundKlonk = Audio::PlaySample3D(NAME_SOUND_KLONK, mWaggon.GetPosition());
+				mSoundKlonk = 1;
+				Audio::PlaySample(NAME_SOUND_KLONK);
+			}
+			else
+			{
+				//System::Log("train collided with obstacle");
+				GameObject otherObj;
+				if (objA->GetID() == mWaggon.GetID())
+					otherObj = objB;
+				else
+					otherObj = objA;
+				if (otherObj.GetType() == ACTOR_VEHICLE)
+				{
+					if (!otherObj.IsPhysicsSimulationEnabled())
+					{
+						otherObj.Explode();
+						otherObj.EnablePhysicsSimulation();
+						otherObj.SetCollisionMode(PHYSIC_COLLISION_NONE);
+					}
+				}
+				else if (otherObj.HasName(NAME_SPAWNED_OBJECT))
+				{
+					otherObj.EnablePhysicsSimulation();
+					otherObj.SetCollisionMode(PHYSIC_COLLISION_NONE);
+				}
+			}
+		}
+	}
+
+	void RunCutsceneWaggonCrash()
+	{
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		Camera::StartTransition(NAME_CS2_TRANSITION, TIME_CS2_TRANSITION);
+		mCurrentTransition = TRANSITION_COLLAPSING_HOUSE2;
+
+		mWaggon.EnablePhysicsSimulation(true);
+		mWaggon.SetAnimation("");
+		mWaggon.StartPhysicsEvent(3);
+		//mCollapsingHouseFloor2.EnablePhysicsSimulation();
+		//mCollapsingHouseFloor2.FreezePhysics();
+		mWaggon.SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+		mCollapsingHouseFloor2.SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+		System::Log("M08: Physics set for waggon");
+		Audio::SetMusicLevel(0.2f);
+	}
+
+	void CutsceneWaggonCrashFirstPhase()
+	{
+		System::Log("M08: CS2 first phase");
+		Vector pos;
+		Camera::FollowTarget(&mWaggon, pos, true);
+		Camera::LookAtTarget(&mWaggon, true, 50.0f, 10.0f);
+		Camera::Rotate(-10000, 0, 0, -10);
+	}
+
+	void RunCutsceneHouseCrash()
+	{
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		Camera::StartTransition(NAME_CS1_TRANSITION, TIME_CS1_TRANSITION);
+		mCurrentTransition = TRANSITION_COLLAPSING_HOUSE1;
+		Audio::SetMusicLevel(0.2f);
+	}
+
+	void CutsceneHouseCrashFirstPhase()
+	{
+		Game::SetGameSpeed(0.75f);
+		System::Log("M08: CS1 first phase");
+		mCollapsingHousePlane1.Hide();
+		for(int i = 0; i < mCollapsingHouseParts1.GetNumObjects(); i++)
+		{
+			GameObject *obj = mCollapsingHouseParts1.GetObject(i);
+			obj->EnablePhysicsSimulation();
+			obj->UnfreezePhysics();
+			obj->SetCollisionMode(PHYSIC_COLLISION_NOWORLD);
+			Vector force = obj->GetPosition() - mCollapsingHouseFloor1.GetPosition();
+			force = force.GetNormal();
+			force.x *= 1300.0f;
+			force.y *= 1300.0f;
+			force.x *= 1300.0f;
+			//obj->ApplyForce(0, obj->GetPosition(), force);
+		}
+		mCollapsingHouseParts1.GetObject(0)->FreezePhysics();
+
+		Game::CollectObstaclesOnVirtualObject(NAME_AREA_HOUSE1, mFallingObjects, ACTOR_PERSON);
+		for(int i = 0; i < mFallingObjects.GetNumObjects(); i++)
+		{
+			GameObject *obj = mFallingObjects.GetObject(i);
+			Person pers = (Person*)obj;
+			pers.Kill();
+			pers.EnablePhysicsSimulation();
+			pers.PushActionWait(ACTION_NEWLIST, 5.f);
+			pers.PushActionDeleteOwner(ACTION_APPEND);
+			//Injure(INJUREREASON_DROWN);
+		}
+		mCollapsingHouseFloor1.AddExplosionForceField("explosion");
+		Audio::PlaySample(NAME_SOUND_CRASHING_HOUSE1);
+		for(int i = 0; i < mParticlesCrack1.GetNumObjects(); i++)
+		{
+			GameObject *obj = mParticlesCrack1.GetObject(i);
+			obj->Show();
+			obj->StartParticleEffect();
+		}
+
+		Mission::StartSingleTimer(TIMER_CS1_SECOND, TIME_CS1_SECOND, true);
+	}
+
+	void CutSceneHouseCrashSecondPhase()
+	{
+		System::Log("M08: CS1 second phase");
+		mCollapsingHouseParts1.GetObject(0)->UnfreezePhysics();
+		mCollapsingHouseFloor1.EnablePhysicsSimulation();
+		mCollapsingHouseFloor1.SetCollisionMode(PHYSIC_COLLISION_NOWORLD);		
+
+		for(int i = 0; i < mParticlesSplash1.GetNumObjects(); i++)
+		{
+			GameObject *obj = mParticlesSplash1.GetObject(i);
+			obj->Show();
+			obj->StartParticleEffect();
+		}
+		Audio::PlaySample(NAME_SOUND_SPLASH);
+
+		for (int i = 0; i < mParticlesChute1.GetNumObjects(); i++)
+		{
+			mParticlesChute1.GetObject(i)->Hide();
+			mParticlesChute1.GetObject(i)->StopParticleEffect();
+		}
+
+		Mission::StartSingleTimer(TIMER_CS1_ENDING, TIME_CS1_ENDING);
+	}
+
+	void CutsceneHouseCrashEnding()
+	{
+		for(int i = 0; i < mFallingObjects.GetNumObjects(); i++)
+		{
+			GameObject *obj = mFallingObjects.GetObject(i);
+			if (obj->GetType() == ACTOR_PERSON)
+			{
+				Person pers = (Person*)obj;				
+				pers.Kill();
+				pers.Hide();
+				pers.PushActionWait(ACTION_NEWLIST, 5.f);
+				pers.PushActionDeleteOwner(ACTION_APPEND);
+			}
+			if (obj->GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle vehi = (Vehicle*)obj;				
+				vehi.Destroy();
+				vehi.Hide();
+			}
+		}
+		mWaterVO1.SetVirtualObjectTerrain("Deep Water");
+		Mission::HideBlackBars();
+		Mission::EndCutScene(true, 3.0f);
+	}
+
+	void CutsceneWaggonCrashEnding()
+	{		
+		Mission::HideBlackBars();
+		Mission::EndCutScene();//true, 3.0f);
+	}
+
+	void HouseSink(int nr_)
+	{
+		if (nr_ < 0 || nr_ > 1)
+			return;
+		mSinkingHouses[nr_].EnablePhysicsSimulation();
+		mSinkingHouses[nr_].SetCollisionMode(PHYSIC_COLLISION_NONE);
+		mSinkingEffectsA[nr_].StartParticleEffect();
+		Game::DeactivateWaitingPoint(mSinkingHouseWPNames[nr_]);
+		GameObjectList list;
+		Game::CollectObstaclesOnVirtualObject(mSinkingAreaNames[nr_], list, ACTOR_PERSON);
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			Person p(list.GetObject(i));
+			p.Kill();
+			p.PushActionDisappear(ACTION_NEWLIST, 1.f);
+		}
+		GameObjectList reffects(mSinkingREffectNames[nr_]);
+		for(int i = 0; i < reffects.GetNumObjects(); i++)
+		{
+			reffects.GetObject(i)->StopParticleEffect();
+		}
+		if (nr_ == 0)
+		{
+			Mission::StartSingleTimer(TIMER_NAME_SINK1_EFFECTB, TIMER_TIME_SINK1_EFFECTB);
+			Mission::StartSingleTimer(TIMER_NAME_SINK1_EFFECTC, TIMER_TIME_SINK1_EFFECTC);
+			mWaterVO4.SetVirtualObjectTerrain("Deep Water");			
+		}
+		else if (nr_ == 1)
+		{
+			Mission::StartSingleTimer(TIMER_NAME_SINK2_EFFECTB, TIMER_TIME_SINK2_EFFECTB);
+			Mission::StartSingleTimer(TIMER_NAME_SINK2_EFFECTC, TIMER_TIME_SINK2_EFFECTC);
+			mWaterVO3.SetVirtualObjectTerrain("Deep Water");
+		}
+		mSinkingHouses[nr_].PushActionWait(ACTION_NEWLIST, 3.0f);
+		mSinkingHouses[nr_].PushActionDeleteOwner(ACTION_APPEND);
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+		serializer_->Write(mTooManyDied);
+
+		serializer_->Write(mRainIntensity);
+		serializer_->Write(mFlashIntensity);
+		serializer_->Write((int)MAX_SWITCHES);
+		for(int i = 0; i < MAX_SWITCHES; i++)
+		{
+			serializer_->Write(mSwitchPressed[i]);
+			serializer_->Write(mSwitches[i]);
+		}
+		serializer_->Write(mElectricityTurnedOff);
+		serializer_->Write(mElectricityEffects);
+		serializer_->Write(mElectricityFullEffect);
+		serializer_->Write(mBarrels);
+		serializer_->Write((int)MAX_BARRELS);
+		for(int i = 0; i < MAX_BARRELS; i++)
+		{
+			serializer_->Write(mBarrelStates[i].ExplodeTimer);
+			serializer_->Write(mBarrelStates[i].HasStarted);
+		}
+		serializer_->Write(mNextBarrelIndex);
+		for(int i = 0; i < MAX_BARREL_PATHES; i++)
+			serializer_->Write(mBarrelPathes[i]);
+		serializer_->Write(mLastUsedBarrelPath);
+		for(int i = 0; i < MAX_SPAWN_OBJECT_PATHES; i++)
+			serializer_->Write(mSpawnObjectsPathes[i]);
+		serializer_->Write(mLastUsedSpawnObjectPath);
+		serializer_->Write((int)MAX_DIVEAREAS);
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+		{
+			serializer_->Write(mDiveAreaPersons[i]);
+			serializer_->Write(mDiveAreaVOs[i]);
+			serializer_->Write(mDiveAreaPersonFound[i]);
+		}
+		serializer_->Write((int)MAX_DROWNING_PERSONS);
+		for(int i = 0; i < MAX_DROWNING_PERSONS; i++)
+		{
+			serializer_->Write(mDrowningPersons[i]);
+			serializer_->Write(mDrowningTimers[i]);
+			serializer_->Write(mDrowningPathes[i]);
+			serializer_->Write(mDrowningPersonRescued[i]);
+		}
+		serializer_->Write((int)MAX_PERSONS_ON_HOUSES);
+		for(int i = 0; i < MAX_PERSONS_ON_HOUSES; i++)
+		{
+			serializer_->Write(mPersonsOnHouses[i]);
+		}
+		serializer_->Write(mNumPersonsOnHouses);
+		serializer_->Write((int)MAX_CRASHING_HOUSES);
+		for(int i = 0; i < MAX_CRASHING_HOUSES; i++)
+			serializer_->Write(mCrashingHouses[i]);
+		serializer_->Write(mWaggon);
+		serializer_->Write((int)MAX_SINKING_HOUSES);
+		for(int i = 0; i < MAX_SINKING_HOUSES; i++)
+		{
+			serializer_->Write(mSinkingHouses[i]);
+			serializer_->Write(mSinkingEffectsA[i]);
+			serializer_->Write(mSinkingEffectsB[i]);
+			serializer_->Write(mSinkingEffectsC[i]);
+		}
+
+		serializer_->Write(mFallingObjects);
+		serializer_->Write(mCollapsingHouseParts1);
+		serializer_->Write(mCollapsingHouseFloor1);
+		for (int i = 0; i < 5; i++)
+		{
+			serializer_->Write(mCollapsingHouseParts2[i]);
+			for (int j = 0; j < 4; j++)
+				serializer_->Write(mCollapsingHouseParts2Frame[i][j]);
+		}
+		serializer_->Write(mCollapsingHouseFloor2);
+		serializer_->Write(mParticlesCrack1);
+		serializer_->Write(mParticlesSplash1);
+		serializer_->Write(mParticlesChute1);
+		serializer_->Write(mParticlesCrack2);
+		serializer_->Write(mParticlesSplash2);
+		serializer_->Write(mParticlesChute2);
+		serializer_->Write(mParticlesBubble);
+		serializer_->Write(mCurrentTransition);
+		serializer_->Write(mWaggonSink);
+		serializer_->Write(mTrainHouseCrash);
+		serializer_->Write(mBubblesShown);
+		serializer_->Write(mSoundKlonk);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mTooManyDied = serializer_->ReadBool();
+
+		serializer_->Read(mRainIntensity);
+		serializer_->Read(mFlashIntensity);
+		int maxswitches = 0;
+		serializer_->Read(maxswitches);
+		if (maxswitches != MAX_SWITCHES)
+		{
+			System::Log("M08: Savegame has different MAX_SWITCHES");
+			return false;
+		}
+		for(int i = 0; i < MAX_SWITCHES; i++)
+		{
+			mSwitchPressed[i] = serializer_->ReadBool();
+			serializer_->Read(mSwitches[i]);
+		}
+		mElectricityTurnedOff = serializer_->ReadBool();
+		serializer_->Read(mElectricityEffects);
+		serializer_->Read(mElectricityFullEffect);
+		serializer_->Read(mBarrels);
+		int maxbarrels = 0;
+		serializer_->Read(maxbarrels);
+		if (maxbarrels != MAX_BARRELS)
+		{
+			System::Log("M08: Savegame has different MAX_BARRELS");
+			return false;
+		}
+		for(int i = 0; i < MAX_BARRELS; i++)
+		{
+			serializer_->Read(mBarrelStates[i].ExplodeTimer);
+			serializer_->Read(mBarrelStates[i].HasStarted);
+		}
+		serializer_->Read(mNextBarrelIndex);
+		for(int i = 0; i < MAX_BARREL_PATHES; i++)
+			serializer_->Read(mBarrelPathes[i]);
+		serializer_->Read(mLastUsedBarrelPath);
+		for(int i = 0; i < MAX_SPAWN_OBJECT_PATHES; i++)
+			serializer_->Read(mSpawnObjectsPathes[i]);
+		serializer_->Read(mLastUsedSpawnObjectPath);
+		int maxdiveareas = 0;
+		serializer_->Read(maxdiveareas);
+		if (maxdiveareas != MAX_DIVEAREAS)
+		{
+			System::Log("M08: Savegame has different MAX_DIVEAREAS");
+			return false;
+		}
+		for(int i = 0; i < MAX_DIVEAREAS; i++)
+		{
+			serializer_->Read(mDiveAreaPersons[i]);
+			serializer_->Read(mDiveAreaVOs[i]);
+			mDiveAreaPersonFound[i] = serializer_->ReadBool();
+		}
+		int maxdrowning = 0;
+		serializer_->Read(maxdrowning);
+		if (maxdrowning != MAX_DROWNING_PERSONS)
+		{
+			System::Log("M08: Savegame has different MAX_DROWNING_PERSONS");
+			return false;
+		}
+		for(int i = 0; i < MAX_DROWNING_PERSONS; i++)
+		{
+			serializer_->Read(mDrowningPersons[i]);
+			serializer_->Read(mDrowningTimers[i]);
+			serializer_->Read(mDrowningPathes[i]);
+			mDrowningPersonRescued[i] = serializer_->ReadBool();
+		}
+		int maxonhouses = 0;
+		serializer_->Read(maxonhouses);
+		if (maxonhouses != MAX_PERSONS_ON_HOUSES)
+		{
+			System::Log("M08: Savegame has different MAX_PERSONS_ON_HOUSES");
+			return false;
+		}
+		for(int i = 0; i < MAX_PERSONS_ON_HOUSES; i++)
+		{
+			serializer_->Read(mPersonsOnHouses[i]);
+		}
+		serializer_->Read(mNumPersonsOnHouses);
+		int maxcrashing = 0;
+		serializer_->Read(maxcrashing);
+		if (maxcrashing != MAX_CRASHING_HOUSES)
+		{
+			System::Log("M08: Savegame has different MAX_CRASHING_HOUSES");
+			return false;
+		}
+		for(int i = 0; i < MAX_CRASHING_HOUSES; i++)
+			serializer_->Read(mCrashingHouses[i]);
+		serializer_->Read(mWaggon);
+		int maxsinking = 0;
+		serializer_->Read(maxsinking);
+		if (maxsinking != MAX_SINKING_HOUSES)
+		{
+			System::Log("M08: Savegame has different MAX_SINKING_HOUSES");
+			return false;
+		}
+		for(int i = 0; i < MAX_SINKING_HOUSES; i++)
+		{
+			serializer_->Read(mSinkingHouses[i]);
+			serializer_->Read(mSinkingEffectsA[i]);
+			serializer_->Read(mSinkingEffectsB[i]);
+			serializer_->Read(mSinkingEffectsC[i]);
+		}
+
+		serializer_->Read(mFallingObjects);
+		serializer_->Read(mCollapsingHouseParts1);
+		serializer_->Read(mCollapsingHouseFloor1);
+		for (int i = 0; i < 5; i++)
+		{
+			serializer_->Read(mCollapsingHouseParts2[i]);
+			for (int j = 0; j < 4; j++)
+				serializer_->Read(mCollapsingHouseParts2Frame[i][j]);
+		}
+		serializer_->Read(mCollapsingHouseFloor2);
+		serializer_->Read(mParticlesCrack1);
+		serializer_->Read(mParticlesSplash1);
+		serializer_->Read(mParticlesChute1);
+		serializer_->Read(mParticlesCrack2);
+		serializer_->Read(mParticlesSplash2);
+		serializer_->Read(mParticlesChute2);
+		serializer_->Read(mParticlesBubble);
+		serializer_->Read(mCurrentTransition);
+		serializer_->Read(mWaggonSink);
+		mTrainHouseCrash = serializer_->ReadBool();
+		mBubblesShown = serializer_->ReadBool();
+		serializer_->Read(mSoundKlonk);
+
+		return true;
+	}
+
+};

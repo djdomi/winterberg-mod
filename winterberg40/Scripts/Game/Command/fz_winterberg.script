@@ -1,0 +1,5957 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script fz_winterberg
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+// ABSCHNITT : Fz erstellen 
+//
+// Winterberger für Em4 by WitchDoc
+// Fahrzeuge erstellen und besetzen
+// 
+// Rotation function by bass-ti
+//
+//  Revision:
+//  02.07.2006 : Alle Fz bekommen eindeutige synth. Kennung nach einheitlichem System
+//		 Die Zuordnung zum Parkplatz-VOB geschieht über Indextabelle
+
+		const int maxdev = 15;
+		const char * availcheck[maxdev];
+		const char * kennung[1];
+		const int MAX_FZ = 75;
+		float fzspeed[MAX_FZ];
+
+object kaufen : CommandScript
+{
+	bool ersatz;
+
+	kaufen()
+	{
+		ersatz=false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		ersatz=true;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle vec;
+		int MaxPass, maxTrans;
+		char *Act[];
+		Actor fz;
+		int i;
+		GameObject *ofz;
+		GameObjectList lfz;
+		ActorList fzl;
+		int q=childID;
+		Vector Wache;
+		float rot[9];
+		float childRot[9];
+		bool bedarfsfz = false;
+		bool nachbarfz = false;
+		int dir = 0;
+		const char *parken[2];
+	
+	if (q>10000)
+	{
+		i=q/10000;
+		q=q-(10000*i);
+		switch (i)
+		{
+			case 1 :
+				nachbarfz=true;
+				break;
+			case 2 :
+				bedarfsfz=true;
+				break;
+			// ob Ersatzbeschaffung, wird durch CheckTarget geklärt
+		}
+	}
+
+	int wache=q/100;
+	q=q-(100*wache);
+	if (wache>50)
+		dir=wache-50;
+	else
+		dir=wache;
+	if (dir==0)
+		parken[1]= fzlocal::kennung(q); // Fz direkt am Standort erzeugen
+	else
+		parken[1]= fzlocal::stellplatz(dir); // Fz direkt am Standort erzeugen
+
+	if (ersatz)
+		parken[1]="neuwagen";
+
+	kennung[0]="KFZSOKN00000";
+	char * format[]="%s000000000000";
+	int x=snprintf(kennung[0],12,format,fzlocal::kennung(q));
+
+	int radius;
+	int a,b,c;
+	Game::GetTime(a,b,c);
+	kennung[0][7]=char(32+wache);  // 1. Stelle codiert die Wache
+	kennung[0][8]=char(32+a);    // 2. -4. Stelle eindeutige Objektkennung
+	kennung[0][9]=char(32+b);
+	kennung[0][10]=char(32+c);
+	kennung[0][11]=char(32+q);    // 5. Stelle codiert Fz-Typ
+
+	System::Log("Fz kaufen");
+	System::Log(kennung[0]);
+	
+	fzl=Game::GetActors(parken[1]); // Fz am gewuenschten Stellplatz erzeugen
+	if(fzl.GetNumActors() > 0)
+		fz = *fzl.GetActor(0);
+	else
+		System::Error("Ungueltiger Stellplatz");
+
+	//Wo soll das Fahrzeug parken?
+	Wache=fz.GetPosition();
+	if (bedarfsfz)
+		radius=100;
+	else 	
+		if (ersatz)
+			radius=300;
+		else
+			radius=0;
+	
+	switch (q)
+	{
+ 		
+		// Logischer Block Fahrzeug erzeugen
+		case 1:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/nef8821.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,8,false);
+		break;
+		// Logischer Block Fahrzeug erzeugen
+		//
+		// RTW Winterberg
+		case 2: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw2.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 3:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/lf1612.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(9);
+		vec.SetMaxTransports(0);
+		vec.AssignCommand("kemlerzahl");
+		vec.AssignCommand("gz_an_bord");
+		vec.AssignCommand("mm_an_bord");
+		vec.AssignCommand("dichtkissen_an_bord");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 4:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/WB_TLF_16_25.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 5:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/unimog.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(0.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 6:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/dlk8331.e4p",kennung[0]);
+		vec.SetSpeed(9.5f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 7 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/stw3.e4p",kennung[0]);
+		vec.SetSpeed(15.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		break;
+		case 8 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/stw2.e4p",kennung[0]);
+		vec.SetSpeed(15.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		break;
+		case 9 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/stw1.e4p",kennung[0]);
+		vec.SetSpeed(15.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		break;
+		case 10 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/mtw1.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(4);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,4,false);
+		break;
+		case 11 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/asfwtb.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,6,false);
+		break;
+		case 12 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rhc2.e4p",kennung[0]);
+		vec.SetSpeed(25.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,8,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,9,false);
+		break;
+		case 13 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/fgri.e4p",kennung[0]);
+		vec.SetSpeed(12.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,5,false);
+		break;
+		// RTW Medebach
+		case 14: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw2m.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		vec.AssignCommand("tagdienst");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		// Dekon
+		case 15: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/gw8921.e4p",kennung[0]);
+		vec.SetSpeed(8.5f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(2);
+		vec.AssignCommand("dichtkissen_an_bord");
+		vec.AssignCommand("gz_an_bord");
+		vec.AssignCommand("mm_an_bord");
+		vec.AssignCommand("kemlerzahl");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(0.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		// Kran
+		case 16: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/fgr.e4p",kennung[0]);
+		vec.SetSpeed(6.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(0);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		break;
+		// Logischer Block Fahrzeug erzeugen
+		//
+		// Bestatter
+		case 17: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/bsw.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(0.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,10,false);
+		break;
+		case 18 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Police/phc.e4p",kennung[0]);
+		vec.SetSpeed(20.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(2);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,3,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,11,false);
+		break;
+		case 19:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/LF_8_Zuechen.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(9);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 20:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/gtlf_berleburg.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 21:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/nef_si4821.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,8,false);
+		break;
+		// Logischer Block Fahrzeug erzeugen
+		//
+		// RTW Winterberg
+		case 22: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw1.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 23: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw7831.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 24: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw4831.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 25: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/rtw9183.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,9,false);
+		break;
+		case 26:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/nef7821.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,8,false);
+		break;
+		case 27:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/ktw8851.e4p",kennung[0]);
+		vec.SetSpeed(10.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(1);
+		vec.AssignCommand("tagdienst");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//NA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,9,false);
+		break;
+		case 28:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsfw8481.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 29:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsfw8482.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 30:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/tlf8211.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 31:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/tlf8212.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 32:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/lna_jeep.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//LNA
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,12,false);
+		break;
+		case 33:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/TEC/nfm.e4p",kennung[0]);
+		vec.SetSpeed(13.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(1);
+		vec.SetMaxTransports(0);
+		vec.AssignCommand("ich_bin_nfm");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		//DBNFM
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,7,false);
+		break;
+		case 34: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/vario/variobody.e4p",kennung[0]);
+		vec.SetSpeed(11.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,16,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,17,false);
+		break;
+		case 35: 
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/ktw_seg.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(8);
+		vec.SetMaxTransports(10);
+		vec.AssignCommand("zelt_an_bord");
+		vec.AssignCommand("seg_ktw_estelle");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		break;
+		case 36:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/ktw_seg.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(4);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,19,false);
+		break;
+		case 37:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/DRK_Truck.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(0);
+		// vec.AssignCommand("zelt_an_bord");
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,18,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,18,false);
+		break;
+		case 38:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/lf86.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(9);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 39:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/LKW.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 40:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/elw.e4p",kennung[0]);
+		vec.SetSpeed(11.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 41:
+		//Erzeuge das Fahrzeug
+		System::Log("Dekon erstellen");
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/dekon_od.e4p",kennung[0]);
+		vec.SetSpeed(8.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 42:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsf8471.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 43:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsf8472.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 44:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsf8473.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 45:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsfw8483.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 46:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Fire Department/CHIDEA_DLK_OLSBERG.e4p",kennung[0]);
+		vec.SetSpeed(9.5f);
+		//Platz schaffen
+		vec.SetMaxPassengers(3);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+//		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::EulerToMatrix(90.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 47:
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tsfw8484.e4p",kennung[0]);
+		vec.SetSpeed(9.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(6);
+		vec.SetMaxTransports(0);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,2,false);
+		break;
+		case 48 :
+		//Erzeuge das Fahrzeug
+		vec = Game::CreateVehicle("mod:Prototypes/Vehicles/Ambulance/chr7.e4p",kennung[0]);
+		vec.SetSpeed(25.0f);
+		//Platz schaffen
+		vec.SetMaxPassengers(2);
+		vec.SetMaxTransports(1);
+		//Lichter aus
+		vec.EnableBlueLights(false);
+		vec.EnableBreakLights(false);
+		vec.EnableSpecialLights(false);
+		//Drehen
+		vec.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::EulerToMatrix(270.0f, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		vec.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		//Ab hier brauchen wir das FZG als Objekt...
+		lfz = Game::GetGameObjects(kennung[0]);
+		//Position setzen
+		Game::FindFreePosition(&vec,Wache,radius);
+		vec.SetPosition(Wache);
+		//Personen erzeugen
+		ofz=*lfz.GetObject(0);
+		ofz->PushActionExecuteCommand(ACTION_NEWLIST,"CreateNewPerson",ofz,8,false);
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",ofz,9,false);
+		break;
+	}
+
+	fzspeed[q]=vec.GetSpeed();
+	if (!vec.HasCommand("FlyTo"))
+		vec.SetSpeed(6.0f);
+
+	lfz = Game::GetGameObjects(kennung[0]);
+	ofz=*lfz.GetObject(0);
+
+	ofz->AssignCommand("AutoUmleiten");	
+	ofz->AssignCommand("notruf_pol");	
+	if (ofz->HasChild("NA"))
+		ofz->SetChildEnabled("NA",false);
+	fzlocal::fz_beladen(ofz);
+
+	if (!ofz->HasCommand("aufsitzen"))
+		ofz->AssignCommand("gohome_winterberg");
+
+	if (bedarfsfz)
+	{
+		ofz->AssignCommand("bedarfs_fz");
+		ofz->Hide();
+	} else if (nachbarfz)
+			ofz->AssignCommand("hidden");
+
+	if (ersatz)
+	{
+		Mission::PlayHint("Ersatzfahrzeug beschafft und auf dem Weg zum Standort.");
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",ofz,0,false); // Ersatzfz zum Standort schicken
+	} else 	if (nachbarfz)
+			ofz->PushActionShowHide(ACTION_APPEND,true);
+
+	ersatz=false;  // Marker für Ersatzfahrzeug wieder zuruecksetzen für nächsten Aufruf
+   }
+};
+
+// ABSCHNITT: RUFE Fz 
+// 
+// basiert auf rufe_stw.script für Em3 by manuelt
+//
+// Revision
+// 17.6.2006 : Auswahl über VehicleList, gesteuert über childID, default -> Streife/MTW
+//		childID = 100 -> nur MTW
+//		childID = 101 -> PolFahrzeug -> 111 Z-Pol für Löschzug
+//		childID = 200 -> Pol.Hubschrauber
+//		childID = 300 -> ASF	-> 350 Kran
+//		childID = 400 -> TecJeep -> 450 DB-Notfallmanager -> 475 Kampfmittelraeumer
+//		childID = 500 -> GW-Mess -> 535 takt GW-Mess im Zug + 536 Dekon-P im Zug
+//		childID = 501 -> Löschfahrzeug
+//		childID	= 502 -> Wasserretter
+//		childID	= 503 -> techn. Rettung -> 513 Takt. RW für Ruestzug -> 533 Takt. RW für Chemiezug
+//		childID = 504 -> Hubretter
+//		childID = 505 -> Chemieschutzfahrzeug -> 
+//		childID = 506 -> GTLF
+//		childID = 507 -> GTLF
+//		childID = 510 -> takt. Löschfahrzeug für Zug (510 und 511 bilden die gemeinsame Basis fur 501 kleiner Löscheinsatz)
+//		childID = 520 -> takt. Löschfahrzeug für Ruestzug -> A-Trupp rüstet sich nicht mit PA aus
+//		childID	= 530 -> takt. Löschfahrzeug für Chemiezug
+//		childID	= 511 -> takt. TLF für Zug -> 531 = takt.TLF für Chemiezug
+//		childID = 512 -> takt. Hubretter für Zug
+//		childID = 550 -> Einsatzleitung -> 553 EL Ruestzug  -> 555 EL Chemiezug
+// 		childID = 600 -> Bestattungsdienst
+//		childID = 601 -> Notarztbesetztes Rettungsmittel -> 611 = ZNEF
+//		childID = 602 -> RTW -> 612 = ZRTW -> 622 = NAW im Rendezvous, RTW aber kein KTW
+//		childID = 610 -> explizit RTH
+//		childID = 620 -> LNA
+//		childID = 650 -> SEG	-> 651 = SEG Arzt  -> 652 = SEG Truck
+//		childID = 199 -> POL Notruf -> alle freien Fz werden gerufen
+//
+// 20.6.2006 : Erzeugt einen externen Bestatter  
+//		alarmierter Streifenwagen kann Verdächtigen direkt verfolgen		
+//
+// 24.6.2006 : einzelne Feuerwehrfahrzeuge sowie RTD werden auch von diesem Script alarmiert
+//
+// 02.7.2006 : Fahrzeuge werden anhand ByteCode identifiziert. Die ich_bin_funkruf-Kommandos sind entbehrlich
+//		alle genau einmal einsetzbaren Fz stehen hidden auf der Map -> einfachere Nachrücklisten
+
+// Basis: Garagenausfahrt by Big Bob
+
+// Ruft ein freies Winterberger Fahrzeug oder alarmiert externe Fahrzeuge
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+int auftrag=0;
+
+object rufe_winterberg : CommandScript
+{
+
+	bool kriterien_erfuellt; //Ist dieser STW gerade frei?
+	float abstand, minimum; // Abstand und kürzester Abstand zwischen STW und Ziel...
+
+   rufe_winterberg()
+   {
+	SetPriority(400);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+		return false;
+
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vector FzPos;
+	Vector MinFz;
+	Vector Abstand;
+	Vehicle v;
+	Vehicle stw;
+	int dir=0;
+	char * hint[];
+	int randact;	
+	int cid;
+	Vector TargetPos;
+	int ptype=0;
+	int wblevel=0;
+	int quad;
+	Vector Mitte;
+	int rtw=0;
+	int h,m,s;
+	int quad;
+	float dist, mindist;
+	ptype=0;
+	TargetPos=Game::GetCommandPos();
+	bool dummy=false;
+	bool nachforderung=false;
+	bool neudispo=false;
+	bool storno=Caller->HasCommand("storno");
+	int basewert;
+
+	if (Target->GetType() == ACTOR_FLOOR)
+	{
+		Vehicle p = Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/pylone.e4p", "alarmdummy");
+		p.Hide();
+		Game::FindFreePosition(&p,TargetPos);
+		p.SetPosition(TargetPos);
+		Target=&p;
+		p.AssignCommand("alarm_dummy");
+	}	
+
+	if (Caller->HasCommand("neudispo"))
+	{
+		neudispo=true;
+		Caller->RemoveCommand("neudispo");
+		Caller->AssignCommand("normal");
+	}
+
+	if (childID>999)
+	{
+		rtw=childID/1000;
+		childID=childID-1000*rtw;
+	}
+
+
+	switch (rtw)
+	{
+		case 99:
+			basewert=10; // Kreisalarm, wenn kein passendes Fz in der Ortswehr naechste Wehr alarmieren
+		default:
+			basewert=-1; // ortsbezogene Alarmierung
+
+	}
+
+	switch (childID) 
+	{
+		case 100 :
+			VehicleList l0(VT_POLICE_MTW,VT_POLICE_MTW);
+			dir=(Math::rand()%8+1)*100+20010;
+			hint="KEIN_MTW";
+			break;
+		case 200 :
+			VehicleList l0(VT_POLICE_PHC,VT_POLICE_PHC);
+			if (l0.GetNumVehicles() < 2)
+				dir=(Math::rand()%8+1)*100+20018;
+			break;
+		case 300:
+			VehicleList l0(VT_FIREFIGHTERS_ASF,VT_FIREFIGHTERS_ASF);
+			if (l0.GetNumVehicles() < 7)
+				dir=(Math::rand()%8+1)*100+20011;
+			break;
+		case 350:			
+			VehicleList l0(VT_THW_FGRR_BKF, VT_THW_FGRR_BKF);
+			if (l0.GetNumVehicles() < 1)
+				dir=20916;
+			break;
+		case 400:
+			VehicleList l0(VT_THW_FGRI_EKW, VT_THW_FGRI_EKW);
+			if (l0.GetNumVehicles() < 7)
+				dir=(Math::rand()%8+1)*100+20013;
+			break;
+		case 475:
+			VehicleList l0(VT_THW_FGRI_EKW, VT_THW_FGRI_EKW);	
+			dir=(Math::rand()%8+1)*100+20034;
+			break;
+		case 450:
+			VehicleList l0(VT_THW_FGRI_EKW, VT_THW_FGRI_EKW);	
+			dir=(Math::rand()%8+1)*100+20033;
+			break;
+		case 500:
+		case 535:
+		case 536:
+			System::Log("Dekon P Fz");
+			VehicleList l0(VT_FIREFIGHTERS_DEKONP,VT_FIREFIGHTERS_DEKONP);
+			break;
+		case 506:
+		case 501:
+			VehicleList l0(VT_FIREFIGHTERS_TLF,VT_FIREFIGHTERS_GTF);
+			break;
+		case 502:
+			VehicleList l0(VT_FIREFIGHTERS_DLK,VT_FIREFIGHTERS_GTF);
+			hint="Es steht kein Wasserretter zur Verfügung!";
+			break;
+		case 533:
+		case 513:
+		case 503:
+			VehicleList l0(VT_FIREFIGHTERS_RW,VT_FIREFIGHTERS_GTF);
+			hint="Es steht kein Fahrzeug mit Rettungsschere zur Verfügung!";
+			break;
+		case 504:
+		case 512:
+			VehicleList l0(VT_FIREFIGHTERS_DLK,VT_FIREFIGHTERS_DLK);
+			break;
+		case 505:
+			VehicleList l0(VT_FIREFIGHTERS_DLK,VT_FIREFIGHTERS_GTF);
+			break;
+		case 510:
+		case 520:
+		case 530:
+			VehicleList l0(VT_FIREFIGHTERS_TLF,VT_FIREFIGHTERS_GTF);
+			break;
+		case 511:
+		case 531:
+			VehicleList l0(VT_FIREFIGHTERS_TLF,VT_FIREFIGHTERS_GTF);
+			break;
+		case 550:
+		case 553:
+		case 555:
+		case 507:
+			VehicleList l0(VT_FIREFIGHTERS_RW,VT_FIREFIGHTERS_RW);
+			hint="Es steht kein Einsatzleiter zur Verfügung!";
+			break;
+		case 598:
+		case 599:
+			VehicleList l0(VT_FIREFIGHTERS_RW,VT_FIREFIGHTERS_GTF);
+			break;
+		case 600:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			dir=20717;
+			break;
+		case 650:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			dir=(Math::rand()%8+1)*100+20035;
+			break;
+		case 651:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			dir=(Math::rand()%8+1)*100+20036;
+			break;
+		case 652:
+			VehicleList l0(VT_AMBULANCE_RHF,VT_AMBULANCE_RHF);
+			dir=(Math::rand()%8+1)*100+20037;
+			break;
+		case 601:
+		case 611:
+			VehicleList l0(VT_AMBULANCE_NEF,VT_AMBULANCE_RHC);
+			VehicleList cl(Caller->GetName());
+			if (Target->GetType() == ACTOR_PERSON)
+				if (cl.GetNumVehicles()>0)
+					nachforderung=(cl.GetVehicle(0)->GetVehicleType() == VT_AMBULANCE_RTW);
+			break;
+		case 622:
+		case 612:
+		case 602:
+			VehicleList l0(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+			VehicleList cl(Caller->GetName());
+			if (Target->GetType() == ACTOR_PERSON)
+				if (cl.GetNumVehicles()>0)
+					nachforderung=(cl.GetVehicle(0)->GetVehicleType() == VT_AMBULANCE_RTW);
+			break;
+		case 610:
+			VehicleList l0(VT_AMBULANCE_RHC,VT_AMBULANCE_RHC);
+			break;		
+		case 620:
+			VehicleList l0(VT_AMBULANCE_NEF,VT_AMBULANCE_NEF);
+			dir=(Math::rand()%8+1)*100+20032;
+			break;		
+		case 101:
+		case 111:
+      			VehicleList l0(VT_POLICE_STW,VT_POLICE_STW);
+			dir=(Math::rand()%8+1)*100+20008;
+			break;
+		case 199:
+      			VehicleList l0(VT_POLICE_MTW,VT_POLICE_STW);
+			break;
+	}
+
+	int max=l0.GetNumVehicles();
+	float wert=101;
+	int maxspeed;
+	float folge=100;
+	int fzid, fzort;
+	int fzstart;
+	int choose=Math::rand()%3;
+	int mdir=dir;
+	
+     	for(int i=0; i<max; i++)
+      	{
+	      	//Aktuelles Objekt
+		v = l0.GetVehicle(i);
+		fzid=fzlocal::fzid(&v); // Fz-Typ laut AutosKaufen
+		fzort=fzlocal::fzort(&v);
+
+		if (storno)
+		{
+			if (fzid == rtw)
+			{
+				v.PushActionExecuteCommand(ACTION_NEWLIST,"aufsitzen",&v,0,false);
+				return;
+			}
+		}
+		
+		switch (fzid)
+		{
+			case 32:
+			case 34:
+				dir=0;
+				break;
+			case 35:
+				if (childID == 650)
+					dir=0;
+				break;
+			case 36:
+				if (childID == 651)
+					dir=0;
+				break;
+			case 37:
+				if (childID == 652)
+					dir=0;
+				break;
+			case 41:
+				System::Log("Dekon-p im Check");
+			default:
+				dir=mdir;
+				break;
+		} 
+
+		bool einsatzbereit=(!v.HasCommand("ich_bin_nicht_frei")&& !v.HasCommand("wird_alarmiert") && !v.IsDestroyed() && !v.HasCommand("alarm_dummy") && !storno);
+
+		if (einsatzbereit || neudispo)
+		{
+			//Nur ohne Transport möglich...
+			if ((v.GetNumTransported() > 0) || v.IsCarryingAnything())
+			{
+				kriterien_erfuellt=false;
+			} else {
+				kriterien_erfuellt=true;
+			}
+			
+			if (kriterien_erfuellt == true)
+			{
+				switch (childID)
+				{
+					case 620:
+						if (fzid == 32)
+							wert=1;
+						else
+							wert=-1;
+						ptype=0;
+						break;
+					case 650:
+						if (fzid == 35)
+							wert=1;
+						else
+							wert=-1;
+						ptype=0;
+						break;
+					case 651:
+						if (fzid == 36)
+							wert=1;
+						else 
+							wert=-1;
+						ptype=0;
+						break;
+					case 652:
+						if (fzid == 37)
+							wert=1;
+						else
+							wert=-1;
+						ptype=0;
+						break;
+					case 601:
+					case 611:
+					case 610:
+						kriterien_erfuellt = false;
+						//Ist mind. ein NA an Bord?
+						PersonList na = v.GetPassengers();
+						for(int j=0; j<na.GetNumPersons(); j++)
+						{
+							if (na.GetPerson(j)->IsDoctor())
+							kriterien_erfuellt = true;
+						}
+						if (kriterien_erfuellt == true)
+						{
+							wblevel=1;
+							if (rtw == 0) // automat. NAW-Alarmierung
+							switch (v.GetVehicleType())
+							{
+								case VT_AMBULANCE_NEF:
+									switch (fzid)
+									{
+										case 1:
+											wert=1;
+											break;
+										case 26: 
+											wert=2;
+											break;
+										case 21:
+											wert=3;
+											break;
+									}
+									break;
+								case VT_AMBULANCE_RTW:
+									wert=10; // Kompakt-NAW gefunden, lieber NEF oder RTH
+									break;
+								case VT_AMBULANCE_RHC:
+									// stw=v; // RTH merken, aber lieber NEF suchen
+									if (childID == 610)
+									{
+										wert=1;
+										i=max; // wenn nur RTH gesucht, dann Suche beenden
+									} else {
+										wert=4;
+									}
+									break;
+							} 
+							else if (fzid == rtw)
+									wert=1;
+								else wert=-1;
+						}
+						break;
+					case 602:	// RTW
+					case 612:
+					case 622:
+						kriterien_erfuellt = false;
+						//Sind 2 RAs an Bord?
+						PersonList ra = v.GetPassengers();
+						int anzahl_ra = 0;
+						for(int j=0; j<ra.GetNumPersons(); j++)
+						{
+							if (ra.GetPerson(j)->IsParamedicTeam())
+								anzahl_ra++;
+							if (ra.GetPerson(j)->IsDoctor())
+								wert=20; // NA-besetzte RTW nur als RTW einsetzen, wenn kein anderer frei.
+						}
+						if ((anzahl_ra >= 1) && (fzid != 39))  // hier mit ra-team -> nur 1 person
+							kriterien_erfuellt = true;
+						if (kriterien_erfuellt == true)
+						{			
+							if (fzid == rtw)
+								wert=1;
+							else
+								wert=-1;
+						} else 
+							wert=-1;
+						break;
+					case 300:
+						stw=v;
+						i=max;
+						ptype=0;
+						break;
+					case 600:
+						if (fzid == 17)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						else
+							wert=-1;
+						break;
+					case 350:
+						wert=1;
+						i=max;
+						ptype=0;
+						break;
+					case 450:
+						if (fzid == 33)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						else
+							wert=-1;
+						break;
+					case 475:
+						if (fzid == 34)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						else
+							wert=-1;
+						break;
+					case 506:
+						wert=-1;
+						if (fzid == 20)
+							wert=1;
+						ptype=112;
+						break;
+					case 507:
+						wert=-1;
+						if (fzid == 39)
+							wert=1;
+						ptype=112;
+						break;
+					case 598:
+					case 599:
+						wert=-1;
+						wblevel=0;
+						if (v.IsFirefighter())
+						{
+							if (fzort == rtw)
+							{
+								switch (v.GetVehicleType())
+								{
+									case VT_FIREFIGHTERS_TLF:
+										wert=2;
+										break;
+									case VT_FIREFIGHTERS_GTF:
+										wert=1;
+										break;
+								}
+							}
+						}
+						ptype=112;
+						break;
+					case 501:
+						wert=-1;
+						wblevel=5;
+						if (v.IsFirefighter())
+						{
+							if (fzort==rtw)
+								wert=1;
+							else 
+								wert=basewert;
+						}
+						ptype=112;
+						break;
+					case 502:
+						wert=-1;
+						wblevel=5;
+						if (v.HasCommand("ich_fuehre_tauchgeraet"))
+						{
+							if (stw.IsValid())
+							{
+								if (v.GetSpeed() > stw.GetSpeed()) // Suche das schnellste Fahrzeug
+									stw=v;					
+							} else {
+								stw=v;
+							}
+						}
+						ptype=112;
+						break;
+					case 503:
+					case 513:
+					case 533:
+						wert=-1;
+						wblevel=2;
+						if (v.IsFirefighter())
+						{
+							System::Log("Suche RW");
+							System::Log(v.GetName());
+							System::Log(fzkennung[fzid]);
+							if (fzlocal::has_equip(&v,5)) 
+							{
+								wert=5;
+								if (v.GetVehicleType()==VT_FIREFIGHTERS_RW)
+								{
+									if ((fzort == rtw)&&(rtw>0))
+										wert=1;
+									else
+										switch (fzort)
+										{
+											default:
+												wert=3;
+										}
+										
+								} else if (fzort == rtw)
+										wert=4;
+							
+							}
+						}
+						ptype=112;
+						break;
+					case 505:
+						wert=-1;
+						if (v.HasCommand("ich_fuehre_csa"))
+						{
+							stw=v;
+							i=max;
+						}
+						ptype=112;
+						break;
+					case 511:
+					case 531:
+						wert=-1;
+						if (v.IsFirefighter())
+						{
+							if ((fzort == rtw) || (rtw == 99))
+							{
+								switch (v.GetVehicleType())
+								{
+									case VT_FIREFIGHTERS_TLF:
+										if ((v.GetNumPassengers()+v.GetFreePassengers())>3)
+											wert=2+basewert;
+										else 
+											wert=5+basewert;
+										break;
+									case VT_FIREFIGHTERS_GTF:
+										wert=3+basewert;
+										break;
+									default:
+										wert=-1;
+										break;
+								}
+							} 
+							ptype=112;
+						}
+						break;
+					case 500:
+						wert=-1;
+						if (fzid == 15)
+							wert=1;
+						ptype=112;
+						break;
+					case 510:
+					case 520:
+					case 530:
+						wert=-1;
+						if (v.IsFirefighter())
+						{
+							if ((fzort == rtw) || (rtw == 99))
+								switch (v.GetVehicleType())
+								{
+									case VT_FIREFIGHTERS_GTF:
+										if ((v.GetNumPassengers()+v.GetFreePassengers()) >5)
+											wert=2+basewert;
+										else
+											wert=4+basewert;
+										break;
+									case VT_FIREFIGHTERS_TLF:
+										if ((v.GetNumPassengers()+v.GetFreePassengers())>3)
+											wert=3+basewert;
+										else 
+											wert=5+basewert;
+										break;
+									default:
+										wert=-1;
+										break;
+								}
+						}
+						ptype=112;
+						break;
+					case 512:
+					case 504:
+						wert=-1;
+						if (v.IsFirefighter())
+						{
+							wert=5;
+							if ((fzort == rtw)&&((rtw>0)||(childID == 512)))
+									wert=1;
+							else
+								switch (fzort)
+								{
+									0:
+										wert=1;
+									default:
+										wert=3;
+										break;
+								}										
+						}
+						ptype=112;
+						break;
+					case 550:
+					case 553:
+					case 555:
+						wert=-1;
+						if (v.HasCommand("fuehrung"))
+						{
+							if (fzort == rtw)
+								wert=1;
+							else 
+								wert=basewert;
+							ptype=112;
+						}
+						break;
+					case 400:
+						if (fzid == 13)
+						{
+							wert=1;
+							i=max;
+							ptype=11880;
+						}
+						else
+							wert=-1;
+						break;
+					case 200:
+						wert=1;	
+						i=max;
+						ptype=110;
+						break;
+					case 100:
+					case 199:
+						wert=1;
+						i=max;
+						ptype=110;
+						break;
+					case 101:
+					case 111:
+						if (v.GetVehicleType()!=VT_POLICE_PHC)
+						{
+							System::Log("STW auswaehlen");
+							dist=fzlocal::Distanz(v,Target);
+							if ((dist < mindist) || (folge == 100))
+							{
+								System::Log("STW gespeichert");
+								mindist=dist;
+								stw=v;
+								folge=1;
+								wert=0;
+							}			
+							ptype=110;
+						}
+						break;
+					default:
+						if (v.GetVehicleType()!=VT_POLICE_PHC)
+						{
+							wert=1;
+							i=max;
+							ptype=0;
+						}
+						break;
+
+				}
+				if (wert>0)
+				{
+					if (v.IsCurrentAction("EActionFindPath") || (!v.IsHidden() && v.HasCommand("hidden")))
+						wert=wblevel+wert/100;
+					if (v.GetVehicleType()==VT_AMBULANCE_RHC)
+					{
+						int h,m,s;
+						Game::GetTime(h,m,s);
+						if ((h>17)||(h<8)||Weather::IsRainVisible()||Weather::IsStormVisible())
+						{
+							if (childID == 610)
+							{
+								Audio::PlaySample("mod:Audio/fx/kein_hubi.wav");
+								Mission::PlayHint("RTH nur bei klarem Wetter und Sonnenlicht primär einsetzbar!");
+							}
+							wert=-1;
+						}
+					}				}
+				if ((wert<folge) && (wert>0))
+				{
+					folge=wert;
+					stw=v;
+				}				
+			}
+		}
+	}
+
+	  //Ab hier gehts nur mit einem weiter...
+	  if (!stw.IsValid())
+	  {
+		if (dir>0) 
+		{
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"kaufen",Target,dir,false);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,childID,false);
+			Caller->PushActionWait(ACTION_INSERTAFTERFIRST,2.0f);
+	  		return;
+		} else {
+//			Mission::PlayHint("Es steht kein Fahrzeug des angeforderten Typs zur Verfügung.");
+		}
+	  } else {
+		fzid=fzlocal::fzid(&stw); // Fz-Typ laut AutosKaufen
+		fzstart=fzlocal::fzort(&stw); // Fz-Standort
+
+		stw.AssignCommand("ich_bin_nicht_frei");
+		stw.AssignCommand("wird_alarmiert");
+		if (Game::IsMultiplayer())
+			stw.SetPlayerMP(Caller->GetPlayerMP());
+		GameObject obj(Target);
+		if (StrCompare(obj.GetName(),"anrufer")==0)
+		{
+			int n=obj.GetUserData();
+			n++;
+			obj.SetUserData(n);
+			System::Log("Anrufer zaehlt ausrueckendes Fz");
+		}
+
+		if (childID > 600) {
+			auftrag++;
+			char * fms="                           ";
+			char * format[]="RD-Auftrag Nr. %u";
+			int x=snprintf(fms,27,format,auftrag);
+			Mission::PlayHint(fms);
+		}
+		
+		if (childID == 599)
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",Target,fzstart*1000+childID,false);
+		if (childID == 199)
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",Target,199,false);
+
+		switch (fzid)
+		{
+			case 48:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,36,false);	
+				break;
+			case 42:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,30,false);	
+				break;
+			case 43:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,31,false);	
+				break;
+			case 44:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,32,false);	
+				break;
+			case 45:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,33,false);	
+				break;
+			case 46:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,34,false);	
+				break;
+			case 47:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,35,false);	
+				break;
+			case 1:	
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,0,false);	
+				break;
+			case 26:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,1,false);	
+				break;
+			case 21:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,2,false);	
+				break;
+			case 2:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,3,false);	
+				break;
+			case 14:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,4,false);	
+				break;
+			case 23:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,5,false);	
+				break;
+			case 24:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,6,false);	
+				break;
+			case 27:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,7,false);	
+				break;
+			case 25:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,8,false);	
+				break;
+			case 22:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,9,false);	
+				break;
+			case 12:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,10,false);	
+				break;
+			case 19 :
+			case 30 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,11,false);	
+				break;
+			case 20 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,12,false);	
+				break;
+			case 28 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,13,false);	
+				break;
+			case 29 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,14,false);	
+				break;
+			case 13:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,16,false);	
+				break;
+			case 16:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,17,false);	
+				break;
+			case 3:
+			case 4:
+			case 5:	
+			case 6:
+			case 40:
+			case 15:
+				switch (childID)
+				{
+					case 501:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,18,false);	
+						break;
+					case 510:
+					case 511:
+					case 512:
+					case 550:
+					case 599:
+					case 598:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,22,false);	
+						break;
+					case 513:
+					case 520:
+					case 553:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,23,false);	
+						break;
+					case 504:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,20,false);	
+						break;
+					case 502:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,21,false);	
+						break;
+					case 530:
+					case 531:
+					case 533:
+					case 535:
+					case 555:
+					case 505:
+					case 536:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,28,false);	
+						break;
+					case 500:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,15,false);	
+						break;
+				}
+				break;
+			case 38 :
+			case 31 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,19,false);	
+				break;
+			case 32 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,24,false);	
+				break;
+			case 33 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,25,false);	
+				break;
+			case 34 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,26,false);	
+				break;
+			case 35 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,27,false);	
+				break;
+			case 31 :
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,28,false);	
+				break;
+			default:
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"alarmgeber",&stw,100,false);	
+				break;
+		}
+		
+		stw.PushActionExecuteCommand(ACTION_NEWLIST,"mannschaft_rufen",&stw,ptype,false);
+		if ((childID == 501) || (childID == 510) || (childID == 511) || (childID == 599) || (childID == 598))
+			cid = 112;
+		else
+			cid = 0;
+		stw.PushActionExecuteCommand(ACTION_APPEND,"check_ms_vollzaehlig",&stw,cid,false);
+		stw.PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,3,false);
+		if (stw.IsHidden() && stw.HasCommand("hidden"))		// Nachbarfz ausserhalb des Stadtgebietes ?
+		{
+			float anmarsch=fzlocal::verz(&stw);
+			stw.PushActionWait(ACTION_APPEND,anmarsch);
+		}
+		
+		GameObject obj(Target);
+		if (obj.HasCommand("tl"))
+			stw.SetUserData(Caller->GetUserData());
+
+		if (nachforderung)
+			stw.PushActionExecuteCommand(ACTION_APPEND,"fz_raus",Caller,childID,false);		
+		else
+			stw.PushActionExecuteCommand(ACTION_APPEND,"fz_raus",Target,childID,false);
+
+				
+		if (obj.IsValid()) {
+			stw.PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,4,false);
+
+		switch (childID) 
+		{
+			case 610:
+			case 601:
+				stw.PushActionExecuteCommand(ACTION_APPEND,"CheckHubiDown",Caller,0,false);
+				if (((Target->GetType() == ACTOR_PERSON) || (Target->GetType() == ACTOR_OPEN_HOUSE)) && !obj.HasCommand("alarm_dummy"))
+					stw.PushActionExecuteCommand(ACTION_APPEND,"NEF_examine",Target,0,false); // NA versorgt Pat
+				else 
+					if (Target->GetType() == ACTOR_VEHICLE)
+						stw.PushActionExecuteCommand(ACTION_APPEND,"TransportBegleiten",Target,0,false);
+					else
+						stw.PushActionExecuteCommand(ACTION_APPEND,"emptycar",&stw,0,false);
+				break;
+			case 622:
+				PersonList sanis(stw.GetName());
+				sanis.GetPerson(0)->SetUserData(44);
+			case 602:
+				if (((Target->GetType() == ACTOR_PERSON) || (Target->GetType() == ACTOR_OPEN_HOUSE)) && !obj.HasCommand("alarm_dummy"))
+      				{
+					stw.PushActionExecuteCommand(ACTION_APPEND,"RTW_examine",Target,1,false); // RA versorgt Patient
+   				} else if (Target->GetType() == ACTOR_VEHICLE)
+				{
+					stw.PushActionExecuteCommand(ACTION_APPEND,"SEG_an_RTW",Target,0,false); // RTW übernimmt vom SEG-Zelt
+				}
+				break;
+			case 300:
+			      	if ((Target->GetType() == ACTOR_VEHICLE) || (Target->GetType() == ACTOR_OBJECT))
+	      			{
+					stw.PushActionExecuteCommand(ACTION_APPEND,"LoadUp_Freeplay",Target,0,true); // Fahrzeug aufladen
+   				}
+				break;
+			case 620:
+				stw.PushActionExecuteCommand(ACTION_APPEND,"emptycar",&stw,0,false);
+				break;
+			case 650:
+				PersonList sanis(stw.GetName());
+				Person sani=sanis.GetPerson(0);
+				sani.RemoveCommand("move");
+				sani.RemoveCommand("entercar");
+				sani.RemoveCommand("heal");
+				sani.RemoveCommand("SetZelt");
+				sani.AssignCommand("ich_bin_nicht_frei");
+				break;
+		}
+		stw.PushActionRedirect(ACTION_APPEND);
+		}
+	  }
+   }
+};
+
+object drehen : CommandScript
+{
+
+	drehen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		float rot[9];
+		Math::EulerToMatrix(childID*1.0f,0.0f,0.0f,rot);
+//		Caller->SetRotation(rot[0],rot[1],rot[2],rot[3],rot[4],rot[5],rot[6],rot[7],rot[8]);
+	}
+};
+
+
+object fz_raus : CommandScript
+{
+
+	fz_raus()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		int cid=0;
+		Vector TargetPos;
+		Vehicle stw(Caller);
+		char * fz[1];
+		
+		if (obj.HasCommand("tl"))
+			stw.PushActionExecuteCommand(ACTION_INSERT,"zugliste_fz",&stw,obj.GetUserData(),false);
+		else if ((Target->GetType()==ACTOR_VEHICLE) && obj.HasCommand("fuehrung"))
+		{
+			PersonList pl(obj->GetName());
+			Person tl;
+			for (int px=0;px<pl.GetNumPersons();px++)
+				if (pl.GetPerson(px)->HasCommand("tl"))
+					tl=pl.GetPerson(px);
+			if (tl.IsValid())
+				stw.PushActionExecuteCommand(ACTION_INSERT,"zugliste_fz",&stw,pl.GetUserData(),false);				
+		}		
+		
+		if (Target->GetType()==ACTOR_OPEN_HOUSE)
+		{
+			OpenHouse oh(Target);
+			TargetPos=oh.GetEntrancePosition(true,0.0);
+		} else
+			TargetPos=Target->GetPosition();
+
+		if (stw.IsHidden())
+		{
+			int fzid=fzlocal::fzort(&stw); // Fz-Standort
+			if (fzid > 50)
+				fzid=fzid-50;
+			GameObjectList ol;
+			Game::CollectObstaclesOnVirtualObject(fzlocal::stellplatz(fzid),ol,ACTOR_VEHICLE);
+			if (ol.GetNumObjects()>0)
+			{
+				stw.PushActionWait(ACTION_INSERT,1.0f);
+				stw.PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"fz_raus",Target,childID,false);
+				System::Error("fz raus: ausfahrt blockiert");
+				return;		// unsauber aber praktisch
+			} else {
+				Vector nachbarpos=stw.GetPosition();
+				Game::FindFreePosition(&stw,nachbarpos,100);
+				stw.SetPosition(nachbarpos);
+				stw.Show();
+			}
+		}
+		//Finde Position
+		Game::FindFreePosition(&stw, TargetPos,50);
+
+		stw.EnableSpecialLights(false);
+		stw.EnableBreakLights(false);
+   		stw.EnableCommand("WarningLightOn", true);
+   	  	stw.RemoveCommand("WarningLightOff");
+	  	//FZG ist nicht mehr verfügbar.
+
+		stw.PushActionExecuteCommand(ACTION_INSERT,"VCmdSiren",&stw,0,false);//Einsatzfahrt
+		stw.PushActionExecuteCommand(ACTION_INSERTAFTERFIRST, "DUMMYDisableSiren", &stw, 2, false); //childID 1: Blaulichter bleiben an...
+
+		switch (childID)
+		{
+			case 200:
+				if (((Target->GetType() == ACTOR_PERSON) || (Target->GetType() == ACTOR_VEHICLE)) && (!obj.HasCommand("alarm_dummy")))
+					stw.PushActionHeliFollow(ACTION_INSERTAFTERFIRST,Target);
+				stw.PushActionFlyTo(ACTION_INSERTAFTERFIRST, TargetPos,false,-1.0f);
+				break;
+			default:
+				if (stw.HasCommand("FlyTo"))
+					stw.PushActionFlyTo(ACTION_INSERTAFTERFIRST,TargetPos,true,135);
+				else
+					stw.PushActionMove(ACTION_INSERTAFTERFIRST, TargetPos);
+				break;
+		}
+		if (StrCompare(obj.GetName(),"anrufer")==0)
+		{
+			System::Log("Anruferobjekt als Ziel");
+			int n=obj.GetUserData();
+			n--;
+			if (n>0)
+				obj.SetUserData(n);
+			else
+			{	
+				obj.PushActionDeleteOwner(ACTION_NEWLIST);
+				System::Log("Anrufer geloescht");
+			}
+		}
+	}
+};
+
+object ResetSpeed : CommandScript
+{
+	ResetSpeed()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle stw(Target);
+		if ((stw.GetVehicleType()!=VT_AMBULANCE_RHC) && (stw.GetVehicleType()!=VT_POLICE_PHC))
+			stw.SetSpeed(6.0f);
+	}
+};
+
+// ABSCHNITT : GO HOME
+//
+//
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+
+object gohome_winterberg : CommandScript
+{
+	Vector Wache;
+	Actor fz;
+
+	gohome_winterberg()
+	{
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(85);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		return !v.IsDestroyed();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE || ((v.GetNumPassengers() == 0) && (v.GetFreePassengers()>0)))
+			return false;
+
+		//Freeplay oder nicht?
+		// changed by Bass-ti -> new em4-codec
+		if (Game::IsFreeplay())
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		bool nachbarfz=v.HasCommand("hidden");
+		bool extern=(!(v.HasCommand("gohome_winterberg")) && !(v.HasCommand("aufsitzen")));
+		bool bedarfsfz=v.HasCommand("bedarfs_fz");		
+		const char * parken[2];
+		int fzid;
+
+		Game::ExecuteCommand("CheckWitchDoc",Caller);
+		Game::ExecuteCommand("WitchDocAction",Caller);
+		
+		if ((v.GetNumPassengers() == 0) && (v.GetFreePassengers() > 0) && (childID != 19292))	// Fz nicht ohne sein Personal wegfahren lassen, NEF darf ins KH folgen
+			return;
+
+		v.PushActionWait(ACTION_NEWLIST,0.1);
+		if (v.HasCommand("DUMMYHasMast"))
+			v.PushActionExecuteCommand(ACTION_APPEND,"Funkmast",Caller,0,false);
+
+		if (v.GetVehicleType() == VT_FIREFIGHTERS_GTF)
+		{
+			PersonList pl(ROLE_SQUAD);
+			bool SchlauchDran=false;
+			Person fw;
+			for (int i=0; (i<pl.GetNumPersons()) && (!SchlauchDran);i++)
+			{
+				fw=pl.GetPerson(i);
+				if (fw.GetFirehoseID()!=0)
+					SchlauchDran=v.IsUsingConnector(&fw);
+			}
+			if (SchlauchDran)
+			{
+				Mission::PlayHint("Schlauchanschluss noch in Betrieb");
+				v.PushActionWait(ACTION_NEWLIST,1.0);
+				return;
+			}
+		}
+	
+		if (v.HasChild("NA"))
+			v.SetChildEnabled("NA",false);
+
+		if (v.HasCommand("DUMMYHasWarningLights"))
+		{
+ 			v.EnableBlinker(BLT_NONE);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+		}
+
+		v.RemoveCommand("DUMMYHasUmfeld");
+		v.EnableSpecialLights(false);
+
+		if (v.GetVehicleType() == VT_THW_FGRR_BKF)
+		{
+			Caller->PushActionDeinstall(ACTION_INSERT);
+		}
+
+		v.PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",&v);
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+		
+		if (extern)
+		{
+			Mission::PlayHint("Externes Zusatzfahrzeug zurueck zur Basis.");
+			Caller->PushActionReturnToBase(ACTION_APPEND);
+		} else {
+
+			int dir=fzlocal::fzort(Caller);
+			if (dir>50)
+				dir=dir-50;
+			fzid=fzlocal::fzid(Caller);
+			if (dir==0)
+				parken[1]= fzlocal::kennung(fzid);
+			else			
+				parken[1]= fzlocal::stellplatz(dir);
+		
+			ActorList fzl=Game::GetActors(parken[1]); 
+			if(fzl.GetNumActors() > 0)
+				Actor fz = *fzl.GetActor(0);
+			else
+				System::Error("Ungueltiger Fz_Standort");
+
+			//Wo soll das Fahrzeug parken?
+			Vector Wache=fz.GetPosition();
+			Game::FindFreePosition(&v, Wache);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_DISABLE, Caller, 1, false);
+			Caller->PushActionLightOn(ACTION_APPEND,false);
+
+			int cid;
+			bool rueckfahrwarnung = false;  // erstmal für alle an
+
+			switch(v.GetVehicleType())
+			{
+				case VT_AMBULANCE_NEF :
+				case VT_AMBULANCE_RTW :
+				case VT_AMBULANCE_RHC :
+					if (v.HasCommand("ich_bin_ein_bsw"))
+					{
+						Mission::PlayHint("Auf zur ewigen Ruhe");
+						break;
+					}
+
+					// PersonList persons = v.GetTransports();
+					if (v.GetNumTransported() > 0)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"zum_krankenhaus",Caller,0,false);
+						return;
+					}
+					cid=0;		// nicht absitzen
+					if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+						break;
+
+					//Leeres NEF bekommt am KH einen neuen NA...
+					PersonList persons = v.GetPassengers();
+					bool HasNA=false;
+					for(int j=0; j<persons.GetNumPersons(); j++)
+					{
+						HasNA=(HasNA || persons.GetPerson(j)->IsDoctor()); //Ist ein NA an Bord?
+					}
+					if (!HasNA)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND, "NEF_zum_KH", Target, 0, false);
+						return;
+					}
+					cid=0;
+					break;
+			}
+
+			bool frei=false;
+			bool trans=false;
+			bool teamok=(v.GetFreePassengers()==0);
+			GameObjectList ol=v.GetCarriedObjects();
+
+			trans=((ol.GetNumObjects() > 0) || (v.GetNumTransported() > 0));  // es wird nix transportiert
+			teamok=(teamok || ((v.GetVehicleType()==VT_AMBULANCE_RTW) && (v.GetFreePassengers() < 2))); // Mannschaft komplett
+			frei=(!trans && ((v.GetEnergy()/v.GetMaxEnergy()) > 0.4) && teamok); // Fz nicht schwer beschaedigt
+
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"Geraete_entfernen",Caller,0,false);
+			
+			if (childID!=110)
+			{
+				if (frei)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"FzFrei",Caller,0,false);
+				else if (trans)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,7,false);
+				else 
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,6,false);
+			}
+				
+			rueckfahrwarnung=((fzid == 3) || (fzid == 4));
+			Vector Vorfahrt=Vector (0,-200,0);
+			Vector Wende=Vector (0,-600,0);	// Standardwende
+			int eje=0;
+
+			switch (fzlocal::richtung(fzid))
+			{
+				case 1 :
+					Vorfahrt=Vector (300,0,0);
+					Wende=Vector (600,0,0);
+					eje=0;	
+					break;
+				case 2:
+					Vorfahrt=Vector (0,200,0);
+					Wende=Vector (0,400,0);
+					eje=90;
+					break;
+				case 3 :
+					Vorfahrt=Vector (-200,0,0);
+					Wende=Vector (-400,0,0);
+					eje=180;
+					break;
+				default :
+					eje=270;
+					break;
+			}
+	
+			if (Caller->HasCommand("FlyTo"))
+			{
+				v.PushActionFlyTo(ACTION_APPEND,Wache,(!bedarfsfz && !nachbarfz),135);
+				// wenn stammfz, dann am ziel landen
+			} else	{
+				Caller->PushActionMove(ACTION_APPEND, Wache + Vorfahrt); // Fahre zum Wendepunkt
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+				Caller->PushActionTurnTo(ACTION_APPEND, Wache + Wende); // Wende
+//				Caller->PushActionExecuteCommand(ACTION_APPEND,"drehen",Caller,eje,false);				
+				if (rueckfahrwarnung)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionMotorSound",Caller,4,false);
+				Caller->PushActionMove(ACTION_APPEND, Wache); // Einparken
+				if (rueckfahrwarnung)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionStopSound",Caller);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+			}
+			
+			switch(v.GetVehicleType())
+			{
+				case VT_FIREFIGHTERS_DLK :
+				case VT_FIREFIGHTERS_RW :
+				case VT_FIREFIGHTERS_TLF :
+				case VT_FIREFIGHTERS_LF :
+				case VT_FIREFIGHTERS_LPF :
+				case VT_FIREFIGHTERS_TFMB :
+				case VT_FIREFIGHTERS_GTF :
+				case VT_FIREFIGHTERS_DEKONP :
+					cid=112;	// Absitzen und Fw betretet
+					break;	
+
+				case VT_POLICE_SW :
+				case VT_POLICE_STW :
+				case VT_POLICE_MTW :
+					if ((v.GetVehicleType() == VT_POLICE_MTW) && (v.GetNumTransported() < 4))
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"FzFrei",Caller,0,false);
+					cid=110;	// Absitzen und PSt betreten			
+					break;
+
+				case VT_FIREFIGHTERS_ASF:
+					if (Caller->IsCarryingAnything())
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionFreeplayUnload",Caller,0,false);
+					cid=0;
+					break;
+				
+				case VT_AMBULANCE_RTW :
+				case VT_AMBULANCE_RHC :
+					cid=0;		// nicht absitzen
+					break;
+				case VT_AMBULANCE_NEF :
+				case VT_AMBULANCE_RHC :				
+					cid=0;
+					break;
+
+				default : 
+					cid=0;	// wenn nicht gelistet, dann nicht absitzen
+			}
+
+			if (Caller->HasCommand("feierabend"))
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,6,false);
+				Caller->AssignCommand("ich_bin_nicht_frei");
+			} else
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,2,false);
+
+			if (bedarfsfz)
+			{
+				Caller->PushActionWait(ACTION_APPEND,5.0);
+				Caller->PushActionDeleteOwner(ACTION_APPEND);
+				
+			} else {
+				if (nachbarfz)
+				{
+					Caller->PushActionShowHide(ACTION_APPEND,true);
+				}
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"WacheAussteigen",Caller,cid,false);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"FzInspektion",Caller,fzid,false);
+			}
+			GameObjectList zl;
+			zl=Game::GetGameObjectsWithPrefix("ZUG");
+			for (int zc=0;zc<zl.GetNumObjects();zc++)
+				if (Caller->GetID()==zl.GetObject(zc)->GetUserData())
+					Game::RemoveGameObject(zl.GetObject(zc));
+		}
+
+	}
+};
+
+
+object WacheAussteigen : CommandScript
+{
+
+	WacheAussteigen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList place;
+		Vector entry;
+
+		int fzid=fzlocal::fzid(Caller);
+
+			switch (fzid)
+			{
+				case 3:
+					place=Game::GetActors("lf_entry");
+					break;
+				case 4:
+					place=Game::GetActors("tlf_entry");
+					break;
+				case 5:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 6:
+					place=Game::GetActors("dlk_entry");
+					break;
+				case 15:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 39:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 40:
+					place=Game::GetActors("elw_entry");
+					break;
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+					place=Game::GetActors("police_entry");
+					break;
+				default:
+					place=Game::GetActors(Caller->GetName());
+					break;
+			}
+
+		if (ChildID > 0) 
+		{
+			if (!Caller->IsHidden())
+				entry=place.GetActor(0)->GetPosition();
+			Vehicle v(Caller);
+			PersonList pl=v.GetPassengers();
+			PersonList tl=v.GetTransports();
+			Person p,t;
+			int tn=tl.GetNumPersons();
+			bool nix=false;
+
+			for (int i=0; i<pl.GetNumPersons(); i++)
+			{
+				System::Log("Aussteigen");
+				p=pl.GetPerson(i);
+				p.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+				if (tn>0)
+				{
+					System::Log("Haeftling aussteigen");
+					tn--;
+					t=tl.GetPerson(tn);
+					//Gangster
+					t.PushActionLeaveCar(ACTION_NEWLIST, Caller);
+					nix=t.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+					t.PushActionWait(ACTION_APPEND, 5.f);
+				}
+				if (!Caller->IsHidden())
+				{
+					if (nix)
+					{
+						System::Log("Haeftling festhalten");
+						p.PushActionMove(ACTION_APPEND, &t, TARGET_FOLLOW);
+						p.PushActionArrest(ACTION_APPEND, &t,false);
+					}
+					System::Log("Zum Eingang gehen");
+					p.PushActionMove(ACTION_APPEND, entry, true);
+				}
+				if (nix)
+				{
+					System::Log("Haeftling in Basis");
+					p.PushActionPutInBase(ACTION_APPEND);
+				}
+				p.PushActionDeleteOwner(ACTION_APPEND);
+				nix=false;
+			}
+			if (v.GetVehicleType() == VT_POLICE_STW)
+				p.PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"Patrouille_frei",&v,15,false);
+		}
+		fzlocal::fz_beladen(Caller);
+	}
+};
+
+object FzFrei : CommandScript
+{
+	FzFrei()
+	{
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		char * fzfrei="Einsatzfahrzeug frei auf Funk";
+		int fzid=fzlocal::fzid(Caller); 	// Fz-Typ laut AutosKaufen
+
+		switch (fzid)
+		{
+			case 1:		
+				fzfrei="8-82-1 einsatzbereit auf Funk";
+				break;
+			case 26:
+				fzfrei="7-82-1 einsatzbereit auf Funk";
+				break;
+			case 21:
+				fzfrei="Notarzt Bad Berleburg einsatzbereit auf Funk";
+				break;
+			case 2:
+				fzfrei="RTW 8-83-1 einsatzbereit auf Funk";
+				break;
+			case 14:
+				fzfrei="RTW 11-83-1 einsatzbereit auf Funk";
+				break;
+			case 23:
+				fzfrei="RTW 7-83-1 einsatzbereit auf Funk";
+				break;
+			case 24:
+				fzfrei="RTW 4-83-1 einsatzbereit auf Funk";
+				break;
+			case 27:
+				fzfrei="KTW 8-85-1 einsatzbereit auf Funk";
+				break;
+			case 28:
+				fzfrei="Florian Sauerland 8-48-1 einsatzbereit auf Funk";
+				break;
+			case 29:
+				fzfrei="Florian Sauerland 8-48-2 einsatzbereit auf Funk";
+				break;
+			case 25:
+				fzfrei="Rot-Kreuz Korbach 91/83 einsatzbereit auf Funk";
+				break;
+			case 22:
+				fzfrei="RTW Bad Berleburg einsatzbereit auf Funk";
+				break;
+			case 12:
+				fzfrei="Christoph 25 einsatzbereit auf Funk";
+				break;
+			case 19 : 
+				fzfrei="Florian Sauerland 8-42-2 einsatzbereit auf Funk";
+				break;
+			case 20 :
+				fzfrei="Florian Siegen 4-29-1 einsatzbereit auf Funk";
+				break;
+			case 3:
+				fzfrei="Florian Sauerland 8-44-2 einsatzbereit auf Funk";
+				break;
+			case 4:	
+				fzfrei="Florian Sauerland 8-23-1 einsatzbereit auf Funk";
+				break;
+			case 6:	
+				fzfrei="Florian Sauerland 8-33-1 einsatzbereit auf Funk";
+				break;
+			case 5:	
+				fzfrei="Florian Sauerland 8-51-1 einsatzbereit auf Funk";
+				break;
+			case 30:	
+				fzfrei="Florian Sauerland 8-21-1 einsatzbereit auf Funk";
+				break;
+			case 31:	
+				fzfrei="Florian Sauerland 8-21-2 einsatzbereit auf Funk";
+				break;
+			case 32:	
+				fzfrei="LNA Sauerland einsatzbereit auf Funk";
+				break;
+			case 35:
+				fzfrei="SEG Rettung Rückfahrt Unterkunft";
+				break;
+			case 38:
+				fzfrei="Florian Sauerland 8-42-2 einsatzbereit auf Funk";
+				break;
+			case 40:
+				fzfrei="Florian Sauerland 8-11-2 einsatzbereit auf Funk";
+				break;
+		}
+		if (childID == 0)
+		{
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"StatusSenden",Caller,1,false);
+//			Mission::PlayHint(fzfrei);
+		}
+		PersonList pl(Caller->GetName());
+		for (int px=0;px<pl.GetNumPersons();px++)
+			pl.GetPerson(px)->SetUserData(0);
+		Caller->RemoveCommand("ich_bin_nicht_frei");	
+	}
+};
+
+
+Person signalgeber;
+int schleife=-1;
+
+const int maxfae=75;
+bool zfae[maxfae];
+bool zalarm=false;
+bool zf=false;
+bool zug=false;
+
+int znum;
+
+object alarmgeber : CommandScript
+{
+
+	alarmgeber()
+	{
+		SetPriority(700);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		signalgeber.PushActionExecuteCommand(ACTION_APPEND,"kanalfrei",Target,childID,false);
+		znum=0;
+		if (childID<50)
+		{
+			System::Log("Code im FiFo");
+			System::Log(fzlocal::dusa(childID));
+		} else 
+			if (childID > 100)
+				System::Log("Zugalarm-Code im Fifo");
+			else
+				System::Log("Fz ohne akustische Alarmierung im Fifo");
+	}
+};
+
+object alarminit : CommandScript
+{
+	alarminit()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		PersonList al("5tongeber");
+		signalgeber=al.GetPerson(0);
+		schleife=-1;
+		signalgeber.PushActionWait(ACTION_NEWLIST,1.0);
+		signalgeber.PushActionExecuteCommand(ACTION_APPEND,"dienstende",&signalgeber,0,false);
+		for (int i=0;i<maxfae;i++)
+			zfae[i]=true;
+		VehicleList vl(VT_POLICE_STW,VT_POLICE_STW);
+		for (i=0;i<vl.GetNumVehicles();i++)
+			vl.GetVehicle(i)->PushActionExecuteCommand(ACTION_NEWLIST,"Fahre_Patrouille",vl.GetVehicle(i),i*20,false);
+		return;
+	}
+};
+
+bool kats=false;
+bool play_fms=true;
+
+object kanalfrei : CommandScript
+{	
+	int cid;
+
+	kanalfrei()
+	{
+		SetPriority(700);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		switch (childID)
+		{		
+			case 101:	// Zugalarmsequenz starten
+				for (int i=0;i<maxfae;i++)
+					zfae[i]=true;
+				zalarm=true; 
+				zf=true;
+				zug=true;
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"set_wartezeit",Target,8,false);
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"zugliste_init",Target,0,false); // Neuer Zug mit eigenem EL
+				System::Log("Zugalarmierung .. jede Schleife nur einmal");
+				break;
+			case 111:	// Zugalarmsequenz starten
+				for (int i=0;i<maxfae;i++)
+					zfae[i]=true;
+				zalarm=true; 
+				zf=false;
+				zug=true;
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"set_wartezeit",Target,8,false);
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"zugliste_init",Target,1,false); // Nachalarmierung -> vorhandene Liste erweitern
+				System::Log("Zugalarmierung .. jede Schleife nur einmal");
+				break;
+			case 102:	// Zugalarmsequenz Ende
+				zug=false;
+				cid=0;
+				break;
+			case 103:	// Zugalarmsequenz Ende
+				zalarm=false;
+				System::Log("Zugalarm Ende..jede Schleife laeuft durch");
+				cid=0;
+				break;
+			case 104:
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"set_wartezeit",Target,12,false);
+				break;
+			case 100:
+				signalgeber.PushActionExecuteCommand(ACTION_INSERT,"fz_rueckt_aus",Target,0,false);
+				if (zug)
+					signalgeber.PushActionExecuteCommand(ACTION_INSERT,"zugliste_fz",Target,0,false);
+				break;
+			case 120:
+				kats=true;
+				break;
+			default:
+				bool fz_raus=false;
+				if ((!zalarm) || (childID > 999) || (zalarm && zfae[childID]))
+					if ((schleife > -1) && Audio::IsPlaying(schleife))
+					{
+						signalgeber.PushActionExecuteCommand(ACTION_INSERT,"kanalfrei",Target,childID,false);
+						return;
+					} else {
+						if (childID>1999)
+						{
+							char * fms="                           ";
+							char * format[]="mod:/Audio/fx/fms/%u%u.wav";
+							int fzid=fzlocal::fzid(Target);
+							int x=snprintf(fms,27,format,1000+fzid,childID-2000);
+							System::Log(fms);
+							if (play_fms)
+								schleife=Audio::PlaySample(fms);
+							signalgeber.PushActionWait(ACTION_INSERT,0.5f);
+						} else if (childID>999)
+						{
+							char * fms="                           ";
+							char * format[]="mod:/Audio/fx/fms/%u%u.wav";
+							int fzid=fzlocal::fzid(Target);
+							int x=snprintf(fms,27,format,1000+fzid,childID-1000);
+							System::Log(fms);
+							if (play_fms)
+								schleife=Audio::PlaySample(fms);
+							signalgeber.PushActionExecuteCommand(ACTION_INSERT,"kanalfrei",Target,(1000+childID),false);
+						} else {
+							schleife=Audio::PlaySample(fzlocal::fae(childID));
+							zfae[childID]=false;
+							Mission::PlayHint(fzlocal::dusa(childID));
+							System::Log("Alarmierung wird ausgelöst");
+							System::Log(fzlocal::dusa(childID));
+							cid=1;
+							VehicleList ls("platz1");
+							Vehicle ofz=ls.GetVehicle(0);
+							if (kats)
+							{
+								Audio::PlaySample("mod:Audio/fx/kats.wav");				
+								kats=false;
+							}
+							else if (ofz.HasCommand("sir"))
+							{
+								Audio::PlaySample("mod:Audio/fx/sir.wav");
+								System::Sleep(1);
+								Audio::PlaySample("mod:Audio/fx/sir.wav");
+								System::Sleep(2);
+								Audio::PlaySample("mod:Audio/fx/sir.wav");
+								ofz.RemoveCommand("sir");
+								ofz.AssignCommand("fae");
+							}
+							fz_raus=true;
+						}
+					}
+				else
+				{
+					if (zalarm)
+						cid++;
+					fz_raus=true;
+				}
+				if (fz_raus)
+				{
+					signalgeber.PushActionExecuteCommand(ACTION_INSERT,"fz_rueckt_aus",Target,cid,zf);
+					if (zug)
+						signalgeber.PushActionExecuteCommand(ACTION_INSERT,"zugliste_fz",Target,0,false);
+					zf=false;
+				}
+				break;
+		}
+	}
+};
+
+bool zf_zuteilen=false;
+
+object fz_rueckt_aus : CommandScript
+{
+
+	fz_rueckt_aus()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		zf_zuteilen=true;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		if (zf_zuteilen)
+		{
+			Vehicle v(Target);
+			if (v.IsFirefighter() && (((v.GetNumPassengers()+v.GetFreePassengers()) > 3) || v.HasCommand("fuehrung")))
+			{
+				v.AssignCommand("tl");
+				zf_zuteilen=false;
+			}
+		}
+		switch (childID)
+		{
+			case 0:
+				obj.RemoveCommand("wird_alarmiert");
+				break;
+			case 100:
+				if (!obj.HasCommand("TL"))
+				{			
+					obj.PushActionWait(ACTION_APPEND,70.0);
+					obj.PushActionDeleteOwner(ACTION_APPEND);  // Zielmarker-Objekt löschen
+				}
+				break;
+			default:
+				obj.AssignCommand("abwarten");
+				obj.SetUserData(childID);
+				obj.RemoveCommand("wird_alarmiert");
+				break;
+		}
+		return;
+	}
+};
+
+object StatusSenden : CommandScript
+{
+	StatusSenden()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		signalgeber.PushActionExecuteCommand(ACTION_INSERT,"kanalfrei",Caller,(1000+childID),false);
+	}
+};
+
+object fms_umschalten : CommandScript
+{
+	fms_umschalten()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		play_fms=!play_fms;
+	}
+};
+
+object VT_SetRole : CommandScript
+{
+	VT_SetRole()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.SetVehicleRole(childID);
+		v.SetCommandable(true);
+	}
+};
+
+object GetChainsaw : CommandScript
+{
+	GetChainsaw()
+	{
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetRestrictions(RESTRICT_NOTDESTROYED | RESTRICT_NOTBURNING | RESTRICT_HASCHAINSAW);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetNeedsCarWithFlagSet(OF_HAS_CHAINSAW);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),6));
+		show=(show && Caller->HasCommand("umkleidemenue"));
+		return show;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		return fzlocal::has_equip(vl.GetVehicle(0),6);;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		GameObject obj(Target);
+		if (Caller->GetObjectType()==TYPE_PERSON && Caller->GetEquipment()!=EQUIP_CHAINSAW &&
+			obj.IsValid() && obj.IsFlagSet(OF_HAS_CHAINSAW))
+		{
+			Person p(Caller);
+			if(p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+				return false;
+			
+			return fzlocal::has_equip(Target,6);
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_EQUIPMENTDOOR);
+		
+		Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		if (fzlocal::take_equip(Target,6))
+			Caller->PushActionGetEquipment(ACTION_APPEND, Target, EQUIP_CHAINSAW);
+	}
+};
+
+object GetFirehose : CommandScript
+{
+	GetFirehose()
+	{
+		SetIcon("crohr");
+		SetCursor("crohr");
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetRestrictions(RESTRICT_NOTDESTROYED | RESTRICT_NOTBURNING | RESTRICT_HASFIREHOSE);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetNeedsCarWithFlagSet(OF_HAS_HOSE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		return fzlocal::has_equip(vl.GetVehicle(0),3);;
+	}
+	
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),3));
+		show=(show && Caller->HasCommand("umkleidemenue"));
+		return show;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		GameObject obj(Target);
+		if (Caller->GetObjectType()==TYPE_PERSON && Caller->GetEquipment()!=EQUIP_FIREHOSE &&
+			obj.IsValid() && obj.IsFlagSet(OF_HAS_HOSE))
+		{
+			Person p(Caller);
+			if(p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+				return false;
+			
+			return fzlocal::has_equip(Target,3);
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_EQUIPMENTDOOR);
+		
+		if (fzlocal::take_equip(Target,3))
+			Caller->PushActionGetEquipment(ACTION_INSERT, Target, EQUIP_FIREHOSE);
+		Caller->PushActionTurnTo(ACTION_INSERT, Target);
+		Caller->PushActionMove(ACTION_INSERT, TargetPos);
+	}
+};
+
+object GetShears : CommandScript
+{
+	GetShears()
+	{
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetRestrictions(RESTRICT_NOTDESTROYED | RESTRICT_NOTBURNING | RESTRICT_HASSHEARS);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetNeedsCarWithFlagSet(OF_HAS_SHEARS);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		return fzlocal::has_equip(vl.GetVehicle(0),5);;
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),5));
+		show=(show && Caller->HasCommand("umkleidemenue"));
+		return show;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		GameObject obj(Target);
+		if (Caller->GetObjectType()==TYPE_PERSON && Caller->GetEquipment()!=EQUIP_SHEARS &&
+			obj.IsValid() && obj.IsFlagSet(OF_HAS_SHEARS))
+		{
+			Person p(Caller);
+			if(p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+				return false;
+			
+			return fzlocal::has_equip(Target,5);
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_EQUIPMENTDOOR);
+		
+		if (fzlocal::take_equip(Target,5))
+			Caller->PushActionGetEquipment(ACTION_INSERT, Target, EQUIP_SHEARS);
+		Caller->PushActionTurnTo(ACTION_INSERT, Target);
+		Caller->PushActionMove(ACTION_INSERT, TargetPos);
+	}
+};
+
+object check_ms_vollzaehlig : CommandScript
+{
+
+
+	check_ms_vollzaehlig()
+	{
+		SetPriority(300);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		int lim=0;
+		Vehicle v(Caller);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			lim=1;
+		if (v.GetFreePassengers()>lim)
+		{
+			Caller->PushActionWait(ACTION_INSERT,1.0f);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"check_ms_vollzaehlig",Caller,ChildID,false);
+		} else { 
+			System::Error("check_ms : Besatzung vollstaendig");
+			if (v.IsFirefighter())
+			{
+				PersonList pl=v.GetPassengers();
+				Person p;
+				for (int gfx=0;gfx<pl.GetNumPersons();gfx++)
+				{
+					p=pl.GetPerson(gfx);
+					p.ChangePrototype("mod:Prototypes/Persons/Fire Department/firefighternorm_upgrade2.e4p");
+					p.RemoveCommand("gf");
+					p.RemoveCommand("tl");
+					p.RemoveCommand("fuehrung");
+				}
+				Person p=pl.GetPerson(0);
+				p.ChangePrototype("mod:Prototypes/Persons/Fire Department/grufue.e4p");
+
+				if (v.HasCommand("tl"))
+				{
+					System::Log("Zugfuehrer bestimmt");
+					v.RemoveCommand("tl");
+					Person p=pl.GetPerson(v.GetNumPassengers()-1);
+					p.ChangePrototype("mod:Prototypes/Persons/Fire Department/wefue.e4p");
+					p.PushActionExecuteCommand(ACTION_NEWLIST,"tl_get_zug",&p,0,false);
+				}
+			}
+			if (ChildID == 112) {
+				Person p=pl.GetPerson(1);
+				if (fzlocal::take_equip(Caller,0))
+					p.ChangePrototype("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p");
+				Person p=pl.GetPerson(2);
+				if (fzlocal::take_equip(Caller,0))
+					p.ChangePrototype("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p");
+			}
+			if (Game::IsMultiplayer())
+			{
+				PersonList pl=v.GetPassengers();
+				for (int mpx=0;mpx<pl.GetNumPersons();mpx++)
+					pl.GetPerson(mpx)->SetPlayerMP(v.GetPlayerMP());
+			}
+		}
+	}
+};
+
+object ChangeToMask: CommandScript
+{
+	ChangeToMask()
+	{
+//		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		return p.GetPersonType() != PT_FIREFIGHTER_MASK;
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),0) && (p.GetPersonType() != PT_FIREFIGHTER_MASK));
+		show=(show && Caller->HasCommand("geraetemenue"));
+		return show;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		bool avail=false;
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.IsFirefighter())
+				avail=fzlocal::has_equip(Target,0);
+			else 
+				avail=false;
+		} else
+			if (Caller->GetID() == Target->GetID())
+				avail=fzlocal::has_equip(Caller,0);
+		return avail;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (fzlocal::has_equip(Target,0))
+	                Caller->PushActionExecuteCommand(ACTION_INSERT, "DummyChange", Target, 1, false);
+	}
+};
+
+object ChangeToABC: CommandScript
+{
+	ChangeToABC()
+	{
+//		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		return p.GetPersonType() != PT_FIREFIGHTER_ABC;
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),1) && (p.GetPersonType() != PT_FIREFIGHTER_ABC));
+		show=(show && Caller->HasCommand("geraetemenue"));
+		return show;
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		bool avail=false;
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.IsFirefighter())
+				avail=fzlocal::has_equip(Target,1);
+			else 
+				avail=false;
+		} else
+			if (Caller->GetID() == Target->GetID())
+				avail=fzlocal::has_equip(Caller,1);
+		return avail;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (fzlocal::has_equip(Target,1))
+	                Caller->PushActionExecuteCommand(ACTION_INSERT, "DummyChange", Target, 2, false);
+	}
+};
+
+object ChangeToDiver: CommandScript
+{
+	ChangeToDiver()
+	{
+//		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		return p.GetPersonType() != PT_DIVER;
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),2) && (p.GetPersonType() != PT_DIVER));
+		show=(show && Caller->HasCommand("geraetemenue"));
+		return show;
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		bool avail=false;
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.IsFirefighter())
+				avail=fzlocal::has_equip(Target,2);
+			else 
+				avail=false;
+		} else
+			if (Caller->GetID() == Target->GetID())
+				avail=fzlocal::has_equip(Caller,2);
+		return avail;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (fzlocal::has_equip(Target,2))
+	                Caller->PushActionExecuteCommand(ACTION_INSERT, "DummyChange", Target, 3, false);
+	}
+};
+
+object ChangeToFireFighter: CommandScript
+{
+	ChangeToFireFighter()
+	{
+//		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		return p.GetPersonType() != PT_FIREFIGHTER_NORMAL;
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && (p.GetPersonType()!=PT_FIREFIGHTER_NORMAL));
+		show=(show && Caller->HasCommand("geraetemenue"));
+		return show;
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped())
+			return false;
+		Person p(Caller);
+    		if (p.IsCarryingPerson() || p.IsInDLKBasket())
+    			return false;
+		bool avail=false;
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.IsFirefighter())
+				avail=true;
+			else 
+				avail=false;
+		} else
+			if (Caller->GetID() == Target->GetID())
+				avail=true;
+		return avail;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+                Caller->PushActionExecuteCommand(ACTION_INSERT, "DummyChange", Target, 4, false);
+	}
+};
+
+object DummyChange: CommandScript
+{
+	DummyChange()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		int enter = 0;
+
+		if (childID<4)
+			if (!fzlocal::take_equip(Target,(childID-1)))
+				return;		// unsauber aber praktisch
+
+		Caller->SetCommandable(false);
+		if (Target->GetType() != ACTOR_VEHICLE)
+		{
+			VehicleList vl(Caller->GetName());
+			Vehicle v(vl.GetVehicle(0));
+		} else
+			Vehicle v(Target);
+		Caller->RemoveCommand("umkleidemenue");
+           	Caller->PushActionExecuteCommand(ACTION_INSERT,"umziehen",&v,childID,false);
+		Caller->PushActionWait(ACTION_INSERT, 3.f);
+         	Caller->PushActionSwitchAnim(ACTION_INSERT,"useobjmid");
+		Caller->PushActionTurnTo(ACTION_INSERT, &v);
+		Caller->PushActionMove(ACTION_INSERT, &v, TARGET_EQUIPMENTDOOR);
+		if (v.HasCommand("freiwillige"))
+		{
+			p.PushActionExecuteCommand(ACTION_APPEND,"entercar",&v,0,true);
+		}
+	}
+};
+
+object umziehen: CommandScript
+{
+	umziehen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		bool grufue=Caller->HasCommand("gf");
+		Person p;
+
+		switch (childID)
+                {
+			case 1:
+				if (Caller->HasCommand("gf"))
+	                       		Caller->ChangePrototype("mod:Prototypes/Persons/Fire Department/grufue_mask.e4p");
+				else
+        	               		Caller->ChangePrototype("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p");
+				break;
+
+			case 2:
+				if (Caller->HasCommand("gf"))
+	                       		Caller->ChangePrototype("mod:Prototypes/Persons/Fire Department/grufue_tesimax.e4p");
+				else
+		                	Caller->ChangePrototype("mod:Prototypes/Persons/Fire Department/firefighterabc_upgraded2.e4p");
+				break;
+			case 3:
+                     		p=Game::CreatePerson("mod:Prototypes/Persons/Fire Department/diver_upgraded2.e4p",Caller->GetName());
+				p.SetPosition(Caller->GetPosition());
+				Caller->PushActionDeleteOwner(ACTION_NEWLIST);
+				Caller=&p; // This is definitively a very evil workaround
+				break;
+
+			case 4:
+				if (Caller->HasCommand("gf"))
+	                       		Caller->ChangePrototype("mod:Prototypes/Persons/Fire Department/grufue.e4p");
+				else
+	                        	Caller->ChangePrototype("mod:Prototypes/Persons/Fire Department/firefighternorm_upgrade2.e4p");
+				break;
+                }
+		switch (childID)
+                {
+			case 1:
+				Caller->AssignCommand("GetGZ");
+				Caller->AssignCommand("GetMM");
+				Caller->AssignCommand("ggv_abdichten");
+				break;
+
+			case 2:
+				Caller->AssignCommand("PutInCar");
+				Caller->AssignCommand("GetGZ");
+				Caller->AssignCommand("GetMM");
+				Caller->AssignCommand("ggv_abdichten");
+				break;
+                }
+		if (grufue)
+		{
+					Caller->RemoveCommand("GetFirehose");
+					Caller->RemoveCommand("GetShears");
+					Caller->RemoveCommand("GetAxe");
+					Caller->RemoveCommand("GetChainsaw");
+					Caller->RemoveCommand("GetExtinguisher");
+					Caller->RemoveCommand("Lift");
+					Caller->RemoveCommand("putincar");
+					Caller->RemoveCommand("SetLima");
+					Caller->RemoveCommand("SetVerteiler");
+					Caller->RemoveCommand("SetMonitor");
+					Caller->RemoveCommand("Schnellangriff");
+					Caller->RemoveCommand("SetLima");
+					Caller->RemoveCommand("SetTS");
+					Caller->AssignCommand("gf_loescheinsatz");
+					Caller->AssignCommand("gf_v_bereit");
+					Caller->AssignCommand("gf_rettung");
+					Caller->AssignCommand("gf_tec_rettung");
+					Caller->AssignCommand("gf_pa");
+					Caller->AssignCommand("gf_csa");
+					Caller->AssignCommand("einsatz_ohne");
+					Caller->AssignCommand("gf_bma_quittung");
+		}
+		Caller->SetCommandable(true);
+	}
+};
+
+const char IMG[] = "sosi";
+
+const char EACTION_FINDPATH[] = "EActionFindPath";
+
+const char DUMMY_HASSIREN[] = "DUMMYHasSiren";
+const char DUMMY_UPDATEPOS[] = "DUMMYUpdatePos";
+const char DUMMY_FINDPATH[] = "DUMMYFindPath";
+
+const char CMD_MOVETO[] = "MoveTo";
+
+const char NAME_DUMMYOBJECT[] = "          ";
+const char dummymask[]="SoSi%u";
+
+//		const int MAX_FZ = 50;
+ 
+int DummyGroup = 20;
+
+object VCmdSiren : CommandScript
+{
+	VCmdSiren()
+	{
+		SetIcon(IMG);
+		SetCursor(IMG);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid())
+			return false;
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		if (!Caller->HasCommand(CMD_MOVETO) || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		char * parken[1];
+		parken[0]=Caller->GetName();
+		int fzid=fzlocal::fzid(Caller);
+		int x=snprintf(NAME_DUMMYOBJECT,10,dummymask,fzid);
+
+		if (!v.HasCommand(DUMMY_HASSIREN) && (childID != 2 && childID != 1))
+		{
+
+			v.SetSpeed(fzspeed[fzid]);
+			System::Error("Sosi : Signal einschalten");
+			int soundID;
+			int zufall = rand()%3;
+			v.EnableBlueLights(true);
+			Vector CarPos = v.GetPosition();
+			if (fzid > 50)
+				System::Error(parken[0]);
+
+			if (StrCompare(fzlocal::Signal(fzid),"NULL") == 0)	// Fz ohne Sosi -> raus hier
+				return;
+
+			if (StrCompare(fzlocal::Signal(fzid),"MULTI") == 0)	// Fz mit wechselndem Signalhorn
+			{
+				if ((fzid == 4)	|| (fzid ==47))			// ELW -> separates Hornset
+				{
+					switch(zufall)
+					{
+						case 0:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_land.wav", CarPos, true);
+							break;
+						case 1:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_stadt.wav", CarPos, true);
+							break;
+						case 2:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/tlf_mix.wav", CarPos, true);
+							break;
+					}
+				} else {
+					switch(zufall)
+					{
+						case 0:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_land.wav", CarPos, true);
+							break;
+						case 1:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_stadt.wav", CarPos, true);
+							break;
+						case 2:
+							soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/rtk_mix.wav", CarPos, true);
+							break;
+					}
+				}
+			} else {
+				soundID = Audio::PlaySample3D(fzlocal::Signal(fzid), CarPos, true);	// Signal spielen
+			}					
+				
+			GameObject mDummy =  Game::CreateObject("mod:Prototypes/Objects/Misc/empty.e4p", NAME_DUMMYOBJECT);
+			mDummy.Hide();
+			mDummy.SetPosition(CarPos);
+			mDummy.SetUserData(soundID);
+			mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, &v, soundID, false);
+			v.SetUserData(soundID);
+			v.AssignCommand(DUMMY_HASSIREN);
+		} else 
+
+			if (v.HasCommand(DUMMY_HASSIREN))
+			{
+				if (childID == 1)
+					v.EnableBlueLights(false);
+			
+			GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+			GameObject *obj = list.GetObject(0);
+			int ref = obj->GetUserData();
+			Audio::StopSample(ref);
+			
+			obj->PushActionDeleteOwner(ACTION_NEWLIST);
+			v.RemoveCommand(DUMMY_HASSIREN);
+			}
+	}
+};
+
+// 01.1
+object DUMMYUpdatePos : CommandScript
+{
+	DUMMYUpdatePos()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		GameObject mDummy(Caller);
+		Vector CarPos = v.GetPosition();
+		char * parken[1];
+		parken[0]=Target->GetName();
+		int fzid=fzlocal::fzid(Caller);
+		int x=snprintf(NAME_DUMMYOBJECT,10,dummymask,fzid);
+		
+		if (!v.HasCommand(DUMMY_HASSIREN))
+			return;
+
+		if (v.IsDestroyed() || !v.IsValid())
+		{
+			Audio::StopSample(childID);
+			mDummy.PushActionDeleteOwner(ACTION_NEWLIST);
+		} else {
+			mDummy.SetPosition(CarPos);
+			Audio::UpdatePos(childID, CarPos, true);
+			if (v.IsCurrentAction(EACTION_FINDPATH))
+			{
+				if (!v.HasCommand(DUMMY_FINDPATH))
+				{
+					v.AssignCommand(DUMMY_FINDPATH);
+				}
+			}
+			mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, Target, childID, false);
+		}
+
+		if (v.HasCommand(DUMMY_FINDPATH))
+		{
+			if (!v.IsCurrentAction(EACTION_FINDPATH) && v.GetNumActions() == 0)
+			{
+				v.RemoveCommand(DUMMY_HASSIREN);
+				v.RemoveCommand(DUMMY_FINDPATH);
+
+				Audio::StopSample(childID);
+
+				GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+				GameObject *obj = list.GetObject(0);
+				obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				v.RemoveCommand(DUMMY_HASSIREN);
+				v.SetSpeed(6.0f);
+				if (v.HasCommand(DUMMY_FINDPATH))
+					v.RemoveCommand(DUMMY_FINDPATH);
+			}
+		}
+	}
+};
+
+// 01.2
+object DUMMYDisableSiren : CommandScript
+{
+	DUMMYDisableSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		char * parken[1];
+		parken[0]=Caller->GetName();
+		int fzid=fzlocal::fzid(Caller);
+		int x=snprintf(NAME_DUMMYOBJECT,10,dummymask,fzid);
+
+		if (childID == 1)
+		{
+			v.EnableBlueLights(false);
+		}
+
+		if (!v.HasCommand(DUMMY_HASSIREN))
+			return;
+
+		GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+		GameObject *obj = list.GetObject(0);
+		int ref = obj->GetUserData();
+		Audio::StopSample(ref);
+		obj->PushActionDeleteOwner(ACTION_NEWLIST);
+		v.RemoveCommand(DUMMY_HASSIREN);
+		if (v.HasCommand(DUMMY_FINDPATH))
+			v.RemoveCommand(DUMMY_FINDPATH);
+		v.SetSpeed(6.0f);
+	}
+};
+
+// 01.3
+object DUMMYFindPath : CommandScript
+{
+	DUMMYFindPath()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+// 01.4
+object DUMMYHasSiren : CommandScript
+{
+	DUMMYHasSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+object CreateNewPerson: CommandScript
+{
+
+	CreateNewPerson()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//Erzeuge einen neue Person
+
+		System::Error("AddPerson Start");
+
+		Vehicle vec(Target);
+		int zufall = rand()%2;
+		bool anderwache;
+		bool anderwerkstatt=false;
+		bool poscheck=false;
+		ActorList place;
+		
+		if (childID > 200)
+		{
+			childID=childID-200;
+			poscheck=true;
+		}
+	
+		if (childID > 100)
+		{
+			childID=childID-100;
+			anderwache=(!vec.IsHidden());
+			if (anderwache)
+				System::Error("An der Wache");
+			else 
+				System::Error("Nachbarfz");
+		} else {
+			anderwache=false;
+		}
+
+		int fzid=fzlocal::fzid(Target);
+
+		switch (childID)
+		{
+			case 1:
+			//EL
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/Einsatzl.e3p", Target->GetName());
+			break;
+
+			case 2:
+			//FWM
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighternorm_upgrade2.e4p", Target->GetName());
+			switch (fzid)
+			{
+				case 3:
+					place=Game::GetActors("lf_entry");
+					break;
+				case 4:
+					place=Game::GetActors("tlf_entry");
+					break;
+				case 5:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 6:
+					place=Game::GetActors("dlk_entry");
+					break;
+				case 15:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 39:
+					place=Game::GetActors("lkw_entry");
+					break;
+				case 40:
+					place=Game::GetActors("elw_entry");
+					break;
+			}
+			p.AssignCommand("geraetemenue");
+			break;
+
+			case 3:
+			//Polizist
+			switch(zufall)
+			{
+				case 0:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/policeman_upgraded2_m.e4p", Target->GetName());
+				break;
+				case 1:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/policeman_upgraded2_f.e4p", Target->GetName());
+				break;
+			}
+			place=Game::GetActors("police_entry");
+			break;
+
+			case 4:
+			//Shooter
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/bepo.e4p", Target->GetName());
+			place=Game::GetActors("police_entry");
+			break;
+
+			case 5:
+			//Siemens Techniker
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/engineer_upgraded2.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_THW_CASE);
+			break;
+
+			case 6:
+			//ADAC
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/adac.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_THW_CASE);
+			break;
+
+			case 7:
+			//DB-NFM
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/nfm.e4p",  Target->GetName());
+			break;
+
+			case 8:
+			//NA
+			switch(1)
+			{
+				case 0:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_f.e4p", Target->GetName());
+				break;
+				case 1:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_m.e4p", Target->GetName());
+				break;
+			}
+			p.SetEquipment(EQUIP_EMERGENCY_CASE);
+			p.AssignCommand("rufe_manv");
+			p.SetAutoHealDistance(0.0f);
+			place=Game::GetActors("hospital_entry");
+			break;
+
+			case 9:
+			//RA
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/paramedic02_upgraded2.e4p", Target->GetName());
+			place=Game::GetActors("hospital_entry");
+			break;
+
+			case 10:
+			//Bestatter
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/bestatter.e4p",  Target->GetName());
+			break;
+
+			case 11:
+			//Sharpshooter
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Police/sharpshooter_upgraded2.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_RIFLE);
+			break;
+
+			case 12:
+			//LNA
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/LNA.e4p", Target->GetName());
+			p.SetEquipment(EQUIP_EMERGENCY_CASE);
+			p.AssignCommand("rufe_seg");
+			p.AssignCommand("lna_start_triage");
+			p.SetAutoHealDistance(0.0f);
+			place=Game::GetActors("hospital_entry");
+			break;
+
+			case 13:
+			//FWM
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefightermask_upgraded2.e4p",  Target->GetName());
+			p.AssignCommand("ggv_abdichten");
+			p.AssignCommand("GetMM");
+			p.AssignCommand("GetGZ");
+			p.AssignCommand("geraetemenue");
+			break;
+
+			case 14:
+			//Diver
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/diver_upgraded2.e4p",  Target->GetName());
+			p.AssignCommand("geraetemenue");
+			break;
+
+			case 15:
+			//ABC
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighterabc_upgraded2.e4p",  Target->GetName());
+			p.AssignCommand("ggv_abdichten");
+			p.AssignCommand("GetMM");
+			p.AssignCommand("GetGZ");
+			p.AssignCommand("geraetemenue");
+			break;
+
+			case 16:
+			//Kampfmittelraeumer
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/kmrd.e4p",  Target->GetName());
+			p.AssignCommand("Repair");
+			p.SetEquipment(EQUIP_LAPTOP);
+			break;
+
+			case 17:
+			//Kampfmittelraeumer
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/kmrd.e4p",  Target->GetName());
+			p.SetEquipment(EQUIP_TVCAMERA);
+			break;
+
+			case 18:
+			//SEG-Sani
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/drk_helfer.e4p",  Target->GetName());
+			p.RemoveCommand("MoveTo");
+			p.AssignCommand("SetZelt");
+			break;
+
+			case 19:
+			//SEG-Arzt
+			switch(zufall)
+			{
+				case 0:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_f.e4p", Target->GetName());
+				break;
+				case 1:
+				Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_m.e4p", Target->GetName());
+				break;
+			}
+			p.SetEquipment(EQUIP_EMERGENCY_CASE);
+			p.SetAutoHealDistance(0.0f);
+			break;
+
+			case 25:
+			//Siemens Techniker
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/TEC/adac.e4p",  "Mechaniker");
+			place=Game::GetActors("werkstatt_entry");
+			anderwache=true;
+			anderwerkstatt=true;
+			break;
+
+			case 99:
+			//Alarmgeber-Objekt
+			Person p = Game::CreatePerson("mod:Prototypes/Persons/Fire Department/firefighternorm_upgrade2.e4p", "5tongeber");
+			p.SetCommandable(false);
+			anderwache=true;
+			place=Game::GetActors("platz2");
+			p.Hide();
+			return;
+			break;
+		}
+
+		p.SetUserData(0);
+		if (Game::IsMultiplayer())
+			p.SetPlayerMP(Caller->GetPlayerMP());
+
+		if (anderwache)
+		{
+			Actor *Entry=place.GetActor(0);
+			Vector pos=Entry->GetPosition();
+			GameObject *pers(p);
+			Game::FindFreePosition(pers,pos,100);
+			p.SetCommandable(true);
+			p.SetPosition (pos);
+			if (anderwerkstatt) 
+			{
+				p.PushActionMove(ACTION_NEWLIST,Target,TARGET_PASSENGERDOOR);
+				p.PushActionTurnTo(ACTION_APPEND,Target);
+				p.PushActionRepair(ACTION_APPEND,Caller);
+				p.PushActionExecuteCommand(ACTION_APPEND,"sendhome",Caller,0,false);
+				p.PushActionMove(ACTION_APPEND,pos);
+				p.PushActionWait(ACTION_APPEND,1.0);
+				p.PushActionDeleteOwner(ACTION_APPEND);
+			} else {
+				if (childID !=99)
+					p.PushActionExecuteCommand(ACTION_NEWLIST,"entercar",Target,0,false);			
+			}
+		} else {
+			System::Error("Einsatzkraft ins Fahrzeug setzen");
+			vec.AddPassenger(&p);
+		}
+		System::Error("AddPerson Ende");
+	}
+};
+
+//
+// Abschnitt FwGeraete -> Kommandoschnittstelle zum Geraeteaufbau
+//
+
+object SetVerteiler : CommandScript
+{
+	SetVerteiler()
+	{
+		SetCursor("Verteiler");
+		SetIcon("Verteiler");
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+		;
+		return fzlocal::has_equip(vl.GetVehicle(i),10);
+	}
+	
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool show=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),10));
+		show=(show && Caller->HasCommand("umkleidemenue"));
+		return show;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || (Caller->GetID() == Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,10))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,100,false);
+	}
+};
+
+object Schnellangriff : CommandScript
+{
+	Schnellangriff()
+	{
+		SetCursor("schnella");
+		SetIcon("schnella");
+//		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets (ACTOR_VEHICLE | ACTOR_PERSON);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),15);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		bool zeig;
+		if (Caller->GetType() == ACTOR_PERSON)
+		{
+			Person p(Caller);
+			VehicleList vl(Caller->GetName());
+			for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+			zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),15));
+		} else if (Caller->GetType() == ACTOR_VEHICLE)
+				zeig=true;
+			else 
+				zeig=false;		
+		zeig=(zeig && Caller->HasCommand("umkleidemenue"));
+		return zeig;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+		
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (v.GetPassengers().GetNumPersons() == 0)
+				return false;
+		} else {
+			Person p(Caller);
+			if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+				return false;
+		
+			switch (p.GetPersonType())
+			{
+				case PT_FIREFIGHTER_NORMAL:
+				case PT_FIREFIGHTER_MASK:
+					break;
+				default:
+					return false;
+			}
+			
+	    		VehicleList vl(Caller->GetName());
+			Vehicle v=vl.GetVehicle(0);
+		}
+		if (fzlocal::has_equip(&v,15))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			PersonList pl=v.GetPassengers();
+			Person p=pl.GetPerson(1);
+			p.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+			p.PushActionExecuteCommand(ACTION_APPEND,"FwGeraet_raus",Target,105,false);
+		} else {
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,105,false);
+		}
+	}
+};
+
+object SetMonitor : CommandScript
+{
+	SetMonitor()
+	{
+		SetCursor("Monitor");
+		SetIcon("Monitor");
+//		SetGroupID(CGROUP_DRAW_WEAPON);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),11);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),11));
+		return zeig;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,11))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,101,false);
+	}
+};
+
+object SetPylone : CommandScript
+{
+	SetPylone()
+	{
+		SetCursor("Pylone");
+		SetIcon("Pylone");
+//		SetGroupID(CGROUP_DRAW_WEAPON);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),13);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),13));
+		return zeig;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_POLICEMEN:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,13))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,103,false);
+	}
+};
+
+object AutoUmleiten : CommandScript
+{
+	AutoUmleiten()
+	{
+		SetCursor("Pylone");
+		SetIcon("Pylone");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if (!Caller->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//	Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,110,false);
+		Caller->PushActionRedirect(ACTION_NEWLIST);
+	}
+};
+
+object SetZelt : CommandScript
+{
+	SetZelt()
+	{
+		SetCursor("segzelt");
+		SetIcon("segzelt");
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),18);
+	}
+
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		return !Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),18);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,18))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,108,false);
+	}
+
+
+};
+
+object SetLima : CommandScript
+{
+	SetLima()
+	{
+		SetCursor("lima");
+		SetIcon("lima");
+//		SetGroupID(CGROUP_DRAW_WEAPON);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),14);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),14));
+		return zeig;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,14))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,104,false);
+	}
+};
+
+object ggv_abdichten : CommandScript
+{
+	ggv_abdichten()
+	{
+		SetCursor("abdichten");
+		SetIcon("abdichten");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),19));
+		return zeig;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),19);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_FIREFIGHTER_ABC:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (!fzlocal::has_equip(&v,19))
+			return false;
+		else 
+		{	
+			Vehicle v(Target);
+			bool leck=(v.GetEnergy() < v.GetMaxEnergy()) && (v.GetUserData() != 4);
+			return leck;
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,109,false);
+	}
+};
+
+object GetGZ : CommandScript
+{
+	GetGZ()
+	{
+		SetCursor("Geiger");
+		SetIcon("Geiger");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),16));
+		return zeig;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),16);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_FIREFIGHTER_ABC:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,16))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,106,false);
+	}
+};
+
+object GetMM : CommandScript
+{
+	GetMM()
+	{
+		SetCursor("Gasmultimeter");
+		SetIcon("Gasmultimeter");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),17));
+		return zeig;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),17);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_FIREFIGHTER_ABC:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,17))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,107,false);
+	}
+};
+
+object GetB : CommandScript
+{
+	GetB()
+	{
+		SetCursor("brohr");
+		SetIcon("brohr");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),21));
+		zeig=(show && Caller->HasCommand("umkleidemenue"));
+		return zeig;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),21);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_FIREFIGHTER_ABC:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,21))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_EQUIPMENTDOOR);
+		
+		if (fzlocal::take_equip(Target,21))
+			Caller->PushActionGetEquipment(ACTION_INSERT, Target, EQUIP_FIREHOSE);
+		Caller->PushActionTurnTo(ACTION_INSERT, Target);
+		Caller->PushActionMove(ACTION_INSERT, TargetPos);
+		Caller->SetUserData(111);
+	}
+};
+
+object SetTS : CommandScript
+{
+	SetTS()
+	{
+		SetCursor("tragks");
+		SetIcon("tragks");
+//		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return fzlocal::has_equip(vl.GetVehicle(i),12);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++);
+		bool zeig=(!Caller->IsEquipped() && fzlocal::has_equip(vl.GetVehicle(i),12));
+		return zeig;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (fzlocal::has_equip(&v,12))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Caller,102,false);
+	}
+};
+
+object geraet_entnehmen : CommandScript
+{
+	geraet_entnehmen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+			return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		bool erg=fzlocal::take_equip(Caller,childID+10);
+	}
+};
+
+object geraet_einladen : CommandScript
+{
+	geraet_einladen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		bool erg=fzlocal::put_equip(Caller,childID+10);
+		if (!erg)
+			System::Log("Einladen fehlgeschlagen");
+	}
+};
+
+/// Patrouillenfunktion
+
+object Fahre_Patrouille : CommandScript
+{
+	Fahre_Patrouille()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle stw(Target);
+		if (stw.HasCommand("ich_bin_nicht_frei"))
+			return;
+		Vector Pos;
+		ActorList al;
+		Actor a;
+
+		float warten=ChildID*1.0;
+		int fzid=((fzlocal::fzid(&stw)-7)*4)+1;
+		stw.PushActionWait(ACTION_NEWLIST,warten);
+		stw.PushActionExecuteCommand(ACTION_APPEND,"mannschaft_rufen",&stw,110,false);
+		stw.PushActionExecuteCommand(ACTION_APPEND,"check_ms_vollzaehlig",&stw,0,false);
+		stw.PushActionExecuteCommand(ACTION_APPEND,"fzfrei",&stw,1,false);
+		for (int ziel=fzid;ziel<(fzid+4);ziel++)
+		{
+			al=Game::GetActors(skennung[ziel]);
+			a=*al.GetActor(0);
+			Pos=a.GetPosition();
+			Game::FindFreePosition(&stw,Pos,100);			
+			stw.PushActionMove(ACTION_APPEND,Pos);
+		}
+		stw.PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",&stw,0,false);
+	}
+};
+
+object Patrouille_frei : CommandScript
+{
+	Patrouille_frei()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle stw(Target);
+		stw.PushActionExecuteCommand(ACTION_APPEND,"Fahre_Patrouille",&stw,ChildID,false);
+	}
+};
+
+///
+/// Nachbarfz vor Werkstattfahrt sichtbar machen
+///
+
+object Fz_ranholen : CommandScript
+{
+
+	Fz_ranholen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle stw(Caller);
+		if (stw.IsHidden())
+		{
+			int fzid=fzlocal::fzort(&stw); // Fz-Standort
+			if (fzid > 50)
+				fzid=fzid-50;
+			GameObjectList ol;
+			Game::CollectObstaclesOnVirtualObject( fzlocal::stellplatz(fzid),ol,ACTOR_VEHICLE);
+			if (ol.GetNumObjects()>0)
+			{
+				stw.PushActionWait(ACTION_INSERT,1.0f);
+				stw.PushActionExecuteCommand(ACTION_INSERT,"fz_ranholen",Target,childID,false);
+				System::Error("fz raus: ausfahrt blockiert");
+				return;		// unsauber aber praktisch
+			} else {
+				Vector nachbarpos=stw.GetPosition();
+				Game::FindFreePosition(&stw,nachbarpos,100);
+				stw.SetPosition(nachbarpos);
+				stw.Show();
+			}
+		}
+	}
+};
+
+
+//
+// Class FZLOCAL -> stellt Funktionen zum Zugriff auf fzspezifische Datenbank bereit
+//
+
+const int MAX_FZ = 75;
+char fzeinsatz[MAX_FZ*25];
+const char *bmask="%s000000000000000000000";
+const char *bel="                                                                    ";
+
+class fzlocal:CommandScript
+{
+	public:
+
+const char *kennung(int i)
+{
+	return fzkennung[i];
+}
+
+const char *fae(int i)
+{
+	return fzfae[i];
+}
+
+const char *dusa(int i)
+{
+	return fzdusa[i];
+}
+
+
+const char *Signal(int i)
+{
+	return fzsignal[i];
+}
+
+const char *stellplatz(int i)
+{
+	return pkennung[i];
+}
+
+int richtung(int i)
+{
+	return rkennung[i];
+}
+
+
+int fzid(Actor *Caller)
+{
+	const char * fz[1];
+	fz[0]=Caller->GetName();
+	int id=int(fz[0][11])-32;
+	return id;
+}
+
+int fzort(Actor *Caller)
+{
+	const char * fz[1];
+	fz[0]=Caller->GetName();
+	int id=int(fz[0][7])-32;
+	return id;
+}
+
+float verz(GameObject *Caller)
+{
+	int i=fzort(Caller);
+	Vehicle v(Caller);
+	float warte;
+
+	if (i<51)
+		warte=0;
+	else 
+		warte=(verzfakt * 10/v.GetSpeed()) / verz[i-50];
+	return warte;
+}
+
+void fz_beladen(Actor *fz)
+{
+	int i=fzid(fz);
+	int id=i*25;
+	int x=snprintf(bel,22,bmask,fzladung[i]);
+	for (int x=0;x<22;x++)
+		fzeinsatz[id+x]=bel[x];
+}
+
+bool has_equip(Actor *fz, int x)
+{
+	int id=fzid(fz);
+	if (id >= MAX_FZ)
+		return false;
+	id=id*25+x;
+	if ((int(fzeinsatz[id])-48) > 0)
+		return true;
+	else
+		return false;
+}
+
+bool take_equip(Actor *fz, int x)
+{
+	int id=fzid(fz);
+	id=id*25+x;
+	if ((int(fzeinsatz[id])-48) > 0)
+	{
+		int anz=int (fzeinsatz[id])-49;
+		fzeinsatz[id]=char(anz+48);
+		return true;
+	} else 
+		return false;		
+}
+
+bool put_equip(Actor *fz, int x)
+{
+	int id=fzid(fz);
+	int i=id*25+x;
+	if (int(fzeinsatz[i]) < int(fzladung[id][x]))
+	{
+		int anz=int (fzeinsatz[i])-47;
+		fzeinsatz[i]=char(anz+48);
+		return true;
+	} else 
+		return false;		
+}
+
+/// Distanzbestimmung
+
+float Distanz(Vehicle pv, Actor *Target)
+{
+	Vector p1=pv.GetPosition();
+	Vector p2=Target->GetPosition();
+	float d1=Math::dist2(p1.x,p1.y,p2.x,p2.y);
+	if (d1<0)
+		d1=d1*-1.0;
+	return d1;
+}
+
+};
+
+//
+// Localizer : ab hier loke Infos -> Abschnitt kann bei Anpassungen komplett ausgetauscht werden
+//
+		const char * fzkennung[MAX_FZ];
+		fzkennung[1]="nef";
+		fzkennung[2]="rtw";
+		fzkennung[3]="lf";
+		fzkennung[4]="tlf";
+		fzkennung[5]="rw";
+		fzkennung[6]="dlk";
+		fzkennung[7]="stw1";
+		fzkennung[8]="stw2";
+		fzkennung[9]="stw3";
+		fzkennung[10]="mtw";
+		fzkennung[11]="asf";
+		fzkennung[12]="ch25";
+		fzkennung[13]="tjeep";
+		fzkennung[14]="rtwm";
+		fzkennung[15]="gw_m";
+		fzkennung[16]="kran";
+		fzkennung[17]="bsw";
+		fzkennung[18]="hummel";
+		fzkennung[19]="zue41";
+		fzkennung[20]="gtlfbb";
+		fzkennung[21]="nefbb";
+		fzkennung[22]="rtwbb";
+		fzkennung[23]="rtw7831";
+		fzkennung[24]="rtw4831";
+		fzkennung[25]="kb9183";
+		fzkennung[26]="7821";
+		fzkennung[27]="ktw";
+		fzkennung[28]="8481";
+		fzkennung[29]="8482";
+		fzkennung[30]="8211";
+		fzkennung[31]="8212";
+		fzkennung[32]="LNAJeep";
+		fzkennung[33]="DBNFM";
+		fzkennung[34]="Bomber";
+		fzkennung[35]="SEG-RD";
+		fzkennung[36]="SEG-Arzt";
+		fzkennung[37]="SEG-Truck";
+		fzkennung[38]="LF-Sied";
+		fzkennung[39]="lkw";
+		fzkennung[40]="elw";
+		fzkennung[41]="dekonp";
+		fzkennung[42]="8471";
+		fzkennung[43]="8472";
+		fzkennung[44]="8473";
+		fzkennung[45]="8483";
+		fzkennung[47]="8484";
+		fzkennung[46]="7331";
+
+		const char * fzladung[MAX_FZ];
+		// definiert die Anzahl der verlasteten Teile pro Einsatzmittel
+		// 1. Stelle PA
+		// 2. Stelle CSA
+		// 3. Stelle Taucheranzuege
+		// 4. Stelle Strahlrohre
+		// 5. Stelle Tankinhalt in 1000 l
+		// 6. Stelle Rettungsschere
+		// 7. Stelle Kettensaege
+		// 8. Stelle
+		// 9. Stelle
+		// 10. Stelle
+		// 11. - 20. Stelle -> FwGeraete (noch nicht implementiert)
+		const availcheck[0]="verteiler_an_bord";
+		const availcheck[1]="monitor_an_bord";
+		const availcheck[2]="ts_an_bord";
+		const availcheck[3]="pylone_an_bord";
+		const availcheck[4]="lima_an_bord";
+		const availcheck[5]="schnellangriff_an_bord";
+		const availcheck[6]="gz_an_bord";
+		const availcheck[7]="mm_an_bord";
+		const availcheck[8]="zelt_an_bord";
+		const availcheck[9]="dichtkissen_an_bord";
+		const availcheck[10]="auto_umleiten";
+		// Jede Stelle ein Zeichen, dessen ASCII-Code = 32 + Wert
+		// Bei Eintreffen Wache wird die definierte Ladung als Einsatzmittel verlastet.
+		// Im Verlauf des Einsatzes werden die Zaehler entsprechend modifiziert
+		fzladung[3]="4204111890200311000112";
+		fzladung[4]="4003200890110001000011";
+		fzladung[5]="2020011890000310000010";
+		fzladung[6]="2000000890000000000010";
+		fzladung[7]="0000000890000300000010";
+		fzladung[8]="0000000890000300000010";
+		fzladung[9]="0000000890000300000010";
+		fzladung[10]="0000000890000300000010";
+		fzladung[15]="N?00000890000000110110";
+		fzladung[19]="4003111890101301000011";
+		fzladung[20]="2003500890110002000011";
+		fzladung[28]="4003100890101301000011";
+		fzladung[29]="4003100890101301000011";
+		fzladung[30]="2003200890100001000011";
+		fzladung[31]="2003200890100001000011";
+		fzladung[38]="4003101890101001000011";
+		fzladung[39]="3000002890000300000316";
+		fzladung[35]="0000000890000000001010";
+		fzladung[40]="4000000890000410000010";
+		fzladung[41]="3300000890000000110010";
+		fzladung[42]="4003100890101300000011";
+		fzladung[43]="4003100890101300000011";
+		fzladung[44]="4003100890101300000011";
+		fzladung[46]="2000000890000000000010";
+		fzladung[45]="4003100890101301000011";
+		fzladung[47]="4003100890101301000011";
+
+		const int MAX_PLATZ=25;
+		const char * pkennung[MAX_PLATZ];
+		pkennung[1]="nord";		// OKZ 51 = Bad Berleburg
+		pkennung[2]="nord1";		// OKZ 52 =
+		pkennung[3]="ost";		// OKZ 53 = Langewiese
+		pkennung[4]="ost1";		// OKZ 54 = Olsberg
+		pkennung[5]="ost2";		// OKZ 55 = Korbach
+		pkennung[6]="sued";		// OKZ 56 = Zueschen
+		pkennung[7]="west";		// OKZ 57 = Langewiese
+		pkennung[8]="west1";		// OKZ 58 =
+		pkennung[9]="kran";		// OKZ 59 = Siedlingshausen
+		pkennung[10]="rtwm";		// OKZ 60 = Medebach
+		pkennung[11]="rtwm";		// OKZ 61 = Medebach
+		pkennung[12]="rtwm";		// OKZ 62 = Medebach
+		pkennung[13]="rtwm";		// OKZ 63 = Medebach
+		pkennung[14]="ch25";		// OKZ 64 = Siegen
+		pkennung[15]="ost";		// OKZ 64 = Siegen
+		pkennung[16]="rtwm";		// OKZ 64 = Siegen
+		pkennung[17]="kran";		// OKZ 64 = Siegen
+		pkennung[18]="kran";		// OKZ 64 = Siegen
+		pkennung[19]="ost";		// OKZ 64 = Siegen
+		pkennung[20]="ost";		// OKZ 64 = Siegen
+		pkennung[21]="nord";		// OKZ 64 = Siegen
+
+		const char * skennung[MAX_PLATZ];
+		skennung[0]="nef";		// OKZ 51 = Bad Berleburg
+		skennung[1]="ost1";		// OKZ 52 =
+		skennung[2]="nord";		// OKZ 53 = Langewiese
+		skennung[3]="west1";		// OKZ 54 = Olsberg
+		skennung[4]="elw";		// OKZ 55 = Korbach
+		skennung[5]="west";		// OKZ 56 = Zueschen
+		skennung[6]="rw";		// OKZ 57 = Langewiese
+		skennung[7]="mtw";		// OKZ 58 =
+		skennung[8]="sued";		// OKZ 59 = Siedlingshausen
+		skennung[9]="kran";		// OKZ 60 = Medebach
+		skennung[10]="rtwm";		// OKZ 61 = Medebach
+		skennung[11]="ost";		// OKZ 62 = Medebach
+		skennung[12]="nef";		// OKZ 53 = Bad Berleburg
+		skennung[13]="ost1";		// OKZ 64 =
+		skennung[14]="nord";		// OKZ 65 = Langewiese
+		skennung[15]="west1";		// OKZ 66 = Olsberg
+		skennung[16]="elw";		// OKZ 67 = Korbach
+		skennung[17]="west";		// OKZ 68 = Zueschen
+		skennung[18]="rw";		// OKZ 69 = Langewiese
+		skennung[19]="mtw";		// OKZ 70 = Altastenberg
+		skennung[20]="mtw";		// OKZ 70 = Altastenberg
+
+
+const float verzfakt=30.0;
+const int maxverz=25;
+const float verz[maxverz];
+verz[1]=1;	// Bad Berleburg entspricht 20 km
+verz[2]=0;
+verz[3]=3;	// Langewiese
+verz[4]=1.0;	// Olsberg
+verz[5]=0.75;	// Korbach
+verz[6]=4;	// Zueschen
+verz[7]=4;	// Groenebach
+verz[8]=0;	// 
+verz[9]=2.5;	// Siedlingshausen
+verz[10]=1.1;	// Medebach
+verz[11]=4;	// Altastenberg
+verz[12]=7;	// Enkeringhausen
+verz[13]=2.5;	// Niedersfeld
+verz[14]=0.4;   // Siegen
+verz[15]=0.75;	// Schmallenberg
+verz[16]=5;	// Elkeringhausen
+verz[17]=3;	// Altenfeld
+verz[18]=1.7;	// Silbach
+verz[19]=4;	// Altastenberg
+verz[20]=3;	// Neuastenberg
+verz[21]=0.2;	// Kassel
+
+		const int rkennung[MAX_FZ];
+		rkennung[3]=2;
+		rkennung[4]=2;
+		rkennung[5]=1;
+		rkennung[6]=2;
+		rkennung[15]=1;
+		rkennung[39]=2;
+		rkennung[40]=2;
+
+		const char * fzsignal[MAX_FZ];
+		fzsignal[1]="MULTI";
+		fzsignal[2]="MULTI";
+		fzsignal[3]="mod:Audio/FX/Sirens/lf16.wav";
+		fzsignal[4]="MULTI";
+		fzsignal[5]="mod:Audio/FX/Sirens/rw.wav";
+		fzsignal[6]="mod:Audio/FX/Sirens/dlk.wav";
+		fzsignal[7]="mod:Audio/FX/Sirens/stw.wav";
+		fzsignal[8]="mod:Audio/FX/Sirens/stw.wav";
+		fzsignal[9]="mod:Audio/FX/Sirens/stw.wav";
+		fzsignal[10]="MULTI";
+		fzsignal[11]="NULL";
+		fzsignal[12]="NULL";
+		fzsignal[13]="NULL";
+		fzsignal[14]="MULTI";
+		fzsignal[15]="mod:Audio/FX/Sirens/dekon.wav";
+		fzsignal[16]="mod:Audio/FX/Sirens/ehorn.wav";
+		fzsignal[17]="NULL";
+		fzsignal[18]="NULL";
+		fzsignal[19]="mod:Audio/FX/Sirens/lfz.wav";
+		fzsignal[20]="mod:Audio/FX/Sirens/gtlf.wav";
+		fzsignal[21]="MULTI";
+		fzsignal[22]="mod:Audio/FX/Sirens/rtwbb.wav";
+		fzsignal[23] ="MULTI";
+		fzsignal[24]="MULTI";
+		fzsignal[25]="MULTI";
+		fzsignal[26]="MULTI";
+		fzsignal[27]="mod:Audio/FX/Sirens/itw.wav";
+		fzsignal[28]="mod:Audio/FX/Sirens/rw.wav";
+		fzsignal[29]="mod:Audio/FX/Sirens/dlk.wav";
+		fzsignal[30]="mod:Audio/FX/Sirens/tlf818.wav";
+		fzsignal[31]="mod:Audio/FX/Sirens/tlf818.wav";
+		fzsignal[32]="mod:Audio/FX/Sirens/JeepLNA.wav";
+		fzsignal[33]="MULTI";
+		fzsignal[34]="mod:Audio/FX/Sirens/bosch.wav";
+		fzsignal[35]="mod:Audio/FX/Sirens/stw.wav";
+		fzsignal[36]="mod:Audio/FX/Sirens/stw.wav";
+		fzsignal[37]="mod:Audio/FX/Sirens/gtlf.wav";
+		fzsignal[38]="mod:Audio/FX/Sirens/lfz.wav";
+		fzsignal[39]="mod:Audio/FX/Sirens/lfz.wav";
+		fzsignal[40]="mod:Audio/FX/Sirens/elw.wav";
+		fzsignal[41]="mod:Audio/FX/Sirens/bosch.wav";
+		fzsignal[42]="mod:Audio/FX/Sirens/bosch.wav";
+		fzsignal[43]="mod:Audio/FX/Sirens/bosch.wav";
+		fzsignal[44]="mod:Audio/FX/Sirens/dlk.wav";
+		fzsignal[45]="mod:Audio/FX/Sirens/itw.wav";
+		fzsignal[47]="MULTI";
+		fzsignal[46]="mod:Audio/FX/Sirens/gtlf.wav";
+		fzsignal[48]="NULL";
+
+const int maxfae=55;
+const char * fzfae[maxfae];
+
+fzfae[0]="mod:Audio/FX/nef.wav"; 
+fzfae[1]="mod:Audio/FX/nef7821.wav"; 
+fzfae[2]="mod:Audio/FX/nefsi4821.wav";
+fzfae[3]="mod:Audio/FX/rtw1.wav";
+fzfae[4]="mod:Audio/FX/rtw2.wav";
+fzfae[5]="mod:Audio/FX/rtw7831.wav"; 
+fzfae[6]="mod:Audio/FX/rtw4831.wav"; 
+fzfae[7]="mod:Audio/FX/ktw.wav"; 
+fzfae[8]="mod:Audio/FX/rtw9183.wav";
+fzfae[9]="mod:Audio/FX/rtwsi4831.wav"; 
+fzfae[10]="mod:Audio/FX/rth.wav";
+fzfae[11]="mod:Audio/FX/lgzuesch.wav"; 
+fzfae[12]="mod:Audio/FX/tlfbb.wav";
+fzfae[13]="mod:Audio/FX/lggroene.wav"; 
+fzfae[14]="mod:Audio/FX/lglangew.wav"; 
+fzfae[15]="mod:Audio/FX/dekon.wav"; 
+fzfae[16]="mod:Audio/FX/siemens.wav";
+fzfae[17]="mod:Audio/FX/thw_kran.wav"; 
+fzfae[18]="mod:Audio/FX/lf.wav"; 
+fzfae[19]="mod:Audio/FX/lgsiedl.wav"; 
+fzfae[20]="mod:Audio/FX/dlk.wav";
+fzfae[21]="mod:Audio/FX/wasser.wav";
+fzfae[22]="mod:Audio/FX/lz_f.wav";
+fzfae[23]="mod:Audio/FX/lz_vu.wav";
+fzfae[24]="mod:Audio/FX/lna.wav";
+fzfae[25]="mod:Audio/FX/nfm.wav";
+fzfae[26]="mod:Audio/FX/gong_fw_wache.wav";
+fzfae[27]="mod:Audio/FX/seg.wav";
+fzfae[28]="mod:Audio/FX/lz_gong.wav";
+fzfae[29]="mod:Audio/FX/lz_gong.wav";
+fzfae[30]="mod:Audio/FX/lg_ehsn.wav";
+fzfae[31]="mod:Audio/FX/lg_afeld.wav";
+fzfae[32]="mod:Audio/FX/lg_sbach.wav";
+fzfae[33]="mod:Audio/FX/lg_aab.wav";
+fzfae[34]="mod:Audio/FX/dlkolsberg.wav";
+fzfae[35]="mod:Audio/FX/lg_nab.wav";
+fzfae[36]="mod:Audio/FX/gong_fw_wache.wav";
+fzfae[49]="mod:Audio/FX/lz_gong.wav";
+
+const char * fzdusa[maxfae];
+
+fzdusa[0]="Einsatz Notarzt 8-82-1";
+fzdusa[1]="Einsatz Notarzt 7-82-1";
+fzdusa[2]="Zu Ihnen kommt der Notarzt Bad Berleburg";
+fzdusa[3]="Notfalleinsatz RTW 8-83-1";
+fzdusa[4]="Notfalleinsatz RTW 11-83-1";
+fzdusa[5]="Notfalleinsatz RTW 7-83-1";
+fzdusa[6]="Notfalleinsatz RTW 4-83-1";
+fzdusa[7]="Notfalleinsatz KTW 8-85-1";
+fzdusa[8]="Zu Ihnen kommt der Rot-Kreuz Korbach 91/83";
+fzdusa[9]="Zu Ihnen kommt der RTW Bad Berleburg";
+fzdusa[10]="Zu Ihnen kommt der Christoph 25";
+fzdusa[11]="Einsatz Löschgruppe Züschen";
+fzdusa[12]="Einsatz GTLF Feuerwehr Bad Berleburg";
+fzdusa[13]="Einsatz Löschgruppe Grönebach";
+fzdusa[14]="Einsatz Löschgruppe Langewiese";
+fzdusa[15]="Einsatz für den Gerätewagen-Messtechnik";
+fzdusa[16]="Einsatz für den Service-Techniker der Fa. Siemens";
+fzdusa[17]="Einsatz für den Kran des THW";
+fzdusa[18]="Einsatz Feuerwehr Winterberg";
+fzdusa[19]="Einsatz Löschgruppe Siedlinghausen";
+fzdusa[20]="Einsatz für die Drehleiter Winterberg! Menschenleben in Gefahr";
+fzdusa[21]="Einsatz Wasserrettung Winterberg";
+fzdusa[22]="Brandeinsatz für den Löschzug Winterberg";
+fzdusa[23]="Hilfeleistungseinsatz für den Löschzug Winterberg";
+fzdusa[24]="Einsatz Leitender Notarzt Hochsauerland";
+fzdusa[25]="Einsatz für den DB Notfallmanager";
+fzdusa[26]="Kampfmittelräumdienst an der EStelle erforderlich";
+fzdusa[27]="Einsatz SEG Rettung";
+fzdusa[28]="Gefahrguteinsatz Löschzug Winterberg";
+fzdusa[30]="Einsatz Löschgruppe Elkeringhausen";
+fzdusa[31]="Einsatz Löschgruppe Altenfeld";
+fzdusa[32]="Einsatz Löschgruppe Silbach";
+fzdusa[33]="Einsatz Löschgruppe Altastenberg";
+fzdusa[35]="Einsatz Löschgruppe Neuastenberg";
+fzdusa[29]="Einsatz Dekon-Fz Fw Schmallenberg";
+fzdusa[34]="Einsatz Drehleiter Olsberg";
+fzdusa[36]="Einsatz Christoph 7";
+fzdusa[49]="";

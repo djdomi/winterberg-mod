@@ -1,0 +1,1100 @@
+ // ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script fz_actions
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "WT_SoSi";
+
+object FzInspektion : CommandScript
+{
+	
+	FzInspektion()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		// System::Log("Inspektion %s",v.GetName());
+		float dam=v.GetEnergy()/v.GetMaxEnergy()*100;
+		if (dam < 50 || ChildID==60)
+		{
+			v.AssignCommand("ich_bin_nicht_frei");
+			v.SetCommandable(false);
+			// System::Log("Fz ausser Dienst %s",v.GetName());
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"Fzreparieren",Caller,ChildID,false);
+		} else if (v.IsChildEnabled("INFEKT")) {
+			int h,m,s;
+			// System::Log("Fz Desinfektion %s",v.GetName());
+			Game::GetTime(h,m,s);
+			if (h>20)
+				h-=24;
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"dienstbeginn",Caller,h+3,false);
+		} else {
+			if (!v.HasCommand("feierabend"))
+				v.RemoveCommand("ich_bin_nicht_frei");
+			// System::Log("Fz Wache Funk aus %s",v.GetName());
+			v.ClearFlag(OF_PULLABLE);
+			v.ClearActions();
+		}
+		// System::Log("Fz Inspektion Ende %s",v.GetName());
+	}
+};
+
+object Fzreparieren : CommandScript
+{
+
+	Fzreparieren()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",Caller,6,false);
+		Mission::PlayHint("WIB_S6");
+		ActorList al("werkstatt");
+		Actor *a=al.GetActor(0);
+		Vector Ziel=a->GetPosition();
+		Game::FindFreePosition(Caller,Ziel,100);
+		if (v.IsHidden())
+			v.PushActionExecuteCommand(ACTION_APPEND,"nachbar_holen",Caller,0,false);
+		if (!v.HasCommand("FlyTo"))
+			v.PushActionMove(ACTION_APPEND,Ziel);
+		v.PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",Caller,25,false);
+	}
+};
+
+object sendhome : CommandScript
+{
+
+	sendhome()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		Mission::PlayHint("WIB_S6_ENDE");
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",&v,11,false);
+		v.PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",&v,0,false);
+		v.SetCommandable(true);
+	}
+};
+
+
+object warte_auf_rtw : CommandScript
+{
+
+	warte_auf_rtw()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Target);
+		if (p.GetEnteredCarID()>1)
+		{
+			// System::Log("Warte auf RTW %s",Caller->GetName());
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"warte_auf_rtw",Target,0,false);
+			Caller->PushActionWait(ACTION_INSERT,3.0);
+		} else 
+			System::Log("Fz Da RTW %s",Caller->GetName());
+	}
+
+};
+
+object unwait : CommandScript
+{
+
+	unwait()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// System::Log("Bremse los %s von %s", Target->GetName(),Caller->GetName());
+		GameObject o(Target);
+		o.PushActionWait(ACTION_REPLACEFIRST,0.1);
+	}
+};
+
+
+object gohome_wenn_fertig : CommandScript
+{
+
+	gohome_wenn_fertig()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"aufsitzen",&v,0,false);
+	}
+};
+
+object normale_fahrt : CommandScript
+{
+	normale_fahrt()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Caller->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			PersonList pl(v.GetPassengers());
+			Person p=pl.GetPerson(0);
+		} else {
+			Vehicle v(Target);
+			Person p(Caller);
+		}
+
+		if (!v.IsFlagSet(OF_BULLDOZABLE) && !v.HasCommand("FlyTo")) // Sosi an? , dann keine Ausweichmanoever mehr
+		{
+			GameObject obj=v.GetClosestObjectInRange(200.0,10.0,ACTOR_VEHICLE);
+			Vehicle sosi(&obj);
+			if (!sosi.IsCivilCar() && sosi.IsFlagSet(OF_BULLDOZABLE))
+			{
+				Vector umkehr=v.GetPosition();
+				v.PushActionMove(ACTION_INSERT,umkehr);
+				v.PushActionWait(ACTION_INSERTAFTERFIRST,4.0f);
+				p.PushActionWait(ACTION_NEWLIST,5.0f);
+			} else
+				p.PushActionWait(ACTION_NEWLIST,1.0);
+			p.PushActionExecuteCommand(ACTION_APPEND,"normale_fahrt",Target,0,false);
+		}
+	}
+};
+
+GameObjectList disaster;
+
+object Disaster_TV : CommandScript
+{
+	
+	Disaster_TV()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		PersonList pl=Game::GetFirefighters();
+		Caller->PushActionWait(ACTION_NEWLIST,3.0);
+		for (int i=0;i<pl.GetNumPersons();i++)
+			if (pl.GetPerson(i)->HasCommand("at") && !pl.GetPerson(i)->IsHidden() && !pl.GetPerson(i)->GetEnteredCarID()<1)
+				Caller->PushActionFlyTo(ACTION_APPEND,pl.GetPerson(i)->GetPosition(),false,0.0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"Disaster_TV",Target,code,false);
+	}
+};
+
+object bin_ich_am_Ziel : CommandScript
+{
+	
+	bin_ich_am_Ziel()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		GameObject ziel(Target);
+		Vehicle fzg(Target);
+		Vehicle v(Caller);
+		bool bungartarget=code==10;
+		bool nocheck2=Target->GetType()==ACTOR_VEHICLE;
+		if (nocheck2)
+			nocheck2=v.IsPolice() && fzg.IsCivilCar();
+			
+		bool nocheck=v.IsPolice() && Target->GetType()==ACTOR_PERSON;
+		
+		nocheck=(code!=1) && (nocheck || nocheck2);
+		if (!nocheck)
+		{
+			char *fz="       ";
+			char *msg="                                                                                                          ";
+			char *mask="                                                                                                         ";
+			snprintf(fz,7,"%s",Caller->GetName());
+
+			if (!ziel.IsValid() || !ziel.IsInsideMap())
+			{
+				if (!bungartarget)
+				{
+					Game::GetGameString("WIB_NO_TARGET",mask,100);
+					snprintf(msg,100,mask,fz);
+					Mission::PlayHint(msg);
+					if (!v.IsAmbulance())
+						Caller->PushActionExecuteCommand(ACTION_NEWLIST,"gohome_winterberg",Caller,0,false);
+					else 
+						Caller->PushActionExecuteCommand(ACTION_NEWLIST,"Funkfrei",Caller,0,false);
+				}
+			} else {
+				if (Caller->GetBoundingRadiusDistXYToObject(Target) > 1024.f && !Game::IsMission())
+				{
+					Game::GetGameString("WIB_HEAVY_TRAFFIC",mask,100);
+					snprintf(msg,100,mask,fz);
+					Game::ShowHelpText(msg);
+					if (code==0)
+						Caller->PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",Caller,code,false);
+					else 
+						Caller->PushActionExecuteCommand(ACTION_NEWLIST,"gohome_winterberg",Caller,0,false);
+				}
+				bungarext::debung (Target);
+			}
+		}
+	}
+};
+
+object weiterfahren : CommandScript
+{
+	
+	weiterfahren()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		Path weg=Caller->GetObjectPath();
+		Vector dahin=weg.GetNearestPoint(Caller->GetPosition());
+		Caller->PushActionMove(ACTION_NEWLIST,dahin,false);
+		Caller->PushActionUsePath(ACTION_APPEND,&weg,true,weg.GetPathSpeed());
+	}
+};
+
+object goaside : CommandScript
+{
+	
+	goaside()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		Vector l,r;
+		GameObject tg(Target);
+		if (code<0)
+		{
+			int rotdir=-1;
+			Vector dist=Caller->GetPosition();
+			tg.GetOrientedBBoxPoint(0,l.x,l.y,l.z);
+			tg.GetOrientedBBoxPoint(2,r.x,r.y,r.z);
+			if (Math::dist(l.x,l.y,dist.x,dist.y)>Math::dist(dist.x,dist.y,r.x,r.y))
+			{
+				tg.GetOrientedBBoxPoint(1,l.x,l.y,l.z);
+				rotdir=1;
+			} else
+				tg.GetOrientedBBoxPoint(3,r.x,r.y,r.z);
+			if (code==-2)
+				Target->SetUserData(rotdir);
+		} else
+			tg.GetOrientedBBoxPoint(code,l.x,l.y,l.z);
+		if (Caller->GetType()==ACTOR_OBJECT)
+			Caller->SetPosition(l);
+		else
+			Caller->PushActionMove(ACTION_INSERT,l);
+	}
+};
+
+object torsteuerung : CommandScript
+{
+	
+	torsteuerung()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		// System::Log("Tor steuern %s %u von Fz %s",Target->GetName(),code,Caller->GetName());
+		GameObject tor(Target);
+		if (code==5)
+			if (tor.IsCurrentAnimation("opened"))
+				code = 32;
+			else 
+				code = 31;
+
+		switch (code)
+		{
+			case 11:
+				float rot[9];
+				float childRot[9];
+				tor.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Math::EulerToMatrix(180.0f, 0.f, 0.f, childRot);
+				Math::MultiplyMatrices(childRot, rot);
+				Caller->SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+			case 21:
+			case 31:
+			case 1:
+				if (!tor.IsCurrentAnimation("opened"))
+				{
+					tor.PushActionSwitchAnim(ACTION_NEWLIST,"open");
+					if (code==21)
+						tor.PushActionWait(ACTION_INSERT,2.0);
+					tor.PushActionWait(ACTION_APPEND,2.0);
+					if (code==31)
+						code=33;
+					else 
+						code=3;
+					tor.PushActionExecuteCommand(ACTION_APPEND,"torsteuerung",&tor,code,false);
+				} 
+				break;
+			case 2:
+			case 32:
+				if (!tor.IsCurrentAnimation("closed"))
+				{
+					tor.PushActionSwitchAnim(ACTION_NEWLIST,"close");
+					tor.PushActionWait(ACTION_APPEND,2.0);
+					tor.PushActionExecuteCommand(ACTION_APPEND,"torsteuerung",&tor,4,false);
+				}
+				if (code==32)
+				{
+					ActorList al(tor.GetName());
+					for (int i=0;i<al.GetNumActors();i++)
+						if (al.GetActor(i)->GetType()==ACTOR_VIRTUAL)
+							al.GetActor(i)->SetVirtualObjectTerrain("No vehicles");
+				}
+				break;
+			case 3:
+			case 33:
+				tor.PushActionSwitchAnim(ACTION_APPEND,"opened");
+				if (code==33)
+				{
+					ActorList al(tor.GetName());
+					for (int i=0;i<al.GetNumActors();i++)
+						if (al.GetActor(i)->GetType()==ACTOR_VIRTUAL)
+							al.GetActor(i)->SetVirtualObjectTerrain("Road");
+				}
+				break;
+			case 4:
+				tor.PushActionSwitchAnim(ACTION_APPEND,"closed");
+				break;
+		}
+	}
+};
+
+
+
+object tank_anschluss : CommandScript
+{
+	
+	tank_anschluss()
+	{
+	}
+
+	int TankID (Vehicle v)
+	{
+		int id;
+		if (v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER) || v.GetUserData()==102)
+			id=v.GetID();
+		else 	if (v.GetUserData()==150)
+			{
+				VehicleList vl(v.GetName());
+				id=vl.GetVehicle(0)->GetID();
+			} else {
+				PersonList pl(v.GetName());
+				Vehicle tank;
+				for (int i=0;i<pl.GetNumPersons() && !tank.IsValid();i++)
+					if (pl.GetPerson(i)->GetUserData()==v.GetUserData())
+					{
+						GameObject o=pl.GetPerson(i)->GetHydrant();
+						Vehicle tank(&o);
+					}
+				if (tank.IsValid())
+					id=TankID(tank);
+				else 
+					id=-1;
+			}
+		// System::Log("%u %u %s",id,v.GetUserData(),v.GetName());
+		return id;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int menge)
+	{
+		Vehicle v(Target);
+		// System::Log("Tank anschliessen %s %s %u",Caller->GetName(),Target->GetName(),Caller->GetUserData());
+		char *id="          ";
+		snprintf(id,10,"PU%u",TankID(v));
+		PersonList pl(id);
+		if (pl.GetNumPersons()>0 && pl.GetPerson(0)->GetMaxHealth()>0)
+		{
+			int menge=100;
+			if (Caller->GetType()==ACTOR_VEHICLE)
+			{
+				if (Caller->HasCommand("flf"))
+					menge=6000;
+				else
+					menge=1200;
+			}
+			else if (Caller->GetUserData()==111)
+				menge=400;
+			else if (Caller->GetUserData()==120)
+				menge=1500;
+			else if (Caller->GetUserData()==113)
+				menge=2000;
+			// System::Log("Tank gefunden, Verbrauch hier %u l",menge);
+			pl.GetPerson(0)->PushActionExecuteCommand(ACTION_INSERT,"tank_verbrauch",Caller,menge,false);
+		}
+	}
+};
+
+object tank_takt : CommandScript
+{
+	
+	tank_takt()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int menge)
+	{
+		Vehicle v(Target);
+		if (menge==0)
+		{
+			char *id="          ";
+			snprintf(id,10,"PU%u",Target->GetID());
+			PersonList pl(id);
+			if (pl.GetNumPersons()>0)
+			{
+				Person p=pl.GetPerson(0);
+				p.PushActionWait(ACTION_APPEND,1.0);
+				p.PushActionExecuteCommand(ACTION_APPEND,"tank_takt",Caller,1,false);
+				if (v.GetVehicleType()==VT_FIREFIGHTERS_TLF)
+					p.PushActionExecuteCommand(ACTION_APPEND,"tank_verbrauch",Target,1600,false);
+				snprintf(id,10,"TA%u",Target->GetID());
+				PersonList pl(id);
+				if (pl.GetNumPersons()>0)
+					p.PushActionExecuteCommand(ACTION_APPEND,"tank_an_pumpe",pl.GetPerson(0),1,false);
+				
+			}
+		} else {
+			// System::Log("Tank Takt %s",Caller->GetName());
+			Person pumpe(Caller);
+			if (pumpe.GetHealth()==1)
+			{
+				Mission::PlayHint("WIB_MA_ZUVIEL");
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"ma_wasser",Caller,2,false);
+				pumpe.SetHealth(0);
+			}
+			Caller->PushActionWait(ACTION_APPEND,0.5);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"tank_takt",Caller,1,false);
+		}
+	}
+};
+
+object tank_verbrauch : CommandScript
+{
+	
+	tank_verbrauch()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int menge)
+	{
+			// System::Log("Tank Verbrauch %s -> %s",Caller->GetName(),Target->GetName());
+			bool valid=Target->IsValid();
+			if (!valid)
+				return; // Unsauber
+			GameObject rohr(Target);
+			if (Target->GetType()==ACTOR_VEHICLE && rohr.IsCurrentAction("EActionFindPath"))
+				return;
+			Person tank(Caller);
+			float inhalt=tank.GetHealth();
+			if (valid && (rohr.GetUserData()==120 || rohr.GetUserData()==113) && tank.GetHealth()<tank.GetMaxHealth())
+			{
+				valid=Caller->HasCommand("haswe");
+				if (valid)
+					tank.SetHealth(inhalt+menge/10);
+			} else 	if (valid)
+				{
+					if (rohr.IsCurrentAction("EActionExtinguish") || rohr.IsCurrentAction("EActionCool"))
+					{
+						if (inhalt>menge/10)
+							tank.SetHealth(inhalt-menge/10);
+						else if (inhalt>0)
+							tank.SetHealth(1);
+					}
+				}
+			// System::Log("Förderleistung %ul %ul %s",int(inhalt),int(tank.GetHealth()),Caller->GetName());
+			if (valid)
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"tank_verbrauch",Target,menge,false);
+	}
+};
+
+object tank_an_pumpe : CommandScript
+{
+	
+	tank_an_pumpe()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int menge)
+	{
+		// System::Log("Tank an Pumpe %s -> %s ",Caller->GetName(),Target->GetName());
+		Person pumpe(Caller);
+		Person tank(Target);
+		float diff=pumpe.GetHealth()-pumpe.GetMaxHealth()/2;
+		float inhalt=tank.GetHealth();
+		if (diff<0)
+		{
+			if ((inhalt+diff)>0)
+			{
+				tank.SetHealth(tank.GetHealth()+diff);
+				pumpe.SetHealth(pumpe.GetHealth()-diff);
+			} else if (inhalt>0) {
+				tank.SetHealth(0);
+				Mission::PlayHint("WIB_MA_WALEER");
+			}
+		} else {
+			if (inhalt<tank.GetMaxHealth())
+			{
+				tank.SetHealth(inhalt+diff);
+				pumpe.SetHealth(pumpe.GetHealth()-diff);				
+			} else
+				tank.SetHealth(tank.GetMaxHealth());
+			if (pumpe.GetHealth()>pumpe.GetMaxHealth())
+				pumpe.SetHealth(pumpe.GetMaxHealth());
+		}	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"tank_an_pumpe",Target,0,false);
+	}
+};
+
+object fl_400l : CommandScript
+{
+	
+	fl_400l()
+	{
+		SetIcon("400l");
+		SetCursor("400l");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+};
+
+object fl_800l : CommandScript
+{
+	
+	fl_800l()
+	{
+		SetIcon("800l");
+		SetCursor("800l");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+};
+
+object fl_1200l : CommandScript
+{
+	
+	fl_1200l()
+	{
+		SetIcon("1200l");
+		SetCursor("1200l");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+};
+
+object fl_1600l : CommandScript
+{
+	
+	fl_1600l()
+	{
+		SetIcon("1600l");
+		SetCursor("1600l");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+};
+
+object fl_2000l : CommandScript
+{
+	
+	fl_2000l()
+	{
+		SetIcon("2000l");
+		SetCursor("2000l");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+};
+
+object fl_2400l : CommandScript
+{
+	
+	fl_2400l()
+	{
+		SetIcon("2400l");
+		SetCursor("2400l");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+};
+
+GameObjectList umziel;
+
+object vk_um_init : CommandScript
+{
+	
+	vk_um_init()
+	{
+	}
+
+	void mark_pfad(int n)
+	{
+		char * bhf="             ";
+		char * zugname="traffic_car0%u";
+		int j=snprintf(bhf,13,zugname,n);
+		PathList pl(bhf);
+		if (pl.GetNumPaths()>0)
+		{
+			Path path(pl.GetPath(0));
+			int i=path.GetNumPoints()-2;	
+			if (i>0)
+			for (i;i>=0;i--)
+			{
+				GameObject o=Game::CreateObject("mod:Prototypes/Objects/Equipment/umleiter.e4p","umziel");
+				// if (path.GetPathType()!=PATH_FORWARD)
+				
+				o.Hide();
+				o.SetUserData(path.GetID());
+				o.SetPosition(path.GetPoint(i));
+				o.PushActionTurnTo(ACTION_NEWLIST,path.GetPoint(i+1));
+				o.PushActionRotateTarget(ACTION_APPEND,&o,0,-90.0,0,0.2);
+			}
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		
+		for (int i=1;i<10;i++)
+			mark_pfad(i);
+		umziel=Game::GetGameObjects("umziel");
+	}
+};
+
+object vk_um_vor : CommandScript
+{
+	
+	vk_um_vor()
+	{
+		SetIcon("umlpl");
+		SetCursor("umlpl");
+		SetPriority(1000);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return Caller->GetID()==Target->GetID();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (umziel.GetObject(0)->IsHidden())
+			Game::ShowObjects(umziel);
+		else
+			Game::HideObjects(umziel);
+	}
+};
+
+object vk_um_do : CommandScript
+{
+	
+	vk_um_do()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int inDir)
+	{
+		GameObject o=Caller->GetClosestObjectInRange(200.0,ACTOR_VEHICLE);
+		if (o.IsValid() && !o.IsFlagSet(OF_FLOTSAM))
+		{
+			Vehicle v(&o);
+			v.SetFlag(OF_FLOTSAM);
+			Path p(Target);
+			if (v.IsCivilCar())
+			{
+				v.PushActionMove(ACTION_REPLACEFIRST,p.GetNearestPoint(v.GetPosition()));
+				v.PushActionUsePath(ACTION_APPEND,&p,inDir>0,p.GetPathSpeed(),false);
+			}
+		}
+		Caller->PushActionWait(ACTION_APPEND,1.0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"vk_um_do",Target,inDir,false);
+	}
+};
+
+object vk_um_leitv : CommandScript
+{
+	
+	vk_um_leitv()
+	{
+		SetIcon("umlvorw");
+		SetCursor("umlvorw");
+		SetPriority(1000);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return Target->HasNamePrefix("umziel") && Target->GetUserData()!=Caller->GetUserData();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		umleit::start_umleiten(Caller,Target,true);
+	}
+};
+
+object vk_um_leitr : CommandScript
+{
+	
+	vk_um_leitr()
+	{
+		SetIcon("umlrueckw");
+		SetCursor("umlrueckw");
+		SetPriority(1100);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return Target->HasNamePrefix("umziel") && Target->GetUserData()!=Caller->GetUserData() && Input::LCtrlPressed();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		umleit::start_umleiten(Caller,Target,false);
+	}
+};
+
+object pol_radar : CommandScript
+{
+
+	pol_radar()
+	{
+		SetIcon("kontrolle");
+		SetCursor("kontrolle");
+		SetValidTargets(ACTOR_OBJECT);
+		SetPriority(2000);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return Target->HasNamePrefix("umziel") && Target->GetUserData()!=Caller->GetUserData();
+   	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Caller->GetUserData()==125)
+			return;
+		if (Caller->GetType()==ACTOR_PERSON)
+		{
+			Actor a=Game::GetActor(Caller->GetUserData());
+			GameObject dev(&a);
+			Caller->SetUserData(125);
+		} else
+			GameObject dev(Caller);
+		Game::HideObjects(umziel);
+		GameObject o(Target);
+		o.Show();
+		Actor a=Game::GetActor(o.GetUserData());
+		Path pa(&a);
+		int lim=int(pa.GetPathSpeed()*10);
+		dev.PushActionTurnTo(ACTION_NEWLIST, Target,0);
+		dev.PushActionRotateTarget(ACTION_APPEND,&dev,0,90,0,1);
+		dev.PushActionExecuteCommand(ACTION_APPEND, "vk_radar_on",Target,80,false);
+	}
+};
+
+object vk_radar_on : CommandScript
+{
+	
+	vk_radar_on()
+	{
+	}
+
+	void blitzen (GameObject *Caller,Vehicle v,float speed)
+	{
+		Game::ShowHelpText("Fz zu schnell !");
+		System::Log("Fz geblitzt %s mit %u ;)",v.GetName(),int(speed*10/1.5));
+		Caller->EnableSpecialLights(true);	
+		Caller->PushActionWait(ACTION_REPLACEFIRST,0.01);
+		if (v.IsCivilCar())
+		{
+			v.SetVehicleRole(VT_GANGSTER_GETAWAY);
+			v.SetUserData(-6);
+			v.AssignCommand("crime");
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int limit)
+	{
+		Caller->EnableSpecialLights(false);
+		GameObject ziel(Target);
+		ziel.Show();
+		GameObject o=ziel.GetClosestObjectInRange(100.0,ACTOR_VEHICLE);
+
+		if (o.IsValid() && !o.IsFlagSet(OF_LOCKED))
+		{
+			Vehicle v(&o);
+			float speed=0;
+			v.SetFlag(OF_LOCKED);
+			if (v.IsCurrentAction("EActionUsePath"))
+			{
+				speed=v.GetCurrentPathSpeed();
+				System::Log("Current Path Speed %s %u",v.GetName(),int(speed*10));
+			} else
+				speed=v.GetSpeed();
+			if ((speed>(limit/10)) && v.IsMoving())
+				blitzen(Caller,v,speed);
+		}
+		Caller->PushActionWait(ACTION_APPEND,0.1);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"vk_radar_on",Target,limit,false);
+	}
+};
+
+int anhaenger;
+
+object anhaenger_dran : CommandScript
+{
+	
+	anhaenger_dran()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int fzid)
+	{
+		Actor a=Game::GetActor(fzid);
+		GameObject haenger(&a);
+		// System::Log("Anhaenger dran  %s  an ZugFz %s",a.GetName(),Target->GetName());
+		Vehicle zugfz(Target);
+		Vector pos=zugfz.GetPosition();
+		//Game::FindFreePosition(&haenger,pos);
+		float rot[9]; float shft;
+		Vector l,r;
+
+		haenger.GetOrientedBBoxPoint(0,l.x,l.y,l.z);
+		haenger.GetOrientedBBoxPoint(2,r.x,r.y,r.z);
+		if (abs(l.x-r.x)>abs(l.y-r.y))
+			shft=l.x-r.x;
+		else
+			shft=l.y-r.y;
+
+		Vector shift(-1*abs(shft)-50,0,0);
+		zugfz.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		Math::RotateVector(shift.x,shift.y,shift.z,rot);
+		haenger.SetPosition(pos+shift);
+		haenger.SetRotation(&zugfz);
+		zugfz.AddTrainWaggon(&haenger);
+		anhaenger=haenger.GetID();
+	}
+};
+
+object anhaenger_weg : CommandScript
+{
+	
+	anhaenger_weg()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int fzid)
+	{
+		Vehicle zugfz(Target);
+		// System::Log("Anhaenger weg  %u an ZugFz %s",zugfz.GetNumTrainWaggons(),Target->GetName());
+		Actor a=Game::GetActor(anhaenger);
+		GameObject haenger(&a);
+		zugfz.RemoveTrainWaggon(&haenger);
+		haenger.PushActionDeleteOwner(ACTION_NEWLIST);
+	}
+};
+
+object lbw_auf : CommandScript
+{
+	
+	lbw_auf()
+	{
+		SetIcon("lbw_auf");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int fzid)
+	{
+		Vehicle v(Target);
+		v.PlayAnimOpenDoor(DAT_SPECIAL,1.5,Caller);
+	}
+};
+
+object lbw_zu : CommandScript
+{
+	
+	lbw_zu()
+	{
+		SetIcon("lbw_zu");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int fzid)
+	{
+		Vehicle v(Target);
+		v.PlayAnimCloseDoor(DAT_SPECIAL,1.5,Caller);
+	}
+};
+
+class umleit : CommandScript
+{
+
+	void start_umleiten (GameObject *Caller, Actor *Target,bool inDir)
+	{
+		Actor a=Game::GetActor(Target->GetUserData());
+		if (a.GetType()==ACTOR_PATH)
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",&a,123+int(inDir),false);
+			Game::HideObjects(umziel);
+			Caller->SetAnimation("waveflag");
+		} else
+			Mission::PlayHint("WIB_POL_NOREDIR");
+	}
+
+};
+
+object driving_through_winterberg : CommandScript
+{
+	
+	driving_through_winterberg()
+	{
+		SetIcon("ego");
+		SetCursor("ego");
+		SetPriority(2000);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int code)
+	{
+		Vehicle v(Target);
+		return Target->GetType()==ACTOR_VEHICLE && v.GetNumPassengers()>1;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		Vehicle v(Target);
+		Vector l,pos,r;
+		v.GetOrientedBBoxPoint(6,l.x,l.y,l.z);
+		v.GetOrientedBBoxPoint(7,r.x,r.y,r.z);
+		pos=v.GetPosition();
+		pos.z=l.z+100;
+		Camera::Set(pos);
+		
+		
+		Camera::LookAt(r,l);
+		if (code)
+		{
+			Caller->PushActionWait(ACTION_APPEND,0.1);
+			if (v.IsSelected())
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"driving_through_winterberg",Target,1,false);
+		} else {
+			float x,y,z;
+			Camera::GetRotation(x,y,z);
+			Camera::SetRotation(z+180,20,0);
+			Camera::ZoomInTo(2000.0);
+			PersonList pl=v.GetPassengers();
+			if (pl.GetNumPersons()>1)
+				pl.GetPerson(1)->PushActionExecuteCommand(ACTION_APPEND,"driving_through_winterberg",Target,1,false);
+			v.Select();
+			Caller->Deselect();
+		}
+	}
+};
+
+object traffic_jam_vap : CommandScript
+{
+	
+	traffic_jam_vap()
+	{
+		SetIcon("heal");
+		SetCursor("heal");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void pfad_vap(int n)
+	{
+		char * bhf="             ";
+		char * zugname="traffic_car0%u";
+		int j=snprintf(bhf,13,zugname,n);
+		PathList pl(bhf);
+		if (pl.GetNumPaths()>0)
+		{
+			GameObjectList ol;
+			int i;
+			if (Game::CollectObstaclesOnPath(bhf,ol)) for (i=ol.GetNumObjects()-1;i>=0;i--)
+			{
+				GameObject o=ol.GetObject(i);
+				if (o.GetType()==ACTOR_VEHICLE)
+				{
+					Vehicle v(&o);
+					if (v.IsCivilCar())
+						o.PushActionDisappear(ACTION_NEWLIST,3.0,0.0,true);
+				}
+			}
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		
+		for (int i=1;i<10;i++)
+			pfad_vap(i);
+	}
+};
+
+class bungarext : CommandScript
+{
+
+	GameObject hierhin (Vector cp)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		//obj.Hide();
+		return obj;
+	}
+	
+	void debung (Actor *bung)
+	{
+		if (bung->HasNamePrefix("bungar"))
+		{
+			GameObject db(bung);
+			db.PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+	}
+};

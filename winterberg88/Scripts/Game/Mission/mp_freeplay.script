@@ -1,0 +1,43 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script mp_freeplay
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Winterberger Em4 Start-Script by WitchDoc
+// basiert auf start V0.1a by manuelt
+// Rotation function by bass-ti
+//
+// Revision:
+// 16.7.2006 : Doppelte Ausführung verhindern
+
+	void alles_auf_start()
+	{
+		GameObjectList ol=Game::GetGameObjects();
+		GameObject obj=ol.GetObject(0);
+		Game::ExecuteCommand("wem_init",&obj);
+	};
+
+bool OnLoad()
+{
+	alles_auf_start();
+	Process::Kill();
+	return true;
+}
+

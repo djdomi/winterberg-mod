@@ -1,0 +1,48 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script ScoutHouse
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+object ScoutHouse : CommandScript
+{
+	ScoutHouse()
+	{
+		SetValidTargets(ACTOR_OPEN_HOUSE);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleExists(CPE_ACCESSIBLE_HOUSE);
+		SetPriority(600);
+		SetSelfClickActivation(true);
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Caller->GetType()!=ACTOR_PERSON || Target->GetType()!=ACTOR_OPEN_HOUSE)
+			return false;
+
+		OpenHouse targetHouse(Target);
+		Person person(Caller);
+		if(person.GetFirehoseID() > 0 || person.GetEnteredCarID() != -1)
+			return false;
+		if(targetHouse.IsOpen() || person.GetEnteredHouseID() == targetHouse.GetID())
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		OpenHouse targetHouse(Target);
+		
+		Vector pos = targetHouse.GetEntrancePosition(true, 500.f);
+		Caller->PushActionMove(ACTION_NEWLIST, pos, false);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target, 1.f);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"gf_lage_erkunden",Target,2,false);
+		Caller->PushActionScoutHouse(ACTION_APPEND, Target);
+	}
+};

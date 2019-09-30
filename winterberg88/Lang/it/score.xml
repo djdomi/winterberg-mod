@@ -1,0 +1,14 @@
+﻿<strings>
+<string name="ID_STATIC_AWARD_AMBULANCE">Distinzione onoraria per le forze di soccorso alle persone!</string>
+<string name="ID_STATIC_AWARD_POLICE">Distinzione onoraria per la forza di spiegamento rapida del corpo di polizia!</string>
+<string name="ID_STATIC_AWARD_FIRE">Distinzione onoraria per la forza di spiegamento rapida dei pompieri!</string>
+<string name="ID_STATIC_AWARD_DOG">Distinzione onoraria per le squadre cinofile!</string>
+<string name="ID_STATIC_AWARD_CIVILPROTECTION">Distinzione onoraria per protezione civile!</string>
+<string name="ID_STATIC_AWARD_SPECIAL">Medaglia di oro nazionale!</string>
+<string name="ID_MISSION_SUCCEEDED">Intervento riuscito!</string>
+<string name="ID_MISSIONRESULT_TIME">Tempo necessario</string>
+<string name="ID_MISSIONRESULT_BUDGET">Budget necessario</string>
+<string name="ID_MISSIONRESULT_PREVENTEDPERSONDAMAGE">Danni fisici evitati</string>
+<string name="ID_MISSIONRESULT_PREVENTEDPROPERTYDAMAGE">Danni materiali evitati</string>
+<string name="ID_MISSIONRESULT_TOTALEFFICIENCY">Efficacia totale</string>
+</strings>

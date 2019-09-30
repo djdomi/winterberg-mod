@@ -1,0 +1,205 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script gohome_winterberg
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+bool patch13=false;
+
+
+object FzInspektion : CommandScript
+{
+	
+	FzInspektion()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		System::Log("Fz inspizieren");
+		Vehicle v(Caller);
+		float dam=v.GetEnergy()/v.GetMaxEnergy()*100;
+		if (dam < 50)
+		{
+			v.AssignCommand("ich_bin_nicht_frei");
+			v.SetCommandable(false);
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",Caller,6,false);
+			v.PushActionExecuteCommand(ACTION_APPEND,"Fzreparieren",Caller,ChildID,false);
+		} else
+			v.RemoveCommand("ich_bin_nicht_frei");
+	}
+};
+
+object Fzreparieren : CommandScript
+{
+
+	Fzreparieren()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		Mission::PlayHint("Fahrzeug Status 6 zur Werkstatt");
+		ActorList al("werkstatt");
+		Actor *a=al.GetActor(0);
+		Vector Ziel=a->GetPosition();
+		Game::FindFreePosition(Caller,Ziel,100);
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"Fz_ranholen",Caller,0,false);
+		v.PushActionMove(ACTION_APPEND,Ziel);
+		v.PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",Caller,25,false);
+	}
+};
+
+object sendhome : CommandScript
+{
+
+	sendhome()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		Mission::PlayHint("Fahrzeug instandgesetzt zurueck zur Wache");
+		v.PushActionExecuteCommand(ACTION_NEWLIST,"gohome_winterberg",&v,0,false);
+		v.SetCommandable(true);
+		v.RemoveCommand("ich_bin_nicht_frei");
+	}
+};
+
+object NEF_zum_KH : CommandScript
+{
+	Vector TargetPos;
+
+	NEF_zum_KH()
+	{
+		SetIcon("naholen");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (!Caller->IsCollidingWithTrigger("aufnahme"))
+			return false;
+
+	   if (Caller->GetID() != Target->GetID())
+		return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		Vehicle rtw(Target);
+
+		if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+			ActorList l1=Game::GetActors("helipad");
+		else
+		{
+			ActorList l1=Game::GetActors("notarzt");
+			v.SetSpeed(rtw.GetSpeed());
+		}
+		
+		Actor nefwache = *l1.GetActor(0);
+		GameObject wobj(&nefwache);
+		Vector Wache=nefwache.GetPosition();
+		Game::FindFreePosition(&v, Wache);
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_DISABLE, &v, 1, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,7,false);
+		v.PushActionLightOn(ACTION_APPEND,false);
+		if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+		{
+			// float ang=v.GetValidLandingAngle(&wobj,Wache);
+			float ang=0;
+			v.PushActionFlyTo(ACTION_APPEND,Wache,true,ang);
+		} else {	
+			v.PushActionMove(ACTION_APPEND, Wache + Vector(0, -150, 0)); // Fahre zum Wendepunkt
+			v.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&v);
+			v.PushActionTurnTo(ACTION_APPEND, Wache + Vector(0, -300, 0)); // Wende
+			v.PushActionMove(ACTION_APPEND, Wache); // Einparken
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckHubiDown",Caller,0,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,8,false);
+		v.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&v);
+	}
+};
+
+
+int escalator=0;
+bool warmedup=false;
+
+object WitchDocAction : CommandScript
+{
+	WitchDocAction()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		int randact=Math::rand()%100;
+		int h,m,s;
+		Game::GetTime (h,m,s);
+		if (warmedup)
+		{
+			escalator++;
+			if (randact < escalator)		// ok -> Spezialeinsatz :-)
+			{
+				randact=Math::rand()%10;
+				switch (randact)
+				{
+					case 0:
+					case 5:
+					case 8:
+					case 2:
+						System::Log("Zweig Verkehrsunfall");
+						if (Mission::GetCounter("Injured Persons") < 3)
+						{					
+							Game::ExecuteCommand("random_vu",Caller);
+						}
+						break;
+					case 6: 
+						System::Log("Zweig Ehrang brennt!");
+						Game::ExecuteCommand("ehrang_brennt",Caller);
+						break;
+					default:
+						System::Log("Zweig BMA");
+						Game::ExecuteCommand("wt_bma",Caller); // BMA mit Feuer
+						break;
+				}
+				escalator=-30;
+			}
+		} else
+			warmedup=(h>7);
+	}
+};

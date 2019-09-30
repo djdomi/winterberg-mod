@@ -1,0 +1,1529 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script rufe_feuerwehr
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+bool zug=false;
+bool sir=false;
+bool isdeluxe=false;
+
+object fw_isdeluxe:CommandScript
+{
+
+   fw_isdeluxe()
+   {
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	isdeluxe=true;
+   }
+};
+
+object fae : CommandScript
+{
+
+   fae()
+   {
+	SetIcon("fme");
+	SetCursor("kats");
+	SetGroupLeader(true);
+	SetGroupID(2);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return ((Caller->GetUserData() & 16)==0) && !Input::LCtrlPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return (!Input::LCtrlPressed()) || (Caller->GetID()!=Target->GetID());
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 15)+16;
+	Caller->SetUserData(ecode);
+   }
+};
+
+object sirene : CommandScript
+{
+
+   sirene()
+   {
+	SetIcon("sir");
+	SetCursor("kats");
+	SetGroupID(2);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return ((Caller->GetUserData() & 16)==16) ||Input::LCtrlPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return !Input::LCtrlPressed() || (Caller->GetID()!=Target->GetID());
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 15);
+	Caller->SetUserData(ecode);
+   }
+};
+
+object ort : CommandScript
+{
+
+   ort()
+   {
+	SetIcon("oertlich");
+	SetCursor("oertlich");
+	SetGroupLeader(true);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=((Caller->GetUserData() & 15)==0) && !Input::LShiftPressed() && !Input::RShiftPressed() && !Input::RCtrlPressed();
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16)+1;
+	Caller->SetUserData(ecode);
+   }
+};
+
+ 
+object lz : CommandScript
+{
+
+   lz()
+   {
+      SetIcon("zug");
+      SetCursor("zug");
+	SetGroupLeader(false);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=(((Caller->GetUserData() & 15)==1) || Input::LShiftPressed()) && !Input::RCtrlPressed();
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16)+2;
+	Caller->SetUserData(ecode);
+   }
+};
+
+object hlz : CommandScript
+{
+
+   hlz()
+   {
+      SetIcon("ruestzug");
+      SetCursor("ruestzug");
+	SetGroupLeader(false);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=((Caller->GetUserData() & 15)==2) && !Input::RShiftPressed() && !Input::LShiftPressed() && !Input::RCtrlPressed();
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16)+3;
+	Caller->SetUserData(ecode);
+   }
+};
+
+object hlzk : CommandScript
+{
+
+   hlzk()
+   {
+      SetIcon("rw_kran");
+      SetCursor("rw_kran");
+	SetGroupLeader(false);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=((Caller->GetUserData() & 15)==3) && !Input::LShiftPressed() && !Input::RShiftPressed() && !Input::RCtrlPressed();
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16)+4;
+	Caller->SetUserData(ecode);
+   }
+};
+
+object ggvz : CommandScript
+{
+
+   ggvz()
+   {
+      SetIcon("gsgzug");
+      SetCursor("gsgzug");
+	SetGroupLeader(false);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=((Caller->GetUserData() & 15)==4) && !Input::LShiftPressed() && !Input::RShiftPressed() && !Input::RCtrlPressed();
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16)+5;
+	Caller->SetUserData(ecode);
+   }
+};
+
+object wald : CommandScript
+{
+
+   wald()
+   {
+      SetIcon("waldbrand");
+      SetCursor("waldbrand");
+	SetGroupLeader(false);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=((Caller->GetUserData() & 15)==5) && !Input::LShiftPressed() && !Input::RShiftPressed() && !Input::RCtrlPressed();
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16)+6;
+	Caller->SetUserData(ecode);
+   }
+};
+
+object einzelfz : CommandScript
+{
+
+   einzelfz()
+   {
+      SetIcon("rufe_lf");
+      SetCursor("rufe_lf");
+	SetGroupLeader(false);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=((Caller->GetUserData() & 15)==6 || Input::RShiftPressed()) && !Input::LShiftPressed() && !Input::RCtrlPressed();
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16)+7;
+	Caller->SetUserData(ecode);
+   }
+};
+
+object ruestw : CommandScript
+{
+
+   ruestw()
+   {
+	SetIcon("rw");
+	SetGroupLeader(false);
+	SetGroupID(1);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	bool vis=((Caller->GetUserData() & 15)==7 || Input::RCtrlPressed());
+	return vis;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int ecode=(Caller->GetUserData() & 16);
+	Caller->SetUserData(ecode);
+   }
+};
+
+object fw100 : CommandScript
+{
+
+   fw100()
+   {
+      SetIcon("winterberg");
+      SetCursor("winterberg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,100,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,0,false);
+   }
+};
+
+object fw156 : CommandScript
+{
+
+   fw156()
+   {
+      SetIcon("zueschen");
+      SetCursor("zueschen");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,156,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,56,false);
+   }
+};
+
+object fw159 : CommandScript
+{
+
+   fw159()
+   {
+      SetIcon("siedlhsn");
+      SetCursor("siedlhsn");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,159,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,59,false);
+   }
+};
+
+object fw157 : CommandScript
+{
+
+   fw157()
+   {
+      SetIcon("groenebach");
+      SetCursor("groenebach");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,157,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,57,false);
+   }
+};
+
+object fw153 : CommandScript
+{
+
+   fw153()
+   {
+      SetIcon("langewiese");
+      SetCursor("langewiese");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+	
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,153,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,53,false);
+   }
+};
+
+object fw162 : CommandScript
+{
+
+   fw162()
+   {
+      SetIcon("elkeringhsn");
+      SetCursor("elkeringhsn");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,162,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,62,false);
+   }
+};
+
+object fw167 : CommandScript
+{
+
+   fw167()
+   {
+      SetIcon("altenfeld");
+      SetCursor("altenfeld");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,167,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,67,false);
+   }
+};
+
+object fw168 : CommandScript
+{
+
+   fw168()
+   {
+      SetIcon("silbach");
+      SetCursor("silbach");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,168,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,68,false);
+   }
+};
+
+object fw161 : CommandScript
+{
+
+   fw161()
+   {
+      SetIcon("altastenberg");
+      SetCursor("altastenberg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,161,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,61,false);
+   }
+};
+
+object fw170 : CommandScript
+{
+
+   fw170()
+   {
+      SetIcon("neuastenberg");
+      SetCursor("neuastenberg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,170,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,70,false);
+   }
+};
+
+object fw163 : CommandScript
+{
+
+   fw163()
+   {
+      SetIcon("niedersfeld");
+      SetCursor("niedersfeld");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,163,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,63,false);
+   }
+};
+
+object fw158 : CommandScript
+{
+
+   fw158()
+   {
+      SetIcon("hildfeld");
+      SetCursor("hildfeld");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool ok=false;
+	GameObject o(Target);
+
+	if( Caller->GetID() == Target->GetID())
+        	ok=Caller->IsFlagSet(OF_FLOTSAM);
+	else
+		switch (Target->GetType())
+		{
+			case ACTOR_FLOOR:
+				ok=true;
+				break;
+			case ACTOR_PERSON:
+				ok=o.HasCommand("fuehrung");
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=(v.IsFirefighter() && v.GetUserData()!=0) || o.HasCommand("lst_estelle");
+				break;
+		}
+	
+	return ok;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,158,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,58,false);
+   }
+};
+
+
+object rufe_dlk : CommandScript
+{
+
+	int dl; //ObjectID der gefundenen DLK
+	bool kriterien_erfuellt; //Ist dieses Fzg gerade frei?
+
+   rufe_dlk()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (childID==0)
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,113,false);
+	else	
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,530,false);
+   }
+};
+
+object rufe_gtlf : CommandScript
+{
+
+	bool kriterien_erfuellt; //Ist dieses LF gerade frei?
+
+   rufe_gtlf()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+ 
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool simba=Input::LCtrlPressed() && Input::LShiftPressed() && Game::IsFreeplay();
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (childID==0)
+		if (simba)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,118,false);
+		else		
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,115,false);
+	else	
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,560,false);
+   }
+};
+
+object rufe_simba : CommandScript
+{
+
+	bool kriterien_erfuellt; //Ist dieses LF gerade frei?
+
+   rufe_simba()
+   {
+	SetIcon("simba");
+	SetCursor("simba");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+ 
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int anz=1;
+	if (Input::LShiftPressed())
+		anz++;
+	if (Input::LCtrlPressed())
+		anz++;
+	if (Input::RCtrlPressed())
+		anz++;
+	if (Input::RShiftPressed())
+		anz++;
+
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (childID==0)
+		for (int i=0;i<anz;i++)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,118,false);
+	else	
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,304,false);
+   }
+};
+
+object rufe_gwas : CommandScript
+{
+
+	int dl; //ObjectID der gefundenen DLK
+	bool kriterien_erfuellt; //Ist dieses Fzg gerade frei?
+
+   rufe_gwas()
+   {
+	SetIcon("gwm");
+	SetCursor("gwm");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (childID==0)
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,114,false);
+	else	
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,550,false);
+   }
+};
+
+object rufe_gwl : CommandScript
+{
+
+	int dl; //ObjectID der gefundenen DLK
+	bool kriterien_erfuellt; //Ist dieses Fzg gerade frei?
+
+   rufe_gwl()
+   {
+	SetIcon("lkw");
+	SetCursor("lkw");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (childID==0)
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,116,false);
+	else	
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,580,false);
+   }
+};
+
+object fw165 : CommandScript
+{
+
+   fw165()
+   {
+	SetIcon("rufe_dekon");
+	SetCursor("rufe_dekon");
+	SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON |ACTOR_OBJECT|ACTOR_VEHICLE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		return true;	
+	if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+        	return false;
+	return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	if (Caller->IsFlagSet(OF_FLOTSAM))
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,165,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,573,false);
+   }
+};
+
+object fw152 : CommandScript
+{
+
+   fw152()
+   {
+	SetIcon("tel_alarm");
+	SetCursor("tel_alarm");
+	SetValidTargets(ACTOR_VEHICLE);
+	SetRestrictions (RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->IsFlagSet(OF_FLOTSAM);
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,152,false);
+   }
+};
+
+object fw151 : CommandScript
+{
+
+   fw151()
+   {
+	SetIcon("rufe_gtlf");
+	SetCursor("rufe_gtlf");
+	SetValidTargets(ACTOR_VEHICLE);
+	SetRestrictions (RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->IsFlagSet(OF_FLOTSAM);
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,151,false);
+   }
+};
+
+object fw178 : CommandScript
+{
+
+   fw178()
+   {
+	SetIcon("simba");
+	SetCursor("simba");
+	SetValidTargets(ACTOR_VEHICLE);
+	SetRestrictions (RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->IsFlagSet(OF_FLOTSAM);
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+	Caller->PushActionExecuteCommand(ACTION_INSERT,"tl_zug_select",Target,178,false);
+   }
+};
+
+object drehdenschluessel : CommandScript
+{
+
+  	 drehdenschluessel()
+   	{
+		SetPriority(2000);
+   	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+   	{
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+		Caller->SetUserData(15);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lst_alarmieren",Target,999,false);
+	}
+};
+
+object alarmfueralle : CommandScript
+{
+
+   alarmfueralle()
+   {
+	SetPriority(2000);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Mission::PlayHint("WIB_AFA");
+	VehicleList vl(VT_FIREFIGHTERS_DEKONP,VT_FIREFIGHTERS_GTF);
+
+	GameObject p(Target);
+
+	Caller->PushActionExecuteCommand(ACTION_NEWLIST,"senden",&p,201,false);
+	for (int x=vl.GetNumVehicles()-1;x>-1;x--)
+	{
+		int vt=vl.GetVehicle(x)->GetVehicleType();
+		if (((vt>=VT_FIREFIGHTERS_DEKONP && vt<=VT_AMBULANCE_RTW)|| vt==VT_FIREFIGHTERS_GTF) && !vl.GetVehicle(x)->HasCommand("ich_bin_nicht_frei"))
+			vl.GetVehicle(x)->PushActionExecuteCommand(ACTION_APPEND,"alarmiere_winterberg",Caller,399,false);
+	}
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,250,false); // TV Heli
+	Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,2,false);
+   }
+};
+
+bool Katas=false;
+
+object KatS : CommandScript
+{
+
+   KatS()
+   {
+	SetIcon("kats");
+	SetCursor("kats");
+	SetPriority(2000);
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return (!Katas && Input::LCtrlPressed() && !Game::IsMission() && !Game::IsCampaign()) || Input::RCtrlPressed();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Caller->GetID()==Target->GetID())
+		return Input::LCtrlPressed();
+	else
+		return Input::RCtrlPressed();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	if (Input::RCtrlPressed())
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"drehdenschluessel",Target,0,false);
+	else {
+		Mission::PlayHint("WIB_KATS");
+		VehicleList vl(VT_FIREFIGHTERS_DEKONP,VT_FIREFIGHTERS_GTF);
+		Vehicle v;
+		Katas=true;
+
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"senden",Caller,401,false);
+		for (int x=0;x<vl.GetNumVehicles();x++)
+		{
+			v=vl.GetVehicle(x);
+			if (v.IsFirefighter() && !v.HasCommand("ich_bin_nicht_frei") && v.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"alarmiere_winterberg",&v,310,false);
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Caller,250,false); // TV Heli
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Caller,2,false);
+	}
+    }     
+};
+
+object KatSEnde : CommandScript
+{
+
+   KatSEnde()
+   {
+	SetIcon("kats_stop");
+	SetCursor("kats_stop");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return Katas;
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+       return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Mission::PlayHint("WIB_KATS_ENDE");
+	VehicleList vl(VT_FIREFIGHTERS_DEKONP,VT_FIREFIGHTERS_GTF);
+	Vehicle v;
+
+	Caller->PushActionExecuteCommand(ACTION_NEWLIST,"senden",Caller,402,false);
+	for (int x=0;x<vl.GetNumVehicles();x++)
+	{
+		v=vl.GetVehicle(x);
+		if ((v.IsFirefighter() && !v.HasCommand("ich_bin_nicht_frei") && v.GetNumPassengers()>0) || v.GetVehicleType()==VT_TV_HELI)
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"aufsitzen",&v,0,false);
+	}
+	Katas=false;
+   }
+};
+
+object rufbereitschaft : CommandScript
+{
+
+   rufbereitschaft()
+   {
+	SetIcon("fme");
+	SetCursor("fme");
+	SetPriority(2000);
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return Input::LCtrlPressed() && !Game::IsMission() && !Game::IsCampaign();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+       return Caller->GetID()==Target->GetID();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObjectList lst("leitstelle");
+	if (childID==0)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"rufe_winterberg",lst.GetObject(0),301,false);
+	} else {
+		Vehicle v(Caller);
+		GameObjectList ol("platz2");
+		PersonList pl=v.GetPassengers();
+		Person *Dispo=pl.GetPerson(0);
+		// Dispo->SetBehaviour(3);
+		Dispo->PushActionLeaveCar(ACTION_NEWLIST,Caller);
+		Dispo->PushActionExecuteCommand(ACTION_APPEND,"EnterHouse",Target,112,false);
+		Dispo->PushActionMove(ACTION_APPEND,ol.GetObject(0),TARGET_ANY);
+		// Dispo->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",Caller,0,false);
+		Game::AddToGroup(Dispo,4);
+	}
+  }
+};
+
+object rufe_ssw : CommandScript
+{
+
+	rufe_ssw()
+	{
+	}
+
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Log("SSW herbeirufen");
+		ActorList al("5641");
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",al.GetActor(0),300,false); 
+	}
+};
+
+
+object rufeDoc : CommandScript
+{
+
+   rufeDoc()
+   {
+	SetIcon("heal");
+	SetCursor("heal");
+	SetGroupID(10);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LCtrlPressed() && Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,101901,false);
+   }
+};
+		
+object rufeDanny : CommandScript
+{
+
+   rufeDanny()
+   {
+	SetIcon("heal");
+	SetCursor("heal");
+	SetGroupID(11);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LCtrlPressed() && Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,100900,false);
+   }
+};
+
+object rufeDedo : CommandScript
+{
+
+   rufeDedo()
+   {
+	SetIcon("heal");
+	SetCursor("heal");
+	SetGroupID(12);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LCtrlPressed() && Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos());
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,102902,false);
+   }
+};
+
+class bungarext : CommandScript
+{
+
+	GameObject hierhin (Vector cp)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		obj.PushActionWait(ACTION_NEWLIST,500.0);
+		obj.PushActionDisappear(ACTION_APPEND,7.0,150.0,true);
+		return obj;
+	}
+	
+	void debung (GameObject *bung)
+	{
+		if (bung->HasNamePrefix("bungar"))
+		{
+			GameObject db(bung);		
+			db.PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+	}
+};

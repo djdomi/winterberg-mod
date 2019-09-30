@@ -1,0 +1,830 @@
+// ## 
+// ## Winterberger 4 Scripting
+// ## Version 6.0
+// ## 
+// ## Script Klinik_funks
+// ## 
+// ## Release 07.07.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+// Winterberger für Em4 
+// To_Hospital v1.1 by WitchDoctor
+// basiert auf To_Hospital.script für Em3 by manuelt/Danny Homm
+//
+// Revision
+// 17.6.06 : NEF folgt dem RTW ins Krankenhaus bei NA-Begleitung
+//		Transport eines Pat mit LE<500 nur mit NA-Begleitung erlaubt
+//
+//	Zum Krankenhaus-Script by Danny Homm alias Winterberger
+//	modifiziert von manuelt: Unterscheidung ob mit oder ohne Sondersignal
+//	V1.2
+// 02.07.06 : 	RTH folgt auch dem RTW
+//		RTH bekommt bei Bedarf am KH einen neuen Notarzt
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+
+int klinikstatus;
+
+Actor HeliPad;
+Actor RTWAnfahrt;
+Actor schockraum;
+Actor rwache;
+GameObject ExtKH;
+int kapaz;
+int intensiv;
+int hubi;
+int aufnahme;
+OpenHouse stfranzi;
+Vector Anstaltstuer;
+
+
+object KlinikInit : CommandScript
+{
+	KlinikInit()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int event)
+	{
+		ActorList l1=Game::GetActors("rtw0");
+		RTWAnfahrt=l1.GetActor(0);
+		l1=Game::GetActors("helipad");
+		HeliPad=l1.GetActor(0);
+		l1=Game::GetActors("rwache");
+		rwache=l1.GetActor(0);
+		ExtKH=Game::CreateObject("mod:Prototypes/Objects/Misc/empty.e4p", "externesKH");
+		Game::ExecuteCommand("waehle_klinik",&ExtKH);
+		ExtKH.Hide();
+		kapaz=4;
+		intensiv=2;
+		hubi=1;
+		ActorList al=Game::GetActors("schockraum");
+		aufnahme=al.GetActor(0)->GetID();
+		klinikstatus=65535;
+		OpenHouseList ohl("klinik");
+		stfranzi=ohl.GetOpenHouse(0);
+		schockraum=al.GetActor(0);
+		Anstaltstuer=stfranzi.GetEntrancePosition(true,0.f);
+	}
+};
+
+object zum_krankenhaus : CommandScript
+{
+	zum_krankenhaus()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		bool naanbord=false;
+		bool polanbord=false;
+		bool needpol=false;
+		Actor kh;
+		Vector Klinik;
+		char *parken[1];
+		parken[0]=v.GetName();
+		int fzid=int(parken[0][11])-32;
+		bool ishubi=false;
+		int meldung=1;
+		bool ziel_steht_fest;
+		bool sekundaer=childID==33;
+		bool extern=false;
+		int khaction=0;
+
+		if (sekundaer)
+			khaction=33;
+		
+		ishubi=v.GetVehicleType() == VT_AMBULANCE_RHC;
+
+		if (!ishubi)
+			kh=RTWAnfahrt;
+		else			
+			kh=HeliPad;
+		
+		Person p;
+		Vehicle nef;
+
+   		if (v.HasCommand("DUMMYHasWarningLights"))
+		{
+ 			v.EnableBlinker(BLT_NONE);
+ 			v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+		}
+
+		//Notarzt an Board? -> Sondersignal
+   		PersonList l2 = v.GetPassengers();
+		PersonList l3 = v.GetTransports();
+		Person sani,pat;
+
+		for (int ix=0;ix<l2.GetNumPersons();ix++)
+		{
+			p=l2.GetPerson(ix);
+			if (p.IsDoctor())
+			{
+				naanbord=true;
+				VehicleList nefs(p.GetName());
+				meldung=11;
+			} else 
+				if (p.HasCommand("DrawWeapon"))
+				{
+					VehicleList stw(p.GetName());
+					polanbord=true;
+				}
+				else 
+					sani=p;
+		}
+
+		
+		extern=(sani.IsFlagSet(OF_BULLDOZABLE) && v.GetNumTransported()>0);		
+
+		System::Log("Zum KH mit %s %s %u %u sek: %u ext: %u Einsatz : %u",sani.GetName(),v.GetName(),v.GetNumTransported(),childID,int(sekundaer),int(extern),sani.GetCarried().GetUserData());
+
+		ziel_steht_fest=sani.IsFlagSet(OF_CUTABLE) || (sekundaer && !extern);
+
+		if (!naanbord && v.GetUserData()==-112)
+			return;		// warte auf den zualarmierten NA
+
+
+		// Klinik-Bettennachweis abfragen;
+		if (ziel_steht_fest)
+		{
+			extern=sani.GetUserData()!=54290 && !sekundaer;
+			if (extern)
+			{
+				Actor a=Game::GetActor(sani.GetUserData());
+				GameObject ExtKH(&a);
+			}
+		} else {
+			extern=(((kapaz==0)|| (naanbord && intensiv==0) || (ishubi && hubi==0))) || extern;
+			if (naanbord && !extern)
+				extern=(Math::rand()%100>90) || (ishubi && l3.GetPerson(0)->GetLife()<350); //Schwerstverletzte direkt in SchwerpunktKH fliegen
+		}
+	
+		if (extern)
+		{
+			Mission::PlayHint("WIB_EXT_KH");
+			if (!ziel_steht_fest)
+				Game::ExecuteCommand("waehle_klinik",&ExtKH);
+			Klinik=ExtKH.GetPosition();
+		} else 
+			Klinik=kh.GetPosition();
+
+		if (!ziel_steht_fest)
+		{
+			sani.SetFlag(OF_CUTABLE);
+			if (extern)
+				sani.SetUserData(ExtKH.GetID());
+			else
+				sani.SetUserData(54290);
+		}
+			
+		Game::FindFreePosition(Caller,Klinik,20);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+   			//Mit Sondersignal oder ohne?
+   			//Erstmal ausschalten...
+			v.EnableBlueLights(false);
+			bool SoSiAnschalten = sekundaer;
+			int follow=19292;
+
+			//Patient an Bord?
+			if (l3.GetNumPersons() > 0)
+			{
+				if (naanbord && !sekundaer)
+				{
+					SoSiAnschalten = true;
+					nef=nefs.GetVehicle(0);
+					nef.PushActionWait(ACTION_NEWLIST,1.0f);
+					if (extern)
+					{
+						nef.SetUserData(ExtKH.GetID());
+					} else {
+						nef.SetUserData(0);
+					}
+					nef.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&v,follow,false);
+				} 
+
+				if (polanbord)
+				{
+					nef=stw.GetVehicle(0);
+					nef.PushActionWait(ACTION_NEWLIST,1.0f);
+					if (extern)
+					{
+						nef.SetUserData(ExtKH.GetID());
+					} else {
+						nef.SetUserData(0);
+					}
+					nef.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&v,follow,false);
+				} 
+			
+				if (l3.GetNumPersons()>1)
+					SoSiAnschalten = true;
+
+	   			//Patient mit LE < 600 && > 0 -> Sondersignal
+				
+				for(int i=0; i<l3.GetNumPersons(); i++)
+				{
+					pat=*l3.GetPerson(i);
+					if (l3.GetPerson(i)->GetRole()==ROLE_GANGSTER)
+						needpol=true;
+					if (l3.GetPerson(i)->GetLife() <= 600 && l3.GetPerson(i)->GetLife() > 0)
+						SoSiAnschalten = true;
+					if ((l3.GetPerson(i)->GetLife() < 400) && (!naanbord))
+					{
+						Audio::PlaySample("mod:Audio/FX/na_trans.wav");
+						v.SetChildEnabled("NA",true);
+						v.EnableBlueLights(true);
+						v.EnableBlinker(BLT_BOTH);
+						return;
+					}
+					
+				}
+			}
+
+			if (needpol && !polanbord)
+			{
+				v.SetChildEnabled("POL",true);
+				Mission::PlayHint("WIB_POL_MIT");
+				v.EnableBlueLights(true);
+				v.EnableBlinker(BLT_BOTH);
+				return;
+			} else {
+				if ((!naanbord) && (fzid != 35) && !sekundaer)
+					sani.PushActionExecuteCommand(ACTION_NEWLIST,"PatMonTransport",&pat,0,false);
+				Caller->PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",Caller,7,false);
+				if (!extern && !sekundaer)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"PatAnmelden",Caller,meldung,false);
+				v.RemoveCommand("DUMMYHasUmfeld");
+				v.EnableSpecialLights(false);
+				if (SoSiAnschalten || sekundaer)
+				{
+					v.PushActionExecuteCommand(ACTION_APPEND, "WT_SoSi", Caller, 0, false);
+				}
+
+				if (!extern || sekundaer)
+				{
+					Caller->PushActionMove(ACTION_APPEND, Klinik+Vector(-150,0,0)); // Fahre zum Wendepunkt
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "WT_Sosi", Caller, 1, false); // childID= 1 -> Blaulichter aus
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller);
+					Caller->PushActionTurnTo(ACTION_APPEND, Klinik+Vector(-300,0,0)); // Wende
+				}
+				Caller->PushActionMove(ACTION_APPEND, Klinik);
+				if (!extern)
+				{
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,8,false);
+					if (v.GetNumTransported() > 0)
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionEmptyRTW",&v,0,false);
+					else if (sekundaer)
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionEmptyRTW",&v,33,false);
+					Caller->PushActionWait(ACTION_APPEND,1.0f);
+				} else {
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "WT_SoSi", Caller, 1, false); 
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionExterneAnfahrt",&ExtKH,0,false);
+				}
+			}	
+		} else {
+			if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+			{
+				float ang=0;
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,7,false);
+				if (!extern)
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"PatAnmelden",Caller,111,false);
+				Caller->PushActionFlyTo(ACTION_APPEND, Klinik, !extern, ang); // Einparken
+				//Nur mit Transports...
+				if (!extern)
+				{
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckHubiDown",Caller,0,false);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,8,false);
+					if (v.GetNumTransported() > 0 || sekundaer)
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionEmptyRTW",Caller,khaction,false);
+					Caller->PushActionWait(ACTION_APPEND,1.0f);
+				} else
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionExterneAnfahrt",&ExtKH,0,false);
+			}	
+		}
+	}
+};
+
+object PatAnmelden : CommandScript
+{
+
+	PatAnmelden()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (!Caller->HasCommand("PatAnmelden"))
+		{
+			bool naanbord=ChildID>10;
+			bool ishubi=ChildID>100;
+			kapaz--;
+			if (naanbord)
+				intensiv--;
+			if (ishubi)
+				hubi--;
+			char * kennung[0]="                                                               ";
+			char * format[]="Aufnahme %i Schockraum %i Hubi %i";
+			int x=snprintf(kennung[0],40,format,kapaz,intensiv,hubi);
+			Mission::PlayHint(kennung[0]);
+			System::Log(":BETTEN:%u:%u:%u", kapaz, intensiv, hubi);
+			Caller->AssignCommand("PatAnmelden");
+		}
+	}
+};
+
+object ActionExterneAnfahrt : CommandScript
+{
+
+	ActionExterneAnfahrt()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Caller->PushActionShowHide(ACTION_APPEND,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",Caller,9,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionEmptyRTW",Target,1,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"verzoegern",Target,0,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"irleuchte",Caller,2,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",Caller,0,false);
+	}
+};
+
+
+object ActionEmptyRTW : CommandScript
+{
+	Vector TargetPos;
+
+	ActionEmptyRTW()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		bool extern=ChildID==1;
+		bool sekundaer=ChildID==33;
+
+		ActorList mPlaceList;
+		PersonList l;
+		Vehicle nef;
+		bool ishubi=false;
+
+		Vehicle v(Caller);
+		char * parken[1];
+		parken[0]=v.GetName();
+		int fzid=int(parken[0][11])-32;
+
+		if (!extern)
+			v.PushActionWait(ACTION_NEWLIST, 3.0f);	// stop car
+		bool isSEG=fzid == 35;
+
+		if (isSEG)
+		{
+			System::Error("SEG KTW am KH leeren");
+			l = v.GetTransports();
+		} else 
+			l = v.GetPassengers();
+		v.RemoveCommand("PatAnmelden");
+		for (int i=0; i<l.GetNumPersons(); i++)
+		{
+			Person p(l.GetPerson(i));
+			p.RemoveCommand("manv_gelb");
+			p.RemoveCommand("manv_gruen");
+			p.SetUserData(0);
+			p.PushActionLeaveCar(ACTION_NEWLIST, Caller);
+			if (!extern)
+			{
+				p.PushActionExecuteCommand(ACTION_APPEND,"InDieAnstalt",&schockraum,0,false);
+				if (!sekundaer && !isSEG)
+					p.PushActionExecuteCommand(ACTION_APPEND,"BettFrei",&v,aufnahme,false);			
+				stfranzi.ShowCeiling(false,false,false);
+			}
+
+			if (sekundaer && !extern)
+			{
+				p.PushActionWait(ACTION_APPEND,10.0f);
+				if (p.IsParamedicTeam())
+					p.PushActionExecuteCommand(ACTION_APPEND,"wt_sekundaertransport",&v,0,false);
+			} else {
+
+				if (p.IsDoctor() || (p.HasCommand("DrawWeapon") && !p.IsInjured()))
+				{
+					if (!v.IsFlagSet(OF_USABLE_WITH_MEGAPHONE) || p.HasCommand("DrawWeapon"))
+					{
+						VehicleList vl(p.GetName());
+						nef=vl.GetVehicle(0);
+						if (!extern)
+						{
+							nef.PushActionWait(ACTION_APPEND,10.0f);
+							nef.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&nef,0,false);
+						} else {
+							nef.PushActionExecuteCommand(ACTION_APPEND,"escorte_abmarsch",&p,0,false);
+							nef.PushActionExecuteCommand(ACTION_APPEND,"check_ms_vollzaehlig",&nef,0,false);
+							nef.PushActionExecuteCommand(ACTION_APPEND,"Fz_ranholen",Target,1,false);
+							nef.PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",Caller,0,false);
+						}
+					}
+				} else
+					if (p.IsParamedicTeam())
+					{
+						Person opfer=p.GetCarried();
+						System::Log("Empty RTW Paramedics %s ext : %u Einsatz : %u",p.GetName(),int(extern),opfer.IsFlagSet(OF_BULLDOZABLE),opfer.GetUserData());
+						if (opfer.IsFlagSet(OF_FLOTSAM) && !extern)
+							p.PushActionExecuteCommand(ACTION_APPEND,"wt_sekundaer",&opfer,0,true);
+
+						if (opfer.IsFlagSet(OF_BULLDOZABLE) && extern)
+						{
+							System::Log("Empty RTW Finish Einsatz %s %u",p.GetName(),opfer.GetUserData());
+							Game::SetEventFinished(opfer.GetUserData(), true, 2000);  // Code für Patch 1.3
+						}
+
+					    	p.PushActionPutInBase(ACTION_APPEND);
+						System::Log("Empty RTW Aufsitzen");
+						if (!extern)
+						{
+							p.PushActionWait(ACTION_APPEND,5.0f);
+							p.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&v,0,false);
+						} else 
+							p.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",&v,984,false);
+					} else 
+						p.PushActionDeleteOwner(ACTION_APPEND);
+				System::Log("Empty RTW Ende Paramedics");
+				p.ClearFlag(OF_BULLDOZABLE);
+			}
+		}
+		if (isSEG)
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "SEGweg", &v, 0, false);
+	
+	}
+};
+
+
+object SEGWeg : CommandScript
+{
+
+	SEGWeg()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		v.PushActionWait(ACTION_NEWLIST,4.0);
+		System::Error("KTW weitersenden.");
+		PersonList pl(v.GetName());
+		if (v.GetNumPassengers()!=pl.GetNumPersons())
+		{
+			System::Error("vom KH zur EStelle zurueck.");
+			v.PushActionExecuteCommand(ACTION_APPEND,"seg_ktw_estelle",Caller,0,true);
+		} else { 
+			System::Error("vom KH nach hause");
+			v.PushActionExecuteCommand(ACTION_APPEND,"gohome_winterberg",Caller,0,true);
+		}
+	}
+};
+
+
+object BettFrei : CommandScript
+{
+
+	BettFrei()
+	{
+		SetGroupID(20);		
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		Person p(Caller);
+		bool ishubi=v.GetVehicleType()==VT_AMBULANCE_RHC;
+
+		if (klinikstatus & 1)
+		{
+			if (ChildID==aufnahme)
+			{
+				if (p.IsParamedicTeam())
+				{
+					kapaz++;
+				}
+				else if (p.IsDoctor())
+				{
+					intensiv++;
+					if (ishubi)
+						hubi++;
+				}
+			} else 
+				if (ChildID<0)
+				{
+					kapaz++;
+					Caller->RemoveCommand("PatAnmelden");
+				}
+		}
+	}
+};
+
+
+object PatMonTransport : CommandScript
+{
+
+	PatMonTransport()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		Person p(Target);
+		if (p.GetLife()<400)
+		{
+			VehicleList vl(Caller->GetName());
+			Vehicle v=vl.GetVehicle(0);
+			if (!v.IsCollidingWithTrigger("aufnahme"))
+			{
+				v.PushActionWait(ACTION_NEWLIST,1.0);
+				Vector posabc=v.GetPosition();
+				int eventid=Game::ShowEvent("RTW benötigt NA !", posabc);
+				v.SetUserData(eventid);
+				v.AssignCommand("ErwarteNA");
+				v.EnableBlueLights(true);
+				v.EnableBlinker(BLT_BOTH);
+				v.PushActionExecuteCommand(ACTION_APPEND,"StatusSenden",&v,0,false);
+				v.PushActionExecuteCommand(ACTION_APPEND,"BettFrei",&v,-1,false);
+				// Audio::PlaySample("mod:/Audio/fx/na_nachf.wav");
+				Mission::PlayHint("WIB_NA_NACHF");
+				v.SetChildEnabled("NA",true);
+				ScriptInterface::OpenObjectives();
+				Caller->PushActionWait(ACTION_NEWLIST,0.1f);						
+			}
+		} else
+		{
+			p.SetLife(p.GetLife()-6);
+			Caller->PushActionWait(ACTION_NEWLIST,1.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"PatMonTransport",Caller,0,false);
+		}
+	}
+};
+
+object ErwarteNA : CommandScript
+{
+
+	ErwarteNA()
+	{
+		SetGroupID(20);		
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		if (ChildID>0)
+			Game::SetEventFinished(ChildID, true, -500); 
+		v.RemoveCommand("ErwarteNA");
+	}
+};
+
+object KlinikStatus0 : CommandScript
+{
+	KlinikStatus0()
+	{
+		SetIcon("aufn_stop");
+		SetCursor("aufn_stop");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return Caller->GetID()==Target->GetID();
+	}
+
+
+   	void PushActions(GameObject *Caller, Actor *Target, int childID)
+   	{
+		bool offen=(klinikstatus & 1);
+		if (offen)
+		{
+			klinikstatus=klinikstatus & 65534;
+			SetIcon("notaus");
+			kapaz=0;
+			SetIcon("aufn_frei");
+			SetCursor("aufn_frei");
+			Mission::PlayHint("Klinik Winterberg für Aufnahmen gesperrt.");
+			System::Log(":KLINIK:0:0");
+		} else {
+			klinikstatus=klinikstatus | 1;
+			SetIcon("EnterHouse");
+			kapaz=4;
+			intensiv=2;
+			hubi=1;
+			SetIcon("aufn_stop");
+			SetCursor("aufn_stop");
+			Mission::PlayHint("Klinik Winterberg aufnahmebereit gemeldet.");
+			System::Log(":KLINIK:0:1");
+			System::Log(":BETTEN:%u:%u:%u", kapaz, intensiv, hubi);
+		}
+   	}
+};
+
+object zum_ith : CommandScript
+{
+
+	zum_ith()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		VehicleList al(Target->GetName());
+		Target=*al.GetVehicle(0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "WT_SoSi", Caller, 0, false);
+		Caller->PushActionMove(ACTION_APPEND,Target,TARGET_ANY);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "WT_SoSi", Caller, 1, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"EmptyCar",Caller,0,false);	
+	}
+};
+
+object InDieAnstalt : CommandScript
+{
+
+	InDieAnstalt()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person squad(Caller);
+		bool notfall=squad.IsDoctor() && Target->GetType()==ACTOR_PERSON;
+		if (notfall)
+		{
+				Caller->PushActionExecuteCommand(ACTION_INSERT,"heal",Target,0,false);
+				Caller->PushActionMove(ACTION_INSERT,Target,TARGET_TREATMENT);
+		} else
+			Caller->PushActionMove(ACTION_INSERT,Target,TARGET_ANY);
+
+		if (squad.GetEnteredHouseID()<1)
+		{
+			Caller->PushActionEnterHouse(ACTION_INSERT,&stfranzi);
+			Caller->PushActionMove(ACTION_INSERT,Anstaltstuer,false);
+		}
+
+		if (squad.IsHidden())
+			Caller->PushActionShowHide(ACTION_INSERT,false);
+	}
+};
+
+object escorte_abmarsch : CommandScript
+{
+
+	escorte_abmarsch()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Target);
+		p.PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",Caller,984,false);
+	}
+};
+
+object ringfunk : CommandScript
+{
+
+	ringfunk()
+	{
+		SetIcon("schockr");
+		SetCursor("schockr");
+		SetGroupID(4);
+		SetGroupLeader(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		stfranzi.ShowCeiling(false,false,false);
+		Person p;
+		PersonList pl=stfranzi.GetNonSquadPersonsInside();
+		for (int x=0;x<pl.GetNumPersons() && !p.IsInjured();x++)
+			p=pl.GetPerson(x);
+		if (!p.IsFlagSet(OF_BULLDOZABLE))
+			p.SetUserData(44);
+		if (p.IsInjured())
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",&p,666,false);
+		else
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",&schockraum,666,false);
+	}
+};
+
+object trauma_ende : CommandScript
+{
+	trauma_ende()
+	{
+		SetIcon("station");
+		SetCursor("station");
+		SetValidTargets(ACTOR_PERSON);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Target);
+		bool ok=Target->GetType()==ACTOR_PERSON && Target->GetID()!=Caller->GetID();
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		ActorList rw;
+		rw=Game::GetActors("rwache");
+		Actor entry;
+		entry=rw.GetActor(0);
+		PersonList pl(Caller->GetName());
+		System::Log("Trauma-Ende %s %u %s",Caller->GetName(),pl.GetNumPersons(),Target->GetName());
+		Person p(Target);
+		bool carry=p.IsInjured();
+		for (int x=0;x<pl.GetNumPersons();x++)
+		{
+			p=pl.GetPerson(x);
+			p.PushActionDeleteOwner(ACTION_NEWLIST);	
+			if (carry && !p.IsDoctor())
+				p.PushActionPutInBase(ACTION_INSERT);			
+			p.PushActionMove(ACTION_INSERT,&entry,TARGET_ANY);
+			if (carry && !p.IsDoctor() && !p.IsHidden() && p.GetEnteredCarID()<2)
+			{
+				p.PushActionLift(ACTION_INSERT,Target);
+				p.PushActionMove(ACTION_INSERT,Target,TARGET_ANY);
+				carry=false;
+			}
+		}
+		VehicleList vl(Caller->GetName());
+		if (vl.GetNumVehicles()>0)
+		{
+			vl.GetVehicle(0)->PushActionExecuteCommand(ACTION_NEWLIST,"Statussenden",Caller,2,false);
+			vl.GetVehicle(0)->PushActionDeleteOwner(ACTION_APPEND);
+		}
+		// stfranzi.ShowCeiling(true,true,true);
+	}
+};

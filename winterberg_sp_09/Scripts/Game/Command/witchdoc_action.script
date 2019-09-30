@@ -1,0 +1,2923 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script witchdoc_action
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+int escalator=140;
+int countdown=20;
+bool warmedup=false;
+int eventid=-1;
+int emmatime;
+bool is_bma=false;
+VehicleList markit;
+int nmark;
+GameObjectList Baumliste;
+int klinik;
+
+object WitchDocAction : CommandScript
+{
+	WitchDocAction()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// System::Log("WitchDoc Action Start");
+		int randact=Math::rand()%100+2;
+		int h,m,s;
+		Game::GetTime(h,m,s);
+		
+		if (randact<9)
+			Game::ExecuteCommand("MegaBass",Caller);
+		Game::ExecuteCommand("Fine",Caller);
+		if ((warmedup && eventid<0) || ChildID==100)
+		{
+			if (escalator>0)
+				escalator--;
+			else if (countdown==0)
+				{
+					System::Log("WD Action : Mission Hang %u",-escalator);
+					escalator=0;
+					countdown=20;
+				}
+
+			if (randact > escalator || escalator<0 || ChildID==100)		// ok -> Spezialeinsatz :-)
+			{
+				if (escalator<0) 
+				{
+					randact=-escalator;
+					countdown--;
+				} else	{
+					randact=Math::rand()%100;
+					countdown=20;
+				}
+
+				escalator=150;
+				// System::Log("WitchDoc Action Act %u",randact);
+				switch (randact)
+				{
+					case 1:
+					case 11:
+					case 21:
+					case 31:
+					case 41:
+					case 61:
+					case 71:
+					case 81:
+					case 91:
+						System::Log("Zweig Verkehrsunfall %u",Game::GetNumInjuredPersonNotOnTransport(true));
+						if (Mission::GetCounter("Injured Persons") < 4)
+							Game::ExecuteCommand("random_vu_init",Caller);
+						else
+							escalator=-randact;
+						break;
+					case 93:
+					case 13:
+						System::Log("Zweig Ehrang brennt!");
+						Game::ExecuteCommand("ehrang_brennt",Caller);
+						escalator=140;
+						break;
+					case 12:
+					case 62:
+						System::Log("Zweig Herbon");
+						if (Mission::GetCounter("Burning Objects") < 3)
+						{
+							Game::ExecuteCommand("herborn_do",Caller); // Tanker in Open_House
+							escalator=170;
+						}
+						break;
+					case 52:
+					case 22:
+					case 72:
+					case 82:
+					case 32:
+						System::Log("Zweig Orkan");
+						Ehranger.PushActionExecuteCommand(ACTION_INSERT,"emma",Caller,0,false); // Sturm
+						escalator=170;
+						break;
+					case 14:
+					case 4:
+					case 24:
+					case 34:
+					case 44:
+					case 64:
+					case 54:
+					case 74:
+					case 84:
+					case 94:
+						System::Log("Zweig Messerstecher");
+						Game::ExecuteCommand("messer_do",Caller);
+						escalator=120;
+						break;
+					case 15:
+					case 85:
+						System::Log("Zweig Ruesselsheim");
+						escalator=170;
+						if (Mission::GetCounter("Injured Persons") < 3 && Mission::GetCounter("Burning Objects") < 2) 
+							Game::ExecuteCommand("ruess_do",Caller); // S-Bahn-Unglueck
+						else
+							escalator=-randact;
+						break;
+					case 55:
+						System::Log("Zweig Plane_crash");
+						escalator=250;
+						if (Mission::GetCounter("Injured Persons") < 3 && Mission::GetCounter("Burning Objects") < 1) 
+							Game::ExecuteCommand("plane_crash",Caller); // S-Bahn-Unglueck
+						else
+							escalator=-randact;
+						break;
+					case 65:
+					case 25:
+					case 75:
+					case 35:
+						System::Log("Zweig Lawine");
+						escalator=150;
+						if (deluxe && Mission::GetCounter("Injured Persons")<4) 
+							Game::ExecuteCommand("Lawine",Caller); 
+						else
+							escalator=-randact;
+						break;
+						break;
+					case 6:
+					case 26:
+					case 56:
+					case 86:
+					case 36:
+						System::Log("Zweig Massenschlaegerei %u");
+						if (Mission::GetCounter("Injured Persons")<4)
+						{
+							Game::ExecuteCommand("randale",Caller); 
+							escalator=170;
+						}
+						else
+							escalator=-randact;
+						break;
+					case 7:
+					case 17:
+					case 37:
+					case 67:
+					case 27:
+						System::Log("Bewaffneter Raub");
+						Caller->SetUserData(0);
+						if (Mission::GetCounter("Injured Persons") < 3 && Mission::GetCounter("Burning Objects") < 3) 
+						{
+							Game::ExecuteCommand("ueberfall",Caller); 
+							escalator=170;
+						}
+						break;
+					case 18:
+					case 8:
+					case 28:
+					case 38:
+					case 48:
+					case 68:
+					case 58:
+					case 78:
+					case 88:
+					case 98:
+						System::Log("Zweig BMA");
+						Game::ExecuteCommand("wt_bma",Caller); // BMA mit Feuer
+						escalator=120;
+						is_bma=true;
+						break;
+					case 9:
+					case 19:
+					case 39:
+					case 79:
+					case 69:
+					case 29:
+					case 89:
+						Caller->SetUserData(1);
+						System::Log("Razzia");
+						Game::ExecuteCommand("ueberfall",Caller);
+						escalator=150;
+						break;
+					default:
+						escalator=1;
+						break;
+				}
+			}
+		} else
+			warmedup=(h>8) || warmedup;
+		// System::Log("WitchDoc Action Ende");
+	}
+};
+
+
+
+// Verkehrsunfall auf der Landstrasse
+// by WitchDoctor
+// Version 0.1
+
+const int MAX_PROTOTYPES = 10;
+const char * prototypes[MAX_PROTOTYPES];
+const char PROTOTYPE1[] = "mod:Prototypes/Persons/Civil/civilminister01.e4p";
+const char PROTOTYPE2[] = "mod:Prototypes/Persons/Civil/civilman03_green.e4p";
+const char PROTOTYPE3[] = "mod:Prototypes/Persons/Civil/civilman02_silver.e4p";
+const char PROTOTYPE4[] = "mod:Prototypes/Persons/Civil/firewatchguy01.e4p";
+const char PROTOTYPE5[] = "mod:Prototypes/Persons/Civil/civilman02_blue.e4p";
+const char PROTOTYPE6[] = "mod:Prototypes/Persons/Civil/civilwoman01_red.e4p";
+const char PROTOTYPE7[] = "mod:Prototypes/Persons/Civil/civilwoman02_beige.e4p";
+const char PROTOTYPE8[] = "mod:Prototypes/Persons/Civil/civilwoman03_blue.e4p";
+const char PROTOTYPE9[] = "mod:Prototypes/Persons/Civil/civilwoman04.e4p";
+const char PROTOTYPE10[] = "mod:Prototypes/Persons/Civil/civilwoman05.e4p";
+
+const char * beweismittel[5];
+const char beweismittel[0] = "mod:Prototypes/objects/equipment/gun.e4p";
+const char beweismittel[1] = "mod:Prototypes/objects/equipment/gun_big.e4p";
+const char beweismittel[2] = "mod:Prototypes/objects/equipment/rifle.e4p";
+const char beweismittel[3] = "mod:Prototypes/objects/misc/movebox01.e4p";
+const char beweismittel[4] = "mod:Prototypes/objects/misc/movebox02.e4p";
+
+const int MAX_PROTOVECS = 13;
+const char * protovecs[MAX_PROTOVECS];
+const char PROTOVECS1[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck00.e4p";
+const char PROTOVECS2[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck01.e4p";
+const char PROTOVECS3[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck02.e4p";
+const char PROTOVECS4[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck05.e4p";
+const char PROTOVECS5[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck07.e4p";
+const char PROTOVECS6[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck08.e4p";
+const char PROTOVECS7[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck09.e4p";
+const char PROTOVECS8[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck10.e4p";
+const char PROTOVECS9[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck11.e4p";
+const char PROTOVECS10[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck12.e4p";
+const char PROTOVECS11[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck13.e4p";
+const char PROTOVECS12[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck14.e4p";
+const char PROTOVECS13[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck15.e4p";
+
+const int MAX_PROTONAMES= 8;
+const char * pName[MAX_PROTONAMES];
+
+		prototypes[0] = PROTOTYPE1;
+		prototypes[1] = PROTOTYPE2;
+		prototypes[2] = PROTOTYPE3;
+		prototypes[3] = PROTOTYPE4;
+            	prototypes[4] = PROTOTYPE5;
+            	prototypes[5] = PROTOTYPE6;
+            	prototypes[6] = PROTOTYPE7;
+            	prototypes[7] = PROTOTYPE8;
+            	prototypes[8] = PROTOTYPE9;
+            	prototypes[9] = PROTOTYPE10;
+
+int punkte;
+
+object random_vu_init : CommandScript
+{
+
+	random_vu_init()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		Vehicle car=Game::CreateVehicle("mod:Prototypes/Vehicles/Civil - Trucks/crash.e4p","WitchDcCore");
+
+		Vector Crash=disaster::incident_pos();
+		if (Crash.x!=0 && Crash.y!=0)
+		{
+			Game::FindFreePosition(&car,Crash,50.0);
+			car.SetPosition(Crash);
+			car.PushActionExecuteCommand(ACTION_NEWLIST,"random_vu_do",&car,0,false);
+		} else 
+			escalator=-11;
+	}
+};
+
+object random_vu_do : CommandScript
+{
+
+	random_vu_do()
+	{
+		SetCursor("MoveTo");
+		SetIcon("MoveTo");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		Actor Opfer;
+		Actor CrashCar;
+		Vector Pos;
+		Vector Posabc;
+		float rot[9];
+		float childRot[9];
+		int index;
+		float winkel;
+		bool autobrennt=false;
+		bool eingeklemmt=false;
+		bool bus=false;
+		bool gefahrgut=false;
+		bool lkw=false;
+		int n_pat=0;
+		int erg;
+		Person p;
+
+            	protovecs[0] = PROTOVECS1;
+            	protovecs[1] = PROTOVECS2;
+            	protovecs[2] = PROTOVECS3;
+            	protovecs[3] = PROTOVECS4;
+            	protovecs[4] = PROTOVECS5;
+            	protovecs[5] = PROTOVECS6;
+            	protovecs[6] = PROTOVECS7;
+            	protovecs[7] = PROTOVECS8;
+            	protovecs[8] = PROTOVECS9;
+            	protovecs[9] = PROTOVECS10;
+            	protovecs[10] = PROTOVECS11;
+            	protovecs[11] = PROTOVECS12;
+            	protovecs[12] = PROTOVECS13;
+
+		pName[0]="Civil Man 01";
+		pName[1]="Civil Man 01 Blue";
+		pName[2]="Civil Man 01 White";
+		pName[3]="Civil Man 02 Silver";
+		pName[4]="Civil Pizza 01";
+		pName[5]="Civil Woman 03 Red";
+		pName[6]="Civil Woman 04";
+		pName[7]="Civil Woman 01 Yellow";
+
+		// System::Error("random_vu: Jetzt gehts los !");
+
+		Vehicle carobj;
+		Vehicle car(Caller);
+		Pos=car.GetPosition();
+		car.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		winkel = rand()%180-90;
+		Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		car.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+		bus=(Math::rand()%10)<7;
+
+		punkte=0;
+		if (bus)
+		{
+			// System::Error("Busunglueck");
+			car.SetSmoking(true);
+			car.SetSmokeLevelDuration(30.0f);
+			punkte=1000;
+			carobj=Game::CreateVehicle("mod:Prototypes/Vehicles/Civil - Cars/wdcrash1.e4p","WitchDcCore2");
+			winkel = rand()%180-90;
+			Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+			Math::MultiplyMatrices(childRot, rot);
+			carobj.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+			carobj.ClearFlags();
+			carobj.SetFlag(OF_RECOVERABLE|OF_TRANSPORTABLE|OF_COOLABLE);
+			Game::FindFreePosition(&carobj,Pos,500);
+			carobj.Destroy();
+			carobj.SetPosition(Pos);
+			carobj.SetParking(false);
+			carobj=Game::CreateVehicle("mod:Prototypes/Vehicles/Civil - Cars/crashcar2.e4p","WitchDcCore3");
+			winkel = rand()%180-90;
+			Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+			Math::MultiplyMatrices(childRot, rot);
+			carobj.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+			carobj.ClearFlags();
+			carobj.SetFlag(OF_RECOVERABLE|OF_TRANSPORTABLE|OF_COOLABLE);
+			carobj.SetParking(false);
+			Game::FindFreePosition(&carobj,Pos,500);
+			carobj.Destroy();
+			carobj.SetPosition(Pos);
+			
+		}
+		else
+		{
+			// System::Error("Gefahrgut");
+			car.PushActionExecuteCommand(ACTION_NEWLIST,"setggv",&car,0,false);
+			gefahrgut=true;
+			
+			// erstmal keine gefahrguteinsaetze
+			punkte=3000;
+		}
+		carobj.SetFlag(OF_RECOVERABLE);
+		car.SetParking(false);
+		char * fzmask="WitchDc%u";
+		char * fzbuf="          ";
+		
+	
+		// Zivilisten erzeugen und als Verletzte auf der Strasse verstreuen
+		//Fahrzeuge + Eingeklemmten erzeugen
+		int q = (rand()%8)+1;
+		bool memek=false;
+		Vehicle memv;
+		
+		for(int i = 0; i < q; i++)
+		{
+			// System::Error("Unfallfz erzeugen");
+			Posabc=Pos+Vector(((rand()%150)-75),((rand()%150)-75),0);
+			index = rand()%MAX_PROTOVECS;
+			winkel = rand()%180-90;
+			Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+			Math::MultiplyMatrices(childRot, rot);
+
+			erg=snprintf(fzbuf,10,fzmask,i);
+			Vehicle v = Game::CreateVehicle(protovecs[index], fzbuf);
+			v.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+			punkte=punkte+500;
+			int w=rand()%11;
+			if (5 < w)
+			{
+				// System::Error("eingeklemmte Person erzeugen");
+				
+				int index = rand()%MAX_PROTONAMES;
+				if (disaster::Person_insFz(&v,fzbuf,&p,true))
+				{
+					n_pat++;
+					eingeklemmt=true;
+					punkte=punkte+750;
+				} 
+			}
+			if (memek)
+			{
+				v.SetPlacement(PLACEMENT_ALIGNED_CORNERS);
+				Posabc=memv.GetTargetPoint(&v,TARGET_SHEARSDOOR);		
+				Game::FindFreePosition(&v,Posabc,50);
+				
+			} else 
+				Game::FindFreePosition(&v,Posabc,300);
+			v.SetPosition(Posabc);
+			v.SetParking(false);
+			if (memek)
+			{
+				v.PushActionTurnTo(ACTION_NEWLIST,Target);
+				v.PushActionMove(ACTION_APPEND,Posabc);
+			}
+			memek=v.HasEnclosedPerson();
+			memv=v;
+			if (((Math::rand()%10)>6) && !gefahrgut)
+			{
+				v.SetSmoking(true);
+				v.SetSmokeLevelDuration(30.0f);
+				if (memek)
+				{
+					v.PushActionExecuteCommand(ACTION_NEWLIST,"ActionMotorSound",&p,112,false);
+				}
+				autobrennt=true;
+			} else {
+				if (memek)
+					p.PushActionExecuteCommand(ACTION_NEWLIST,"ActionMotorSound",&p,1121,false);		
+				v.Damage(v.GetMaxEnergy()*0.5);
+			}
+			v.SetFlag(OF_RECOVERABLE);
+		}
+		// Personen erzeugen und verletzt auf der Strasse verstreuen
+		if (bus)
+			q=(rand()%10)+5;
+		else
+			q = (rand()%7)+3;	
+	
+		n_pat=disaster::Verletzte_streuen(&car,q,700,"WitchDcPat");
+		
+		punkte=punkte+500*n_pat;
+
+		
+		// EventID-Code für Patch 1.3
+		if (gefahrgut)	
+			eventid=Game::ShowEvent("WIB_WD_VUGGV", Pos);
+		else
+			eventid=Game::ShowEvent("WIB_WD_VUUN", Pos);
+
+		Game::ShowHelpText("WIB_WD_VU");
+		Mission::PlayHint("WIB_WD_VU");
+		if (autobrennt && ((Math::rand()%10)<5))
+			Mission::PlayHint("WIB_WDVU_FEUER");
+		else 	if (bus && ((Math::rand()%10)<4))
+				Mission::PlayHint("WIB_WDVU_BUS");
+			else 	if (eingeklemmt && ((Math::rand()%10)<3))
+				Mission::PlayHint("WIB_WDVU_KLEMM");
+				else 	if (n_pat > Math::rand()%10)
+						Mission::PlayHint("WIB_WDVU_VIELE");
+					else
+						Mission::PlayHint("WIB_WDVU_SCHNELL");
+		ScriptInterface::ShowBriefing();
+		Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,10,false);	
+	}
+};
+
+GameObject Ehranger;
+char *wib_disaster="              ";
+
+object CheckWTDInit : CommandScript
+{
+	CheckWTDInit()
+	{
+		SetGroupID(20);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int event)
+	{
+		System::Log("WTD Init");
+		Ehranger=Caller;
+		OpenHouseList ohl("klinik");
+		klinik=ohl.GetOpenHouse(0)->GetID();
+		ehrang=false;
+		escalator=130;
+		warmedup=false;
+		eventid=-1;
+		// snprintf(wib_disaster,15,"%s111111111111111",System::GetEnvString("WEMDisaster"));
+		// Mission::PlayHint(wib_disaster);
+		System::Log("WTD Init Ende");
+	}
+};
+
+object CheckWitchDoc : CommandScript
+{
+	CheckWitchDoc()
+	{
+		SetGroupID(20);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int event)
+	{
+		bool feddisch=false;
+		bool missed=false;
+		bool razzia=false;
+		
+		// System::Log("CheckWitchDoc %u",event);
+		switch (event)
+		{
+			case 90:	
+				razzia=true;
+			case 70:
+				// if (razzia)
+				//	System::Log("Razzia laeuft");
+				// else
+				//	System::Log("Ueberfall laeuft");
+				PersonList pl("ueberfall");
+				Vehicle v(Target);
+				// System::Log(v.GetName());
+				int i;
+				feddisch=(pl.GetNumPersons() == 0);
+				if (razzia && feddisch)
+				{
+					GameObjectList ol("beweis");
+					for (i=0;i<ol.GetNumObjects() && !missed;i++)
+						missed=!ol.GetObject(i)->IsCarried();
+				}
+				else
+					missed=v.IsValid() && v.IsHidden() && v.GetNumPassengers()>0;
+				feddisch=feddisch && !missed;
+				if (missed)
+				{
+					if (razzia)
+					{
+						// System::Log("Razzia fehlgeschlagen");
+						Mission::PlayHint("WIB_WD_RAZZIA_NIX");
+					} else {
+						// System::Log("Ueberfall fehlgeschlagen");
+						Mission::PlayHint("WIB_WD_UEBERFALL_NIX");
+						for (i=0;i<pl.GetNumPersons();i++)
+							pl.GetPerson(i)->PushActionDeleteOwner(ACTION_NEWLIST);
+						if (v.HasNamePrefix("ueberfall"))
+							v.PushActionDeleteOwner(ACTION_NEWLIST);
+					}
+					Audio::PlaySample("mod:Audio/FX/Voices/sardlach.wav");
+				}
+				break;
+			case 60:
+				// System::Log("Schlaegerei/Demo laeuft");
+				PersonList pl("randale");
+				feddisch=(pl.GetNumPersons() == 0);
+				break;
+			case 10:
+				GameObjectList pl=Game::GetGameObjectsWithPrefix("WitchDc");
+				feddisch=(pl.GetNumObjects() == 0);
+				if (pl.GetNumObjects()==1)
+					System::Log("VU Objects left %u %s %u",pl.GetNumObjects(),pl.GetObject(0)->GetName(),int(pl.GetObject(0)->GetType()));
+				break;
+			case 20:
+				GameObjectList pl=Game::GetGameObjectsWithPrefix("HerbTank");
+				feddisch=(pl.GetNumObjects() == 0);
+				// System::Log("Herborn laeuft");
+				if (feddisch)
+				{
+					System::Log("Tankzug feddisch");
+					GameObjectList ol("HerbOel");
+					Game::RemoveGameObject(ol.GetObject(0));
+				}
+				break;
+			case 25:
+				GameObjectList pl=Game::GetGameObjectsWithPrefix("emma");
+				feddisch=(pl.GetNumObjects() == 0);
+				// System::Log("Orkan läuft");
+				if (feddisch)
+					System::Log("Emma fertig");
+				else if (emmatime<disaster::hmin())
+					Caller->PushActionExecuteCommand(ACTION_INSERT,"emma",Caller,3+rand()%5,false);		
+				break;
+			case 26:
+				feddisch=!Game::ExistsInjuredPerson();
+				if (feddisch)
+				{
+					ActorList al("wintersport");
+					SpawnPoint sp(al.GetActor(0));
+					sp.SetEnabled(true);
+				}
+				break;
+			case 40:
+				Actor a=Game::GetActor(opfer);
+				feddisch=!a.IsValid();
+				if (feddisch)
+				{
+					System::Log("Messerstecher beseitigt");
+				} else {
+					Person p(&a);
+					missed=p.IsDead();
+				}
+				break;
+			case 50:
+			case 51:
+			case 52:
+			case 53:
+				int zug=event-50;
+				char * bhf="       ";
+				char * zugname="sbahn%u";
+				int j=snprintf(bhf,7,zugname,zug);
+				GameObjectList ol(bhf);
+				// System::Log("Ruesselsheim laeuft");
+
+				if (ol.GetNumObjects() == 0)
+					feddisch=true;
+				else
+				{	
+					feddisch=true;	
+					System::Log("SBahn Objekte untersuchen");	
+					for (int x=0;(x<ol.GetNumObjects()) && feddisch;x++)
+						feddisch=feddisch && ol.GetObject(x)->IsHidden();
+				}
+		
+				if (feddisch)
+				{
+					ehrang=false;
+					System::Log("Ruesselsheim beendet");
+				}
+				break;	
+			case 55:
+				GameObjectList ol("Air_Berlin");
+				// System::Log("PlaneCrash läuft");
+
+				if (ol.GetNumObjects() == 0)
+					feddisch=true;
+				else
+				{	
+					feddisch=true;	
+					for (int x=0;(x<ol.GetNumObjects()) && feddisch;x++)
+						feddisch=feddisch && ol.GetObject(x)->IsHidden();
+				}
+		
+				if (feddisch)
+				{
+					System::Log("PlaneCrash beendet");
+				}
+				break;	
+			default:
+				char * bhf="       ";
+				char * zugname="ehrang%u";
+				int j=snprintf(bhf,7,zugname,event);
+				GameObjectList ol(bhf);
+				Vehicle v;
+				// System::Log("Ehrang laeuft");
+
+				if (ol.GetNumObjects() == 0)
+					feddisch=true;
+				else
+				{	
+					feddisch=true;	
+					// System::Log("Ehrang Objekte untersuchen");	
+					for (int x=0;((x<ol.GetNumObjects()) && feddisch);x++)
+						if (ol.GetObject(x)->GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(ol.GetObject(x));
+							feddisch=feddisch && v.IsHidden();
+						}
+				}
+		
+				if (feddisch)
+				{
+					punkte=25000;
+					ehrang=false;
+					System::Log("Ehrang beendet");
+				}
+				break;	
+		}
+		
+		if (feddisch || missed)
+		{	
+			Game::SetEventFinished(eventid, feddisch, punkte);  // Code für Patch 1.3
+			eventid=-1;
+			switch (event)
+			{
+				case 25:
+					Mission::PlayHint("WIB_WD_EMMA_ENDE");
+					break;
+				case 60:
+					PersonList pl("unnschuess");
+					for (int i=0;i<pl.GetNumPersons();i++)
+						pl.GetPerson(i)->PushActionDeleteOwner();
+					break;
+			}
+		} else {
+			Caller->PushActionWait(ACTION_APPEND,7.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",Target,event,false);
+		}
+		// System::Log("CheckWitchDoc Ende");
+	}
+};
+
+VehicleList bmalist;
+
+object wt_bma : CommandScript
+{
+	wt_bma()
+	{
+		// SetGroupID(20);
+		SetIcon("sosi");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		// 1. Gebaeudeobjekt suchen
+		Vehicle bma;
+		int x=Math::rand()%bmalist.GetNumVehicles();
+		bma=bmalist.GetVehicle(x);
+		punkte=500;
+		bool feuer=false;
+
+		// 2. Wenn ChildID=1 -> wirkliches Feuer -> Haus anzuenden
+		// 3. Wenn Gebaeude OPEN_HOUSE, dann Objekt im Haus anzuenden
+		if ((Math::rand()%20)> 16)
+		{
+			GameObjectList ol;
+			GameObject obj;
+			bool open=false;
+			punkte=3000;
+			Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_PERSON|ACTOR_OBJECT|ACTOR_OPEN_HOUSE|ACTOR_HOUSE);
+			for (int bx=0;(bx<ol.GetNumObjects());bx++)
+			{
+				obj=ol.GetObject(bx);
+				switch (obj.GetObjectType())
+				{
+					case TYPE_HOUSE:
+					case TYPE_OPEN_HOUSE:
+						if (obj.HasFireChilds() && !feuer)
+							disaster::feuer_legen(&obj);
+						feuer=true;
+						break;
+					case TYPE_PERSON:
+						punkte+=500;
+						break;
+				}
+			}
+
+
+		} else
+			// 5. BMA Fehl-Alarm auslösen
+			bma.PushActionExecuteCommand(ACTION_NEWLIST,"wt_bma_alarm",&bma,0,false);
+
+		// 6. Wenn Patch 1.3 dann Punkte festlegen und Einsatz in Eventliste aufnehmen, Check auf Einsatzende starten
+		// EventID-Code für Patch 1.3
+
+		bma.Show();
+		Vector Posabc=bma.GetPosition();
+		eventid=Game::ShowEvent("WIB_WD_BMAALM", Posabc);
+	}
+};
+
+object wt_bma_quittung : CommandScript
+{
+	wt_bma_quittung()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// BMA wieder scharf schalten
+		// 1. Testen auf vorhandene Feuer und Verletzte im Gebaeude
+		GameObjectList ol;
+		GameObject obj;
+		Vehicle bma(Target);
+		bool e_ende=true;
+		Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_PERSON|ACTOR_OBJECT|ACTOR_HOUSE|ACTOR_OPEN_HOUSE);
+		for (int i=0;(i<ol.GetNumObjects() && e_ende);i++)
+		{
+			obj=ol.GetObject(i);
+			if (obj.GetObjectType() == TYPE_PERSON)
+			{
+				Person p(&obj);
+				e_ende=(e_ende && !p.IsInjured() && !p.IsComatose());
+			} else {
+				e_ende=(e_ende && !obj.IsBurning());
+			}
+		}
+		
+		if (e_ende)
+		{
+			bma.EnableSpecialLights(false);
+			Mission::PlayHint("WIB_WDBMA_AKTIV");
+			bma.PushActionExecuteCommand(ACTION_NEWLIST,"wt_bma_scharf",&bma,0,false);
+			if (is_bma)
+			{
+				Game::SetEventFinished(eventid, true, punkte);  // Code für Patch 1.3
+				eventid=-1;
+				is_bma=false;
+			}
+			bma.PushActionExecuteCommand(ACTION_INSERT,"StatusSenden",Target,11,false);
+		} else
+			Mission::PlayHint("WIB_WDBMA_REST");
+		e_ende=false;
+	}
+};
+
+object wt_bma_alarm : CommandScript
+{
+	wt_bma_alarm()
+	{
+		SetGroupID(20);
+		SetPriority(900);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int linie)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int feuer)
+	{
+		Vehicle bma(Target);
+		bma.SetVehicleRole(VT_THW_FGRR_RL);
+		if (feuer>0)
+		{
+			GameObjectList ol;
+			GameObject obj;
+			Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_PERSON);
+			for (int i=0;(i<ol.GetNumObjects());i++)
+			{
+				obj=ol.GetObject(i);
+				float val=rand()%300+600;
+				Person p(&obj);
+				if (p.GetPersonType()!=PT_FIREFIGHTER_MASK)
+				{
+					p.Injure(INJUREREASON_ENERGY,true);
+					p.SetLife(val);
+					float val=rand()%2+0.7;
+					p.SetInjuredLifeDrain(val);
+				} else
+					punkte-=500;
+			}
+			int h,m,s;
+			Game::GetTime(h,m,s);
+			if ((h>19) || (h<9))
+			{
+				Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_OPEN_HOUSE);
+				for (int i=0;(i<ol.GetNumObjects());i++)
+				{
+					OpenHouse oh=ol.GetObject(i);
+					oh.CloseDoor(oh.GetEntranceDoorID());
+					Actor a=Game::GetActor(oh.GetEntranceDoorID());
+					GameObject do(&a);
+					do.SetFlag(OF_LOCKED);
+				}
+			}
+		}
+		bma.PushActionExecuteCommand(ACTION_INSERT,"StatusSenden",Target,10,false);
+		bma.EnableSpecialLights(true);
+		char * bmaname="                     ";
+		char * bmafile[]="mod:Audio/fx/bma%u.wav";
+		int j=snprintf(bmaname,21,bmafile,(Math::rand()%6+1));
+		Audio::PlaySample(bmaname);
+		Game::ShowHelpText("WIB_WD_BMA");
+		Mission::PlayHint(bma.GetName());
+		ScriptInterface::ShowObjectives();
+		ScriptInterface::OpenObjectives();
+	}
+};
+
+object wt_bma_scharf : CommandScript
+{
+	wt_bma_scharf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle bma(Target);
+		bma.SetVehicleRole(VT_NOSQUAD);
+		bool feuer=Game::IsBurningObjectInVirtualObject(bma.GetName());
+		if (feuer)
+		{
+			bma.PushActionExecuteCommand(ACTION_NEWLIST,"wt_bma_alarm",&bma,1,false);
+			bma.PushActionExecuteCommand(ACTION_APPEND,"wt_bma_rauchgas",&bma,0,false);
+		}
+		else
+		{
+			bma.PushActionWait(ACTION_NEWLIST,5.0f);
+			bma.PushActionExecuteCommand(ACTION_APPEND,"wt_bma_scharf",&bma,0,false);
+		}
+	}
+};
+
+object wt_bma_rauchgas : CommandScript
+{
+	wt_bma_rauchgas()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle bma(Target);
+		GameObjectList ol;
+		GameObject obj;
+		Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_PERSON);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			Person p(ol.GetObject(i));
+			if (!p.IsInjured())
+				if (p.GetPersonType() != PT_FIREFIGHTER_MASK && p.GetPersonType() != PT_FIREFIGHTER_ABC)
+				{
+					if (p.GetEnteredHouseID()<1)
+					{
+						p.Hurt(INJUREREASON_DROWN,50);
+						p.SetInjuredLifeDrain(1.5);
+					} else {
+						p.Hurt(INJUREREASON_DROWN,150);
+						p.SetInjuredLifeDrain(4.5);
+					}
+				} 
+		}
+		bma.PushActionWait(ACTION_NEWLIST,2.0);
+		bma.PushActionExecuteCommand(ACTION_APPEND,"wt_bma_rauchgas",&bma,0,false);
+	}
+};
+
+object wt_bma_init : CommandScript
+{
+	wt_bma_init()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		VehicleList bl(VT_THW_FGRR_RL,VT_THW_FGRR_RL);
+		bmalist=bl;
+		Vehicle bma;
+		for (int i=0;(i<bl.GetNumVehicles());i++)
+		{
+			bma=bl.GetVehicle(i);
+			bma.SetUserData(i);
+			System::Log("BMA Init %s",bma.GetName());
+			bma.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",&bma,11,false);
+			bma.PushActionExecuteCommand(ACTION_APPEND,"wt_bma_scharf",&bma,0,false);
+			// if (Game::IsMultiplayer())
+			// 	bma.SetPlayerMP(1);
+		}
+	}
+};
+
+bool ehrang=false;
+
+object ehrang_brennt : CommandScript
+{
+	ehrang_brennt()
+	{
+		// SetGroupID(20);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (ehrang)
+			return;
+		else
+			ehrang=true;
+
+		char * bhf="       ";
+		char * zugname="ehrang%u";
+		int zug=(Math::rand()%3)+1;
+		int j=snprintf(bhf,7,zugname,zug);
+		GameObjectList ol(bhf);
+		if (ol.GetNumObjects()==0)
+			return;  // evil aber bequem
+		Vehicle v;
+
+		char * fzkz[1];
+		fzkz[0]="WitchDoc";
+
+		for (int x=0;x<ol.GetNumObjects();x++)
+		{
+			Vehicle v(ol.GetObject(x));
+			v.Show();
+			v.SetSmokeLevelDuration(rand()%15+15.0f);
+			v.SetSmoking(true);
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"setggv",&v,8,false);
+			int w=rand()%11;
+			if (7 < w)
+			{
+				System::Error("eingeklemmte Person erzeugen");
+				int index = rand()%MAX_PROTONAMES;
+				fzkz[0][5]=char(x+32);
+				Person pat = Game::CreatePerson(prototypes[index], fzkz[0]);
+				if (v.SetEnclosedPerson(fzkz[0]))
+				{
+					float val=rand()%300+500;
+					pat.Injure(INJUREREASON_ENERGY,true);
+					pat.SetLife(val);
+					float val=rand()%2+0.5;
+					pat.SetInjuredLifeDrain(val);
+				} 
+			}
+
+		}
+
+		Mission::PlayHint("WIB_WD_EHRANG");
+		Game::ShowHelpText("WIB_WD_EHRANG");
+
+		Vector Posabc=ol.GetObject(1)->GetPosition();
+		eventid=Game::ShowEvent("WIB_WD_BRENNTZUG", Posabc);
+		ScriptInterface::ShowBriefing();
+		Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,zug,false);
+	}
+};
+
+bool deluxe=false;
+
+object wtd_setver : CommandScript
+{
+	wtd_setver()
+	{
+		SetGroupID(20);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// System::Log("WTD Init");
+		deluxe=(Caller->GetUserData() == 11);		
+	}
+};
+
+
+object herborn_do : CommandScript
+{
+	herborn_do()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		// 1. Init
+		punkte=50000;
+
+		// 2. Gebaeudeobjekt suchen
+		GameObjectList ohl=Game::GetGameObjects(TYPE_OPEN_HOUSE);
+		int i=Math::rand()%ohl.GetNumObjects();
+		for (bool do=true;do;i--)
+		{
+			OpenHouse hou(ohl.GetObject(i));
+			do=(i>-1) && !hou.HasGroundEntrance();
+		}
+
+		if (hou.HasGroundEntrance())
+		{
+		
+			FireObject fo;
+			Vector hierhin=hou.GetEntrancePosition(true,0.f);
+			Vehicle v=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/tanktruck01.e4p","HerbTank");
+			GameObject lache=Game::CreateObject("mod:Prototypes/Objects/Missionspec/fluessigkeit.e4p","HerbOel");
+			v.SetChildEnabled("33",false);
+			v.SetChildEnabled("201",false);
+			v.SetChildEnabled("202",false);
+			v.SetChildEnabled("203",false);
+			v.SetChildEnabled("861",false);
+			v.SetChildEnabled("862",false);
+			v.SetChildEnabled("863",false);
+			Game::FindFreePosition(&v,hierhin,50.0);
+
+			//3. Explosion
+			v.SetPosition(hierhin);
+			v.PushActionTurnTo(ACTION_NEWLIST,&hou);
+			lache.SetPosition(hierhin);
+			lache.SetRotation(&v);
+			v.SetSmokeLevelDuration(0);
+			v.SetSmoking(true);
+			v.SetParking(false);
+	
+			//4. Einsatzauftrag
+			Audio::PlaySample("mod:Audio/FX/destruction/carcrash02.wav");
+		
+			// EventID-Code für Patch 1.3
+			eventid=Game::ShowEvent("WIB_WD_TANKZUG", hierhin);
+
+			Game::ShowHelpText("WIB_WD_HERBORN");
+			Mission::PlayHint("WIB_WD_HERBORN");
+			ScriptInterface::ShowBriefing();
+			Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,20,false);
+		} else
+			escalator=0;
+	}
+};
+
+int opfer;
+
+object messer_do : CommandScript
+{
+	messer_do()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		// 1. Init
+		punkte=2000;
+
+		PersonList pl(ROLE_CIVILIAN);
+		if (pl.GetNumPersons()>0)
+		{
+			int i=Math::rand()%pl.GetNumPersons();
+			Person killed=pl.GetPerson(i);
+			for(i-=1;(!killed.IsValid() || killed.IsInjured() || !killed.IsInsideMap()) && i>0;i--)
+				killed=pl.GetPerson(i);
+			if (i>0)
+			{
+				killed.Injure (INJUREREASON_SHOT,true);
+				opfer=killed.GetID();
+				killed.AssignCommand("crime");
+				Vector hierhin=killed.GetPosition();
+				killed.PushActionExecuteCommand(ACTION_NEWLIST,"art_blutung",&killed,0,false);		
+				// EventID-Code für Patch 1.3
+				eventid=Game::ShowEvent("WIB_WD_PMESS", hierhin);
+				killed.SetUserData(eventid);
+				escalator=50;
+				Game::ShowHelpText("WIB_WD_MESSER");
+				Mission::PlayHint("WIB_WD_MESSER");
+				ScriptInterface::ShowBriefing();
+				Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,40,false);
+			} else 
+				escalator=0;
+		}
+	}
+};
+
+object ruess_do : CommandScript
+{
+
+	ruess_do()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		Actor Opfer;
+		Actor CrashCar;
+		Vector Pos;
+		Vector Posabc;
+		float rot[9];
+		float childRot[9];
+		int index;
+		float winkel;
+		int n_pat=0;
+
+		System::Error("Ruesselsheim: Jetzt gehts los !");
+		
+		char * bhf="       ";
+		char * zugname="sbahn%u";
+		int zug=(Math::rand()%3)+1;
+		int j=snprintf(bhf,7,zugname,zug);
+		GameObjectList ol(bhf);
+		if (ol.GetNumObjects()==0)
+			return;  // evil aber bequem
+		Vehicle v;
+
+		punkte=15000;
+
+		char * fzkz[1];
+		fzkz[0]="WitchDoc";
+
+		for (int x=0;x<ol.GetNumObjects();x++)
+		{
+			Vehicle v(ol.GetObject(x));
+			v.Show();
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"setggv",&v,8,false);
+			int w=rand()%11;
+			if (7 < w)
+			{
+				System::Error("eingeklemmte Person erzeugen");
+				int index = rand()%MAX_PROTONAMES;
+				fzkz[0][5]=char(x+32);
+				Person pat = Game::CreatePerson(prototypes[index], fzkz[0]);
+				if (v.SetEnclosedPerson(fzkz[0]))
+				{
+					float val=rand()%300+500;
+					pat.Injure(INJUREREASON_ENERGY,true);
+					pat.SetLife(val);
+					float val=rand()%2+0.5;
+					pat.SetInjuredLifeDrain(val);
+					punkte=punkte+1000;
+				} 
+			}
+
+		}
+
+		int q=Math::rand()%50+20;
+
+		n_pat=disaster::Verletzte_streuen(ol.GetObject(x/2),q,1500,bhf);
+		
+		punkte=punkte+500*n_pat;
+
+		Audio::PlaySample("mod:Audio/FX/destruction/carcrash02.wav");
+		
+		// EventID-Code für Patch 1.3
+		Posabc=ol.GetObject(1)->GetPosition();
+		eventid=Game::ShowEvent("WIB_WD_VUBAHN", Posabc);
+
+		Game::ShowHelpText("WIB_WD_SBAHN");
+		Mission::PlayHint("WIB_WD_SBAHN");
+		ScriptInterface::ShowBriefing();
+
+		Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,50+zug,false);
+	
+	}
+};
+
+
+object plane_crash : CommandScript
+{
+
+	plane_crash()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		Actor Opfer;
+		Actor CrashCar;
+		Vector Pos;
+		Vector Posabc;
+		float rot[9];
+		float childRot[9];
+		int index;
+		float winkel;
+		int n_pat=0;
+
+		System::Error("Flugzeugabsturz: Jetzt gehts los !");
+		
+		GameObjectList ol("Air_Berlin");
+		GameObject plane;
+		if (ol.GetNumObjects()==0)
+			return;  // evil aber bequem
+
+		punkte=15000;
+
+		for (int x=0;x<ol.GetNumObjects();x++)
+		{
+			ol.GetObject(x)->Show();
+			ol.GetObject(x)->SetFlags(OF_TRANSPORTABLE|OF_RECOVERABLE);
+			if (ol.GetObject(x)->GetType()==ACTOR_OPEN_HOUSE)
+				plane=ol.GetObject(x);
+		}
+
+		if (rand()%10>6)		
+			disaster::feuer_legen(&plane);
+
+		int q=Math::rand()%60+40;
+
+		n_pat=disaster::Verletzte_streuen(&plane,q,rand()%1500+1500,"Air_Berlin");
+		
+		punkte=punkte+500*n_pat;
+
+		// FEUER !
+
+		ol=plane.GetObjectsInRange(rand()%1500+1000,ACTOR_OBJECT);
+		FireObject fob;
+		for (int x=0;x<ol.GetNumObjects();x++)
+			if (ol.GetObject(x)->HasFireChilds())
+				disaster::feuer_legen(ol.GetObject(x));		
+		
+
+		Audio::PlaySample("mod:Audio/FX/destruction/carcrash02.wav");
+		
+		// EventID-Code für Patch 1.3
+		Posabc=plane.GetPosition();
+		eventid=Game::ShowEvent("WIB_WD_PLANE", Posabc);
+
+		Game::ShowHelpText("WIB_WD_PLANECRASH");
+		Mission::PlayHint("WIB_WD_PLANECRASH");
+		ScriptInterface::ShowBriefing();
+
+		Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,55,false);
+	
+	}
+};
+
+object ueberfall : CommandScript
+{
+
+	ueberfall()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		Actor Opfer;
+		Vector Pos;
+		Vector tuerpos;
+		int index,q;
+		bool razzia=Caller->GetUserData()>0;	
+		// 1. Init
+		if (razzia)
+		{
+			punkte=3000;
+		} else {
+			punkte=5000;
+		}
+
+		// 2. Gebaeudeobjekt suchen
+
+		GameObjectList ohl=Game::GetGameObjects(TYPE_OPEN_HOUSE);
+		int i=Math::rand()%ohl.GetNumObjects();
+		for (bool do=true;do;i--)
+		{
+			OpenHouse hou(ohl.GetObject(i));
+			do=(i>0) && !hou.HasGroundEntrance();
+		}
+		
+		if (Caller->GetType()==ACTOR_OPEN_HOUSE)
+			OpenHouse hou(Caller);
+	
+		if (hou.HasGroundEntrance() && !hou.IsLocked())
+		{
+			if (hou.IsLocked() && !razzia)
+			{
+				hou.ClearFlag(OF_LOCKED);
+				hou.OpenDoor(hou.GetEntranceDoorID());				
+			}
+			tuerpos=hou.GetEntrancePosition(true,0.f);
+			
+			PersonList ol=hou.GetNonSquadPersonsInside();
+			// FireObjectList fl;
+			// bool jo=hou.GetInhouseFires(fl);
+			int no=0;
+			bool FluFz=false;
+			Vehicle ffz;
+
+			if (razzia)
+			{
+				q=2+rand()%4;
+			} else {				
+				q=3+rand()%6;
+				GameObjectList vl=hou.GetObjectsInRange(700,ACTOR_VEHICLE);
+				bool weiter=vl.GetNumObjects()>0;
+				if (weiter)
+				{
+			
+					int k=rand()%vl.GetNumObjects();				
+					for (i=k;weiter;i--)
+					{
+						Vehicle v(vl.GetObject(i));
+						FluFz=v.IsParking() && v.IsCivilCar();
+						if (i==0)
+							i=vl.GetNumObjects();
+						weiter=!FluFz && i!=k+1;
+					}
+				}
+			}
+
+			if (FluFz)
+			{
+				ffz=Game::CreateVehicle(v.GetPrototypeFileName(),"ueberfall");
+				ffz.Hide();
+				ffz.SetVehicleRole(VT_BUS);
+				ffz.SetMaxPassengers(9);
+				ffz.SetMaxTransports(9);
+				ffz.SetCommandable(true);
+				ffz.SetAutoShoot(true);
+				ffz.AddRifleToGetawayCar();
+				ffz.ClearFlag(OF_TRANSPORTABLE);
+				ffz.SetRotation(&v);
+				ffz.SetParking(false);
+				if (deluxe)
+					ffz.SetSpeed(12);
+				else
+					ffz.SetSpeed(10);
+				int a;
+				a=disaster::hmin();
+				if (a>2399)
+					a=a-23;
+				a=a+rand()%75+100;	// Fluchtzeitpunkt festlegen
+				ffz.PushActionExecuteCommand(ACTION_NEWLIST,"waehle_klinik",&ffz,0,false);
+				ffz.PushActionExecuteCommand(ACTION_APPEND,"ueb_flufz_pos",&v,0,false);
+				ffz.PushActionExecuteCommand(ACTION_APPEND,"ueb_flufz_flucht",&ffz,a,false);
+			} 
+	
+			for(i = q; i > 0; i--)
+			{
+				System::Error("Taeter erzeugen");
+				int index = rand()%MAX_PROTOTYPES;
+				Person p = Game::CreatePerson(prototypes[index], "ueberfall");
+				Pos=tuerpos;
+				// p.SetEnteredHouseID(hou.GetID());
+				Game::FindAvailablePosition(&p,Pos,400,false);
+				p.SetPosition(Pos);
+				punkte=punkte+500;
+				p.SetRole(ROLE_GANGSTER);
+				p.SetFleeing(true);
+				if (razzia)
+					p.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+				else
+					p.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+				p.SetDisableGangsterSymbol(true);
+				p.SetCivilsFleeing(false);
+				if (!razzia || Math::rand()%10>7)
+					p.PushActionEquipWeapon(ACTION_NEWLIST, true);
+				if (!razzia)
+					p.SetShootFrequency(rand()%5+2);
+				if (rand()%10>5)
+					p.SetShootAtPsychologist(true);
+				p.PushActionMove(ACTION_NEWLIST,tuerpos,true);
+				p.PushActionEnterHouse(ACTION_APPEND,&hou);
+
+				if (no==0)
+					no=ol.GetNumPersons();
+				if (no>0)
+				{
+					no--;
+					p.SetPrimaryTarget(ol.GetPerson(no));
+					p.PushActionMove(ACTION_APPEND,ol.GetPerson(no),TARGET_TOUCHPERSON);
+				}
+
+				if (!razzia) switch (i)
+				{
+					case 1:
+					case 2:
+						p.PushActionExecuteCommand(ACTION_APPEND,"ueb_setbev",&p,BEHAVIOUR_GANGSTER_GUARDPASSAGE,false);
+						break;
+					default:
+						p.PushActionExecuteCommand(ACTION_APPEND,"ueb_setbev",&p,BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART,false);
+						break;
+				}
+			}
+
+			if (razzia)
+			{
+				int x=Math::rand()%5;
+				GameObject beweis = Game::CreateObject(beweismittel[x], "beweis");
+				// System::Log(beweismittel [x]);
+				Pos=tuerpos;
+				Game::FindAvailablePosition(&beweis,Pos,450,false);
+				beweis.SetPosition(Pos);
+				beweis.ClearFlags();
+				beweis.SetPlacement(PLACEMENT_ALIGNED_CORNERS);
+				beweis.UpdatePlacement();
+				beweis.SetFlag(OF_RECOVERABLE|OF_PULLABLE|OF_TRANSPORTABLE);
+				p.PushActionExecuteCommand(ACTION_NEWLIST,"razzia_entdeckt",&hou,0,false);
+				eventid=Game::ShowEvent("WIB_WD_POLR", tuerpos);
+				Game::ShowHelpText("WIB_WD_RAZZIA");
+			} else {
+				eventid=Game::ShowEvent("WIB_WD_POLU", tuerpos);
+				Game::ShowHelpText("WIB_WD_UEBERFALL");
+			}
+
+			ScriptInterface::ShowBriefing();
+			if (razzia)
+				int code=90;
+			else
+				int code=70;
+			Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&ffz,code,false);
+		} else
+			escalator=0;
+	}
+};
+
+object razzia_entdeckt : CommandScript
+{
+
+	razzia_entdeckt()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		switch (ChildID)
+		{
+			case 0:
+				Caller->PushActionWait(ACTION_NEWLIST,5.0);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"razzia_entdeckt",Target,1,false);
+				break;
+			case 1:
+				OpenHouse hou(Target);
+				if (hou.IsCeilingOpen())
+				{
+					Caller->PushActionWait(ACTION_NEWLIST,35.0);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"razzia_entdeckt",Target,2,false);
+				} else {
+					Caller->PushActionWait(ACTION_NEWLIST,5.0);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"razzia_entdeckt",Target,1,false);
+				}
+				break;
+			case 2:
+				Mission::PlayHint("WIB_WD_RAZZIA_FOUND");
+				PersonList pl(Caller->GetName());
+				for (int i=0;i<pl.GetNumPersons();i++)
+				{
+					pl.GetPerson(i)->SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART);
+					pl.GetPerson(i)->SetShootFrequency(rand());
+				}
+				break;
+		}
+	}
+};
+
+object ueb_flufz_pos : CommandScript
+{
+
+	ueb_flufz_pos()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vector start=Target->GetPosition();
+		Vector ziel=Caller->GetPosition();
+		GameObject o(Target);
+		Game::RemoveGameObject(&o);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"WT_SoSi",Caller,100,false);
+		Caller->PushActionMove(ACTION_APPEND,ziel);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"WT_SoSi",Caller,1,false);
+		Caller->PushActionShowHide(ACTION_APPEND,true);
+		Caller->SetPosition(start);
+		Caller->PushActionShowHide(ACTION_INSERT,false);
+	}
+};
+
+object ueb_flufz_flucht : CommandScript
+{
+
+	ueb_flufz_flucht()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (disaster::hmin()<ChildID)
+		{
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"ueb_flufz_flucht",Caller,ChildID,false);
+			Caller->PushActionWait(ACTION_INSERT,7.0);
+		} else {
+			Caller->PushActionWait(ACTION_INSERT,50.0f);
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"aufsitzen",Caller,666,false);
+		}
+	}
+};
+
+object ueb_setbev : CommandScript
+{
+
+	ueb_setbev()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Caller);
+		p.SetBehaviour(ChildID);
+	}
+};
+
+const char * baume[10];
+const char baume[0]="mod:Prototypes/Objects/Trees/brokentree01a.e4p";
+const char baume[1]="mod:Prototypes/Objects/Trees/brokentree01b.e4p";
+const char baume[2]="mod:Prototypes/Objects/Trees/brokentree01c.e4p";
+const char baume[3]="mod:Prototypes/Objects/Trees/brokentree01d.e4p";
+const char baume[4]="mod:Prototypes/Objects/Trees/brokentree02a.e4p";
+const char baume[5]="mod:Prototypes/Objects/Trees/brokentree02b.e4p";
+
+object emma : CommandScript
+{
+
+	emma()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vector start;
+		Vector TargetPos;
+		bool nachhut=ChildID>0;
+
+		VehicleList markit(VT_THW_FGRR_TRL,VT_THW_FGRR_TRL);
+		int nmark=markit.GetNumVehicles();
+
+		Weather::SetFlashVisible(false);
+		Weather::SetSnowVisible(true);
+		Weather::SetRainVisible(true);
+		Weather::SetRainIntensity(0.7);
+		Weather::SetStormVisible(true);
+		Weather::SetStormIntensity(0.5);
+		Weather::SetStormSpeed(0.4);
+		Weather::SetFogVisible(true);
+		Weather::SetFogIntensity(0.4);
+
+		if (nachhut)
+			Game::ShowHelpText("WIB_WD_EMMA_NOCHMAL");
+		else
+			Game::ShowHelpText("WIB_WD_EMMA");
+
+		Baumliste=Game::GetGameObjectsWithPrefix("wib_baum");
+
+		if (!nachhut)
+			punkte=2000;
+		int k=rand()%10+7;
+		if (nachhut)
+			k=ChildID;
+
+		for (int n=k;n>0;n--)
+		{
+			Ehranger.PushActionWait(ACTION_INSERT,3+rand()%10);
+			Ehranger.PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"emma_throw",Caller,n,false);
+		}
+		emmatime=disaster::hmin()+360+rand()%120;
+		if (!nachhut)
+		{
+			eventid=Game::ShowEvent("WIB_WD_ORK1",Caller->GetPosition());
+			Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,25,false);
+			emmatime=disaster::hmin()+360+rand()%200;
+		} else 
+			emmatime=disaster::hmin()+480+rand()%240;
+	}
+};
+
+object emma_throw : CommandScript
+{
+	emma_throw()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int n)
+	{
+		int x=disaster::wirf_baum(n);
+	}
+};
+
+object emma_clear_mark : CommandScript
+{
+	emma_clear_mark()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Target->IsValid())
+		{
+			Caller->PushActionWait(ACTION_NEWLIST,10.0f);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"emma_clear_mark",Target,0,false);
+		} else
+			Caller->Hide();			
+	}
+};
+
+class disaster : CommandScript
+{
+
+	bool Person_insFz(Vehicle *fz, char *opfer,Person *pers,bool einklemmen)
+	{
+		Person p;
+
+		// System::Log("Person einklemmen %s",opfer);
+		int index = rand()%MAX_PROTONAMES;
+		bool ok=true;
+		p = Game::CreatePerson(prototypes[index], opfer);
+		if (!p.IsValid())
+		{
+			// System::Log("Disaster Invalid Person %s",prototypes[index]);
+			return false;
+		} 
+		if (einklemmen)
+			ok=fz->SetEnclosedPerson(opfer);
+		else {
+			p.SetUserData(fz->GetID());
+			fz->AddPassenger(&p);
+		}
+		if (ok && einklemmen)
+		{
+			float val=rand()%300+500;
+			p.Injure(INJUREREASON_ENERGY,true);
+			p.SetLife(val);
+			float val=rand()%2+0.5;
+			p.SetInjuredLifeDrain(val);
+		}
+		// System::Log("Person ins Fz verbracht");
+		pers=&p;
+		return ok;	
+	}
+	
+	int hmin()
+	{
+		int a,b,c;
+		Game::GetTime(a,b,c);
+		return a*100+b;
+	}
+
+	Vector incident_pos()
+	{
+		int i=Math::rand()%5+1;	
+		
+		if (!deluxe)
+			i++;	
+
+		char * bhf="             ";
+		char * zugname="traffic_car0%u";
+		int j=snprintf(bhf,13,zugname,i);
+		PathList pl(bhf);
+		Path path(pl.GetPath(0));
+		i=path.GetNumPoints()-4;
+		if (i>0)
+		{
+			Vector Crash=path.GetPoint(Math::rand()%i+2);
+			Crash.z=Game::GetFloorHeight(Crash.x,Crash.y);
+		} else
+			Vector Crash=Vector (0,0,0);
+		return Crash;
+	}
+
+	int  wirf_baum(int mx)
+	{
+		char * fzkz[2];
+		fzkz[0]="emma%u";
+		fzkz[1]="          ";
+		int erg;
+		Person p;
+		
+		Vector start=Baumliste.GetObject(rand()%Baumliste.GetNumObjects())->GetPosition();
+		int bx=rand()%6;
+		GameObject baum=Game::CreateObject(baume[bx],"emma");
+		baum.SetFlags(OF_CUTABLE|OF_RECOVERABLE);
+		baum.ClearFlag(OF_PULLABLE);
+		Vector TargetPos=disaster::incident_pos();
+		Game::FindFreePosition(&baum,TargetPos,50.0);
+		baum.SetPosition(start);
+		punkte+=250;
+		GameObject ziel=baum.GetClosestObjectInRange(2000,800,ACTOR_PERSON|ACTOR_VEHICLE);
+
+		for (mx;mx<nmark && !markit.GetVehicle(mx)->IsHidden();mx++);
+		if (mx>=nmark)
+			Vehicle marker=Game::CreateVehicle("mod:prototypes/vehicles/TEC/emma.e4p","marker");
+		else 
+			Vehicle marker=markit.GetVehicle(mx);
+		marker.Hide();
+
+		System::Log("Baum werfen");
+
+		if (ziel.IsValid() && ziel.IsInsideMap() && rand()%10>4 &&!ziel.IsFlagSet(OF_BLOCKED))
+		{
+			if (ziel.GetType()==ACTOR_PERSON)
+			{
+				Person zp(&ziel);
+				if (zp.GetEnteredHouseID()<1)
+				{
+					float val=rand()%400+300;
+					zp.Injure(INJUREREASON_ENERGY,true);
+					zp.SetLife(val);
+					float val=rand()%2+0.5;
+					zp.SetInjuredLifeDrain(val);
+					punkte+=1000;
+				} else {
+					System::Log("Person im Haus");
+					Actor h=Game::GetActor(zp.GetEnteredHouseID());
+					GameObject ziel(&h);
+					OpenHouse oh(&h);
+					if (oh.HasGroundEntrance())
+					{
+						TargetPos=oh.GetEntrancePosition(true);
+						float val=rand()%400+300;
+						zp.Injure(INJUREREASON_ENERGY,true);
+						zp.SetLife(val);
+						float val=rand()%2+0.5;
+						zp.SetInjuredLifeDrain(val);
+						punkte+=1000;
+					} else 
+						oh.GetOrientedBBoxPoint(6,TargetPos.x,TargetPos.y,TargetPos.z);
+					oh.ShowCeiling(true,true,true);
+					oh.SetCeilingCollision(true);
+					punkte+=500;
+				}			
+			} else {
+				erg=snprintf(fzkz[1],10,fzkz[0],mx);
+				Vehicle v(&ziel);
+				bool isHubi=v.GetVehicleType()==VT_AMBULANCE_RHC || v.GetVehicleType()==VT_POLICE_PHC || v.GetVehicleType()==VT_TV_HELI;
+				if (isHubi && !v.IsOnGround())
+					v.Explode();
+				v.SetSmokeLevelDuration(30.0f);	
+				v.SetSmoking(true);
+				v.ClearActions();
+				if (!v.IsParking() && (rand()%10>6 || v.IsCivilCar() ))
+					if (disaster::Person_insFz(&v,fzkz[1],&p,true))
+						punkte+=1500;
+					else punkte+=500;
+				else punkte+=500;
+				v.SetSmoking(false);
+			}
+			if (rand()%10>7)
+			{
+				baum.ClearFlag(OF_CUTABLE);
+				punkte+=500;
+			}
+			baum.SetRotation(&ziel);
+			ziel.SetFlag(OF_BLOCKED);
+			baum.SetUserData(ziel.GetID());
+			if (ziel.GetType()!=ACTOR_OPEN_HOUSE)
+				TargetPos=ziel.GetPosition();
+		} 
+		marker.SetPlacement(PLACEMENT_NONE);
+		marker.SetPosition(TargetPos);
+		baum.SetPlacement(PLACEMENT_NONE);
+		baum.PushActionMoveToPoint(ACTION_NEWLIST,&marker,500.0,0.0);
+		baum.PushActionExecuteCommand(ACTION_APPEND,"PosIt",&ziel,0,false);
+		baum.PushActionExecuteCommand(ACTION_APPEND,"ShowIt",&marker,0,false);
+		marker.ClearFlags();
+		marker.PushActionWait(ACTION_NEWLIST,10.0f);
+		marker.PushActionExecuteCommand(ACTION_APPEND,"emma_clear_mark",&baum,0,false);
+		mx++;
+		return mx;
+	}
+
+	int Verletzte_streuen (GameObject *unfall,int anz,int radius,char *name)
+	{
+		Vector Pos=unfall->GetPosition();
+		int diam=2*radius;
+		int n_pat=0;
+		Person p;
+		float rot[9];
+		float childRot[9];
+		int winkel;
+		Vector Posabc;
+
+		unfall->GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+
+		for(int i = 0; i < anz; i++)
+		{
+			System::Error("Verletzte verstreuen");
+			Posabc=Pos+Vector(((rand()%diam)-radius),((rand()%diam)-radius),0);
+			winkel = rand()%360;
+			Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+			Math::MultiplyMatrices(childRot, rot);
+			int index = rand()%MAX_PROTOTYPES;
+			Person p = Game::CreatePerson(prototypes[index], name);
+			float val=300+rand()%500;
+			Game::FindAvailablePosition(&p,Posabc,400,false);
+			p.SetPosition(Posabc);
+			p.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+			p.Injure(INJUREREASON_ENERGY,true);
+			p.SetLife(val);
+			float val=rand()%2+0.7;
+			p.SetInjuredLifeDrain(val);
+			if (Math::rand()%15 > 12)
+				p.PushActionExecuteCommand(ACTION_NEWLIST,"art_blutung",&p,0,false);
+			n_pat++;
+		}
+		return n_pat;
+	}
+
+	void feuer_legen(GameObject *obj)
+	{
+		int fx=Math::rand()%obj->GetNumFireChilds();
+		FireObject fob=obj->GetFireChild(fx);
+		obj->SetFireObjectBurning(fob.GetName());
+		return;
+	}
+
+	void aibalarm (Person p, int code)
+	{
+		System::Log("AIB Alarm");
+		int pc=p.GetID();
+		GameObjectList ol=Game::GetGameObjectsWithPrefix("bett15");
+		int weiter=-1;
+		for (int i=0;weiter<0 && i<ol.GetNumObjects();i++)
+		{
+			if (ol.GetObject(i)->GetUserData()==pc)
+				weiter=i;
+		}
+		if (weiter>-1)
+		{
+			char * action="         ";
+			int j=snprintf(action,9,"ev%s",ol.GetObject(weiter)->GetName());
+			GameObjectList ol(action);
+			GameObject o=ol.GetObject(0);
+			switch (code)
+			{
+				case 1:
+					o.EnableTrafficLight(TLT_RED);
+					o.PushActionExecuteCommand(ACTION_NEWLIST,"evitawatch",&p,0,false);
+					Audio::PlaySample("mod:Audio/FX/ippvalarm.wav");
+					break;
+				case 0:
+					o.EnableTrafficLight(TLT_NONE);
+					break;
+			}
+		}
+	}
+
+};
+
+
+object evitawatch : CommandScript
+{
+	evitawatch()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Target);
+		if (p.IsCarried())
+			disaster::aibalarm(p,0);
+		else
+		{
+			Caller->PushActionWait(ACTION_APPEND,1.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"evitawatch",Target,0,false);
+		}
+	}
+};
+
+object deblock : CommandScript
+{
+	deblock()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Actor a=Game::GetActor(ChildID);
+		GameObject t(Target);
+		t.SetFlags(OF_TRANSPORTABLE | OF_CUTABLE);
+		GameObject o(&a);
+		o.ClearFlag(OF_BLOCKED);
+	}
+};
+
+object PosIt : CommandScript
+{
+	PosIt()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObject ziel(Target);
+		Vector l,r, Posabc;
+		ziel.GetOrientedBBoxPoint(0,l.x,l.y,l.z);
+		ziel.GetOrientedBBoxPoint(6,r.x,r.y,r.z);
+		Posabc.x=(l.x+r.x)/2;
+		Posabc.y=(l.y+r.y)/2;
+		if (ziel.GetObjectType()==TYPE_HOUSE || ziel.GetObjectType()==TYPE_OPEN_HOUSE)
+			Posabc.z=r.z;
+		else
+			Posabc.z=l.z;
+		Caller->SetPosition(Posabc);
+	}
+};
+
+
+object ShowIt : CommandScript
+{
+	ShowIt()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObject o(Target);
+		o.Show();
+		Caller->SetPlacement(PLACEMENT_ALIGNED_CORNERS);
+		Caller->SetPosition(o.GetPosition());
+		Caller->UpdatePlacement();
+	}
+};
+
+object randale_raeumen : CommandScript
+{
+
+	randale_raeumen()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// System::Log("Randale aufloesen");
+		PersonList pl(Caller->GetName());
+		Person p,pn;
+		for (int i=0;i<pl.GetNumPersons();i++)
+		{
+			p=pl.GetPerson(i);
+			if (p.GetBehaviour()==BEHAVIOUR_GANGSTER_CIVILUNARMED))
+			{
+				// System::Log("Geeignete Person gefunden");
+				if (rand()%10>7)
+				{
+					// System::Log("Person flieht");
+					pn=Game::CreatePerson(p.GetPrototypeFileName(),"unnschuess");
+					pn.Hide();
+					pn.SetRotation(&p);
+					pn.SetBehaviour(BEHAVIOUR_CIVILIAN_GAZER);
+					pn.SetRole(ROLE_SQUAD);
+					pn.SetPosition(&p);
+					pn.Show();
+					pn.PushActionMove(ACTION_NEWLIST,disaster::incident_pos());
+					p.Hide();
+					p.PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+		}
+	}
+};
+
+object randale : CommandScript
+{
+	randale()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		Vector Pos;
+		Vector Posabc;
+		int i,q;
+		char * brief;
+		char * alarm;
+		
+		// 1. Init
+		if (Math::rand()%100>90)
+			int size=1;
+		else
+			int size=0;
+
+		switch (size)
+		{
+			case 0 :	// nur Schlägerei
+				punkte = 3000;  // Basispunkte
+				int maxpers = 20;
+				int basepers = 7;
+				int maxweap = 22;
+				int maxstone = 19;
+				brief="WIB_WD_HITB";
+				alarm="WIB_WD_HIT";
+				break;
+			case 1: 	// Studentenunruhe
+				punkte = 7000;  // Basispunkte
+				int maxpers = 50;
+				int basepers = 25;
+				int maxweap = 20;
+				int maxstone = 15;
+				brief="WIB_WD_HITD";
+				alarm="WIB_WD_DEMO";
+				break;
+		}
+
+		
+								
+		System::Log(brief);
+		Pos=disaster::incident_pos();
+
+		int q=Math::rand()%maxpers+basepers;
+		int n_pat=q/10;
+		int n_shoot=25;
+		bool victim=false;
+		Person Gegner;
+		
+
+		for(i = 0; i < q; i++)
+		{
+			System::Error("Schläger erzeugen");
+			Posabc=Pos+Vector(((rand()%600)-300),((rand()%600)-300),0);
+			int index = rand()%MAX_PROTOTYPES;
+			Person p = Game::CreatePerson(prototypes[index], "randale");
+			float val=rand()%300+600;
+			Game::FindAvailablePosition(&p,Posabc,400,false);
+			p.SetPosition(Posabc);
+			punkte=punkte+500;
+			if (n_pat>0)
+			{
+				p.Injure(INJUREREASON_ENERGY,true);
+				p.SetLife(val);
+				float val=rand()%2+0.7;
+				p.SetInjuredLifeDrain(val);
+				if (Math::rand()%10 > 7)
+			 		p.PushActionExecuteCommand(ACTION_NEWLIST,"art_blutung",&p,0,false);
+				n_pat--;	
+			} else {
+				p.SetRole(ROLE_GANGSTER);
+				p.SetBehaviour(BEHAVIOUR_GANGSTER_FISTFIGHT);
+				int j=Math::rand()%n_shoot;
+				if (j>maxweap)
+				{
+					p.PushActionEquipWeapon(ACTION_NEWLIST, true);
+					p.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+					if (rand()%10>5)
+						p.SetShootAtPsychologist(true);
+					// p.SetShootFrequency(0.03);	
+					punkte=punkte+250;
+					n_shoot--;
+				} else 
+					if (j>maxstone)
+						p.SetBehaviour(BEHAVIOUR_GANGSTER_THROWSTONES);
+					else 	if (size>0)
+						{
+							p.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+							//p.PlaceObjectInRightHand("mod:Models/Objects/Equipment/demosign01.v3o");
+							p.PushActionSwitchAnim(ACTION_NEWLIST,"demonstrate");
+						} else {
+							if (victim)
+							{
+								Gegner.PushActionMove(ACTION_NEWLIST,&p,TARGET_TOUCHPERSON);
+								if (rand()%10>6)
+									Gegner.PushActionFistFight(ACTION_APPEND,&p,false);
+								// p.SetResistance(INJUREREASON_ENERGY,5000.0);
+							}
+							else
+								Gegner=p;
+							victim=!victim;
+						}
+					
+			}
+				
+		}
+
+		eventid=Game::ShowEvent(brief, Pos);
+
+		Game::ShowHelpText(alarm);
+		ScriptInterface::ShowBriefing();
+
+		Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,60,false);
+	}
+};
+
+
+float ffw=5.0;
+
+object Freiwillige : CommandScript
+{
+	Freiwillige()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Caller->ChangePrototype(prototypes[rand()%5+2]);
+		Caller->SetCommandable(false);
+		Vector start;
+		int max,min;
+		switch (ChildID)
+		{
+			case 42:
+				GameObjectList ol("spindenk");
+				OpenHouseList oh("enk");
+				PathList pl("freiwillige2");
+				break;
+			case 45:
+				GameObjectList ol("spindaab");
+				OpenHouseList oh("aab");
+				PathList pl("freiwillige1");
+				break;
+		}
+		Path p(pl.GetPath(0));
+		min=0;max=p.GetNumPoints();
+		start=p.GetPoint(rand()%(max-min)+min);
+		Game::FindFreePosition(Caller,start,50);
+		Caller->SetPosition(start);
+		Person fw(Caller);
+		fw.SetRole(ROLE_SQUAD);
+		Caller->PushActionWait(ACTION_NEWLIST,2.0f+ffw);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"EnterHouse",oh.GetOpenHouse(0),112,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"DummyChange",ol.GetObject(0),41,false);
+		ffw=ffw-1.0f;
+		if (ffw<0)
+			ffw=5.0f;
+	}
+};
+
+const int lifelim[4];
+	lifelim[1]=340;
+	lifelim[2]=250;
+	lifelim[3]=250;
+
+
+object wt_sekundaer : CommandScript
+{
+
+	wt_sekundaer()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Target);
+		bool ok=(p.GetLife()<500);
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// System::Log("wt_sekundaer %u",ChildID);
+		bool verlegen=false;
+		bool notop=false;
+		Person p(Target);
+		int r=int(p.GetInjuryReason())+ChildID;
+		switch (r)
+		{
+			case 2:
+			case 3:
+				notop=rand()%10>7;
+			case 1:
+				verlegen=p.GetLife()<lifelim[r] && !p.IsDead();
+				if (notop)
+				{
+					Game::ShowHelpText("WIB_ICU_OP");
+					int auftrag=Game::ShowEvent("WIB_WD_NOTOP",p.GetPosition());
+					p.PushActionExecuteCommand(ACTION_NEWLIST,"art_blutung",&p,0,false);
+					p.SetUserData(auftrag);
+					p.SetFlag(OF_BULLDOZABLE);		
+					disaster::aibalarm(p,1);
+				} else if (verlegen) {
+					disaster::aibalarm(p,1);
+					p.PushActionExecuteCommand(ACTION_NEWLIST,"wt_callsek",&p,r,false);		
+				} else
+					p.PushActionDeleteOwner(ACTION_NEWLIST);
+				break;
+			default:
+				if (r>9)
+				{
+					Person pat = Game::CreatePerson(p.GetPrototypeFileName(), "WTSekVer");
+					pat.Hide();
+					pat.SetUserData(p.GetLife());
+					pat.PushActionExecuteCommand(ACTION_NEWLIST,"wt_callsek",&pat,r,false);		
+				} else {
+					System::Log("Ungültiger Sekundärcode %s %u",p.GetName(),r);		
+					p.PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+				break;
+		}
+	}
+};
+
+	const char * grund[7];
+		grund[1]="Verlegung ins Verbrennungsbett";
+		grund[2]="Verlegung HTG";
+		grund[3]="Verlegung Polytrauma";
+
+	const InjuryReason ir[8];
+		ir[0]=INJUREREASON_UNKNOWN;
+		ir[1]=INJUREREASON_FIRE;
+		ir[2]=INJUREREASON_SHOT;
+		ir[3]=INJUREREASON_ENERGY;
+		ir[4]=INJUREREASON_DROWN;
+		ir[5]=INJUREREASON_CONTAM_ATOM;
+		ir[6]=INJUREREASON_CONTAM_CHEM;
+		ir[7]=INJUREREASON_CONTAM_BIO;
+
+object wt_callsek : CommandScript
+{
+
+	wt_callsek()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PatInsBett(GameObject bett, Person p, int reason, int auftrag)
+	{
+				// System::Log("Ins Bett %s %u %u",bett.GetName(),bett.GetUserData(),p.GetID());
+				Vector l,r, Posabc;
+				bett.GetOrientedBBoxPoint(0,l.x,l.y,l.z);
+				bett.GetOrientedBBoxPoint(6,r.x,r.y,r.z);
+				Posabc.x=(l.x+r.x)/2;
+				Posabc.y=(l.y+r.y)/2;
+				Posabc.z=l.z+(r.z-l.z)*0.63;
+				p.SetInjuredAnimation();
+				if (auftrag>-1)
+				{
+					float val=rand()%200+200;
+					if (p.GetRole()==ROLE_SQUAD)
+						p.SetRole(ROLE_CIVILIAN);
+					p.Injure(ir[reason],true);
+					p.SetLife(p.GetUserData());
+					p.SetMaxLife(p.GetUserData()*1.3);
+					p.SetInjuredLifeDrain(0.3);
+					p.SetClassified(true);
+					p.SetEnteredHouseID(klinik);
+				}
+				p.SetPlacement(PLACEMENT_NONE);
+				p.UpdatePlacement();
+				p.FreezePhysics();
+				p.SetPosition(Posabc);
+				p.SetRotation(&bett);
+				p.Show();
+				bett.SetUserData(p.GetID());
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int reason)
+	{
+
+		// System::Log("WT_CALLSek %u",reason);
+		Vector Posabc;
+		Person p(Caller);
+
+		if (reason<0)
+		{
+			GameObject bett(Target);
+			PatInsBett(bett,p,p.GetInjuryReason(),reason);
+			if (reason==-1)
+			{
+				p.PushActionWait(ACTION_NEWLIST,15.0);
+				p.PushActionDeleteOwner(ACTION_APPEND);
+			} 
+		} else if (reason<10) {
+				Posabc=p.GetPosition();
+				char * action="           ";
+				char * zugname="WIB_SEKRD_%u";
+				int j=snprintf(action,11,zugname,reason);
+				int auftrag=Game::ShowEvent(grund[reason], Posabc);
+				p.SetUserData(auftrag);
+				p.SetFlag(OF_BULLDOZABLE);
+				p.SetHighlighted(true);
+				p.SetInjuredLifeDrain(0.5);
+				Game::ShowHelpText(action);
+		} else {
+			reason-=10;
+			GameObjectList al=Game::GetGameObjectsWithPrefix("bett15");
+			bool weiter=true;
+			for (int i=al.GetNumObjects()-1;weiter;i--)
+			{
+				GameObject bett=al.GetObject(i);
+				Actor a=Game::GetActor(bett.GetUserData());
+				weiter=a.IsValid() && i>0 && a.GetID()!=p.GetID();
+			}
+			if (!a.IsValid() || a.GetID()==p.GetID())
+			{	
+				PatInsBett(bett,p,reason,reason);
+				p.PushActionWait(ACTION_NEWLIST,10.0*(Math::rand()%10+3));
+				p.PushActionExecuteCommand(ACTION_APPEND,"wt_sekundaer",&p,0,false);					
+				Mission::PlayHint("WIB_WD_TOICU");
+			} else
+				Mission::PlayHint("WIB_WD_NOICU");
+		}
+	}
+};
+
+object wt_sekundaertransport : CommandScript
+{
+
+	wt_sekundaertransport()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		PersonList pl(Caller->GetName());
+		PersonList tl("WTSekVer");
+		Person opfer=tl.GetPerson(0);
+		if (opfer.GetLife()<100)
+		{
+			Game::SetEventFinished(opfer.GetUserData(), false, 0);			
+			Game::ShowHelpText("WIB_SEKRD_OVER");
+			opfer.PushActionDeleteOwner(ACTION_NEWLIST);
+		} 
+
+		for (int i=0;i<pl.GetNumPersons();i++)
+		{
+			Person rd=pl.GetPerson(i);
+			if (rd.IsParamedicTeam())
+			{
+				rd.PushActionMove(ACTION_APPEND,&opfer,TARGET_ANY);
+				rd.PushActionLift(ACTION_APPEND,&opfer);
+			}
+			rd.SetFlag(OF_BULLDOZABLE);
+			rd.PushActionExecuteCommand(ACTION_APPEND,"EnterCar",Target,33,true);
+		};
+
+	}
+};
+
+object WDMsg : CommandScript
+{
+
+	WDMsg()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		if (Target->GetType()==ACTOR_PERSON)
+		{
+			Person t(Target);
+			t.ClearFlag(OF_BULLDOZABLE);
+		}
+
+		if (code>100)
+		{
+			char *fz="       ";
+			snprintf(fz,7,"%s",Caller->GetName());
+			char *mask="%s : %s";
+			char * meldung="                                                         ";
+			char * txt="                                                                                                                                                                                                         ";
+			switch (code)
+			{
+				case 101: 
+					Game::GetGameString("WIB_MSG_REA",meldung,50);
+					break;
+				case 102: 
+					Game::GetGameString("WIB_NA_HER",meldung,50);
+					break;
+				case 103: 
+					Game::GetGameString("WIB_RTW_HER",meldung,50);
+					break;
+			}
+			snprintf(txt,125,mask,fz,meldung);
+			Mission::PlayHint(txt);
+		} else
+
+		switch (code)
+		{
+			case 1:
+				Game::ShowHelpTextWindow("WIB_WD_OBD"); 
+				break;
+			case 0:
+				Game::ShowHelpTextWindow("WIB_WD_NOOBD"); 
+				break;
+			case 10:
+				Game::ShowHelpTextWindow("WIB_WD_FKOK"); 
+				break;
+			case 11:
+				Game::ShowHelpTextWindow("WIB_WD_FKBASS"); 
+				break;
+			case 12:
+				Game::ShowHelpTextWindow("WIB_WD_FKDRAENG"); 
+				break;
+			case 13:
+				Game::ShowHelpTextWindow("WIB_WD_FKTUEV"); 
+				break;
+			case 14:
+				Game::ShowHelpTextWindow("WIB_WD_FKALK"); 
+				break;
+			case 15:
+				Game::ShowHelpTextWindow("WIB_WD_FKWHAT"); 
+				break;
+			case 16:
+				Game::ShowHelpTextWindow("WIB_WD_FKKLAU"); 
+				break;
+			case 17:
+				Game::ShowHelpTextWindow("WIB_WD_FKSUSPECT"); 
+				break;
+		}
+	}
+};
+
+
+object TaeterInsFz : CommandScript
+{
+
+	TaeterInsFz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		// System::Log("Taeter erzeugen %i",code);
+		Person p;
+		Vehicle v(Caller);
+		v.SetMaxPassengers(2);
+		disaster::Person_insFz(&v,"Fahrer",&p,false);
+		PersonList pl(v.GetPassengers());
+	
+		switch (code)
+		{
+			case -10:
+				p=pl.GetPerson(0);
+				p.PushActionExecuteCommand(ACTION_NEWLIST,"Alkoholfahrt",&v,0,false);
+				p.PushActionWait(ACTION_INSERT,2.0);
+				break;
+			case -5:
+				for (int i=0;i<pl.GetNumPersons();i++)
+				{
+					p=pl.GetPerson(i);
+					p.SetRole(ROLE_GANGSTER);
+					if (rand()%10>7)
+						p.SetBehaviour(BEHAVIOUR_GANGSTER_GUARDPASSAGE);
+					else
+						p.SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+					if (rand()%4>1)
+						p.PushActionEquipWeapon(ACTION_NEWLIST,true);
+				}
+				break;
+		}
+	}
+};
+
+
+object Alkoholfahrt : CommandScript
+{
+
+	Alkoholfahrt()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		Vehicle v(Target);
+		Person p(Caller);
+
+		GameObject obj=v.GetClosestObjectInRange(200.0,10.0,ACTOR_PERSON);
+		if (obj.IsValid() && v.IsMoving())
+		{
+			v.PushActionExecuteCommand(ACTION_INSERT,"CrashEm",&obj,0,false);
+			v.PushActionMove(ACTION_INSERT,&obj,TARGET_FOLLOW);
+			p.PushActionWait(ACTION_NEWLIST,5.0);
+		} else {
+			p.PushActionWait(ACTION_NEWLIST,1.0);
+		}
+		if (v.IsValid())
+			p.PushActionExecuteCommand(ACTION_APPEND,"Alkoholfahrt",&v,0,false);
+	}
+};
+
+object CrashEm : CommandScript
+{
+
+	CrashEm()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		Person p(Target);
+		p.Hurt(INJUREREASON_ENERGY,2000);
+		p.SetLife(rand()%400+300);
+		p.ClearActions();
+		p.RemoveObjectPath();
+	}
+};
+
+object MegaBass : CommandScript
+{
+
+	MegaBass()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+
+		// System::Log("MegaBass Start");
+		int i=Math::rand()%5+1;	
+		
+		if (!deluxe)
+			i++;	
+		char * bhf="             ";
+		char * zugname="traffic_car0%u";
+		int j=snprintf(bhf,13,zugname,i);
+		GameObjectList ol;	
+
+		if (Game::CollectObstaclesOnPath(bhf,ol))
+		if (ol.GetNumObjects()>0)
+		{
+			Person p;
+			Vehicle v(ol.GetObject(ol.GetNumObjects()-1));
+			if (!v.IsParking() && v.IsCivilCar())
+			{
+				v.AssignCommand("crime");
+				v.SetVehicleRole(VT_GANGSTER_GETAWAY);
+				v.SetAutoShoot(false);
+				if (v.GetNumPassengers()<10)
+				{
+					v.SetMaxPassengers(4);
+					disaster::Person_insFz(&v,"bassproll",&p,false);
+				}
+				switch (rand()%10)
+				{
+					case 3:
+					case 8:
+					case 0:
+						v.EnableBlinker(BLT_BOTH);
+						v.EnableHeadLights(true);
+						v.PushActionUsePath(ACTION_NEWLIST,bhf,11.0);
+						v.PushActionExecuteCommand(ACTION_INSERT,"WT_SoSi",&v,-2,false); //Einsatzfahrt
+						break;
+					default:			
+						v.PushActionExecuteCommand(ACTION_INSERT,"WT_SoSi",&v,-1,false); //Einsatzfahrt
+						break;
+				}
+			}
+		} else
+			System::Log("MegaBass : Kein geeignetes Fz gefunden");
+	}
+};
+
+
+object Ersthelfer : CommandScript
+{
+
+	Ersthelfer()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Caller);
+		bool ok=rand()%10>3;
+		ok=ok && !p.IsBeingHealed();
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		GameObjectList pl=Caller->GetObjectsInRange(750.0,ACTOR_PERSON);
+		for (int i=0;i<pl.GetNumObjects();i++)
+		{
+			Person eh(pl.GetObject(i));
+			if (eh.GetPersonType()==PT_NOSQUAD && !eh.IsDead() && !eh.IsInjured() && !eh.IsCarried() && eh.GetRole()!=ROLE_GANGSTER && eh.GetRole()!=ROLE_ANIMAL)
+			{
+				eh.SetRole(ROLE_SQUAD);
+				eh.SetBehaviour(BEHAVIOUR_SQUAD_RESCUE);
+				eh.PushActionMove(ACTION_NEWLIST,Caller,TARGET_TREATMENT);
+				eh.PushActionExecuteCommand(ACTION_APPEND,"eh",Caller,10,false);
+				i=pl.GetNumObjects();
+			}
+		}
+	}
+};
+
+object Bauunfall : CommandScript
+{
+
+	Bauunfall()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		GameObjectList kraene("baukran");
+		if (kraene.GetNumObjects()>0)
+		{
+			GameObject kran=kraene.GetObject(rand()%kraene.GetNumObjects());
+			kran.SetPlacement(PLACEMENT_BOXALIGNED);
+			kran.UpdatePlacement();
+			kran.PushActionRotateTarget(ACTION_NEWLIST,&kran,-90.0,0.0,0.0,3.0);
+			kran.StopAnimation();
+		}
+	}
+};
+
+object Lawine : CommandScript
+{
+
+	Lawine()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		if (code==1)
+		{
+			Camera::SetShakingEnabled(false);
+			return;
+		}
+
+		Camera::SetShakingEnabled(true);
+		GameObjectList ol;
+		bool ok=Game::CollectObstaclesOnPath("skipiste",ol);
+		ActorList al("wintersport");
+		SpawnPoint sp(al.GetActor(0));
+		sp.SetEnabled(false);
+		punkte=0;
+		Vector shaker;
+
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			if (ol.GetObject(i)->GetType()==ACTOR_PERSON)
+			{
+				Person p(ol.GetObject(i));
+				if (p.GetRole()!=ROLE_ANIMAL)
+				{
+					punkte+=500;
+					p.SetBloodPuddle(false);
+					p.Injure(INJUREREASON_ENERGY,true);
+					p.SetLife(400+rand()%400);
+					p.SetInjuredLifeDrain(rand()%2+0.8);
+					p.SetInjuredAnimation();
+					if (rand()%10>2)
+					{
+						punkte+=250;
+						p.SetFoundByDog(false);
+						p.SetFlags(8448);
+						p.SetBloodPuddle(false);
+					} else
+						p.SetFoundByDog(true);
+					shaker=p.GetPosition();
+					shaker.x+=rand()%700;
+					shaker.y+=rand()%800-400;
+					p.SetPosition(shaker);
+				} else 
+					p.Kill();
+			}
+		}
+
+		Vector Posabc=sp.GetPosition();
+		eventid=Game::ShowEvent("WIB_WD_SNOW", Posabc);
+
+		Game::ShowHelpText("WIB_WD_LAWINE");
+		Mission::PlayHint("WIB_WD_LAWINE");
+		ScriptInterface::ShowBriefing();
+		Caller->PushActionWait(ACTION_INSERT,5.0);
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Lawine",Caller,1,false);
+
+		Ehranger.PushActionExecuteCommand(ACTION_APPEND,"CheckWitchDoc",&Ehranger,26,false);
+	}
+};
+
+
+object Schleuderfahrt : CommandScript
+{
+
+	Schleuderfahrt()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		Vehicle v(Target);
+		float winkel=140.0*code;
+		
+		if (code==0)
+		{
+			code=-1;
+			PersonList pl=v.GetPassengers();
+			if (pl.GetNumPersons()==0)
+				return;
+			Person p=pl.GetPerson(0);
+			Mission::PlayHint("Schleuderfahrt !");
+			winkel=-70;
+			v.EnablePhysics();
+			v.SetPhysicsFriction(0.0);
+			v.ActivateOBBCollision();
+			// v.EnablePhysicsSimulation(true,false,false);
+			// v.UnfreezePhysics();
+			v.SetTerrain(TERRAIN_AIRPLANE);
+			v.SetPlacement(PLACEMENT_NONE);
+			p.PushActionWait(ACTION_NEWLIST,0.1);
+		} else
+			Person p(Caller);
+
+		if (v.IsMoving())
+		{	
+			p.PushActionRotateTarget(ACTION_APPEND,Target,0,winkel,0,0.2);
+			p.PushActionWait(ACTION_APPEND,0.5);
+			p.PushActionExecuteCommand(ACTION_APPEND,"Schleuderfahrt",Target,-code,false);
+			v.ClearFlag(OF_TRANSPORTABLE);
+			v.EnableBrakeLights(true);
+		}
+	}
+};

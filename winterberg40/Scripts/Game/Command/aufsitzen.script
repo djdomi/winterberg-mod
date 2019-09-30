@@ -1,0 +1,88 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script aufsitzen
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+object aufsitzen : CommandScript
+{
+	aufsitzen()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetCursor("gowache");
+		SetIcon("gowache");
+		SetPriority(90);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return !Caller->HasCommand("feierabend");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_NEWLIST,0.5f);
+		int cid=112; // -> EnterCar, dann auf volles Fz prüfen und ggf abruecken
+		int free;
+		char * parken[1];
+		parken[0]=Caller->GetName();
+		int fzid=int(parken[0][11])-32;
+		int calltype=0;
+
+		Vehicle Fz(Caller);
+		if (Fz.GetVehicleType() == VT_FIREFIGHTERS_DLK)
+		{
+			Vector FzP=Game::GetCommandPos();
+			if (Fz.IsInstalled())
+			{
+				Caller->PushActionBasketDown(ACTION_NEWLIST, FzP);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYEnableLights", Caller, 2, false);
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"dlk_stuetze",Caller,1,false);	
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"Umfeld_LM",Caller,2,false);	
+				Caller->AssignCommand("VCmdSiren");
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen",Caller,0,false);
+				return;
+			}
+		}			
+		PersonList pl(Caller->GetName());
+		for (int i=pl.GetNumPersons()-1; i > -1; i--)
+		{
+			Person p=pl.GetPerson(i);
+			if ((!p.IsInjured()) && (p.GetEnteredCarID() == -1))
+			{
+				p.PushActionWait(ACTION_NEWLIST,0.1);
+				if (p.GetFirehoseID()!=0)
+					p.PushActionExecuteCommand(ACTION_APPEND,"RemoveFirehose",Caller,cid,false);
+				if ((p.GetUserData() > 0) && !p.IsParamedicTeam() && !p.HasCommand("tl"))
+					p.PushActionExecuteCommand(ACTION_APPEND,"Geraet_abbauen",Caller,0,false);
+				if (fzid == 32)
+					p.PushActionExecuteCommand(ACTION_APPEND,"lna_leichen",Caller,0,false);
+				if ((p.IsCarryingPerson() || p.IsLinkedWithPerson()) && !p.IsParamedicTeam())
+					p.PushActionExecuteCommand(ACTION_APPEND,"PutInCar",Caller,1,false);
+				if (!p.IsDoctor() || (childID != 19292))
+					p.PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,cid,false);
+				
+			} // else
+			  //	if ((p.GetEnteredCarID() != -1) && (p.GetEnteredCarID() != Fz.GetID()))
+			  //		calltype++;
+		}
+//		if (calltype > 0)
+//			calltype=i-calltype;
+
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckAbfahrt",Caller,calltype,false);
+	}
+};
+

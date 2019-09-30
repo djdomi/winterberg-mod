@@ -1,0 +1,550 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script options
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+object eplus : CommandScript
+{
+
+   eplus()
+   {
+     	SetIcon("bma");
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	float freq=Game::GetGlobalEventFrequencyFactor();
+	freq=freq+0.2;
+	Game::SetGlobalEventFrequencyFactor(freq);
+   }
+};
+
+object eminus : CommandScript
+{
+
+   eminus()
+   {
+     	SetIcon("bma");
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return Input::LCtrlPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	float freq=Game::GetGlobalEventFrequencyFactor();
+	freq=freq-0.2;
+	if (freq<0)
+		freq=0;
+	Game::SetGlobalEventFrequencyFactor(freq);
+   }
+};
+
+object uplus : CommandScript
+{
+
+   uplus()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Input::LCtrlPressed())
+	{
+		Game::SetGameSpeed(Game::GetGameSpeed()*2);	
+	} else {
+		int h,m,s;
+		Game::GetTime(h,m,s);
+		h++;
+		if (h>23)
+			h=0;
+		Game::SetTime(h,m,s);
+	}
+   }
+};
+
+object uminus : CommandScript
+{
+
+   uminus()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Input::LCtrlPressed())
+	{
+		Game::SetGameSpeed(Game::GetGameSpeed()/2);	
+	} else {
+		int h,m,s;
+		Game::GetTime(h,m,s);
+		h--;
+		if (h<0)
+			h=23;
+		Game::SetTime(h,m,s);
+	}
+   }
+};
+
+object switch_fms : CommandScript
+{
+
+   switch_fms()
+   {
+     	SetIcon("fms_aus");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::ExecuteCommand("fms_umschalten",Caller);
+   }
+};
+
+object switch_alarm : CommandScript
+{
+
+   switch_alarm()
+   {
+     	SetIcon("alarm_aus");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::ExecuteCommand("alarm_umschalten",Caller);
+   }
+};
+
+object switch_c1 : CommandScript
+{
+
+   switch_c1()
+   {
+     	SetIcon("zahl_verl");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		Game::SetNavigatorCounter("Injured Persons");	
+   }
+};
+
+object switch_c2 : CommandScript
+{
+
+   switch_c2()
+   {
+     	SetIcon("zahl_einsfzg");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		Game::SetNavigatorCounter("Squad Vehicles");	
+   }
+};
+
+object switch_c3 : CommandScript
+{
+
+   switch_c3()
+   {
+     	SetIcon("zahl_brandobj");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		Game::SetNavigatorCounter("Burning Objects");	
+   }
+};
+
+object switch_c4 : CommandScript
+{
+
+   switch_c4()
+   {
+     	SetIcon("zahl_rdeins");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		Game::SetNavigatorCounter("Animal deaths");	
+   }
+};
+
+
+object switch_c5 : CommandScript
+{
+
+   switch_c5()
+   {
+     	SetIcon("zahl_vkraeft");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		Game::SetNavigatorCounter("Squads injuries");	
+   }
+};
+
+object kamera_grenze_an : CommandScript
+{
+
+   kamera_grenze_an()
+   {
+     	SetIcon("lighton");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::SetMapBoundsBlockCamera(false);
+   }
+};
+
+object kamera_grenze_aus : CommandScript
+{
+
+   kamera_grenze_aus()
+   {
+     	SetIcon("lightoff");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Game::SetMapBoundsBlockCamera(true);
+   }
+};
+
+object schneeaus : CommandScript
+{
+
+   schneeaus()
+   {
+     	SetIcon("notaus");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Weather::GetSnowIntensity() > 0 || childID==48)
+		{
+			Weather::SetSnowVisible(false);
+			Weather::SetSnowIntensity(0.0);
+		} else {
+			Weather::SetSnowVisible(true);
+			Weather::SetSnowIntensity(rand()%7/10+0.3);
+		}
+   }
+};
+
+
+object sirprobe : CommandScript
+{
+
+   sirprobe()
+   {
+     	SetIcon("sir");
+   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return Input::LCtrlPressed();
+	}
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,15998,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7000,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7530,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7560,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7570,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7580,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7590,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7630,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7660,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7670,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7680,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7690,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,7700,false);	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,15999,false);	
+   }
+};
+
+object platzwahl : CommandScript
+{
+
+   platzwahl()
+   {
+     	SetIcon("heal");
+	SetCursor("heal");
+	SetValidTargets(ACTOR_VEHICLE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObject o(Target);
+	return Caller->GetPlayerMP()!=0 || !o.HasNamePrefix("platz2");
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle tisch(Target);
+	tisch.SetPlayerMP(Caller->GetPlayerMP());
+	Caller->Deselect();
+	tisch.Select();
+	GameObjectList pl(tisch.GetName());
+	for (int i=0;i<pl.GetNumObjects();i++)
+		pl.GetObject(i)->SetPlayerMP(Caller->GetPlayerMP());
+   }
+};
+
+
+
+object NAW7Mode : CommandScript
+{
+
+   NAW7Mode()
+   {
+     	SetIcon("checkvictim");
+     	SetCursor("checkvictim");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->GetID()!=Target->GetID() && Target->GetType()==ACTOR_VEHICLE;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObject fz(Target);
+	Vector Pos=fz.GetPosition();
+	Pos.x=300; Pos.y=300;Pos.z=500;
+	Camera::UnlockCameraMovement();
+	Camera::FollowTarget(&fz,Pos,false);
+   }
+};
+
+
+bool WibCamera=false;
+float minz,maxz,minp,maxp;
+
+
+object WibCam : CommandScript
+{
+
+   WibCam()
+   {
+     	SetIcon("checkvictim");
+     	SetCursor("checkvictim");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (WibCamera)
+	{
+		Camera::SetMinCamPitch(minp);
+		Camera::SetMaxCamPitch(maxp);
+		Camera::SetMinCamZ(minz);
+		Camera::SetMaxCamZ(maxz);
+	} else {
+		minp=Camera::GetMinCamPitch();
+		maxp=Camera::GetMaxCamPitch();
+		minz=Camera::GetMinCamZ();
+		maxz=Camera::GetMaxCamZ();
+		Camera::SetMinCamPitch(15);
+		Camera::SetMaxCamPitch(89.);
+		Camera::SetMinCamZ(200.);
+		Camera::SetMaxCamZ(10000.);
+		Mission::PlayHint("WEM4 Extended Camera Parms active");
+	}
+	WibCamera=!WibCamera;
+   }
+};
+	
+object BMAChange : CommandScript
+{
+
+   BMAChange()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObjectList ol=Game::GetGameObjects(TYPE_VEHICLE);
+	int n=0;
+	for (int i=0; i<ol.GetNumObjects();i++)
+		if (StrCompare(ol.GetObject(i)->GetPrototypeName(),"Brandmelder")==0)
+		{
+			Vector pos=ol.GetObject(i)->GetPosition();
+			ol.GetObject(i)->PushActionDeleteOwner(ACTION_NEWLIST);
+			GameObject ob=Game::CreateObject("mod:Prototypes/Objects/equipment/brandmelder.e4p","brandmelder");
+			Game::FindAvailablePosition(&ob,pos,1.0,true);
+			ob.SetPosition(pos);
+			
+			n++;
+			// System::Log("Brandmelder installiert %u",i);
+		}
+	System::Log("%u Brandmelder aktiviert",n);
+   }
+};
+
+object mapversion : CommandScript
+{
+
+   mapversion()
+   {
+     	SetIcon("start");
+	SetCursor("start");
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return true;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Target->HasNamePrefix("WEM4");
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Mission::PlayHint(Target->GetName());
+	Mission::PlayHint("WIB_VER_LENNOX");
+   }
+};
+
+
+object actionstep : CommandScript
+{
+
+   actionstep()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	System::Log("Action Step %s -> %s Code %u",Caller->GetName(),Target->GetName(),childID);
+   }
+};

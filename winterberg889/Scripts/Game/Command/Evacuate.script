@@ -1,0 +1,66 @@
+// ## 
+// ## WEM4 8 Scripting
+// ## Kahdeksas
+// ## 
+// ## Script Evacuate
+// ## 
+// ## Release 1.12.2011
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+object Evacuate : CommandScript
+{
+	Evacuate()
+	{
+		SetIcon("evacuatebuilding");
+		SetCursor("evacuatebuilding");
+		SetValidTargets(ACTOR_OPEN_HOUSE|ACTOR_PERSON);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return Game::GetNumActors(ACTOR_OPEN_HOUSE) > 0;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		bool ok=true;
+
+		if(!Caller->IsValid() || !Target->IsValid())
+			return false;
+
+		// if (Caller->GetObjectType() != TYPE_VEHICLE) 
+		// 	return false;
+					
+		if (Target->GetType() == ACTOR_PERSON)
+		{
+			Person p(Target);
+			ok=p.HasNamePrefix("randale");
+		} 
+			
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Target->GetType()==ACTOR_OPEN_HOUSE)
+		{
+			Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_ANY);	
+			if (Caller->HasCommand("FlyTo"))	
+				Caller->PushActionFlyTo(ACTION_NEWLIST, TargetPos, false, 0.0f);
+			else 
+				Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+			Caller->PushActionEvacuate(ACTION_APPEND, Target);
+		} else {
+			Person p(Target);
+			Mission::PlayHint("WIB_WD_RANDALE_WEG");
+			p.PushActionExecuteCommand(ACTION_NEWLIST,"randale_raeumen",Caller,0,false);
+		}
+	}
+};

@@ -1,0 +1,46 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script drop
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+object Drop : CommandScript
+{
+
+	Drop()
+	{
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_PERSON | ACTOR_OBJECT);
+		SetDoubleClickable(true);
+		SetGroupID(CGROUP_PICKUP);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetDeselectCaller(false);
+	}
+	
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid())
+			return false;
+		return Caller->IsCarryingAnything();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{		
+		if(!Caller->IsValid() || !Target->IsValid() || Caller->GetID()!=Target->GetID())
+			return false;
+
+		Vehicle v(Caller);
+		if (v.GetVehicleType() == VT_THW_FGRR_RL && !v.IsBucketUp())
+			return false;
+
+		return Caller->IsCarryingObjects();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionDrop(ACTION_NEWLIST);
+	}	
+};

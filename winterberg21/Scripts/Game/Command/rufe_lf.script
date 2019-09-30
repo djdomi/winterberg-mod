@@ -1,0 +1,61 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.0
+// ## 
+// ## Script rufe_lf
+// ## 
+// ## Stand : 06.8.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+// Winterberger für Em4 
+// rufe_lf v1.0 by WitchDoctor
+// basiert auf Umzieh.script für Em3 by manuelt
+//
+// Revision
+// 17.6.2006:
+//
+// Basis: Garagenausfahrt by BigBob
+
+// Ruft einen freies LF ...
+
+// Ein freies LF:
+// steht an der Basis oder
+// wurde gerade alamiert oder
+// fährt streife und
+// hat min. einen Feuerwehrmann an Bord und
+// wurde vom Spieler nicht per Hand an einen Ort geschickt
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+object rufe_lf : CommandScript
+{
+
+	bool kriterien_erfuellt; //Ist dieses LF gerade frei?
+
+   rufe_lf()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_STREET);
+      SetIcon("rufe_lf");
+      SetCursor("rufe_lf");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+   	GameObject dispatcher(Caller);
+	if(dispatcher.HasName("dispatcher"))
+		return true;
+
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,501,false);
+   }
+};

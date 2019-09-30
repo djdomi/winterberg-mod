@@ -1,0 +1,102 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script UseRoadBlock
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+object UseRoadBlock : CommandScript
+{
+
+	bool isfw;
+
+	UseRoadBlock()
+	{
+		SetValidTargets(ACTOR_FLOOR|ACTOR_OBJECT);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleEquipment(EQUIP_ROADBLOCK);
+		// SetPriority(700);
+		SetSelfClickActivation(true);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+
+		Person p(Caller);
+		if (Input::LCtrlPressed())
+			SetPriority(700);
+		else
+			SetPriority(0);
+		isfw=p.GetPersonType()==PT_FIREFIGHTER_NORMAL || p.GetPersonType()==PT_FIREFIGHTER_MASK || p.GetPersonType()==PT_FIREFIGHTER_ABC || p.GetPersonType()==PT_POLICEMEN;
+		if (isfw)
+		{
+			SetIcon("band");
+			SetCursor("band");
+		} else {
+			SetIcon("useroadblock");
+			SetCursor("useroadblock");
+		}
+
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p(Caller);
+		if(!Caller->IsValid() || Caller->GetEquipment()!=EQUIP_ROADBLOCK || Caller->GetID()==Target->GetID())
+			return false;			
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		if (Target->IsValid() && Target->GetType() == ACTOR_OBJECT)
+		{
+			GameObject target(Target);
+			if(!target.IsBridge())
+				return false;
+		}
+		if(p.GetEnteredCarID() != -1)
+			return false;
+		isfw=p.GetPersonType()==PT_FIREFIGHTER_NORMAL || p.GetPersonType()==PT_FIREFIGHTER_MASK || p.GetPersonType()==PT_FIREFIGHTER_ABC || p.GetPersonType()==PT_POLICEMEN;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (isfw || ChildID==1)
+		{
+			switch (ChildID)
+			{
+				case 0:
+					if (Target->GetName()!=Caller->GetName());
+					{
+						Caller->PushActionTurnTo(ACTION_NEWLIST,Game::GetCommandPos());
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"UseRoadBlock",Target,1,false);
+					} else {
+						GameObject o(Target);
+						Game::RemoveGameObject(&o);
+					}
+					break;
+				case 1:
+					char * obname="                    ";
+					char * obmask="FB%s";
+					int j=snprintf(obname,20,obmask,Caller->GetName());
+
+					GameObject sperrung=Game::CreateObject("mod:Prototypes/Objects/Equipment/flatterband.e4p",obname);
+					sperrung.SetRotation(Caller);
+					sperrung.SetPosition(Caller);
+					sperrung.PushActionHalt(ACTION_NEWLIST,250,HALT_PERSONS);
+					break;
+			}
+		} else
+			if (Caller->GetID() == Target->GetID())
+			   	Caller->PushActionUseEquipment(ACTION_NEWLIST, Target, ChildID, 3.f); // Target, Child and Time does not matter
+			else {
+				Caller->PushActionTurnTo(ACTION_NEWLIST,Game::GetCommandPos());
+				Caller->PushActionUseEquipment(ACTION_APPEND,Caller,ChildID, 3.f);	
+			}
+	}
+};

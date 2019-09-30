@@ -1,0 +1,17 @@
+object harry : CommandScript
+{
+	harry()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+	void PushActions (GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->SetUserData(childID);
+	}
+};

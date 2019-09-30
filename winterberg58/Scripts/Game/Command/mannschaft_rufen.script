@@ -1,0 +1,242 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 5.8  
+// ## 
+// ## Script mannschaft_rufen
+// ## 
+// ## Stand : 23.03.2008
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+
+
+
+
+
+
+// Winterberger für Em4 
+// Mannschaft aufs Fahrzeug rufen v1.0 by WitchDoctor
+// 
+//
+// Revision
+// 15.6.06 : erster Versuch
+
+float wartezeit=10.0;
+
+object mannschaft_rufen : CommandScript
+{
+	
+	bool ignore_pull=false;
+
+	mannschaft_rufen()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// Caller->ClearFlag(OF_PULLABLE);
+		ignore_pull=true;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Caller->GetType()==ACTOR_VEHICLE)
+			Vehicle fz(Caller);
+		else
+			Vehicle fz(Target);
+
+		bool rufen=!fz.IsFlagSet(OF_PULLABLE) || ignore_pull;
+		ignore_pull=false;
+
+		if (Caller->HasCommand("wird_alarmiert"))
+		{
+			System::Log("mannschaft rufen -> Alarmierung erwarten");
+			Caller->PushActionWait(ACTION_INSERT,1.0);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"mannschaft_rufen",Caller,ChildID,false);
+		} else if (rufen)  // hidden setzt nicht OF_PULLABLE ausser Kraft !, mal sehen
+		{
+			System::Log("mannschaft rufen");
+			System::Log(fz.GetName());
+			ActorList place;
+			int n,free;
+			int ptype=0;
+								
+			fz.AssignCommand("ich_bin_nicht_frei");
+			
+			if (fz.HasCommand("abwarten"))
+				fz.PushActionWait(ACTION_INSERT,5.0f);
+		
+			free=fz.GetFreePassengers();
+			n=free;
+
+			switch (ChildID)
+			{	
+				case 0:
+					break;
+				case 112:
+					ptype=2;
+					break;
+				case 110:
+					PersonList pl(fz.GetName());
+					switch (fz.GetVehicleType())
+					{
+						case VT_POLICE_MTW:
+							n++;
+						case VT_POLICE_WAW:
+							ptype=4;
+							break;
+						case VT_POLICE_STW:
+							n=2;
+							ptype=3;
+							break;
+						case VT_POLICE_PHC:
+							ptype=4;
+							break;
+						default:
+							ptype=3;
+							break;
+					}
+					n=n-pl.GetNumPersons();
+					break;
+				case 1101:
+					PersonList pl(fz.GetName());
+					n=2;
+					n=n-pl.GetNumPersons();
+					ptype=33;
+					break;
+				case 1110:
+					ptype=31;
+					break;
+				case 1111:
+					ptype=30;
+					break;
+				case 19221:
+					ptype=9;
+					n=1;
+					if (free>0)
+						fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,112,false);			
+					break;
+				case 19222:
+					if (fz.IsFlagSet(OF_USABLE_WITH_MEGAPHONE) && free>0)
+						fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,181,false);			
+				case 19229:
+					ptype=91;
+					if (fz.GetVehicleType()!=VT_AMBULANCE_NEF)
+						n=2;
+					else	
+						n=1;
+					break;
+				case 19297:
+					ptype=12;
+					n=1001;
+					break;
+				case 19223:
+					ptype=34;
+					n=1;
+					break;
+				case 19296:
+					ptype=8;
+					n=1001;
+					fz.SetFlag(OF_USABLE_WITH_MEGAPHONE);
+					break;
+				case 19292:
+					ptype=81;
+					n=1;
+					fz.SetFlag(OF_USABLE_WITH_MEGAPHONE);
+					break;
+				case 19293:
+					ptype=12;
+					n=1;
+					break;
+				case 19294:
+					ptype=19;
+					break;
+				case 19224:
+					ptype=18;
+					n=free-1;
+					break;
+				case 11880:
+					ptype=5;
+					break;
+				case 9578:
+					ptype=20;
+					n=4;
+					fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,214,false);			
+					fz.EnableBlueLights(true);
+					break;
+			}
+			if ((ptype>0) && (n>0))
+			{
+				fz.PushActionExecuteCommand(ACTION_INSERT,"rufe_pers",Caller,n*100+ptype,false);
+				fz.SetFlag(OF_USABLE);			
+				if (fz.HasCommand("abwarten"))
+					fz.PushActionWait(ACTION_INSERT,wartezeit*(fz.GetUserData()-1));
+			}
+			fz.RemoveCommand("abwarten");
+		}
+		System::Log("Mannschaft rufen ende");
+	}
+};
+
+
+object rufe_pers : CommandScript
+{
+
+	rufe_pers()
+	{
+		SetPriority(500);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int pc)
+	{
+		System::Log("Rufe Personal");
+		System::Log(Caller->GetName());
+		ActorList place;
+		int n;
+		int alarm=100;
+		Vehicle fz(Caller);
+	
+		n=pc/100;
+		pc=pc%100;
+		if (n>999)
+		{
+			n-=1000;
+			alarm=300;
+		}
+
+		if (n==0)
+			n=fz.GetFreePassengers();
+					
+		for (int i=0; i<n; i++)
+		{
+			Caller->PushActionWait(ACTION_INSERT,0.5f);
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"CreateNewPerson",Caller,alarm+pc,false);			
+		}
+		Caller->SetFlag(OF_PULLABLE);
+		System::Log("Rufe Personal ende");
+	}
+};
+
+object set_wartezeit : CommandScript
+{
+
+	set_wartezeit()
+	{
+		SetPriority(500);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		wartezeit=1.0*ChildID;
+	}
+};

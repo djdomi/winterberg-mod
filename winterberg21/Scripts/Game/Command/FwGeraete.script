@@ -1,0 +1,1256 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script FwGeraete
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+const int maxdev = 15;
+const char * devname[maxdev];
+const char * availcheck[maxdev];
+const char * devoutside[maxdev];
+
+const devname[0]="mod:Prototypes/Vehicles/Winterberg/Verteiler.e4p";
+const devname[1]="mod:Prototypes/Vehicles/Winterberg/Monitor.e4p";
+const devname[2]="mod:Prototypes/Vehicles/Winterberg/ts.e4p";
+const devname[3]="mod:Prototypes/Vehicles/Winterberg/pylone.e4p";
+const devname[4]="mod:Prototypes/Vehicles/Winterberg/lichtmast.e4p";
+const devname[5]="mod:Prototypes/Vehicles/Winterberg/schnella.e4p";
+const devname[6]="mod:";
+const devname[7]="mod:";
+const devname[8]="mod:Prototypes/Vehicles/Winterberg/tent.e4p";
+const devname[9]="mod:";
+const devname[10]="mod:Prototypes/Objects/Misc/empty.e4p";
+
+const availcheck[0]="verteiler_an_bord";
+const availcheck[1]="monitor_an_bord";
+const availcheck[2]="ts_an_bord";
+const availcheck[3]="pylone_an_bord";
+const availcheck[4]="lima_an_bord";
+const availcheck[5]="schnellangriff_an_bord";
+const availcheck[6]="gz_an_bord";
+const availcheck[7]="mm_an_bord";
+const availcheck[8]="zelt_an_bord";
+const availcheck[9]="dichtkissen_an_bord";
+const availcheck[10]="auto_umleiten";
+
+const devoutside[0]="mir_fehlt_verteiler";
+const devoutside[1]="mir_fehlt_monitor";
+const devoutside[2]="mir_fehlt_ts";
+const devoutside[3]="mir_fehlt_pylone";
+const devoutside[4]="mir_fehlt_lima";
+const devoutside[5]="schnellangriff_im_einsatz";
+const devoutside[6]="mir_fehlt_gz";
+const devoutside[7]="mir_fehlt_mm";
+const devoutside[8]="mir_fehlt_zelt";
+const devoutside[9]="mir_fehlt_dichtkissen";
+const devoutside[10]="auto_umleiten_aktiv";
+
+object SetVerteiler : CommandScript
+{
+	SetVerteiler()
+	{
+		SetCursor("Verteiler");
+		SetIcon("Verteiler");
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+		// SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[0]);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || (Caller->GetID() == Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[0]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,100,false);
+	}
+};
+
+object SetMonitor : CommandScript
+{
+	SetMonitor()
+	{
+		SetCursor("Monitor");
+		SetIcon("Monitor");
+		// SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[1]);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[1]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,101,false);
+	}
+};
+
+object SetPylone : CommandScript
+{
+	SetPylone()
+	{
+		SetCursor("Pylone");
+		SetIcon("Pylone");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[3]);
+	}
+
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_POLICEMEN:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[3]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,103,false);
+	}
+};
+
+object AutoUmleiten : CommandScript
+{
+	AutoUmleiten()
+	{
+		SetCursor("Pylone");
+		SetIcon("Pylone");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		return v.HasCommand(availcheck[10]);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if (!Caller->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		if (v.HasCommand(availcheck[10]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//	Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,110,false);
+		Caller->PushActionRedirect(ACTION_NEWLIST);
+	}
+};
+
+object SetZelt : CommandScript
+{
+	SetZelt()
+	{
+		SetCursor("segzelt");
+		SetIcon("segzelt");
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[8]);
+	}
+
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[8]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,108,false);
+	}
+
+
+};
+
+object SetLima : CommandScript
+{
+	SetLima()
+	{
+		SetCursor("lima");
+		SetIcon("lima");
+		// SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[4]);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[4]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,104,false);
+	}
+};
+
+object ggv_abdichten : CommandScript
+{
+	ggv_abdichten()
+	{
+		SetCursor("abdichten");
+		SetIcon("abdichten");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[9]);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_FIREFIGHTER_ABC:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (!v.HasCommand(availcheck[9]))
+			return false;
+		else 
+		{	
+			Vehicle v(Target);
+			bool leck=(v.GetEnergy() < v.GetMaxEnergy()) && (v.GetUserData() != 4);
+			return leck;
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,109,false);
+	}
+};
+
+object GetGZ : CommandScript
+{
+	GetGZ()
+	{
+		SetCursor("Geiger");
+		SetIcon("Geiger");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[6]);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_FIREFIGHTER_ABC:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[6]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,106,false);
+	}
+};
+
+object GetMM : CommandScript
+{
+	GetMM()
+	{
+		SetCursor("Gasmultimeter");
+		SetIcon("Gasmultimeter");
+		SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[7]);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+			case PT_FIREFIGHTER_ABC:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[7]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,107,false);
+	}
+};
+
+object SetTS : CommandScript
+{
+	SetTS()
+	{
+		SetCursor("tragks");
+		SetIcon("tragks");
+		// SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets(ACTOR_FLOOR | ACTOR_VIRTUAL);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[2]);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+		
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_MASK:
+				break;
+			default:
+				return false;
+		}
+			
+	    	VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		if (v.HasCommand(availcheck[2]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Caller,102,false);
+	}
+};
+
+object FwGeraet_raus : CommandScript
+{
+	// entnimmt ein Einsatzmittel und installiert es im Gelände
+	// childID = 100	Verteiler
+	//	     101	Monitor
+	//	     102	TS
+	//	     103	Pylone
+	//	     104	Lichtmast
+	//	     105	Schnellangriff
+	//	     106	Gas-Multimeter
+	//	     107	Geigerzähler
+	//	     108	SEG-Zelt
+	//	     109	Dichtkissen
+	//	     110	AutoUmleiten
+
+	FwGeraet_raus()
+	{
+	}
+		
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector Pos=Target->GetPosition();
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector EinsatzPos;
+
+		VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		int cid=childID-100;
+
+		if (childID != 105)
+			EinsatzPos = Game::GetCommandPos();
+		else 
+			EinsatzPos=Target->GetPosition();
+
+		if (!v.HasCommand(availcheck[cid]))
+			return;
+		
+		switch (cid)
+		{
+			case 10:
+				break;
+			case 2:
+			case 8:
+				Caller->PushActionMove(ACTION_NEWLIST, &v, TARGET_REARDOOR);
+				break;
+			default:	
+				Caller->PushActionMove(ACTION_NEWLIST, &v, TARGET_EQUIPMENTDOOR);
+				break;
+		}
+
+		Caller->PushActionTurnTo(ACTION_APPEND, &v);
+		switch (cid)
+		{
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 8:
+			case 9:
+				Caller->PushActionGetEquipment(ACTION_APPEND, &v, EQUIP_THW_CASE);
+				break;
+			case 0:
+			case 5:
+				Caller->PushActionGetEquipment(ACTION_APPEND, &v, EQUIP_FIREHOSE);
+				break;
+			case 6:
+				Caller->PushActionGetEquipment(ACTION_APPEND, &v, EQUIP_TVCAMERA);
+				Caller->AssignCommand("DUMMYHasSiren");
+				break;
+			case 7:
+				Caller->PushActionGetEquipment(ACTION_APPEND, &v, EQUIP_LAPTOP);
+				Caller->AssignCommand("DUMMYHasSiren");
+				break;
+		}
+		v.RemoveCommand(availcheck[cid]);
+		v.AssignCommand(devoutside[cid]);
+		switch (cid)
+		{
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 8:
+			case 9:
+				Caller->PushActionMove(ACTION_APPEND,EinsatzPos);
+				break;
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"Geraet_setzen",Target,childID,false);
+	}
+};
+
+object Geraet_setzen : CommandScript
+{
+	Geraet_setzen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)	
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vector pos=Caller->GetPosition();
+		Vehicle v(Target);
+
+		float rot[9];
+		float childRot[9];
+		Caller->GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		float dx = 35.f, dy = 0.f, dz = 0.f;
+		Math::RotateVector(dx, dy, dz, rot);
+		pos=pos+Vector(dx,dy,0);
+		int idx=ChildID-100;
+		switch (idx)
+		{
+			case 6:
+			case 7:
+				Caller->AssignCommand("Geraet_abbauen");
+				Caller->EnableCommand("drop",false);
+				Caller->SetUserData(ChildID);
+				Mission::PlayHint("Messgeraet aktiviert");
+				break;
+			case 9:
+				Caller->PushActionMove(ACTION_APPEND,Target,TARGET_ANY);
+				v.PushActionExecuteCommand(ACTION_APPEND,"ggv_check",Caller,4,false);			
+				Caller->PushActionRepair(ACTION_APPEND,Target);
+				break;				
+			default:
+				if (Game::FindFreePosition(Caller, pos, 35.f))
+				{
+					Vehicle v = Game::CreateVehicle(devname[idx], Caller->GetName());
+					v.AssignCommand("ich_bin_nicht_frei");
+					v.AssignCommand("ich_bin_kein_fz");
+					if (v.IsValid())
+					{
+						switch (idx) 
+						{	
+							case 5:
+								float dx = 70.f, dy = 0.f, dz = 30.f;
+								Math::RotateVector(dx, dy, dz, rot);
+								pos=pos+Vector(dx,dy,0);
+								break;
+								break;
+							case 8:
+								float dx = 70.f, dy = 0.f, dz = 30.f;
+								Math::RotateVector(dx, dy, dz, rot);
+								pos=pos+Vector(dx,dy,0);
+								Game::FindFreePosition(&v, pos, 50.f);
+								break;
+							case 10:
+								pos=Caller->GetPosition();
+								Caller->GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+								int winkel = 180.0;
+								Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+								Math::MultiplyMatrices(childRot, rot);
+								rot=childRot;
+								break;
+						}
+						v.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+						v.SetPosition(pos);
+						v.UpdatePlacement();
+						if (idx != 10)
+						{
+							if (idx != 5) 
+							{
+								Caller->PushActionRemoveEquipment(ACTION_APPEND);
+								if (idx != 8)				
+									Caller->PushActionSwitchAnim(ACTION_APPEND,"kneeldown");
+							} else
+								v.PushActionTurnTo(ACTION_NEWLIST,Caller,0.0);
+							Caller->AssignCommand("Geraet_abbauen");
+							Caller->SetUserData(ChildID);
+						}
+						v.SetUserData(ChildID);
+						switch (idx)
+						{
+							case 3:
+								v.PushActionRedirect(ACTION_NEWLIST);
+								v.EnableBlueLights(true);
+								v.AssignCommand("Geraet_drehen");
+								break;
+							case 4:
+								v.EnableSpecialLights(true);
+								v.AssignCommand("Geraet_drehen");
+								break;
+							case 5:
+								Caller->EnableCommand("RemoveFirehose",false);
+								Caller->PushActionMove(ACTION_APPEND,&v,TARGET_FREE_CONNECTOR);
+								Caller->PushActionUseEquipment(ACTION_APPEND,&v,0,0);
+								// v.Hide();
+								pos=Target->GetPosition();
+								Caller->PushActionMoveWithHose(ACTION_APPEND, pos);
+								Caller->PushActionExtinguish(ACTION_APPEND, Target, 20.0);				
+								break;
+							case 8:
+								v.SetCommandable(true);
+								v.SetMaxPassengers(10);
+								v.SetMaxTransports(10);
+								v.PushActionExecuteCommand(ACTION_NEWLIST,"seg_start_triage",&v,0,false);
+								break;
+							case 10:
+								v.PushActionRedirect(ACTION_NEWLIST);
+								break;
+						}
+					}
+				}
+				else
+				{
+					Mission::PlayHint("HINT_LIGHT_NOSPACE");
+				}
+				break;
+		}
+	}
+};
+
+object Schnellangriff : CommandScript
+{
+	Schnellangriff()
+	{
+		SetCursor("schnella");
+		SetIcon("schnella");
+		// SetGroupID(CGROUP_GETEQUIPMENT);
+		SetGroupLeader(false);
+		SetValidTargets (ACTOR_VEHICLE | ACTOR_PERSON);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		VehicleList vl(Caller->GetName());
+		for (int i=0; (i<vl.GetNumVehicles()) && (vl.GetVehicle(i)->HasCommand("ich_bin_kein_fz")); i++)
+			;
+		return vl.GetVehicle(i)->HasCommand(availcheck[5]);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return !Caller->IsEquipped();
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (!Caller->IsValid())
+			return false;
+		
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (v.GetPassengers().GetNumPersons() == 0)
+				return false;
+		} else {
+			Person p(Caller);
+			if (p.IsValid() && (p.IsCarryingPerson()||p.IsLinkedWithPerson()|| p.GetFirehoseID()!=0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+				return false;
+		
+			switch (p.GetPersonType())
+			{
+				case PT_FIREFIGHTER_NORMAL:
+				case PT_FIREFIGHTER_MASK:
+					break;
+				default:
+					return false;
+			}
+			
+	    		VehicleList vl(Caller->GetName());
+			Vehicle v=vl.GetVehicle(0);
+		}
+		if (v.HasCommand(availcheck[5]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			PersonList pl=v.GetPassengers();
+			Person p=pl.GetPerson(0);
+			p.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+			p.PushActionExecuteCommand(ACTION_APPEND,"FwGeraet_raus",Target,105,false);
+		} else {
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FwGeraet_raus",Target,105,false);
+		}
+	}
+};
+
+object Geraet_weg : CommandScript
+{
+	Geraet_weg()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (childID != 110)
+			return true;
+		if (!Caller->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		if (v.HasCommand(devoutside[10]))
+			return true;
+		else 	
+			return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int cid)
+	{
+		Person p(Caller);
+
+		System::Error("Geraeteobjekt loeschen");
+		
+		VehicleList vl(Caller->GetName());
+		Vehicle v;
+		switch (cid)
+		{
+			case 106:
+			case 107:
+			case 109:
+				break;
+			default:
+				for (int i=0; i<vl.GetNumVehicles(); i++)
+				{
+					v=vl.GetVehicle(i);
+					if (v.GetUserData() == cid)
+						i=vl.GetNumVehicles();
+				}
+		}
+		// Hier noch auf angeschlossene Schlaeuche pruefen
+		
+		switch (cid)
+		{
+			case 100:
+			case 102:
+				PersonList pl(ROLE_SQUAD);
+				bool SchlauchDran=false;
+				Person fw;
+				for (i=0; (i<pl.GetNumPersons()) && (!SchlauchDran);i++)
+				{
+					fw=pl.GetPerson(i);
+					if (fw.GetFirehoseID()!=0)
+						SchlauchDran=v.IsUsingConnector(&fw);
+				}
+				if (SchlauchDran)
+				{
+					Mission::PlayHint("Geraet kann nicht abgebaut werden.");
+					Caller->PushActionWait(ACTION_NEWLIST,1.0);
+					return;
+				}
+				break;
+
+			case 104:
+				v.EnableSpecialLights(false);
+				break;
+
+			case 108:
+				if (v.GetNumTransported() > 0)
+				{
+					Mission::PlayHint("Zelt kann nicht abgebaut werden.");
+					Caller->PushActionWait(ACTION_NEWLIST,1.0);
+					return;
+				}
+				break;
+
+			default:
+				break;
+		}
+		System::Error("Geraet wird abgebaut");
+
+		Caller->EnableCommand("MoveTo",true);
+		Caller->RemoveCommand("Geraet_abbauen");
+		Caller->EnableCommand("drop",true);
+
+		switch (Caller->GetUserData())
+		{
+			case 100:
+				System::Error("Verteiler");
+				Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_FIREHOSE);
+				break;
+			case 102:
+				System::Error("TS");
+				Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_FIREHOSE);
+				break;
+		
+			case 101:
+				System::Error("Monitor");
+				Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+		
+			case 103:
+				System::Error("Pylone");
+				Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+		
+			case 104:
+				System::Error("LiMa");
+				Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+		
+			case 105:
+				System::Error("Schnellangriff");
+				break;
+			case 106:
+			case 107:
+				System::Error("Messgeraet");
+				return;
+				break;
+			case 108:
+				System::Error("SEG-Zelt");
+				Caller->PushActionGetEquipment(ACTION_INSERT, Caller, EQUIP_THW_CASE);
+				break;
+			case 109:
+				System::Error("Dichtkissen");
+				return;
+				break;
+			case 110:
+				System::Error("AutoUmleiten");
+				break;
+			default:
+				System::Error("Ungueltiger Code bei Geraeteruecknahme");
+				return;
+				break;
+		}
+		v.PushActionDeleteOwner(ACTION_NEWLIST);
+	}
+};
+
+object Geraet_ins_Auto : CommandScript
+{
+	Geraet_ins_Auto()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int cid)
+	{
+		VehicleList vl(Caller->GetName());
+		Vehicle v;
+		for (int i=0; i<vl.GetNumVehicles(); i++)
+		{
+			v=vl.GetVehicle(i);
+			if (!v.HasCommand("ich_bin_kein_fz"))
+				i=vl.GetNumVehicles();
+		}
+
+		cid=cid-100;
+
+		if (cid > 10)
+		{
+			System::Error("ungueltiges geraet beim einraeumen");
+			System::Error(Caller->GetName())
+		}
+
+		if ((cid == 2) || (cid == 8))
+			Caller->PushActionMove(ACTION_INSERT, &v, TARGET_REARDOOR);
+		else 
+		{
+			System::Error("Gehe zum Fahrzeug zurueck");
+			Caller->PushActionMove(ACTION_INSERT,&v,TARGET_EQUIPMENTDOOR);
+		}
+		System::Error("geraet verstaut");
+		Caller->PushActionRemoveEquipment(ACTION_INSERTAFTERFIRST);
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST, &v);
+		Caller->SetUserData(0);
+		if (cid != 9)
+		{
+			v.AssignCommand(availcheck[cid]);
+			v.RemoveCommand(devoutside[cid]);
+		}		
+		System::Error("Feddisch");
+	}
+};
+
+object zum_geraet_gehen : CommandScript
+{
+	zum_geraet_gehen()
+	{
+	}
+
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		switch (childID)
+		{
+			case 106:
+			case 107:
+			case 109:
+			case 110:
+				break;
+			default:
+				VehicleList vl(Caller->GetName());
+				Vehicle v;
+				for (int i=0; i<vl.GetNumVehicles(); i++)
+				{
+					v=vl.GetVehicle(i);
+					if (v.GetUserData() == Caller->GetUserData())
+						i=vl.GetNumVehicles();
+				}
+				if (Caller->GetUserData() != 105)
+					Caller->PushActionMove(ACTION_INSERT, &v, TARGET_ANY);
+				else
+				{
+					Vector pos;
+					v.GetUsedConnectorPosition(Caller,pos);
+					Caller->PushActionMoveWithHose(ACTION_INSERT, pos);
+				}
+				break;
+		}
+	}
+};
+
+object Geraet_abbauen : CommandScript
+{
+	Geraet_abbauen()
+	{
+		SetCursor("deinstall");
+		SetIcon("deinstall");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		VehicleList vl(Caller->GetName());
+		Vehicle v;
+		for (int i=0; i<vl.GetNumVehicles(); i++)
+		{
+			v=vl.GetVehicle(i);
+			if (v.GetUserData() == Caller->GetUserData())
+				i=vl.GetNumVehicles();
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"zum_geraet_gehen",Target, Caller->GetUserData(),false);		
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Geraet_ins_Auto",Target,Caller->GetUserData(),false);
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Geraet_weg",Target,Caller->GetUserData(),false);
+		if (Caller->GetUserData() == 105)
+			Caller->PushActionUseEquipment(ACTION_INSERTAFTERFIRST,&v,childID,10.0f);
+	}
+};
+
+object Fzaufruesten : CommandScript
+{
+
+	Fzaufruesten()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		for (int i=0;i<10;i++)
+		{
+			if (Caller->HasCommand(devoutside[i]))
+			{
+				Caller->RemoveCommand(devoutside[i]);
+				Caller->AssignCommand(availcheck[i]);
+			}
+		}
+	}
+};
+
+
+object Geraete_entfernen : CommandScript
+{
+
+	// löscht alle evtl. vergessenen Geraete auf der Karte, wenn das Fz am Standort einrueckt oder
+	// abgeschleppt wird
+
+	Geraete_entfernen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Error("Geraete von der Strasse entfernen");
+		System::Error(Caller->GetName());
+		VehicleList vl(Caller->GetName());
+		Vehicle v;
+		for (int i=0; i<vl.GetNumVehicles(); i++)
+		{
+			v=vl.GetVehicle(i);
+			if (v.HasCommand("ich_bin_kein_fz"))
+			{
+				v.PushActionDeleteOwner(ACTION_NEWLIST);
+				System::Error("Ein vergessenes Geraet geloescht");
+			}
+		}
+		System::Error("Geraetesammeln beendet");
+	}
+};
+
+object Geraet_drehen : CommandScript
+{
+
+	// löscht alle evtl. vergessenen Geraete auf der Karte, wenn das Fz am Standort einrueckt oder
+	// abgeschleppt wird
+
+	Geraet_drehen()
+	{
+		SetIcon("LimaDrehen");
+		SetCursor("LimaDrehen");
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return (Caller->GetID() == Target->GetID());
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		float rot[9];
+		Vehicle car(Caller);
+		float winkel;
+		float childRot[9];
+
+		Vector Pos=car.GetPosition();
+		car.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+		winkel = 15.0;
+		Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+		Math::MultiplyMatrices(childRot, rot);
+		car.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+	}
+};
+

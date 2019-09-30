@@ -1,0 +1,619 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 4.0  
+// ## 
+// ## Script gefahrgut
+// ## 
+// ## Stand : 12.08.2007
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+
+// Sammelt alle Scripts, die mit der Bearbeitung von Gefahgut zu tun haben
+//
+// folgende Gefahrgueter kommen zum Einsatz
+//
+//	33   : leicht brennbare Flüssigkeit -> Kraftstofftransport
+//	X423 : Gefahrenziffer für Natrium -> kein Wasser! , bildet brennbare Gase
+//	20   : Gas -> Einsatz im Gefahrenbereich nur mit PA
+//	411  : explosiver Feststoff -> Munitionstransport !
+//	86   : ätzende/giftige Substanz -> Einsatz nur mit CSA
+//      70   : radioaktive Substanz, Gefahrenklasse II -> CSA
+//	235  : brennbares Gas, Gefahr heftiger chem. Reaktion -> Acetylengas-Flaschen
+
+int DummyGroup = 20;
+
+const int maxggv=20;
+const char * ggv_info[maxggv];
+const ggv_info[1]="Leicht entflammbare Fluessigkeit! Fz kuehlen, Funkenreissendes Geraet vermeiden, Zuendquellen fernhalten. Einsatz mit PA!";
+const ggv_info[2]="Feststoff bildet bei Wasserkontakt brennbare Gase. Kein Loeschversuch mit Wasser oder Schaum! Weitraeumig absperren!";
+const ggv_info[3]="Austreten von Gas. Mit Wasser niederschlagen. Personen zuegig aus Gefahrenbereich entfernen. Einsatz mit PA!";
+const ggv_info[4]="Munitionstransport. Gefahrenbereich evakuieren, Kuehlen, Zuendquellen fernhalten, Erschuetterung vermeiden! Kampfmittelraeumdienst zuziehen.";
+const ggv_info[5]="Aetzende giftige Substanz. Weitraeumig absperren. Substanz mit Wasser niederschlagen. Personen + Fz zuegig aus dem Gefahrenbereich evakuieren. Einsatz nur mit CSA!";
+const ggv_info[6]="Radioaktiver Stoff Gefahrenklasse II. Strahlungsmessung. Weitraeumig evakuieren. Aufenthalt im Gefahrenbereich so kurz wie möglich.";
+const ggv_info[7]="Acetylengas-Flaschen. Erschuetterung vermeiden! Bei Waermeentwicklung aus sicherer Distanz kuehlen. Weitraeumig absperren. Abtransport im Wasserbad.";
+
+const char * Part[20];
+const Part[1]="contam2";	
+const Part[2]="none";	
+const Part[3]="gas01";	
+const Part[4]="none";	
+const Part[5]="contam";	
+const Part[6]="none";
+const Part[7]="none";
+const Part[11]="burningfloor03b";
+	
+
+object kemlerzahl : CommandScript
+{
+
+	kemlerzahl()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("Kemmlerzahl");
+		SetCursor("Kemmlerzahl");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		return v.HasCommand("gefahrgut");
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		int ggv=v.GetUserData();
+		if (ggv> 10)
+			ggv=ggv-10;
+		Mission::PlayHint(ggv_info[ggv]);
+	}
+};
+
+object mm_an_bord : CommandScript
+{
+	mm_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object gz_an_bord : CommandScript
+{
+	gz_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_gz : CommandScript
+{
+	mir_fehlt_gz()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object dichtkissen_an_bord : CommandScript
+{
+	dichtkissen_an_bord()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_dichtkissen : CommandScript
+{
+	mir_fehlt_dichtkissen()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object mir_fehlt_mm : CommandScript
+{
+	mir_fehlt_mm()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object gefahrgut : CommandScript
+{
+	gefahrgut()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object setggv : CommandScript
+{
+	setggv()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		v.PushActionWait(ACTION_NEWLIST,1.0);
+		int ggv;
+		if (childID == 0)
+			ggv=Math::rand()%6+1;
+		else
+			ggv=childID;
+		if ((ggv == 2) || (ggv == 4) || (ggv == 6))
+			v.ChangePrototype("mod:Prototypes/Vehicles/Winterberg/twinkletruck01.e4p");
+		else
+			v.ChangePrototype("mod:Prototypes/Vehicles/Winterberg/tanktruck01.e4p");
+		
+		v.SetUserData(ggv);
+		v.AssignCommand("gefahrgut");
+		v.SetChildEnabled("33",false);
+		v.SetChildEnabled("20",false);
+		v.SetChildEnabled("86",false);
+		switch (ggv)			// Szenario entsprechend dem Gefahrgut vorbereiten
+		{
+			case 1 :		// leicht brennbare Flüssigkeit
+				// setze Energieabstrahlung durch Brand
+				// aktiviere Zuendquellenpruefung
+				// Fluessigkeitsaustritt einschalten
+				break;
+			case 2 : 		// Alkalitransport
+				// setze Explosionsenergie
+				// setze Energieabstrahlung durch Brand
+				// aktiviere Pruefung auf Wasserbeaufschlagung
+				break;
+			case 3 :		// Austreten von Gas
+				// setze Contaminationrange
+				// setze Gesundheitsschaden durch Gasinhalation
+				// aktiviere Leck-Countdown
+				// Gaswolke einschalten
+				break;
+			case 4 :		// Munitionstransport
+				v.AssignCommand("kmrd_target");		// Use durch KMRD zulassen
+				v.SetFlag(OF_USABLE);
+				// aktiviere Funkenreisserpruefung	
+				// aktiviere Erschuetterungs/Kollisionsprüfung
+				// setze Explosionsenergie
+				// aktiviere Entschaerfungsprüfung
+				break;
+			case 5 :		// Ätzende giftige Substanz
+				// setze Contaminationradius
+				// setze Gesundheitsschaden durch Substanz
+				// aktiviere Leck-Countdown
+				// Flüssigkeitsaustritt einschalten
+				break;
+			case 6 : 		// Radioaktive Substanz
+				// setze Contaminationradius
+				// setze Gesundheitsschaden durch Substanz
+				break;
+		}
+		if (Math::rand()%100 < 100)	// Tritt schon Gefahrgut aus ?
+		{
+			v.PushActionExecuteCommand(ACTION_APPEND,"ggv_leck",&v,ggv,false);
+		}
+		v.PushActionExecuteCommand(ACTION_APPEND,"ggv_wirken",&v,0,false);
+	}
+};
+
+object ggv_leck : CommandScript
+{
+
+	ggv_leck()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.Damage(v.GetMaxEnergy()/100*(Math::rand()%50+40));
+		v.SetFlag(OF_USABLE);
+		int ggv=v.GetUserData();
+		switch (ggv)
+		{
+			case 1:
+				System::Error("GGV 33");
+				v.SetChildEnabled("33",true);
+				break;
+			case 3:
+				System::Error("GGV 20");
+				v.SetChildEnabled("20",true);
+				break;
+			case 5:
+				System::Error("GGV 86");
+				v.SetChildEnabled("86",true);
+				break;
+		}
+	}
+};
+
+object ggv_check : CommandScript
+{
+	ggv_check()
+	{
+		SetGroupID(DummyGroup);
+		SetPriority(700);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	// Prüft auf reaktionsauslösende Massnahmen am GGV-Transport
+	// die entsprechenden Scripts übermitteln per ChildID im Aufruf die grade durchgeführte Aktion
+	// folgende Codes werden z.Zt verarbeitet
+	// 1 : Beaufschlagen mit Wasser
+	// 2 : Einsatz der Rettungsschere
+	// 3 : ASF Aufladen / Heben mit Kran
+	// 4 : Reparatur, z.B. Entschärfen durch KMD, Leck abdichten
+	// 99: Zuendquelle im Gefahrenbereich
+
+	void PushActions(GameObject *Caller, Actor *Target, int cid)
+	{
+		Vehicle v(Caller);
+		GameObject p(Target);
+		if (!v.HasCommand("gefahrgut"))
+			return;
+		int ggv=v.GetUserData();
+		bool leck=(v.GetEnergy() != v.GetMaxEnergy());
+		bool recall=false;
+		if ((p.GetNumActions() > 1) && (cid != 99))
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ggv_check",Target,cid,false);
+			return;
+		}
+		switch (cid)
+		{
+			case 1:
+				if (leck)
+				switch (ggv)
+				{
+					case 1 :
+						v.SetUserData(ggv+10);
+						break;
+					case 2 :	
+						v.SetSmoking(true);
+						v.SetSmokeLevelDuration(5.0f);
+						v.PushActionWait(ACTION_NEWLIST,5.0f);
+						v.PushActionExecuteCommand(ACTION_APPEND,"ggv_explode",Target,0,false);
+						break;
+					case 3 :
+					case 5 :
+					case 6 :
+						v.SetUserData(ggv+10);
+						// verändere Contamination Range bei Niederschlagen des Gases mit Wasser;
+						break;
+				}
+				else
+					recall=true;
+				break;
+			case 2:
+			case 3:
+			case 99:
+				switch (ggv)
+				{
+					case 1:
+						if ((Math::rand()%10)<5) 
+						{
+							v.SetFireObjectBurning("Zuendung");
+							v.SetSmoking(true);
+							v.SetSmokeLevelDuration(10.0f);
+						} else {
+							v.SetFireObjectBurning("Zuendung");
+							v.PushActionWait(ACTION_NEWLIST,3.0f);
+							v.PushActionExecuteCommand(ACTION_APPEND,"ggv_explode",Target,0,false);
+						}
+						break;
+					case 4:
+						v.PushActionWait(ACTION_NEWLIST,1.0);
+						v.PushActionExecuteCommand(ACTION_APPEND,"ggv_explode",Target,0,false);
+						break;					
+				}
+				break;
+			case 4:
+				System::Log("ggv_check : abdichten");
+				switch (ggv)
+				{
+					case 1 :
+						v.SetFireObjectBurning("Zuendung");
+						v.SetSmoking(true);
+						v.SetSmokeLevelDuration(1.0f);
+						break;
+					case 11:
+					case 13:
+					case 15:
+					case 16:
+					case 3 :
+					case 5 :
+					case 6 :
+						if (p.IsCurrentAction("EActionRepair"))
+						{
+							System::Log("Abdichten in progress");
+							Caller->PushActionExecuteCommand(ACTION_APPEND,"ggv_check",Target,cid,false);
+						} else {
+							System::Log("Fahrzeug vollstaendig dicht");
+							// Leck ist dicht, kein Gefahrgut tritt mehr aus
+							v.PushActionWait(ACTION_NEWLIST,1.0);
+							Mission::PlayHint("Leck abgedichtet. Fz kann abtransportiert werden.");
+							v.SetChildEnabled("33",false);
+							v.SetChildEnabled("20",false);
+							v.SetChildEnabled("86",false);
+						}
+						break;
+					case 4 :
+						if (p.IsCurrentAction("EActionRepair"))
+						{
+							Caller->PushActionExecuteCommand(ACTION_APPEND,"ggv_check",Target,cid,false);
+						} else {
+							v.SetUserData(0);
+							v.PushActionWait(ACTION_NEWLIST,1.0);
+							Mission::PlayHint("Transport entschaerft. Fz kann abtransportiert werden.");
+						}
+						break;
+				}
+				break;
+		}
+	}
+};
+
+object ggv_wirken : CommandScript
+{
+	ggv_wirken()
+	{
+		SetGroupID(DummyGroup);
+		SetPriority(700);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	// Prüft zyklisch auf Objekte im Gefahrenbereich
+	// je nach Objekt und Gefahrgut wird dann das Objekt geschaedigt oder das
+	// Gefahrgut reagiert
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if (v.GetEnergy() > 0.95*v.GetMaxEnergy())
+		{
+			return;		// kein Gefahrgutaustritt -> keine Wirkung;
+		}
+		int ggv=v.GetUserData();
+		float radius;
+		switch (ggv)
+		{
+			case 1:
+				radius=600;
+				break;
+			case 11:
+				radius=60;
+				break;
+			case 2:
+				radius=0;
+				break;
+			case 3:
+				radius=500;
+				break;
+			case 13:
+				radius=50;
+				break;
+			case 4:
+				radius=0;
+				break;
+			case 5:
+				radius=600;
+				break;
+			case 15:
+				radius=150;
+				break;
+			case 6:
+				radius=1000;
+				break;
+			case 16:
+				radius=1600;
+				break;
+		}
+		int actrange;
+		// actrange=(radius*(v.GetEnergy()/v.GetMaxEnergy()));
+		actrange=1*radius;
+		GameObjectList ol=Caller->GetObjectsInRange(actrange, ACTOR_PERSON | ACTOR_VEHICLE);
+		GameObject obj;
+		Vehicle ov;
+		Person op;
+		PersonType pt;
+		for (int i=0; i<ol.GetNumObjects(); i++)
+		{
+			obj=ol.GetObject(i);
+			switch (ggv)
+			{
+				case 1:
+				case 11:
+					switch (obj.GetType())
+					{
+						case ACTOR_VEHICLE:
+							Vehicle ov(&obj);
+							if (ov.HasCommand("ich_bin_kein_fz")) 
+								switch (ov.GetUserData())
+								{
+									case 102:
+									case 104:
+										v.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",&v,99,false);			
+								}
+							else
+								if (ov.IsCurrentAction("EActionMove") || ov.IsCurrentAction("EActionMoveToPoint"))
+									v.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",&v,99,false);			
+							break;
+						case ACTOR_PERSON:
+							Person op(&obj);
+							pt=op.GetPersonType();
+							if (op.IsCurrentAction("EActionUseEquipment"))
+							{
+								v.PushActionExecuteCommand(ACTION_INSERT,"ggv_check",&v,99,false);
+							}			
+							if ((pt != PT_FIREFIGHTER_ABC) && (pt != PT_FIREFIGHTER_MASK))
+								op.Hurt(INJUREREASON_CONTAM_CHEM,50);
+							if ((pt == PT_FIREFIGHTER_ABC) && (op.GetUserData() == 107))
+								op.PushActionExecuteCommand(ACTION_NEWLIST,"ggv_messung",Caller,0,false);
+							break;
+					}
+					break;
+				case 2:
+					break;
+				case 3:
+				case 13:
+					switch (obj.GetType())
+					{
+						case ACTOR_VEHICLE:
+							break;
+						case ACTOR_PERSON:
+							Person op(&obj);
+							pt=op.GetPersonType();		
+							if ((pt != PT_FIREFIGHTER_ABC) && (pt != PT_FIREFIGHTER_MASK))
+								op.Hurt(INJUREREASON_CONTAM_CHEM,100);
+							if ((pt == PT_FIREFIGHTER_ABC) && (op.GetUserData() == 107))
+								op.PushActionExecuteCommand(ACTION_NEWLIST,"ggv_messung",Caller,0,false);
+							break;
+					}
+					break;
+				case 4:
+					break;
+				case 5:
+				case 15:
+					switch (obj.GetType())
+					{
+						case ACTOR_VEHICLE:
+							Vehicle ov(&obj);
+							ov.Damage(ov.GetEnergy()*0.02);
+							ov.SetSmokeLevelDuration(30);
+							break;
+						case ACTOR_PERSON:
+							Person op(&obj);
+							pt=op.GetPersonType();		
+							if (pt != PT_FIREFIGHTER_ABC)
+								op.Hurt(INJUREREASON_CONTAM_CHEM,150);
+							op.Contaminate(CONTAMINATION_CHEMICAL);
+							if ((pt == PT_FIREFIGHTER_ABC) && (op.GetUserData() == 107))
+								op.PushActionExecuteCommand(ACTION_NEWLIST,"ggv_messung",Caller,0,false);
+							break;
+					}
+					break;
+				case 6:
+				case 16:
+					switch (obj.GetType())
+					{
+						case ACTOR_VEHICLE:
+							break;
+						case ACTOR_PERSON:
+							Person op(&obj);
+							pt=op.GetPersonType();
+							Vector tpos=Caller->GetPosition();
+							Vector ppos=obj.GetPosition();
+	//						float d=dist(tpos.x,tpos.y,ppos.x,ppos.y);		
+							op.Hurt(INJUREREASON_CONTAM_ATOM,10);
+							if ((pt == PT_FIREFIGHTER_ABC) && (op.GetUserData() == 106))
+								op.PushActionExecuteCommand(ACTION_NEWLIST,"ggv_messung",Caller,0,false);
+							if (ggv == 16) 
+								op.Contaminate(CONTAMINATION_ATOMIC);
+							break;
+					}
+					break;
+			}
+		}
+		Caller->PushActionWait(ACTION_APPEND,1.0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"ggv_wirken",Caller,0,false);
+	}
+};
+
+object ggv_explode : CommandScript
+{
+	ggv_explode()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.Explode();
+	}
+};
+
+object ggv_messung : CommandScript	// GGV-Detektor
+{
+	ggv_messung()
+	{
+		SetPriority(500);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		// Liste aller Objekte im Radius -> wenn Leckage und GGV passend zum Detektor, dann Ton an sonst Ton aus
+		Vehicle ov(Target);
+		Vector CarPos=Caller->GetPosition();
+		if (Caller->GetUserData() == 107)
+		{
+			// Mission::PlayHint("Chemikalienaustritt im Messradius !");
+			Audio::PlaySample3D("mod:Audio/FX/228_einzel.wav", CarPos, false);
+		} else {
+			// Mission::PlayHint("Radioaktivitätsquelle im Messradius !");
+			Audio::PlaySample3D("mod:Audio/FX/ggz.wav", CarPos, false);
+		}
+	}
+};

@@ -1,0 +1,164 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script pickup
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+object PickUp : CommandScript
+{
+	PickUp()
+	{
+		SetIcon("liftwithcrane");
+		SetCursor("liftwithcrane");
+		// Vehicle wird fürs Motorboot gebraucht
+		SetValidTargets(ACTOR_OBJECT | ACTOR_PERSON | ACTOR_VEHICLE);
+		// SetRestrictions2(RESTRICT2_CANBEPICKEDUP);
+		SetGroupID(CGROUP_PICKUP);
+		SetPossibleEquipment(EQUIP_NONE);
+		SetGroupLeader(true);
+		SetPriority(100);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid())
+			return false;
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_THW_FGRR_RL)
+				return !v.IsCarryingAnything();
+			return true;
+		}
+		return !Caller->IsCarryingAnything();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid())
+			return false;
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_FMB)
+			{
+				return v.GetFreeTransports() > 0 && (Game::ExistsNormalObjectWithFlagSet(OF_FLOTSAM) || Game::ExistsDrowningPerson());
+			}
+			else if (v.GetVehicleType() == VT_THW_FGRR_RL)
+			{
+				return !v.IsCarryingAnything() && Game::ExistsNormalObjectWithFlagSet(OF_CARRYABLE_BY_BULLDOZER);
+			}
+		}
+		if ( Caller->GetType() == ACTOR_PERSON)
+		{
+			Person p(Caller);
+			if ( p.GetArrestedID() != -1 )
+				return false;
+		}
+		if (Caller->IsCarryingAnything())
+			return false;
+		if (Caller->HasCommand("Extinguish"))
+			return Game::ExistsInstalledJumppad() || Game::ExistsPickableAnimal();
+		else 
+			return Caller->HasCommand("DrawWeapon");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || Caller->GetID()==Target->GetID())
+			return false;
+	
+		Vehicle v(Caller);
+		// (dg) special code for rl
+		if (v.IsValid() && (v.GetVehicleType() == VT_THW_FGRR_RL))
+		{
+			GameObjectList l = v.GetCarriedObjects();
+			int numObjects = l.GetNumObjects();
+			if (numObjects > 0)
+				return false;
+			GameObject obj(Target);
+			if (obj.IsValid() && obj.IsFlagSet(OF_CARRYABLE_BY_BULLDOZER))
+				return true;
+		}
+		// (uw) special code for fmb		
+		else if (v.IsValid() && (v.GetVehicleType() == VT_FIREFIGHTERS_FMB))
+		{
+			GameObjectList l = v.GetCarriedObjects();
+			int numObjects = l.GetNumObjects();
+			// Kann FMB noch was aufnehmen?
+			if (v.GetFreeTransports() <= 0)
+			{
+				return false;
+			}			
+		
+			Person p(Target);
+			GameObject obj(Target);
+			if ((obj.IsValid() && obj.IsFlagSet(OF_FLOTSAM)) || 
+				(p.IsValid() && p.IsDrowning()) )
+			{
+				return true;
+			}		
+		
+		} else if (Target->GetType() == ACTOR_VEHICLE)
+			return false;
+
+		if (Caller->IsCarryingAnything())
+			return false;
+			
+		GameObject obj(Target);
+
+		// don't pickup jumppad which is in use
+		if ( obj.IsJumppad() && obj.HasAnyAction() )
+			return false;
+
+		if (obj.IsValid() 
+			&& (obj.IsJumppad() || obj.IsRoadblock() || obj.IsFlagSet(OF_RECOVERABLE))
+			&& obj.GetObjectType()!= TYPE_PERSON 
+			&& obj.GetObjectType()!= TYPE_VEHICLE)
+		{
+			return true;
+		}
+		if (obj.GetType() == ACTOR_PERSON && obj.IsFlagSet(OF_PULLABLE))
+		{
+			Person p(Target);
+			if (p.IsDead() && p.GetRole() == ROLE_ANIMAL)
+				return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		if (v.GetVehicleType() == VT_FIREFIGHTERS_FMB)
+		{
+			Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_FOLLOW);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			Caller->PushActionPickUp(ACTION_APPEND, Target);
+		}
+		else
+		{
+			Vector TargetPos = Target->GetTargetPoint(Caller, TARGET_ANY);
+			
+			Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			if (v.GetVehicleType() == VT_THW_FGRR_RL)
+				if (v.IsBucketUp())
+				{
+					Caller->PushActionMoveBucket(ACTION_APPEND, Target, false);
+				}
+			Caller->PushActionPickUp(ACTION_APPEND, Target);
+			if (v.GetVehicleType() == VT_THW_FGRR_RL)
+			{
+				Caller->PushActionMoveBucket(ACTION_APPEND, Target, true);
+			}
+		}
+	}
+};

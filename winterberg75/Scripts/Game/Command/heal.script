@@ -1,0 +1,1062 @@
+// ## 
+// ## WEM4 7 Scripting
+// ## Alquimista 7.0
+// ## 
+// ## Script heal
+// ## 
+// ## Release 6.12.2009
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+// Winterberger für Em4 
+// heal 1.1 by WitchDoctor
+// basiert auf heal.script für Em3 by manuelt
+//
+// Revision
+// 15.6.06 : RA versorgen PAT und fordern ggf. Notarzt nach
+//	
+// 20.6.06 : erstmal kein random heal
+//
+//	basiert auf MT_mod_Heal V2.0 by manuelt
+//	
+//	Die Verwendung in anderen Emergency3-Modifikationen ist gestattet,
+//	wenn dieser Kommentar im Skript erhalten bleibt.
+//
+// 16.7.2006 : Notarzt stabilisiert Eingeklemmte im Fahrzeug vor der Rettung -> LifeDrain wird REDUZIERT!
+//		nachgefordertes NEF hält in der Nähe des RTW, nicht des Patienten. Dadurch parkt das NEF
+//		nicht im Wald, wenn der Pat im Hinterzimmer eines Gebäudes liegt sondern in der Nähe des Eingangs
+
+// Patientenmarkierung im UserData:
+// 44 - NA ist mit dabei, keine automatische NEF-Nachalarmierung
+// 43 - Patient wird vom RA versorgt -> NA nur beratend
+// 42 - Patient bereits vom NA versorgt -> keine erneute Bestimmung des MaxLife mehr
+// 45 - BasisRea -> NA uebernimmt nach Ankunft
+// 46 - Patient wird vom RA versorgt, NEF ist alarmiert -> NA nur beratend
+ 
+int DummyGroup = 20;
+const int na_her=400;
+const int rtw_her=600;
+const int ktw_liegend=900;
+
+object raheal : CommandScript
+{
+	raheal()
+	{
+		SetValidTargets(ACTOR_PERSON|ACTOR_VEHICLE);
+		SetIcon("Heal");
+		SetCursor("Heal");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		bool ok=false;
+
+		switch(Target->GetType())
+		{
+			case ACTOR_PERSON:
+				Person p(Target);
+				ok=(!p.IsFlagSet(OF_USABLE) && !p.IsDrowning() && !p.IsHealing() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried() && !(p.HasCommand("manv_schwarz") && p.HasCommand("na_cat")));
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=v.HasEnclosedPerson() && !v.IsFlagSet(OF_FLOTSAM);
+				break;
+		}
+
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			if (childID==0)
+			{
+				Caller->PushActionMove(ACTION_NEWLIST,Target,TARGET_SHEARSDOOR);
+				Caller->PushActionTurnTo(ACTION_APPEND,Target);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"raheal",Target,1,false);
+			} else {
+				int prob=20;
+				Vehicle v(Target);
+				if (v.HasNamePrefix("ccar"))
+					prob=16;
+				if (rand()%prob>12)
+				{
+					Caller->SetEquipment(EQUIP_SHEARS);
+					Caller->PushActionUseEquipment(ACTION_APPEND, Target, 0, 0.0f);
+					Caller->PushActionRemoveEquipment(ACTION_APPEND);
+					Mission::PlayHint("WIB_PKLEMM_JA");
+				} else {
+					v.SetFlag(OF_FLOTSAM);
+					Mission::PlayHint("WIB_PKLEMM_NEIN");
+				}
+			}
+		} else
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"Heal",Target,0,false);
+	}
+};
+
+object ratransport : CommandScript
+{
+	ratransport()
+	{
+		SetIcon("liftperson");
+		SetCursor("liftperson");
+		SetValidTargets(ACTOR_PERSON|ACTOR_VEHICLE);
+		SetGroupID(CGROUP_CARRY_PERSON);
+		SetGroupLeader(true);
+		SetPriority(400);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || (Caller->GetType() != ACTOR_PERSON))
+			return false;
+		Person p(Caller);
+		if (p.IsCarryingPerson() || p.IsHealing())
+			return false;
+		return Game::ExistsInjuredPerson() && !Caller->HasCommand("fuehrung");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle tv(Target);
+			return tv.IsFlagSet(OF_CARRYABLE_BY_BULLDOZER) && !tv.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER);
+		} else {
+
+		Person p(Caller);
+		Person t(Target);
+		
+		if (t.HasCommand("blutung") && !p.IsDead())
+			return false;
+
+		if (t.IsDrowning())
+			return p.HasCommand("Dive");
+
+		if ((t.IsInjured() && !t.IsClassified()) || t.GetLife()<100)
+			return false;
+
+		bool P_Frei=p.IsValid() && !p.IsCarryingPerson() && !p.IsLinkedWithPerson() && !p.IsPulling();
+		bool t_injured=t.IsValid() && t.IsInjured() && !t.IsCarried() && t.GetRole()!=ROLE_ANIMAL && !t.IsRescueDog();
+		bool t_arrested=(t.IsLinkedWithPerson()||t.IsCarryingPerson()) && (t.GetRole() == ROLE_SQUAD);
+		bool ok=P_Frei;
+
+		if (P_Frei)
+		{
+			if (t_injured)
+			{
+				ok=ok && (p.GetEnteredCarID() == -1 || p.GetEnteredCarTargetID() == t.GetEnteredHouseID());
+				ok=ok && (t.GetEnteredHouseID() == p.GetEnteredHouseID() || t.IsInHouseWithGroundEntrance());
+			} else if (t_arrested) {
+				if (t.IsLinkedWithPerson())
+					t=t.GetArrested();
+				else
+					t=t.GetCarried();
+			} else
+				ok=false;
+
+			if (t.IsContaminated())
+				ok=ok;//  && t.IsContaminated(CONTAMINATION_BIOLOGICAL);
+		}
+		// System::Log("RA Trans Frei %u Injured %u Arrest %u ok %u",int(P_Frei),int(t_injured),int(t_arrested),ok);
+
+		return ok;
+		}
+	} 
+
+	void zufuss (Person *p, Person *pat, Vehicle *v)
+	{
+		p->PushActionMove(ACTION_NEWLIST, pat, TARGET_TOUCHPERSON);
+		if (pat->IsContaminated() || pat->GetInjuryReason()==INJUREREASON_CONTAM_BIO)
+			p->AssignCommand("mrsa");
+		if (pat->GetRole()!=ROLE_GANGSTER)
+			pat->SetRole(ROLE_CIVILIAN);
+		pat->SetBehaviour(5);
+		Path test=pat->GetObjectPath();
+		if(test.IsValid())
+			pat->RemoveObjectPath();
+		if (!pat->IsBeingHealed())
+			p->PushActionExecuteCommand(ACTION_APPEND,"RTWZuFuss",pat,v->GetID(),false);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		PersonList pl(Caller->GetName());
+		VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		
+		Person p(Caller);
+		Person pat(Target);
+		bool canwalk=Target->GetType()==ACTOR_PERSON && !pat.IsCarryingPerson() && !pat.IsLinkedWithPerson() && !Game::IsMission();
+
+		if (canwalk && (pat.GetLife()>899 || !pat.IsInjured()))
+		{
+			if (v.IsFlagSet(OF_USABLE_WITH_MEGAPHONE))
+				Mission::PlayHint("WIB_NAW_NOMINOR");
+			else
+				zufuss (&p,&pat,&v);
+		} else for (int x=0;x<pl.GetNumPersons();x++)
+		{
+			p=pl.GetPerson(x);
+			if (!p.IsDoctor() && !p.IsInjured() && !p.IsDead() && !p.IsLinkedWithPerson())
+			{
+				Vector TargetPos = v.GetTargetPoint(p, TARGET_REARDOOR);
+				p.PushActionMove(ACTION_NEWLIST, TargetPos);
+				if (p.GetEnteredCarID()!=-1)
+		 			p.PushActionLeaveCar(ACTION_INSERT,&v);
+				p.PushActionTurnTo(ACTION_APPEND,&v);
+				p.PushActionExecuteCommand(ACTION_APPEND,"IRLeuchte",&v,11,false);
+				if (Caller->GetID()==p.GetID())
+				{
+					p.PushActionExecuteCommand(ACTION_APPEND,"fernofertig",Target,0,false);
+				} else {
+					p.PushActionDeleteOwner(ACTION_APPEND);
+				}
+			}
+		}
+		if (pat.GetState()!=PERSONSTATE_NORMAL)
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"TriageKarte",Target,0,false);
+	}
+};
+
+object RTWZuFuss : CommandScript
+{
+
+
+	RTWZuFuss()
+	{
+	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int fzid)
+	{
+		Actor a=Game::GetActor(fzid);
+		switch (a.GetType())
+		{
+			case ACTOR_VEHICLE:
+				Vehicle v(&a);
+				Person pat(Target);
+				pat.SetFlag(OF_CUTABLE);
+				pat.SetIdleAnimation();
+				pat.PushActionMove(ACTION_NEWLIST,&v,TARGET_REARDOOR);
+				// Caller->PushActionArrest(ACTION_NEWLIST,&pat,false);
+				Caller->PushActionWait(ACTION_APPEND,1.0);
+				Caller->PushActionMove(ACTION_APPEND,&v,TARGET_REARDOOR);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"RTWZuFuss",&v,pat.GetID(),false);
+				break;
+			case ACTOR_PERSON:
+				Person pat(&a);
+				if (pat.HasAnyAction())
+				{
+					Caller->PushActionWait(ACTION_APPEND,0.5);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"RTWZuFuss",Target,pat.GetID(),false);
+				} else {
+					pat.Carried(true,false,Caller);
+					Vehicle v(Target);
+					Caller->PushActionMove(ACTION_NEWLIST,Target,TARGET_REARDOOR);
+					Caller->PushActionPutInCar(ACTION_APPEND,Target);
+					if (pat.IsContaminated())
+						v.AssignCommand("mrsa");
+						
+				}
+				break;
+		}
+	}
+};
+
+object fernofertig : CommandScript
+{
+
+
+	fernofertig()
+	{
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return true;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		int ra=2;
+		VehicleList vl(Caller->GetName());
+		Vehicle v=vl.GetVehicle(0);
+		PersonList pl(Caller->GetName());
+		for (int x=0;x<pl.GetNumPersons();x++)
+			if (!pl.GetPerson(x)->IsDoctor())
+				ra--;
+		if (ra==1)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"umziehen",Target,7,false);
+		else
+		{
+			Caller->PushActionWait(ACTION_NEWLIST,1.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"fernofertig",Target,0,false);
+		}
+	}
+};
+
+object fernoweg : CommandScript
+{
+
+
+	fernoweg()
+	{
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return true;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{	
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"IRLeuchte",Target,11,false);
+		Caller->PushActionWait(ACTION_APPEND,1.0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"umziehen",Target,71,false);
+	}
+};
+
+
+
+object Heal : CommandScript
+{
+	Heal()
+	{
+		SetValidTargets(ACTOR_PERSON | ACTOR_VEHICLE);
+		SetGroupID(1);
+		SetPriority(100);
+		SetGroupLeader(true);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return !Input::LCtrlPressed();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		
+		bool ok;
+
+		if(Target->GetType()==ACTOR_PERSON)
+		{
+			Person p(Target);
+			if (p.IsFlagSet (OF_USABLE) || (p.HasCommand("rd117") && p.IsDead() && p.HasCommand("na_cat")))
+				ok = false;
+			else
+				ok=(!p.IsDrowning() && !p.IsHealing() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried());
+		} 
+
+		if(Target->GetType()==ACTOR_VEHICLE)
+		{
+			GameObject obj(Target);
+			Person p(Caller);
+			ok=obj.IsFlagSet(OF_PERSON_ENCLOSED) && p.IsDoctor();
+		}
+		return ok && !Input::LCtrlPressed();
+	}
+
+
+	int fzid(Actor *Caller)
+	{
+		const char * fz;
+		fz=Caller->GetName();
+		int id=int(fz[11])-32;
+		return id;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Target);
+		Person ra(Caller);
+		if (p.HasCommand("manv_schwarz") && p.IsDead() && p.HasCommand("na_cat")) 
+			return;
+
+		if (p.HasCommand("ams"))
+			p.PushActionExecuteCommand(ACTION_INSERT,"ActionStopSound",&p,0,false);
+
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_TREATMENT);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FirstCheck",Target,childID,false);
+
+		p.ClearFlag(OF_FLOTSAM);
+		bool RDEH=!ra.IsDoctor() && !(p.HasCommand("na_cat") && (ra.IsEquipped()||childID==10));
+		bool RDEH=RDEH||p.IsFlagSet(OF_BLOCKED);
+
+		bool RDvorOrt=p.GetUserData()==43 || p.GetUserData()==46;
+
+		if (RDEH) // Ist der Pat NA-triagiert, agiert der RA mit Notfallkoffer wie ein Notarzt
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"RDVersorgt",Target,0,false);
+		} else {
+			if (Target->GetType() == ACTOR_VEHICLE)
+			{
+				if (!Caller->HasCommand("ich_habe_helm"))
+				{
+					VehicleList nefl(Caller->GetName());
+					Vehicle nef=nefl.GetVehicle(0);
+					Caller->PushActionMove(ACTION_NEWLIST,&nef,TARGET_EQUIPMENTDOOR);
+					Caller->PushActionTurnTo(ACTION_APPEND,&nef);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"helmauf",Caller,0,false);
+				}
+				Vehicle veh(Target);
+				Caller->PushActionMove(ACTION_APPEND,Target,TARGET_SHEARSDOOR);
+				Caller->PushActionTurnTo(ACTION_APPEND, Target);
+				Caller->PushActionSwitchAnim(ACTION_APPEND,"kneeldown");
+				PersonList pl(Target->GetName());
+				if (pl.GetNumPersons() > 0)
+				{
+					Person p=pl.GetPerson(0);
+					if (p.HasCommand("ams"))
+						p.PushActionExecuteCommand(ACTION_INSERT,"ActionStopSound",&p,0,false);
+					p.SetInjuredLifeDrain(p.GetInjuredLifeDrain()/4);
+					p.SetClassified(true);
+				}
+			} else {	
+				if (ra.IsDoctor() && p.GetUserData()!=112 && !p.IsFlagSet(OF_BULLDOZABLE))
+				{
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"SetNAParms",&p,0,false);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"lna_categorize",Target,1,false);
+					if (RDvorOrt)
+						Caller->PushActionWait(ACTION_APPEND,5.0);
+				}
+				if (fzid(Caller)!=36)
+					Caller->SetUserData(p.GetID());
+				Caller->PushActionHeal(ACTION_APPEND, Target);
+				if (ra.IsDoctor())
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"check_life",Target,0,false);
+			}
+		}
+	}
+};
+
+
+object FirstCheck : CommandScript
+{
+	FirstCheck()
+	{
+	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Target); Person ra(Caller);
+		if (p.GetEnteredHouseID()==ra.GetEnteredHouseID())
+		{
+			if (!p.HasCommand("blutung"))
+				p.PushActionWait(ACTION_NEWLIST,0.1f);
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"TriageKarte",Target,0,false);
+		} else
+			Caller->PushActionWait(ACTION_NEWLIST,1.0);
+	}
+};
+
+object SetNAParms : CommandScript
+{
+	SetNaParms()
+	{
+	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		
+		Person p(Target);
+		Person ra(Caller);
+		if (p.GetEnteredHouseID()!=ra.GetEnteredHouseID())
+			ra.PushActionWait(ACTION_NEWLIST,1.0);
+		else {
+			if (!p.IsFlagSet(OF_BULLDOZABLE))
+				p.SetUserData(42);
+			p.SetFlag(OF_FLOTSAM);
+		}
+	}
+};
+
+
+object check_life : CommandScript
+{
+	check_life()
+	{
+	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+   		Person p(Target);
+
+		bool unklar=false;   	
+
+		if (p.IsDead())
+		{
+			char * parken[1];
+			parken[0]=Caller->GetName();
+			int fzid=int(parken[0][11])-32;
+
+			if (fzid == 36)
+				Caller->RemoveCommand("ich_bin_nicht_frei");
+
+			switch (p.GetInjuryReason())
+			{
+				case 1:
+					unklar=true;
+					break;
+				case 2:
+					unklar=true;
+					break;
+				case 3:
+					unklar=true;
+					break;
+				case 4:
+					unklar=true;
+					break;
+				case 5: 
+					unklar=true;
+					break;
+				case 7:
+					unklar=true;
+					break;
+				default:
+					break;
+			}
+			bool crime=p.HasCommand("crime");
+			p.ChangePrototype("mod:Prototypes/Persons/Civil/leichentuch.e4p");
+			p.AssignCommand("manv_schwarz");
+			p.AssignCommand("patstat4");
+			p.AssignCommand("rd117");
+			p.SetCommandable(true);
+			p.SetFlag(OF_BULLDOZABLE);
+			if (crime)
+				p.AssignCommand("crime");
+			if (unklar)
+			{
+				Game::ShowHelpTextWindow("WIB_WD_UNKLAR");		
+				p.SetFlag(OF_BULLDOZABLE);	// Leiche blockieren
+			}
+
+			if (fzid!=36)
+			{
+	   			Mission::PlayHint("WIB_BSW_ANGEFORDERT");
+				p.SetCommandable(true);
+   				Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,600,false);
+   			}
+		}
+	}
+};
+
+const char *tricard[5];
+tricard[0]="Equipment/triage_tuerkis.v3o";
+tricard[1]="Equipment/triage_green.v3o";
+tricard[2]="Equipment/triage_yellow.v3o";
+tricard[3]="Equipment/triage_red.v3o";
+tricard[4]="Equipment/triage_black.v3o";
+
+object TriageKarte : CommandScript
+{
+	TriageKarte()
+	{
+	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person rd(Caller);
+		bool candie=rd.IsDoctor();
+		if (Target->GetType()==ACTOR_PERSON)
+		{
+			Person p(Target);
+			float l=p.GetLife();
+			int tc=2;
+			if (p.IsDead())
+				if (p.HasCommand("manv_schwarz") && childID==0 && (candie || p.HasCommand("na_cat")))
+					tc=4;
+				else
+					tc=3;
+			else
+				if (l<na_her)
+					tc=3;
+				else if (l<rtw_her)
+					tc=2;
+				else if (l<ktw_liegend)
+					tc=1;
+				else
+					tc=0;
+
+			p.PlaceObjectInRightHand(tricard[tc]);
+			System::Log("Triage %s %s",Caller->GetName(),tricard[tc]);
+		} else {
+			GameObject o(Target);
+			o.DrawOrientedBBox(255,255,0);
+			o.PushActionExecuteCommand(ACTION_APPEND,"TriageKarte",Target,0,false);
+		}
+	}
+};
+
+
+object helmab : CommandScript
+{
+	helmab()
+	{
+	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->ChangePrototype("mod:Prototypes/Persons/Ambulance/doctor_upgraded2_m.e4p");
+		Person p(Caller);
+		p.SetEquipment(EQUIP_EMERGENCY_CASE);
+		Caller->RemoveCommand("ich_habe_helm");
+	}
+};
+
+object helmauf : CommandScript
+{
+	helmauf()
+	{
+	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->ChangePrototype("mod:Prototypes/Persons/Fire Department/dochelm.e4p");
+		Person p(Caller);
+		p.SetEquipment(EQUIP_EMERGENCY_CASE);
+		Caller->AssignCommand("ich_habe_helm");
+	}
+};
+
+object eh : CommandScript
+{
+	eh()
+	{
+		SetIcon("ehilfe");
+		SetCursor("ehilfe");
+		SetValidTargets(ACTOR_PERSON);
+		SetGroupID(CGROUP_INSTALL);
+		SetGroupLeader(true);
+		SetPriority(700);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		return !p.IsCarryingPerson();
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		if(Target->GetType()==ACTOR_PERSON)
+		{
+			Person p(Target);
+			if (p.HasCommand("rd117"))
+				return false;
+			if(!p.IsDrowning() && !p.IsHealing() && p.GetRole() != ROLE_ANIMAL && !p.IsRescueDog() && (p.IsInjured() || p.IsWoundedSquad()) && p.GetEnteredCarID() == -1 && !p.IsCarried())
+				return true;
+		} 
+
+		return false;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (childID==10)
+		{
+			Person p(Caller);
+			p.SetRole(ROLE_CIVILIAN);
+			p.SetBehaviour(BEHAVIOUR_CIVILIAN_GAZER);
+		}
+		Caller->PushActionMove(ACTION_NEWLIST,Target,TARGET_TREATMENT);
+		Caller->PushActionTurnTo(ACTION_APPEND,Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"RDVersorgt",Target,1,false);
+	}
+};
+
+object blutung : CommandScript
+{
+	blutung()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return false;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+
+object RDVersorgt : CommandScript
+{
+
+	RDVersorgt()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return false;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Target); Person ra(Caller);
+		bool isRD=childID==0;
+		bool isRA=ra.GetEquipment()==EQUIP_EMERGENCY_CASE;
+		bool ktw=false;
+
+		if (p.GetEnteredHouseID()!=ra.GetEnteredHouseID() || (p.HasCommand("manv_schwarz") && p.HasCommand("na_cat")))
+			return;
+
+		if (p.IsFlagSet(OF_BLOCKED))
+		{
+			Game::ShowHelpText("WIB_VU_BLOCKED");
+		}
+
+		if (isRD)
+		{
+			VehicleList vll(Caller->GetName());
+			Vehicle vl=vll.GetVehicle(0);
+			ktw=!vl.IsFlagSet(OF_USABLE_WITH_MEGAPHONE) && (vl.GetNumPassengers()+vl.GetFreePassengers())<3;
+			if (isRA)
+				Caller->SetFlag(OF_CARRYABLE_BY_BULLDOZER);
+			else
+				Caller->ClearFlag(OF_CARRYABLE_BY_BULLDOZER);
+			Caller->RemoveEquipment();
+			childID=vl.GetID();
+		}
+		
+		Caller->PushActionSwitchAnim(ACTION_NEWLIST,"treatinjured1");
+
+		if (isRD) // Rettungsdienst
+		{
+			p.SetClassified(true);
+			
+			if ((p.GetLife() < na_her) && (p.GetUserData() != 43) && (p.GetUserData() != 44) && p.GetUserData()!=46 && (ra.GetUserData()!=44) && !p.IsFlagSet(OF_BULLDOZABLE) && !p.HasCommand("na_cat") && !vl.IsChildEnabled("NA"))
+			{
+				if (p.GetLife()<1)
+					vl.PushActionExecuteCommand(ACTION_INSERT,"StatusSenden",Caller,0,false);
+				else
+					vl.PushActionExecuteCommand(ACTION_INSERT,"StatusSenden",Caller,5,false);
+				vl.SetChildEnabled("NA",true);
+				vl.PushActionExecuteCommand(ACTION_INSERT,"rufe_nef",Target,1,false);
+				vl.PushActionExecuteCommand(ACTION_INSERT,"WDMsg",&p,102,false);
+			}
+
+			if (ktw)
+			{
+				if ((p.GetLife() < rtw_her) && !p.GetUserData()!=42 && p.GetUserData() != 43 && p.GetUserData()!=46)
+				{
+					Actor a=Game::GetActor(childID);
+					Vehicle vl(&a);
+					vl.PushActionExecuteCommand(ACTION_INSERT,"StatusSenden",Caller,5,false);
+					vl.PushActionExecuteCommand(ACTION_INSERT,"WDMsg",&p,103,false);
+				}
+			}
+
+			if (p.GetUserData()!=42 && p.GetUserData()!=44 && p.GetUserData()!=46)
+				if (ra.GetUserData()==44)
+					p.SetUserData(46);
+				else
+					p.SetUserData(43); 
+		}
+
+		p.RemoveCommand("blutung");
+
+		if (p.HasCommand("na_cat") && isRA)
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"Heal",&p,10,false);	
+		else if (p.GetLife()<1)
+		{
+			ReaLife=p.GetLife();
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"WDMsg",&p,101,false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"BasisRea",Target,0,false);
+		} else {
+			if (isRA)
+				p.SetInjuredLifeDrain(p.GetInjuredLifeDrain()/4);
+			else
+				Caller->ClearFlag(OF_CARRYABLE_BY_BULLDOZER);
+			Caller->PushActionWait(ACTION_APPEND,1.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"RDueberwacht",Target,childID,false);
+		}
+		p.SetClassified(true);
+	}
+};
+
+float ReaLife;
+
+object BasisRea : CommandScript
+{
+	BasisRea()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return false;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (childID%10 == 0)
+		{
+			// Caller->PushActionSwitchAnim(ACTION_NEWLIST,"kneeldown");
+			Caller->PushActionSwitchAnim(ACTION_NEWLIST,"treatinjured1");
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"BasisRea",Target,childID+1,false);
+			if (Target->GetUserData()!=44)
+				Target->SetUserData(45);
+		} else {
+			Person p(Target);
+			if (p.IsCarried() || p.HasCommand("manv_schwarz"))
+			{
+		 		Caller->PushActionSwitchAnim(ACTION_NEWLIST,"idle");
+			} else {
+				if (!p.IsBeingHealed())
+				{
+					p.SetLife(ReaLife);
+					Caller->PushActionWait(ACTION_APPEND,0.5f);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"BasisRea",Target,childID,false);
+				} else
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST,"RDueberwacht",Target,childID-childID%10,false);
+			}
+		}
+	}
+};
+
+object RDueberwacht : CommandScript
+{
+	RDueberwacht()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return false;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Target);
+		bool isRD=childID>1000;
+		bool isRA=Caller->IsFlagSet(OF_CARRYABLE_BY_BULLDOZER);
+
+		if (p.IsCarried() || p.HasCommand("manv_schwarz"))
+	 		Caller->PushActionSwitchAnim(ACTION_NEWLIST,"idle");
+		else {
+			if (isRA && p.HasCommand("patstat1"))
+				Caller->PushActionExecuteCommand(ACTION_NEWLIST,"heal",Target,10,false);
+			else if (p.GetLife()<0 && !p.IsBeingHealed())
+			{
+				Caller->PushActionExecuteCommand(ACTION_NEWLIST,"WDMsg",&p,101,false);
+				ReaLife=p.GetLife();
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"BasisRea",Target,10,false);
+			} else {
+				Caller->PushActionWait(ACTION_NEWLIST,1.0f);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"RDueberwacht",Target,childID,false);
+			}
+		}
+	}
+};
+
+object art_blutung : CommandScript
+{
+	art_blutung()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+   	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   	{
+      		return false;
+   	}
+
+    	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		// System::Log("Blutung %s %u",Target->GetName(),childID);
+		if (childID!=3)
+			Caller->PushActionWait(ACTION_NEWLIST,1.0);
+		switch (childID)
+		{
+			case 5:
+			case 3:
+			case 0:
+				Person p(Target);
+				if (p.IsInjured() || childID==5)
+				{
+					GameObject bleed=Game::CreateObject("mod:Prototypes/Objects/Particles/arterie.e4p","blut");
+					bleed.SetPlacement(PLACEMENT_NONE);
+					bleed.SetPosition(p.GetPosition());
+					p.SetLife(p.GetLife()*2/3);
+					if (p.IsClassified())
+						p.SetInjuredLifeDrain(p.GetInjuredLifeDrain()*2.5);
+					else
+						p.SetInjuredLifeDrain(p.GetInjuredLifeDrain()*2.5);
+					p.AssignCommand("blutung");
+					bleed.PushActionExecuteCommand(ACTION_NEWLIST,"art_blutung",&p,1,false);		
+					p.SetClassified(true);
+				} else 
+					if (childID!=3)
+					{
+						p.PushActionWait(ACTION_NEWLIST,1.0);
+						p.PushActionExecuteCommand(ACTION_APPEND,"art_blutung",&p,childID,false);		
+					}
+				break;
+			case 1:
+				Person p(Target);
+				float life=p.GetLife();
+				bool steht_blutung=((p.IsBeingHealed() || p.IsCarried()) && !p.IsFlagSet(OF_BULLDOZABLE)) || !p.HasCommand("blutung") || p.IsDead() || p.HasCommand("Pat_in_OP");
+				if (steht_blutung)
+				{
+					if (p.HasCommand("Pat_in_OP"))
+					{
+						p.RemoveCommand("Pat_in_OP");
+						Game::SetEventFinished(p.GetUserData(), true, 1000);  // Code für Patch 1.3
+					}
+					Caller->PushActionDeleteOwner(ACTION_NEWLIST);
+					if (p.IsBeingHealed())
+					{
+						p.SetInjuredLifeDrain(p.GetInjuredLifeDrain()/7);
+					}
+					else if (!p.HasCommand("blutung"))
+						p.SetInjuredLifeDrain(p.GetInjuredLifeDrain()/3);
+					p.RemoveCommand("blutung");
+				} else {
+					Caller->PushActionWait(ACTION_NEWLIST,1.0f);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"art_blutung",Target,1,false);		
+					if (p.IsCarried())
+						Caller->PushActionShowHide(ACTION_INSERT,true);
+				}
+				if (p.IsFlagSet(OF_BULLDOZABLE) && p.IsDead())
+				{
+					Game::SetEventFinished(p.GetUserData(), false, 0);
+					p.PushActionDeleteOwner(ACTION_NEWLIST);
+					Mission::PlayHint("WIB_ICU_DEAD");					
+				} else if (life<150)
+					Caller->PushActionShowHide(ACTION_INSERT,true);
+				if (!p.IsDead() && !steht_blutung)
+				{
+					Caller->PushActionWait(ACTION_NEWLIST,1.0);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"art_blutung",&p,childID,false);		
+				}
+				break;
+			case 2:
+				Person p(Target);
+				p.SetInjuredLifeDrain(p.GetInjuredLifeDrain()/5);
+				break;
+		}
+	}
+};
+
+object patstat1 : CommandScript
+{
+
+	patstat1()
+   	{
+		SetGroupID(1);
+		SetGroupLeader(true);
+		SetIcon("gruen");
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		Person p(Caller);
+		bool ok=p.GetLife()>rtw_her;
+		return ok;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+object patstat2 : CommandScript
+{
+
+	patstat2()
+   	{
+		SetGroupID(1);
+		SetGroupLeader(false);
+		SetIcon("gelb");
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		Person p(Caller);
+		bool ok=p.GetLife()<=rtw_her && p.GetLife()>na_her;
+		return ok;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+object patstat3 : CommandScript
+{
+
+	patstat3()
+   	{
+		SetGroupID(1);
+		SetGroupLeader(false);
+		SetIcon("rot");
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		Person p(Caller);
+		bool ok=p.GetLife()<=na_her && !p.IsDead();
+		return ok;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+object patstat4 : CommandScript
+{
+
+	patstat4()
+   	{
+		SetGroupID(1);
+		SetGroupLeader(false);
+		SetIcon("schwarz");
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		Person p(Caller);
+		bool ok=p.IsDead();
+		return ok;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+

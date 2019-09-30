@@ -1,0 +1,71 @@
+// ## 
+// ## Winterberger für EM4 Scripting
+// ## Version 2.1 beta
+// ## 
+// ## Script rufe_chemiezug
+// ## 
+// ## Stand : 18.9.2006
+// ## 
+// ## created by WitchDoctor
+// ## 
+
+
+// basiert auf rufe_loeschzug.script für Em3 by manuelt
+//
+// Revision
+// 17.6.2006 : Fz-Auswahl über VehicleList (schneller)
+//		Zug wird  anhand Fahrzeugtypen zusammengestellt, von jedem Typ ein Fz
+// 
+// Basis: Garagenausfahrt by BigBob
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object rufe_chemiezug : CommandScript
+{
+   rufe_chemiezug()
+   {
+      SetValidTargets(ACTOR_FLOOR);
+      SetIcon("abczug");
+      SetCursor("abczug");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	Vector TargetPos=Game::GetCommandPos();
+	Person p = Game::CreatePerson("mod:Prototypes/Persons/Civil/firewatchguy01.e4p", "anrufer");
+	p.Hide();
+	p.SetNeverResort(true);
+	Game::FindFreePosition(&p,TargetPos);
+	p.SetPosition(TargetPos);
+	p.SetAnimation("wavehelp3");
+	p.SetCommandable(true);
+
+	p.PushActionExecuteCommand(ACTION_NEWLIST,"alarmgeber",&p,101,false);	// Zugsequenz einschalten
+
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,111,false); // Streife, kein MTW
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,555,false); // EL
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,530,false); // Löschfahrzeug
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,500,false); // GW-Mess
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,531,false); // TLF
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,533,false); // Fz Technische Rettung
+	p.PushActionExecuteCommand(ACTION_APPEND,"alarmgeber",&p,103,false);	// Zugsequenz abschalten
+
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,611,false); // Notarzt
+	p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,612,false); // RTW
+	p.PushActionExecuteCommand(ACTION_APPEND,"alarmgeber",&p,102,false);	// Zugsequenz ausschalten
+
+   }
+};

@@ -1,0 +1,365 @@
+// ## 
+// ## WEM4 6 Scripting
+// ## Version XMas 2008 (6.5)
+// ## 
+// ## Script wib_init
+// ## 
+// ## Release 12.12.2008
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+bool WEMCam=true; // für normale Kameraparameter diese Zeile löschen
+
+const int maxdispo=15;
+const char * dispo[maxdispo];
+dispo[10]="disponent";
+dispo[1]="platz1";
+dispo[2]="platz2";
+dispo[3]="platz3";
+dispo[4]="platz4";
+dispo[11]="disponent1";
+dispo[12]="disponent2";
+dispo[13]="disponent3";
+dispo[14]="disponent4";
+
+object wem_init : CommandScript
+{
+
+   wem_init()
+   {
+   }
+
+	void logthis (int vcode)
+	{
+		System::Log(":RESTART");
+		char * buf="                         ";
+		Game::GetGameString("WIB_VER_LENNOX",buf,25);
+		System::Log(":MAP:%u",vcode-10);
+		System::Log(buf);
+	}
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+
+		System::Log("Winterberg Init");
+		// Parameter fuer Fahrzeugerzeugung definieren
+		char *proto[];
+		char *kenn[];
+		Vehicle vec;
+		int MaxPass, maxTrans;
+		char *Act[];
+		Actor fz;
+		int i;
+		GameObject *ofz;
+		GameObject *init;
+		GameObjectList lfz;
+		ActorList fzl;
+		int ver=10;
+
+		GameObjectList lfz(dispo[ver]);
+		ver=11-lfz.GetNumObjects();
+		GameObjectList inil(start[ver-10]);
+		init=*inil.GetObject(0);
+		init->SetUserData(ver);
+		init->SetCommandable(false);
+
+		logthis(ver);
+
+		init->PushActionExecuteCommand(ACTION_NEWLIST,"setver",init,ver,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"wtd_setver",init,ver,false);	
+		init->PushActionExecuteCommand(ACTION_APPEND,"KlinikInit",init,ver,false);	
+		init->PushActionExecuteCommand(ACTION_APPEND,"wt_bma_init",init,0,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"CoreInit",init,0,false);
+
+				lfz=Game::GetGameObjects(dispo[2]);
+				ofz = *lfz.GetObject(0);
+				ofz->SetCommandable(false);
+				Game::AddToGroup(ofz,1);
+
+				ofz->SetCommandable(false);
+				ofz->AssignCommand("rd102");
+				ofz->AssignCommand("rd114");
+				ofz->AssignCommand("rd123");
+				ofz->AssignCommand("rd124");
+				ofz->AssignCommand("rd122");
+				ofz->AssignCommand("rd125");
+				ofz->AssignCommand("rd166");
+				ofz->AssignCommand("rd190");
+				ofz->AssignCommand("rd167");
+				ofz->AssignCommand("rd189");
+				ofz->AssignCommand("rd193");
+				ofz->AssignCommand("rd192");
+				ofz->AssignCommand("rd158");
+				ofz->AssignCommand("rd185");
+				ofz->AssignCommand("rd188");
+				ofz->AssignCommand("rd127");
+				ofz->AssignCommand("normal");
+				ofz->AssignCommand("neudispo");
+				ofz->AssignCommand("storno");
+				ofz->SetUserData(0);
+
+				lfz=Game::GetGameObjects(dispo[1]);
+				ofz = *lfz.GetObject(0);
+				ofz->SetCommandable(false);
+				Game::AddToGroup(ofz,0);
+				ofz->AssignCommand("fw100");
+				ofz->AssignCommand("fw156");
+				ofz->AssignCommand("fw159");
+				ofz->AssignCommand("fw157");
+				ofz->AssignCommand("fw153");
+				ofz->AssignCommand("fw166");
+				ofz->AssignCommand("fw167");
+				ofz->AssignCommand("fw168");
+				ofz->AssignCommand("fw169");
+				ofz->AssignCommand("fw170");
+				ofz->AssignCommand("fw163");
+				ofz->AssignCommand("fw158");
+				ofz->AssignCommand("rufe_dlk");
+				ofz->AssignCommand("rufe_gtlf");
+				ofz->AssignCommand("rufe_gwas");
+				ofz->AssignCommand("rufe_gwn");
+				ofz->AssignCommand("fw109");
+				ofz->AssignCommand("ort");
+				ofz->AssignCommand("lz");
+				ofz->AssignCommand("hlz");
+				ofz->AssignCommand("hlzk");
+				ofz->AssignCommand("ggvz");
+				ofz->AssignCommand("wald");
+				ofz->AssignCommand("einzelfz");
+				ofz->AssignCommand("ruestw");		
+				ofz->AssignCommand("fae");
+				ofz->AssignCommand("sirene");
+				ofz->SetUserData(0);
+
+				lfz=Game::GetGameObjects(dispo[3]);
+				ofz = *lfz.GetObject(0);
+				ofz->SetCommandable(false);
+				Game::AddToGroup(ofz,2);
+				ofz->AssignCommand("rufe_pol");
+				ofz->AssignCommand("rufe_mtw");
+				ofz->AssignCommand("rufe_kripo");
+				ofz->AssignCommand("rufe_sek");
+				ofz->AssignCommand("demopol");
+				ofz->AssignCommand("rufe_waw");
+				ofz->AssignCommand("rufe_hummel");
+				ofz->AssignCommand("rufe_verkehrskontrolle");
+				ofz->AssignCommand("rufe_siemens");
+				ofz->AssignCommand("rufe_wawe");
+				ofz->AssignCommand("rufe_nfm");
+				ofz->AssignCommand("rufe_bomber");
+				ofz->AssignCommand("rufe_ASF");
+				ofz->AssignCommand("rufbereitschaft");
+				ofz->SetUserData(0);
+
+				lfz=Game::GetGameObjects(dispo[4]);
+				ofz = *lfz.GetObject(0);
+				ofz->SetCommandable(false);
+				Game::AddToGroup(ofz,3);
+				ofz->AssignCommand("rd101");
+				ofz->AssignCommand("rd126");
+				ofz->AssignCommand("rd165");
+				ofz->AssignCommand("rd121");
+				ofz->AssignCommand("rd186");
+				ofz->AssignCommand("rd191");
+				ofz->AssignCommand("rd194");
+				ofz->AssignCommand("rd112");
+				ofz->AssignCommand("rd148");
+				ofz->AssignCommand("rd187");
+				ofz->AssignCommand("rufe_manv");
+				ofz->AssignCommand("rufe_rhs");
+				ofz->AssignCommand("ith");
+				ofz->AssignCommand("ringfunk");
+				ofz->AssignCommand("normal");
+				ofz->AssignCommand("neudispo");
+				ofz->AssignCommand("storno");
+				ofz->SetUserData(0);
+
+				lfz=Game::GetGameObjects(dispo[ver]);
+				ofz = *lfz.GetObject(0);
+				Game::AddToGroup(ofz,4);
+				ofz->AssignCommand("switch_fms");
+				ofz->AssignCommand("sirprobe");
+				ofz->AssignCommand("eminus");
+				ofz->AssignCommand("uminus");
+				ofz->AssignCommand("uplus");
+				ofz->AssignCommand("switch_alarm");
+				ofz->AssignCommand("kamera_grenze_aus");
+				ofz->AssignCommand("smitex");
+				ofz->AssignCommand("smite");
+				ofz->AssignCommand("schneeaus");
+				ofz->AssignCommand("switch_c1");
+				ofz->AssignCommand("switch_c2");
+				ofz->AssignCommand("switch_c3");
+				ofz->AssignCommand("switch_c5");
+				ofz->AssignCommand("switch_c4");
+				ofz->AssignCommand("KlinikStatus0");
+				ofz->AssignCommand("KatS");
+				ofz->AssignCommand("KatSEnde");
+				ofz->AssignCommand("WibCam");
+
+		for (int q=1;q<11;q++) 
+		{
+				init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,q,false);
+		}
+
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15659,false);	// Zivile 1
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15160,false);	// Zivile 2
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,40,false);	// ELW	
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,39,false);	// LKW
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16412,false);	// Chr. 25	
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16014,false);	// RTW Medebach	
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15,false);	// GW-Mess
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15619,false);	// LF Zueschen
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15630,false);	// TLF Zueschen
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15728,false);	// TSF-W Grönebach
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15329,false);	// TSF-W Langewiese
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15120,false);   // GTLF Berleburg
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15121,false);   // NAW Berleburg		
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15122,false);		
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15423,false);	// NAW Olsberg	
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15426,false);		
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16524,false);	// RTW 4-83-1
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15525,false);	// RTW Korbach	
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,27,false);	// KTW Winterberg
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15931,false);	// TLF Siedlingshausen
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15938,false);	// LF 8/6 Siedlingshausen
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,6642,false);	// Elkeringhausen TSF
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16743,false);	// Altenfeld TSF
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16777,false);	// Altenfeld Kdo
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16844,false);	// Silbach TSF
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,6945,false);	// Altastenberg TSF
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15446,false);	// DLK Olsberg
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17047,false);	// Neuastenberg TSF
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17148,false);	// Chr. 7
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16349,false);	// Kdo Niederfeld
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16350,false);	// WaWe Niederfeld
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16351,false);	// LF Niedersfeld
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16355,false);	// TSF Niedersfeld
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15952,false);	// Kdo Siedlinghausen
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15653,false);	// Kdo Zueschen
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15854,false);	// TSF Hildfeld
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16565,false);	// NEF Fredeburg
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17266,false);	// RTW Brilon
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17367,false);	// RTW Marsberg
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,56,false);	// Kripo
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,16541,false);	// Dekon-P
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15258,false);	// RTW Arnsberg
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15432,false);	// LNA
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15262,false);	// ELW2 Arnsberg
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17,false);	// Bestatter
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17281,false);	// Kreisschirrmeister
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17482,false);	// KBM
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15285,false);	// RTW Hagelstein
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17486,false);	// NEF Meschede
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17587,false);	// Chr 8
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17489,false);	// RTW Meschede
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15288,false);	// 1-83-12
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17290,false);	// 5-83-2
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17691,false);	// 3-82-1
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17692,false);	// 3-83-1
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17793,false);	// 10-83-1
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,15294,false);	// 1-82-1
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,17495,false);	// Rettungshunde
+		if (ver==11)
+		{
+			init->PushActionExecuteCommand(ACTION_APPEND,"fw_isdeluxe",init,1,false);	
+			init->PushActionExecuteCommand(ACTION_APPEND,"rd_isdeluxe",init,1,false);	
+			init->PushActionExecuteCommand(ACTION_APPEND,"tec_isdeluxe",init,1,false);
+			init->PushActionExecuteCommand(ACTION_APPEND,"pol_isdeluxe",init,1,false);	
+		}
+
+		init->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",init,99,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"CoreInit",init,1,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"init_fza",init,0,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"kaufen",init,84,false);	// OP-Tisch
+	
+		if (Game::IsMultiplayer())
+		{
+			System::Log("Disponenten in der LST erstellen");
+			for (int i=0;i<4;i++)
+				init->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",init,192+i*1000,false);
+		}
+
+		init->PushActionExecuteCommand(ACTION_APPEND,"lst_einschalten",init,0,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"vk_um_init",init,0,false);
+		init->PushActionDeleteOwner(ACTION_APPEND);
+
+		System::Log("FzBeschaffung abgeschlossen");
+
+		lfz=Game::GetGameObjects("leitstelle");
+	
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			OpenHouse oh(ofz);
+			oh.ShowCeiling(false,false,false);
+		}
+
+		System::Log("Leitstelle oeffnen");
+
+		lfz=Game::GetGameObjectsWithPrefix("ehrang");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+
+		lfz=Game::GetGameObjectsWithPrefix("sbahn");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+		lfz=Game::GetGameObjectsWithPrefix("Air_Berlin");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+		
+		lfz=Game::GetGameObjectsWithPrefix("wib_radar");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+		
+		Game::ShowHelpText("WIB_VERSION");
+		System::Log("FP Init Ende");
+	}
+};
+
+const char * start[2];
+start[0]="start";
+start[1]="startpfeil";
+
+object lst_einschalten : CommandScript
+{
+
+	lst_einschalten()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		System::Log("Lst einschalten %s",Caller->GetName());
+		GameObjectList lfz;
+	
+		lfz=Game::GetGameObjectsWithPrefix("platz");
+		for (int i=0;i<4;i++)
+			lfz.GetObject(i)->SetCommandable(true);
+		Game::ShowHelpTextWindow("WIB_LST_OK");
+	}
+};
