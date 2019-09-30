@@ -1,0 +1,472 @@
+<?xml version="1.0" ?>
+<dialog version="1" id="WEMFZA" x=0 y=10 width="1000" height="610">
+
+	<stylesheet file="base:UI/Game/def_templates.xml" />
+	<stylesheet file="base:UI/Game/MainMenu/mainmenu_templates.xml"/>
+
+<box id="FzStatus" x="0" y="0" width="900" height="600">
+<staticbitmap id="stgr101" x="95" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd101" x="85" y="10" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl101" x="110" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz101" x="5" y="5" width="150" height="20" text="FZKEN1001" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr102" x="95" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd102" x="85" y="30" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl102" x="110" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz102" x="5" y="25" width="150" height="20" text="FZKEN1002" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr103" x="95" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd103" x="85" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl103" x="110" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz103" x="5" y="45" width="150" height="20" text="FZKEN1003" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr104" x="95" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd104" x="85" y="70" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl104" x="110" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz104" x="5" y="65" width="150" height="20" text="FZKEN1004" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr105" x="95" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd105" x="85" y="90" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl105" x="110" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz105" x="5" y="85" width="150" height="20" text="FZKEN1005" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr106" x="95" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd106" x="85" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl106" x="110" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz106" x="5" y="105" width="150" height="20" text="FZKEN1006" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr107" x="95" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd107" x="85" y="130" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl107" x="110" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz107" x="5" y="125" width="150" height="20" text="FZKEN1007" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr108" x="95" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd108" x="85" y="150" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl108" x="110" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz108" x="5" y="145" width="150" height="20" text="FZKEN1008" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr109" x="95" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd109" x="85" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl109" x="110" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz109" x="5" y="165" width="150" height="20" text="FZKEN1009" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr110" x="95" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd110" x="85" y="190" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl110" x="110" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz110" x="5" y="185" width="150" height="20" text="FZKEN1010" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr111" x="95" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd111" x="85" y="210" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl111" x="110" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz111" x="5" y="205" width="150" height="20" text="FZKEN1011" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr112" x="95" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd112" x="85" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl112" x="110" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz112" x="5" y="225" width="150" height="20" text="FZKEN1012" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr113" x="95" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd113" x="85" y="250" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl113" x="110" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz113" x="5" y="245" width="150" height="20" text="FZKEN1013" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr114" x="95" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd114" x="85" y="270" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl114" x="110" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz114" x="5" y="265" width="150" height="20" text="FZKEN1014" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr115" x="95" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd115" x="85" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl115" x="110" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz115" x="5" y="285" width="150" height="20" text="FZKEN1015" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr116" x="95" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd116" x="85" y="310" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl116" x="110" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz116" x="5" y="305" width="150" height="20" text="FZKEN1016" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr117" x="95" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd117" x="85" y="330" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl117" x="110" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz117" x="5" y="325" width="150" height="20" text="FZKEN1017" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr118" x="95" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd118" x="85" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl118" x="110" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz118" x="5" y="345" width="150" height="20" text="FZKEN1018" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr119" x="95" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd119" x="85" y="370" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl119" x="110" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz119" x="5" y="365" width="150" height="20" text="FZKEN1019" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr120" x="95" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd120" x="85" y="390" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl120" x="110" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz120" x="5" y="385" width="150" height="20" text="FZKEN1020" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr121" x="95" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd121" x="85" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl121" x="110" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz121" x="5" y="405" width="150" height="20" text="FZKEN1021" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr122" x="95" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd122" x="85" y="430" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl122" x="110" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz122" x="5" y="425" width="150" height="20" text="FZKEN1022" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr123" x="95" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd123" x="85" y="450" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl123" x="110" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz123" x="5" y="445" width="150" height="20" text="FZKEN1023" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr124" x="95" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd124" x="85" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl124" x="110" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz124" x="5" y="465" width="150" height="20" text="FZKEN1024" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr125" x="95" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd125" x="85" y="490" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl125" x="110" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz125" x="5" y="485" width="150" height="20" text="FZKEN1025" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr126" x="95" y="510" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd126" x="85" y="510" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl126" x="110" y="510" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz126" x="5" y="505" width="150" height="20" text="FZKEN1026" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr127" x="95" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd127" x="85" y="530" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl127" x="110" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz127" x="5" y="525" width="150" height="20" text="FZKEN1027" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr128" x="95" y="550" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd128" x="85" y="550" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl128" x="110" y="550" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz128" x="5" y="545" width="150" height="20" text="FZKEN1028" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr129" x="95" y="570" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd129" x="85" y="570" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl129" x="110" y="570" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz129" x="5" y="565" width="150" height="20" text="FZKEN1029" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr130" x="95" y="590" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd130" x="85" y="590" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl130" x="110" y="590" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz130" x="5" y="585" width="150" height="20" text="FZKEN1030" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr131" x="245" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd131" x="235" y="10" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl131" x="260" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz131" x="155" y="5" width="150" height="20" text="FZKEN1031" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr132" x="245" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd132" x="235" y="30" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl132" x="260" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz132" x="155" y="25" width="150" height="20" text="FZKEN1032" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr133" x="245" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd133" x="235" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl133" x="260" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz133" x="155" y="45" width="150" height="20" text="FZKEN1033" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr134" x="245" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd134" x="235" y="70" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl134" x="260" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz134" x="155" y="65" width="150" height="20" text="FZKEN1034" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr135" x="245" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd135" x="235" y="90" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl135" x="260" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz135" x="155" y="85" width="150" height="20" text="FZKEN1035" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr136" x="245" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd136" x="235" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl136" x="260" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz136" x="155" y="105" width="150" height="20" text="FZKEN1036" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr137" x="245" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd137" x="235" y="130" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl137" x="260" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz137" x="155" y="125" width="150" height="20" text="FZKEN1037" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr138" x="245" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd138" x="235" y="150" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl138" x="260" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz138" x="155" y="145" width="150" height="20" text="FZKEN1038" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr139" x="245" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd139" x="235" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl139" x="260" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz139" x="155" y="165" width="150" height="20" text="FZKEN1039" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr140" x="245" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd140" x="235" y="190" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl140" x="260" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz140" x="155" y="185" width="150" height="20" text="FZKEN1040" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr141" x="245" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd141" x="235" y="210" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl141" x="260" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz141" x="155" y="205" width="150" height="20" text="FZKEN1041" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr142" x="245" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd142" x="235" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl142" x="260" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz142" x="155" y="225" width="150" height="20" text="FZKEN1042" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr143" x="245" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd143" x="235" y="250" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl143" x="260" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz143" x="155" y="245" width="150" height="20" text="FZKEN1043" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr144" x="245" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd144" x="235" y="270" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl144" x="260" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz144" x="155" y="265" width="150" height="20" text="FZKEN1044" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr145" x="245" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd145" x="235" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl145" x="260" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz145" x="155" y="285" width="150" height="20" text="FZKEN1045" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr146" x="245" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd146" x="235" y="310" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl146" x="260" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz146" x="155" y="305" width="150" height="20" text="FZKEN1046" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr147" x="245" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd147" x="235" y="330" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl147" x="260" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz147" x="155" y="325" width="150" height="20" text="FZKEN1047" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr148" x="245" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd148" x="235" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl148" x="260" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz148" x="155" y="345" width="150" height="20" text="FZKEN1048" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr149" x="245" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd149" x="235" y="370" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl149" x="260" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz149" x="155" y="365" width="150" height="20" text="FZKEN1049" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr150" x="245" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd150" x="235" y="390" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl150" x="260" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz150" x="155" y="385" width="150" height="20" text="FZKEN1050" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr151" x="245" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd151" x="235" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl151" x="260" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz151" x="155" y="405" width="150" height="20" text="FZKEN1051" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr152" x="245" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd152" x="235" y="430" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl152" x="260" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz152" x="155" y="425" width="150" height="20" text="FZKEN1052" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr153" x="245" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd153" x="235" y="450" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl153" x="260" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz153" x="155" y="445" width="150" height="20" text="FZKEN1053" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr154" x="245" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd154" x="235" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl154" x="260" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz154" x="155" y="465" width="150" height="20" text="FZKEN1054" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr155" x="245" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd155" x="235" y="490" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl155" x="260" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz155" x="155" y="485" width="150" height="20" text="FZKEN1055" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr156" x="245" y="510" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd156" x="235" y="510" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl156" x="260" y="510" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz156" x="155" y="505" width="150" height="20" text="FZKEN1056" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr157" x="245" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd157" x="235" y="530" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl157" x="260" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz157" x="155" y="525" width="150" height="20" text="FZKEN1057" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr158" x="245" y="550" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd158" x="235" y="550" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl158" x="260" y="550" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz158" x="155" y="545" width="150" height="20" text="FZKEN1058" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr159" x="245" y="570" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd159" x="235" y="570" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl159" x="260" y="570" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz159" x="155" y="565" width="150" height="20" text="FZKEN1059" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr160" x="245" y="590" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd160" x="235" y="590" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl160" x="260" y="590" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz160" x="155" y="585" width="150" height="20" text="FZKEN1060" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr161" x="395" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd161" x="385" y="10" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl161" x="410" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz161" x="305" y="5" width="150" height="20" text="FZKEN1061" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr162" x="395" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd162" x="385" y="30" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl162" x="410" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz162" x="305" y="25" width="150" height="20" text="FZKEN1062" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr163" x="395" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd163" x="385" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl163" x="410" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz163" x="305" y="45" width="150" height="20" text="FZKEN1063" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr164" x="395" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd164" x="385" y="70" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl164" x="410" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz164" x="305" y="65" width="150" height="20" text="FZKEN1064" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr165" x="395" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd165" x="385" y="90" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl165" x="410" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz165" x="305" y="85" width="150" height="20" text="FZKEN1065" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr166" x="395" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd166" x="385" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl166" x="410" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz166" x="305" y="105" width="150" height="20" text="FZKEN1066" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr167" x="395" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd167" x="385" y="130" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl167" x="410" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz167" x="305" y="125" width="150" height="20" text="FZKEN1067" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr168" x="395" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd168" x="385" y="150" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl168" x="410" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz168" x="305" y="145" width="150" height="20" text="FZKEN1068" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr169" x="395" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd169" x="385" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl169" x="410" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz169" x="305" y="165" width="150" height="20" text="FZKEN1069" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr170" x="395" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd170" x="385" y="190" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl170" x="410" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz170" x="305" y="185" width="150" height="20" text="FZKEN1070" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr171" x="395" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd171" x="385" y="210" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl171" x="410" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz171" x="305" y="205" width="150" height="20" text="FZKEN1071" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr172" x="395" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd172" x="385" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl172" x="410" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz172" x="305" y="225" width="150" height="20" text="FZKEN1072" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr173" x="395" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd173" x="385" y="250" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl173" x="410" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz173" x="305" y="245" width="150" height="20" text="FZKEN1073" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr174" x="395" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd174" x="385" y="270" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl174" x="410" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz174" x="305" y="265" width="150" height="20" text="FZKEN1074" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr175" x="395" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd175" x="385" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl175" x="410" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz175" x="305" y="285" width="150" height="20" text="FZKEN1075" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr176" x="395" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd176" x="385" y="310" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl176" x="410" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz176" x="305" y="305" width="150" height="20" text="FZKEN1076" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr177" x="395" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd177" x="385" y="330" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl177" x="410" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz177" x="305" y="325" width="150" height="20" text="FZKEN1077" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr178" x="395" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd178" x="385" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl178" x="410" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz178" x="305" y="345" width="150" height="20" text="FZKEN1078" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr179" x="395" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd179" x="385" y="370" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl179" x="410" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz179" x="305" y="365" width="150" height="20" text="FZKEN1079" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr180" x="395" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd180" x="385" y="390" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl180" x="410" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz180" x="305" y="385" width="150" height="20" text="FZKEN1080" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr181" x="395" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd181" x="385" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl181" x="410" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz181" x="305" y="405" width="150" height="20" text="FZKEN1081" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr182" x="395" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd182" x="385" y="430" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl182" x="410" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz182" x="305" y="425" width="150" height="20" text="FZKEN1082" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr183" x="395" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd183" x="385" y="450" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl183" x="410" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz183" x="305" y="445" width="150" height="20" text="FZKEN1083" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr184" x="395" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd184" x="385" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl184" x="410" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz184" x="305" y="465" width="150" height="20" text="FZKEN1084" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr185" x="395" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd185" x="385" y="490" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl185" x="410" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz185" x="305" y="485" width="150" height="20" text="FZKEN1085" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr186" x="395" y="510" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd186" x="385" y="510" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl186" x="410" y="510" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz186" x="305" y="505" width="150" height="20" text="FZKEN1086" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr187" x="395" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd187" x="385" y="530" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl187" x="410" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz187" x="305" y="525" width="150" height="20" text="FZKEN1087" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr188" x="395" y="550" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd188" x="385" y="550" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl188" x="410" y="550" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz188" x="305" y="545" width="150" height="20" text="FZKEN1088" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr189" x="395" y="570" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd189" x="385" y="570" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl189" x="410" y="570" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz189" x="305" y="565" width="150" height="20" text="FZKEN1089" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr190" x="395" y="590" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd190" x="385" y="590" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl190" x="410" y="590" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz190" x="305" y="585" width="150" height="20" text="FZKEN1090" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr191" x="545" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd191" x="535" y="10" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl191" x="560" y="10" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz191" x="455" y="5" width="150" height="20" text="FZKEN1091" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr192" x="545" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd192" x="535" y="30" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl192" x="560" y="30" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz192" x="455" y="25" width="150" height="20" text="FZKEN1092" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr193" x="545" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd193" x="535" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl193" x="560" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz193" x="455" y="45" width="150" height="20" text="FZKEN1093" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr194" x="545" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd194" x="535" y="70" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl194" x="560" y="70" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz194" x="455" y="65" width="150" height="20" text="FZKEN1094" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr195" x="545" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd195" x="535" y="90" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl195" x="560" y="90" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz195" x="455" y="85" width="150" height="20" text="FZKEN1095" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr196" x="545" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd196" x="535" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl196" x="560" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz196" x="455" y="105" width="150" height="20" text="FZKEN1096" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr197" x="545" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd197" x="535" y="130" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl197" x="560" y="130" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz197" x="455" y="125" width="150" height="20" text="FZKEN1097" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr198" x="545" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd198" x="535" y="150" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl198" x="560" y="150" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz198" x="455" y="145" width="150" height="20" text="FZKEN1098" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr199" x="545" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd199" x="535" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl199" x="560" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz199" x="455" y="165" width="150" height="20" text="FZKEN1099" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr200" x="545" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd200" x="535" y="190" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl200" x="560" y="190" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz200" x="455" y="185" width="150" height="20" text="FZKEN1100" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr201" x="545" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd201" x="535" y="210" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl201" x="560" y="210" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz201" x="455" y="205" width="150" height="20" text="FZKEN1101" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr202" x="545" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd202" x="535" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl202" x="560" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz202" x="455" y="225" width="150" height="20" text="FZKEN1102" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr203" x="545" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd203" x="535" y="250" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl203" x="560" y="250" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz203" x="455" y="245" width="150" height="20" text="FZKEN1103" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr204" x="545" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd204" x="535" y="270" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl204" x="560" y="270" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz204" x="455" y="265" width="150" height="20" text="FZKEN1104" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr205" x="545" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd205" x="535" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl205" x="560" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz205" x="455" y="285" width="150" height="20" text="FZKEN1105" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr206" x="545" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd206" x="535" y="310" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl206" x="560" y="310" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz206" x="455" y="305" width="150" height="20" text="FZKEN1106" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr207" x="545" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd207" x="535" y="330" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl207" x="560" y="330" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz207" x="455" y="325" width="150" height="20" text="FZKEN1107" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr208" x="545" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd208" x="535" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl208" x="560" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz208" x="455" y="345" width="150" height="20" text="FZKEN1108" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr209" x="545" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd209" x="535" y="370" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl209" x="560" y="370" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz209" x="455" y="365" width="150" height="20" text="FZKEN1109" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr210" x="545" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd210" x="535" y="390" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl210" x="560" y="390" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz210" x="455" y="385" width="150" height="20" text="FZKEN1110" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr211" x="545" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd211" x="535" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl211" x="560" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz211" x="455" y="405" width="150" height="20" text="FZKEN1111" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr212" x="545" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd212" x="535" y="430" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl212" x="560" y="430" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz212" x="455" y="425" width="150" height="20" text="FZKEN1112" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr213" x="545" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd213" x="535" y="450" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl213" x="560" y="450" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz213" x="455" y="445" width="150" height="20" text="FZKEN1113" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr214" x="545" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd214" x="535" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl214" x="560" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz214" x="455" y="465" width="150" height="20" text="FZKEN1114" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+<staticbitmap id="stgr215" x="545" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd215" x="535" y="490" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl215" x="560" y="490" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<statictext id="fz215" x="455" y="485" width="150" height="20" text="FZKEN1115" textheight="1" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="true"/>
+#
+<staticbitmap id="bg" x="0" y="0" width="750" height="630" image="mod:ui/Game/Wemdlg/fzaback.dds"/>
+</box>
+
+</dialog>

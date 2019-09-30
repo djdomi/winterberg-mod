@@ -1,0 +1,1407 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 14
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+// mission 14 script
+const int HINT_DEAD_CIVILS = 3;
+const int MAX_DEAD = 5;
+const int MAX_BURN = 3;
+const int MAX_RECOVERABLE_WAGGONS = 2;
+const int COUNT_WAGGON_SLIDE_FRAMES = 5;
+const int COUNT_WAGGON_FALLEN_FRAMES = 5;
+const int COUNT_ALIENS = 0;
+
+const float TIME_HINT_FIND_LOC = 6*60.0f;// Hint Lok im Wasser
+const float TIME_WAGGON_FALL = 7.0f*60.0f;// Waggon fällt
+const float TIME_HINT_WAGGON_FALL_WARNING = TIME_WAGGON_FALL - 2*60.0f;
+const float TIME_WAGGON_SLIDE = 11*60.0f;// Wagon rutscht ab
+const float TIME_HINT_WAGGON_SLIDE_WARNING = TIME_WAGGON_SLIDE - 2*60.0f;
+const float TIME_PERSON_BRIDGE = 10*60.0f;// Person fällt
+const float TIME_PERSON_BRIDGE_WARNING = TIME_PERSON_BRIDGE - 2*60.0f;
+const float TIME_MAX_DELAY_WAGGON_ANIMATION = 20.0f;// Zeit Schwing-Animation
+const float TIME_START_CHANGE_WEATHER = 2.0f*60.f; // Zeit, ab wann Regen schwächer wird
+const float TIME_FADE_OUT_WEATHER = 1.0f*60.0f; // Zeit, in der der Regen aufhört
+const float TIME_CHANGE_WEATHER = 10.f;
+// Cutscene-Timer
+const float TIME_CS_PARTICLE_SPLASH2 = 0.3f;
+const float TIME_CS_WAGGON_GOES_UP = 1.0f;
+const float TIME_CS_WAGGON_FLOATS = 4.0f;
+
+const float PERSON_BRIDGE_LIFEDRAIN_AFTERFALL = 8.0f;
+
+const float END_SPEED_WAGGON_SLIDE = 14.0f;
+const float END_SPEED_WAGGON_FALLEN = 14.0f;
+
+const char NAME_TRIGGER_WATERFALL[]		= "trigger_waterfall";
+const char NAME_TRIGGER_CATCH[]			= "trigger_catch";
+const char NAME_TRIGGER_DROWNING1[]		= "trigger_drowning1";
+const char NAME_TRIGGER_DROWNING2[]		= "trigger_drowning2";
+const char NAME_TRIGGER_DROWNING3[]		= "trigger_drowning3";
+const char NAME_TRIGGER_DROWNING4[]		= "trigger_drowning4";
+const char NAME_WAGGON_SLIDE[]			= "waggon_slide";
+const char NAME_WAGGON_SLIDE_PART1[]	= "waggon_slide_part1";
+const char NAME_WAGGON_SLIDE_PART2[]	= "waggon_slide_part2";
+const char NAME_WAGGON_LAND1_PART1[]	= "waggon_land1_part1";
+const char NAME_WAGGON_LAND1_PART2[]	= "waggon_land1_part2";
+const char NAME_WAGGON_LAND2_PART1[]	= "waggon_land2_part1";
+const char NAME_WAGGON_LAND2_PART2[]	= "waggon_land2_part2";
+const char NAME_WAGGON_FALL[]			= "waggon_fall";
+const char NAME_WAGGON_LAND1[]			= "waggon_land1";
+const char NAME_WAGGON_LAND2[]			= "waggon_land2";
+const char NAME_WAGGON_LOC[]			= "loc";
+const char NAME_PARTICLE_BUBBLE1[]		= "particle_bubble1";
+const char NAME_PARTICLE_BUBBLE2[]		= "particle_bubble2";
+const char NAME_PARTICLE_BUBBLE3[]		= "particle_bubble3";
+const char NAME_VO_RIVER[]				= "sh_water_fluss";
+const char NAME_LOC_PERSON[]			= "loc_person";
+const char NAME_WAGGON_SLIDE_PERSON[]	= "waggon_slide_person";
+const char NAME_WAGGON_FALL_PERSON[]	= "waggon_fall_person";
+const char NAME_WAGGON_LAND1_PERSON[]	= "waggon_land1_person";
+const char NAME_WAGGON_LAND2_PERSON[]	= "waggon_land2_person";
+const char NAME_WATERFALL_STONES[]		= "waterfall_stones";
+const char NAME_PERSON_BRIDGE[]			= "person_bridge";
+const char NAME_VIRTUAL_HOUSE[]			= "virtual_house";
+const char NAME_WAGGON_SLIDE_FRAME1[]	= "waggon_slide1";
+const char NAME_WAGGON_SLIDE_FRAME2[]	= "waggon_slide2";
+const char NAME_WAGGON_SLIDE_FRAME3[]	= "waggon_slide3";
+const char NAME_WAGGON_SLIDE_FRAME4[]	= "waggon_slide4";
+const char NAME_WAGGON_SLIDE_FRAME5[]	= "waggon_slide5";
+const char NAME_WAGGON_FALL_FRAME1[]	= "waggon_fall1";
+const char NAME_WAGGON_FALL_FRAME2[]	= "waggon_fall2";
+const char NAME_PERSON_DROWNING1[]		= "person_drowning1";
+const char NAME_PERSON_DROWNING2[]		= "person_drowning2";
+const char NAME_PERSON_DROWNING3[]		= "person_drowning3";
+const char NAME_PERSON_DROWNING4[]		= "person_drowning4";
+const char NAME_PATH_DROWNING1[]		= "path_drowning1";
+const char NAME_PATH_DROWNING2[]		= "path_drowning2";
+const char NAME_PATH_DROWNING3[]		= "path_drowning3";
+const char NAME_PATH_DROWNING4[]		= "path_drowning4";
+const char NAME_PATH_FLIGHT[]			= "flightpath";
+const char NAME_AMBIENT_RAIN[]			= "rain";
+const char NAME_VO_PLACEMENT[]			= "vo_placeperson";
+
+const char NAME_CS_WAGGON_FALLEN[]		= "cs_waggon_fallen";
+const char NAME_CS_WAGGON_FALLEN_FRAME1[] = "cs_waggon_fallen1";
+const char NAME_CS_WAGGON_FALLEN_FRAME2[] = "cs_waggon_fallen2";
+const char NAME_CS_WAGGON_FALLEN_FRAME3[] = "cs_waggon_fallen3";
+const char NAME_CS_WAGGON_FALLEN_FRAME4[] = "cs_waggon_fallen4";
+const char NAME_CS_WAGGON_FALLEN_FRAME5[] = "cs_waggon_fallen5";
+const char NAME_CS_PARTICLE_SPLASH1[]	= "cs_particle_splash1";
+const char NAME_CS_PARTICLE_SPLASH2[]	= "cs_particle_splash2";
+const char NAME_CS_TRAINSITION1[]		= "cs_scene1";
+const char NAME_CS_TRAINSITION2[]		= "cs_scene2";
+
+const char NAME_SOUND_SWAYING[]			= "mod:Audio/FX/destruction/mission_bridge_warning_02.wav";
+const char NAME_SOUND_SLIDE[]			= "mod:Audio/FX/destruction/break01.wav";
+const char NAME_SOUND_SPLASH[]			= "mod:Audio/FX/misc/watersplash02.wav";
+
+enum TransitionState
+{
+	TRANSITION_NONE,
+	TRANSITION_WAGGON_FALL,
+	TRANSITION_WAGGON_DIVE,
+};
+
+object Mission14 : MissionScript
+{
+	GameObject mWaggonSlide, mWaggonSlidePart1, mWaggonSlidePart2;
+	GameObject mWaggonLand1, mWaggonLand2;
+	GameObject mWaggonLand1Part1, mWaggonLand1Part2, mWaggonLand2Part1, mWaggonLand2Part2;
+	GameObject mWaggonFall;
+	GameObject mWaggonFallen;
+	GameObject mLoc;
+	GameObject mStone;
+	GameObjectList mParticleBubbleList[MAX_RECOVERABLE_WAGGONS];
+	GameObjectList mParticleSplash1List;
+	GameObjectList mParticleSplash2List;
+	int mRecoverableWaggons[MAX_RECOVERABLE_WAGGONS];
+	GameObject mWaggonSlideFrame[COUNT_WAGGON_SLIDE_FRAMES];
+	GameObject mWaggonFallFrame[2];
+	GameObject mWaggonFallenFrame[COUNT_WAGGON_FALLEN_FRAMES];
+	PersonList mLocPersonList;
+	PersonList mWaggonSlidePersonList;
+	PersonList mWaggonFallPersonList;
+	PersonList mWaggonLand1PersonList;
+	PersonList mWaggonLand2PersonList;	
+	Person mPersonBridge;
+	Actor mVORiver;
+	OpenHouse mVirtualHouse;
+	Actor mPersonPlace;
+	Person mFirefighter;
+	int mCurrentTransition;
+	float mStartTime;
+	float mRainIntensity;
+	float mRainVolume;
+	float mSaveFallWaggonPersonZPos;
+	int mLocFreezeCounter;
+	int mWaggonSlideFreezeCounter;
+
+	bool mAlreadyFiresExt;
+	bool mAlreadyInjuredSaved;
+	bool mWaggonFallSaved, mWaggonSlideSaved, mPersonBridgeSaved;
+	bool mWaggonWaterImpact;
+	bool mTimerWaggonAnimStarted;
+	bool mCutsceneWaitForAnim;
+	bool mWaggonSlidingDropping;
+	bool mWaggonSwaying;
+	bool mFailedTooManyBuildingBurn;
+	bool mFailedTooManyDeadCivils;
+	bool mHintManyDeadCivils;
+	bool mCutsceneRun;
+
+	Mission14()
+	{
+	}
+	
+	~Mission14()
+	{
+	}
+	
+	void Start()
+	{
+		mWaggonFallSaved = false;
+		mWaggonSlideSaved = false;
+		mPersonBridgeSaved = false;
+		mWaggonWaterImpact = false;
+		mTimerWaggonAnimStarted = false;
+		mCutsceneWaitForAnim = false;
+		mWaggonSlidingDropping = false;
+		mWaggonSwaying = true;
+		mFailedTooManyBuildingBurn = false;
+		mFailedTooManyDeadCivils = false;
+		mHintManyDeadCivils = false;
+		mCutsceneRun = false;
+		mCurrentTransition = 0;
+		mRainIntensity = Weather::GetRainIntensity();
+		mRainVolume = 1.0f;
+		mLocFreezeCounter = 0;
+		mWaggonSlideFreezeCounter = 0;
+
+		ActorList actList1 = Game::GetActors(NAME_VO_RIVER);
+		mVORiver = actList1.GetActor(0);
+
+		ActorList actList2 = Game::GetActors(NAME_VO_PLACEMENT);
+		mPersonPlace = actList2.GetActor(0);
+
+		PersonList pList1(NAME_LOC_PERSON);
+		mLocPersonList = pList1;
+		for (int i = 0; i < mLocPersonList.GetNumPersons(); i++)
+		{
+			mLocPersonList.GetPerson(i)->Hide();
+		}
+		PersonList pList2(NAME_WAGGON_SLIDE_PERSON);
+		mWaggonSlidePersonList = pList2;
+		for (int i = 0; i < mWaggonSlidePersonList.GetNumPersons(); i++)
+		{
+			mWaggonSlidePersonList.GetPerson(i)->Hide();
+		}
+		PersonList pList3(NAME_WAGGON_FALL_PERSON);
+		mWaggonFallPersonList = pList3;
+		mSaveFallWaggonPersonZPos = mWaggonFallPersonList.GetPerson(0)->GetPosition().z;
+		for (int i = 0; i < mWaggonFallPersonList.GetNumPersons(); i++)
+		{
+			mWaggonFallPersonList.GetPerson(i)->Hide();
+		}		
+		PersonList pList4(NAME_WAGGON_LAND1_PERSON);
+		mWaggonLand1PersonList = pList4;
+		for (int i = 0; i < mWaggonLand1PersonList.GetNumPersons(); i++)
+		{
+			mWaggonLand1PersonList.GetPerson(i)->Hide();
+		}
+		PersonList pList5(NAME_WAGGON_LAND2_PERSON);
+		mWaggonLand2PersonList = pList5;
+		for (int i = 0; i < mWaggonLand2PersonList.GetNumPersons(); i++)
+		{
+			mWaggonLand2PersonList.GetPerson(i)->Hide();
+		}
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for (int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_WAGGON_SLIDE))
+			{
+				mWaggonSlide = obj;
+				mWaggonSlide.SetPhysicsFriction(9000000.0f);
+				mRecoverableWaggons[1] = obj->GetID();
+			}
+			else if (obj->HasName(NAME_WAGGON_SLIDE_PART1))
+			{
+				mWaggonSlidePart1 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_SLIDE_PART2))
+			{
+				mWaggonSlidePart2 = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_LAND1))
+			{
+				mWaggonLand1 = obj;
+			}
+			else if (obj->HasName(NAME_WAGGON_LAND1_PART1))
+			{
+				mWaggonLand1Part1 = obj;
+			}
+			else if (obj->HasName(NAME_WAGGON_LAND1_PART2))
+			{
+				mWaggonLand1Part2 = obj;
+			}
+			else if (obj->HasName(NAME_WAGGON_LAND2))
+			{
+				mWaggonLand2 = obj;
+			}
+			else if (obj->HasName(NAME_WAGGON_LAND2_PART1))
+			{
+				mWaggonLand2Part1 = obj;
+			}
+			else if (obj->HasName(NAME_WAGGON_LAND2_PART2))
+			{
+				mWaggonLand2Part2 = obj;
+			}
+			else if (obj->HasName(NAME_WAGGON_FALL))
+			{
+				mWaggonFall = obj;				
+			}
+			else if (obj->HasName(NAME_CS_WAGGON_FALLEN))
+			{
+				mWaggonFallen = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_LOC))
+			{
+				mLoc = obj;
+				mLoc.SetPhysicsFriction(9000000.0f);
+				mRecoverableWaggons[0] = obj->GetID();
+			}
+			else if (obj->HasName(NAME_WATERFALL_STONES))
+			{
+				mStone = obj;
+			}
+			else if (obj->HasName(NAME_PERSON_BRIDGE))
+			{
+				mPersonBridge = obj;
+			}
+			else if (obj->HasName(NAME_VIRTUAL_HOUSE))
+			{
+				mVirtualHouse = OpenHouse(obj);
+			}
+			else if (obj->HasName(NAME_WAGGON_SLIDE_FRAME1))
+			{
+				mWaggonSlideFrame[0] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_SLIDE_FRAME2))
+			{
+				mWaggonSlideFrame[1] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_SLIDE_FRAME3))
+			{
+				mWaggonSlideFrame[2] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_SLIDE_FRAME4))
+			{
+				mWaggonSlideFrame[3] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_SLIDE_FRAME5))
+			{
+				mWaggonSlideFrame[4] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_WAGGON_FALL_FRAME1))
+			{
+				mWaggonFallFrame[0] = obj;
+			}
+			else if (obj->HasName(NAME_WAGGON_FALL_FRAME2))
+			{
+				mWaggonFallFrame[1] = obj;				
+			}			
+			else if (obj->HasName(NAME_CS_WAGGON_FALLEN_FRAME1))
+			{
+				mWaggonFallenFrame[0] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_CS_WAGGON_FALLEN_FRAME2))
+			{
+				mWaggonFallenFrame[1] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_CS_WAGGON_FALLEN_FRAME3))
+			{
+				mWaggonFallenFrame[2] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_CS_WAGGON_FALLEN_FRAME4))
+			{
+				mWaggonFallenFrame[3] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_CS_WAGGON_FALLEN_FRAME5))
+			{
+				mWaggonFallenFrame[4] = obj;
+				obj->Hide();
+			}
+			else if (obj->HasName(NAME_PERSON_DROWNING1))
+				obj->SetObjectPath(NAME_PATH_DROWNING1);
+			else if (obj->HasName(NAME_PERSON_DROWNING2))
+				obj->SetObjectPath(NAME_PATH_DROWNING2);
+			else if (obj->HasName(NAME_PERSON_DROWNING3))
+				obj->SetObjectPath(NAME_PATH_DROWNING3);
+			else if (obj->HasName(NAME_PERSON_DROWNING4))
+				obj->SetObjectPath(NAME_PATH_DROWNING4);
+		}
+
+		mWaggonFallFrame[0].SetPosition(&mWaggonFall);
+		mWaggonFallFrame[0].Hide();
+		mWaggonFallFrame[1].SetPosition(&mWaggonFall);
+		mWaggonFallFrame[1].SetRotation(&mWaggonFall);
+		mWaggonFallFrame[1].Hide();
+
+		mPersonBridge.SetEnteredHouseID(mVirtualHouse.GetID());
+
+		mParticleBubbleList[0] = Game::GetGameObjects(NAME_PARTICLE_BUBBLE1);
+		mParticleBubbleList[1] = Game::GetGameObjects(NAME_PARTICLE_BUBBLE2);
+		mParticleSplash1List = Game::GetGameObjects(NAME_CS_PARTICLE_SPLASH1);
+		for (int i = 0; i < mParticleSplash1List.GetNumObjects(); i++)
+			mParticleSplash1List.GetObject(i)->StopParticleEffect();
+		mParticleSplash2List = Game::GetGameObjects(NAME_CS_PARTICLE_SPLASH2);
+		for (int i = 0; i < mParticleSplash2List.GetNumObjects(); i++)
+			mParticleSplash2List.GetObject(i)->StopParticleEffect();
+
+		for (int i = 0; i < COUNT_WAGGON_SLIDE_FRAMES; i++)
+		{
+			if (!mWaggonSlideFrame[i].IsValid())
+				System::Error("M11: waggon_slide%d is missing!", i);
+		}
+		for (int i = 0; i < COUNT_WAGGON_FALLEN_FRAMES; i++)
+		{
+			if (!mWaggonFallenFrame[i].IsValid())
+				System::Error("M11: waggon_fallen%d is missing!", i);
+		}
+
+		mStartTime = Game::GetTime();
+
+		Mission::StartSingleTimer("FindLoc", TIME_HINT_FIND_LOC);
+		Mission::StartSingleTimer("WaggonFallWarning", TIME_HINT_WAGGON_FALL_WARNING);
+		Mission::StartSingleTimer("WaggonSlideWarning", TIME_HINT_WAGGON_SLIDE_WARNING);
+		Mission::StartSingleTimer("WaggonSlide", TIME_WAGGON_SLIDE);
+		Mission::StartSingleTimer("PersonBridgeWarning", TIME_PERSON_BRIDGE_WARNING);
+		Mission::StartSingleTimer("PersonBridge", TIME_PERSON_BRIDGE);
+		Mission::StartSingleTimer("StartChangeWeather", TIME_START_CHANGE_WEATHER);		
+
+		Mission::StartIntervalTimer("CheckMissionState", 1.0f);
+
+		Mission::AddObjective("TRANSPORT_INJURED");
+
+		Audio::PlaySoundtrack("14", 0.0f);
+	}
+
+	bool OnPostCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		if (Cmd == "DriveAwayPerson" && Target->GetID() == mPersonBridge.GetID())
+		{
+			Caller->ClearActions();
+			Person pc, pt;
+			pc = Person(Caller);
+			pt = Person(Target);
+			pt.SetEnteredHouseID(-1);
+			Caller->PushActionLinkPerson(ACTION_NEWLIST, &pt);
+			mPersonBridgeSaved = true;
+			return false;
+		}
+		return true;
+	}	
+
+	void RunCutscene()
+	{
+		if (!mCutsceneRun && !Mission::IsCutSceneRunning())
+		{
+			if (mFirefighter.IsValid() && !mFirefighter.IsHidden() && !mFirefighter.IsInjured() && mFirefighter.GetEnteredCarID() == -1)
+				mFirefighter.SetObjectPath(NAME_PATH_FLIGHT);
+			Mission::StartCutScene();
+			Mission::ShowBlackBars();
+			mCurrentTransition = TRANSITION_WAGGON_FALL;
+			//mWaggonFall.SetAnimation("swaying");
+			//mWaggonFall.SetAnimationTime(0.0f, false);
+			Camera::StartTransition(NAME_CS_TRAINSITION1, 4.0f);
+			Audio::SetMusicLevel(0.4f);
+		}
+	}
+
+	void CutsceneFirstPhase()
+	{
+		System::Log("CutsceneFirstPhase");
+		mWaggonFall.Show();
+		mWaggonFall.EnablePhysicsSimulation();
+		Vector pos;
+		pos.x = 200.0f;
+		pos = mWaggonFall.RelativeToWorldPosition(pos);
+		Vector force;
+		force.z = -50000.0f;
+		mWaggonFall.ApplyForce(0, pos, force);
+		Audio::PlaySample3D(NAME_SOUND_SLIDE, mWaggonFall.GetPosition());
+	}
+
+	void CutsceneSecondPhase()
+	{
+		System::Log("CutsceneSecondPhase");
+		mWaggonFall.Hide();		
+		Mission::StartSingleTimer("waggon_goes_up", TIME_CS_WAGGON_GOES_UP, true);		
+	}
+
+	void CutsceneThirdPhase()
+	{
+		System::Log("CutsceneThirdPhase");
+		mWaggonFallen.Show();
+		mWaggonFallen.EnablePhysicsSimulation();
+		mWaggonFallen.SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+		Mission::StartSingleTimer("waggon_float", TIME_CS_WAGGON_FLOATS, true);
+		//mWaggonFallen.SetFloatage(2.01f);
+		mCutsceneRun = true;
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		switch (mCurrentTransition)
+		{
+			case TRANSITION_WAGGON_FALL:
+				{
+					mCutsceneWaitForAnim = true;					
+				}
+				break;
+			case TRANSITION_WAGGON_DIVE:
+				{
+					CutsceneSecondPhase();
+				}
+				break;
+		}
+		mCurrentTransition = TRANSITION_NONE;
+	}
+
+	void Update()
+	{
+		if (!mWaggonFall.HasAnyAction() && mCutsceneWaitForAnim && !mCutsceneRun)
+		{
+			CutsceneFirstPhase();
+			mCutsceneWaitForAnim = false;
+		}
+		else if (!mWaggonFall.HasAnyAction() && !mTimerWaggonAnimStarted)
+		{
+			float time = ((float)Math::rand()/(float)Math::RANDMAX)*TIME_MAX_DELAY_WAGGON_ANIMATION;
+			mTimerWaggonAnimStarted = true;
+			//System::Log("time: %d", (int)(Game::GetTime() - mStartTime));
+			if (!mCutsceneRun && (Game::GetTime() - mStartTime > TIME_WAGGON_FALL))
+			{
+				mWaggonSwaying = false;
+				RunCutscene();
+			}
+			if (mWaggonSwaying)
+				Mission::StartSingleTimer("waggon_swaying", time);
+		}
+	}
+
+	void UpdateCutScene()
+	{
+		if (!mWaggonWaterImpact && mWaggonFall.IsPhysicsObjectFloating())
+		{
+			mWaggonWaterImpact = true;
+			for (int i = 0; i < mParticleSplash1List.GetNumObjects(); i++)
+				mParticleSplash1List.GetObject(i)->StartParticleEffect();
+			//Mission::StartSingleTimer("splash2", TIME_CS_PARTICLE_SPLASH2, true);
+			for (int i = 0; i < mParticleSplash2List.GetNumObjects(); i++)
+				mParticleSplash2List.GetObject(i)->StartParticleEffect();
+			mCurrentTransition = TRANSITION_WAGGON_DIVE;
+			Camera::StartTransition(NAME_CS_TRAINSITION2, 4.0f);
+			mWaggonFall.SetCollisionMode(PHYSIC_COLLISION_NONE);
+			Audio::PlaySample3D(NAME_SOUND_SPLASH, mWaggonFall.GetPosition());
+		}
+	}
+
+	void DropSliceableWaggon(GameObject *waggon, GameObject *part1, GameObject *part2)
+	{
+		part1->Show();
+		part1->SetPosition(waggon);
+		part1->SetRotation(waggon);
+		part2->Show();
+		part2->SetPosition(waggon);
+		part2->SetRotation(waggon);
+		waggon->Hide();
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		switch(Timer)
+		{
+			case "start_cs":
+				mWaggonSwaying = false;
+				mStartTime = Game::GetTime();
+				mTimerWaggonAnimStarted = true;
+				RunCutscene();
+				break;
+			case "StartChangeWeather":
+				Mission::StartIntervalTimer("ChangeWeather", TIME_CHANGE_WEATHER);
+				break;
+			case "ChangeWeather":
+				float rainIntensity = Weather::GetRainIntensity();
+				float flashIntensity = Weather::GetFlashIntensity();
+				rainIntensity -= TIME_CHANGE_WEATHER/TIME_FADE_OUT_WEATHER * mRainIntensity;
+				mRainVolume -= TIME_CHANGE_WEATHER/TIME_FADE_OUT_WEATHER;
+				if (rainIntensity < 0.f)
+				{
+					rainIntensity = 0.f;
+					Weather::SetRainVisible(false);
+					Game::StopAmbientSound(NAME_AMBIENT_RAIN);
+					Mission::StopTimer("ChangeWeather");
+				}
+				Weather::SetRainIntensity(rainIntensity);
+				Game::SetAmbientSoundVolumeByName(NAME_AMBIENT_RAIN, mRainVolume);
+				break;
+			case "CheckMissionState":
+				if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") == 0)
+				{
+					if (Mission::HasObjective("EXTINGUISH_FIRES") && !Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+						//Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+						System::Log("Comment: M02_FIRES_EXTINGIUSHED");
+						mAlreadyFiresExt = true;
+					}
+				}
+				else
+				{
+					if (Mission::HasObjective("EXTINGUISH_FIRES"))
+					{
+						if (Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+						{
+							if (mAlreadyInjuredSaved)
+							{
+								//Mission::PlayComment("SUPERV_OBJ_FIRE1");
+								System::Log("Comment: EXTINGUISH_FIRES");
+							}
+						}
+					}
+					else
+						Mission::AddObjective("EXTINGUISH_FIRES");
+					Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", false);
+				}
+				if (Mission::GetCounter("Injured Civils") - COUNT_ALIENS + Mission::GetCounter("Injured Squads") == 0)
+				{
+					if (Mission::HasObjective("TRANSPORT_INJURED") && !Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", true);
+						Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+						System::Log("Comment: M02_INJURED_TRANSPORTED");
+						mAlreadyInjuredSaved = true;
+					}
+				}
+				else
+				{
+					if (Mission::HasObjective("TRANSPORT_INJURED"))
+					{
+						if (Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+						{
+							if (mAlreadyInjuredSaved)
+							{
+								Mission::PlayComment("SUPERV_OBJ_TREATVICTIMS");
+								System::Log("Comment: M02_INJURED_AGAIN");
+							}
+						}
+					}
+					else
+						Mission::AddObjective("TRANSPORT_INJURED");
+					Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+				}
+				if (mWaggonSlidingDropping)
+				{
+					if (mWaggonSlide.IsPhysicsSimulationEnabled())
+					{
+						//mWaggonSlide.SetCollisionMode(PHYSIC_COLLISION_NOEXTERNALBODIES);
+						if (mWaggonSlide.IsPhysicsFreezed())
+						{
+							DropSliceableWaggon(&mWaggonSlide, &mWaggonSlidePart1, &mWaggonSlidePart2);
+							mWaggonSlidingDropping = false;
+						}
+					}
+				}
+				break;
+			case "FindLoc":
+				if (mLoc.IsInsideWater())
+				{
+					Mission::PlayHint("HINT_M14_LOOK_FOR_TRAIN");
+					Audio::SetMusicLevel(0.1f);
+				}
+				break;
+			case "WaggonFallWarning":
+				if (!mWaggonFallSaved)
+				{
+					Mission::PlayHint("HINT_M14_WAGON_ON_BRIDGE");
+					Audio::SetMusicLevel(0.2f);
+				}
+				break;
+			case "WaggonSlideWarning":
+				if (!mWaggonSlideSaved)
+				{
+					Mission::PlayHint("HINT_M14_WAGON_HALF_IN_WATER");
+					Audio::SetMusicLevel(0.2f);
+				}
+				break;
+			case "WaggonSlide":
+				if (!mWaggonSlideSaved)
+				{
+					System::Log("M14: Waggon slides away!");
+					mWaggonSlide.SetSpeed(1.0f);
+					mWaggonSlide.SetCollisionResponseByForces(50.0f);
+					mWaggonSlide.ActivateOBBCollision();
+					mWaggonSlide.PushActionMoveToPoint(ACTION_NEWLIST, &mWaggonSlideFrame[0], 2.0f);
+					mWaggonSlide.PushActionMoveToPoint(ACTION_APPEND, &mWaggonSlideFrame[1], 4.0f);
+					mWaggonSlide.PushActionMoveToPoint(ACTION_APPEND, &mWaggonSlideFrame[2], 8.0f);
+					mWaggonSlide.PushActionMoveToPoint(ACTION_APPEND, &mWaggonSlideFrame[3], 10.0f);
+					mWaggonSlide.PushActionMoveToPoint(ACTION_APPEND, &mWaggonSlideFrame[4], END_SPEED_WAGGON_SLIDE);
+					mWaggonSlide.PushActionTag(ACTION_APPEND, "tag_WaggonSlide");
+				}
+				break;
+			case "PersonBridgeWarning":
+				if (!mPersonBridgeSaved)
+				{
+					Mission::PlayHint("HINT_M14_PERSON_HOLDING_ON");
+					Audio::SetMusicLevel(0.1f);
+				}
+				break;
+			case "PersonBridge":
+				if (!mPersonBridgeSaved)
+				{
+					mPersonBridge.SetInjuredLifeDrain(PERSON_BRIDGE_LIFEDRAIN_AFTERFALL);
+					mPersonBridge.EnablePhysicsSimulation();
+					mPersonBridge.Injure(INJUREREASON_ENERGY);
+					mVirtualHouse.Hide();
+					mPersonBridge.SetEnteredHouseID(-1);
+				}
+				break;
+			case "splash2":
+				//for (int i = 0; i < mParticleSplash2List.GetNumObjects(); i++)
+				//	mParticleSplash2List.GetObject(i)->StartParticleEffect();
+				//mCurrentTransition = TRANSITION_WAGGON_DIVE;
+				//Camera::StartTransition(NAME_CS_TRAINSITION2, 4.0f);
+				break;
+			case "waggon_goes_up":
+				CutsceneThirdPhase();
+				break;
+			case "waggon_float":
+				//mWaggonFallen.DisablePhysicsSimulation();
+				mWaggonFallen.SetPlacementNone();
+				mWaggonFallen.SetCollisionResponseByForces(50.0f);
+				mWaggonFallen.ActivateOBBCollision();
+				mWaggonFallen.SetSpeed(1.0f);
+				mWaggonFallen.PushActionMoveToPoint(ACTION_NEWLIST, &mWaggonFallenFrame[0], 2.0f);
+				mWaggonFallen.PushActionMoveToPoint(ACTION_APPEND, &mWaggonFallenFrame[1], 4.0f);
+				mWaggonFallen.PushActionMoveToPoint(ACTION_APPEND, &mWaggonFallenFrame[2], 8.0f);
+				mWaggonFallen.PushActionMoveToPoint(ACTION_APPEND, &mWaggonFallenFrame[3], 10.0f);
+				mWaggonFallen.PushActionMoveToPoint(ACTION_APPEND, &mWaggonFallenFrame[4], END_SPEED_WAGGON_FALLEN);
+				mWaggonFallen.PushActionTag(ACTION_APPEND, "tag_WaggonFallen");
+				Mission::StartSingleTimer("end_cutscene", 2.5f);
+				break;
+			case "end_cutscene":
+				Mission::HideBlackBars();
+				Mission::EndCutScene(true, 3.0f);
+				break;
+			case "waggon_swaying":
+				if (!mWaggonFallSaved)
+				{
+					//mWaggonFall.SetAnimation("swaying");
+					//mWaggonFall.SetAnimationTime(0.0f, false);
+					System::Log("waggon is swaying...");
+					mWaggonFall.PushActionMoveToPoint(ACTION_NEWLIST, &mWaggonFallFrame[0], 2.0f, 3.5f);
+					mWaggonFall.PushActionMoveToPoint(ACTION_APPEND, &mWaggonFallFrame[1], 2.0f, 7.0f);
+					Audio::PlaySample3D(NAME_SOUND_SWAYING, mWaggonFall.GetPosition());
+					mTimerWaggonAnimStarted = false;
+				}
+				break;
+		}
+	}
+	
+	void OnSquadArrived(Person *squad_)
+	{
+		//if (squad_->HasCommand("useshears"))
+		//{
+		//	System::Log("M14: Assigned command M14UseShears.");
+		//	squad_->RemoveCommand("useshears");
+		//	squad_->AssignCommand("M14UseShears");			
+		//}
+	}
+
+	void OnSquadVehicleArrived(Vehicle *vehicle)
+	{
+		//if (vehicle->HasCommand("DropWithCrane"))
+		//{
+		//	System::Log("M14: Assigned command M14DropWithCrane.");
+		//	vehicle->RemoveCommand("DropWithCrane");
+		//	vehicle->AssignCommand("M14DropWithCrane");
+		//}
+	}
+
+	void OnCollision(GameObject *objA, GameObject *objB)
+	{
+		GameObject destroyObject;
+		if (mLoc.IsPhysicsSimulationEnabled() && !mLoc.IsPhysicsFreezed())
+		{
+			if (mLoc.IsPhysicsObjectFloating() && !objB)// && (objB->GetName() == "sh_water_fluss" || objB->GetName() == "divearea_lok"))
+			{
+				mLocFreezeCounter++;
+				if (mLocFreezeCounter > 50)
+				{
+					mLoc.FreezePhysics();
+					mLoc.SetCollisionMode(PHYSIC_COLLISION_NONE);
+				}
+			}
+		}
+		if (mWaggonSlideSaved && mWaggonSlide.IsPhysicsSimulationEnabled() && !mWaggonSlide.IsPhysicsFreezed())
+		{
+			if (mWaggonSlide.IsPhysicsObjectFloating() && !objB)// && (objB->GetName() == "sh_water_fluss" || objB->GetName() == "divearea_lok"))
+			{
+				mWaggonSlideFreezeCounter++;
+				if (mWaggonSlideFreezeCounter > 50)
+				{
+					mWaggonSlide.FreezePhysics();
+					mWaggonSlide.SetCollisionMode(PHYSIC_COLLISION_NONE);
+				}
+			}
+		}
+		if (!objB)
+			return;
+		if (!mWaggonSlide.IsPhysicsSimulationEnabled())
+		{
+			if (objA->GetID() == mWaggonSlide.GetID())
+				destroyObject = objB;
+			else if (objB->GetID() == mWaggonSlide.GetID())
+				destroyObject = objA;
+		}
+		if (!destroyObject.IsValid())
+		{
+			if (objA->GetID() == mWaggonFallen.GetID())
+				destroyObject = objB;
+			else if (objB->GetID() == mWaggonFallen.GetID())
+				destroyObject = objA;
+		}
+
+		if (destroyObject.IsValid()
+			&& destroyObject.GetID() != mWaggonFallen.GetID()
+			&& destroyObject.GetID() != mWaggonSlide.GetID())
+		{
+			if (destroyObject.GetType() == ACTOR_VEHICLE)
+			{
+				System::Log("destroy vehicle: %s", destroyObject.GetName());
+				destroyObject.EnablePhysicsSimulation();
+				destroyObject.Explode();
+				if (destroyObject.IsInsideWater())
+					destroyObject.SetCollisionMode(PHYSIC_COLLISION_NONE);
+			}
+			if (destroyObject.GetType() == ACTOR_PERSON)
+			{
+				Person ps(&destroyObject);
+				if (!ps.IsDead())
+				{
+					ps.Kill();
+					ps.EnablePhysicsSimulation();
+					ps.PushActionWait(ACTION_NEWLIST, 10.0f);
+					ps.PushActionDeleteOwner(ACTION_APPEND);
+					if (destroyObject.IsInsideWater())
+						ps.SetCollisionMode(PHYSIC_COLLISION_NONE);
+				}
+			}
+		}
+		//System::Log("coll1 name: %s  coll2 name: %s", objA->GetName(), objB->GetName());
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		bool squad = false;
+		Vehicle vc;
+		Person ps;
+		if (Collider->GetType() == ACTOR_VEHICLE)
+		{
+			vc = Vehicle(Collider);
+			if (vc.GetVehicleType() != VT_NOSQUAD && vc.GetVehicleType() != VT_GANGSTER_GETAWAY)
+				squad = true;
+		}
+		else if (Collider->GetType() == ACTOR_PERSON)
+		{
+			ps = Person(Collider);
+			if (ps.GetRole() == ROLE_SQUAD)
+				squad = true;
+		}
+		if (squad)
+		{
+			switch(Trigger)
+			{
+			}
+		}
+		else
+		{
+			switch (Trigger)
+			{
+				case NAME_TRIGGER_DROWNING1:
+					if (Collider->HasName(NAME_PERSON_DROWNING1))
+					{						
+						Mission::PlayHint("HINT_M14_WATERFALL");
+						Game::DeactivateTrigger(NAME_TRIGGER_DROWNING1);
+						Audio::SetMusicLevel(0.3f);
+					}					
+					break;
+				case NAME_TRIGGER_DROWNING2:
+					if (Collider->HasName(NAME_PERSON_DROWNING2))
+					{						
+						Mission::PlayHint("HINT_M14_WATERFALL");
+						Game::DeactivateTrigger(NAME_TRIGGER_DROWNING2);
+						Audio::SetMusicLevel(0.3f);
+					}					
+					break;
+				case NAME_TRIGGER_DROWNING3:
+					if (Collider->HasName(NAME_PERSON_DROWNING3))
+					{						
+						Mission::PlayHint("HINT_M14_WATERFALL");
+						Game::DeactivateTrigger(NAME_TRIGGER_DROWNING3);
+						Audio::SetMusicLevel(0.3f);
+					}					
+					break;
+				case NAME_TRIGGER_DROWNING4:
+					if (Collider->HasName(NAME_PERSON_DROWNING4))
+					{						
+						Mission::PlayHint("HINT_M14_WATERFALL");
+						Game::DeactivateTrigger(NAME_TRIGGER_DROWNING4);
+						Audio::SetMusicLevel(0.3f);
+					}					
+					break;
+				case NAME_TRIGGER_CATCH:
+					if (Collider->GetType() == ACTOR_PERSON)
+					{						
+						Person pers(Collider);
+						if (!pers.IsPhysicsSimulationEnabled())
+						{							
+							pers.Kill();
+							pers.EnablePhysicsSimulation(true);
+							pers.PushActionWait(ACTION_NEWLIST, 10.0f);
+							pers.PushActionDeleteOwner(ACTION_APPEND);
+						}
+					}
+					break;
+				case NAME_TRIGGER_WATERFALL:
+					if (Collider->GetID() == mWaggonSlide.GetID())
+					{
+						mWaggonSlide.SetCollisionMode(PHYSIC_COLLISION_NONE);
+					}
+					else if (Collider->GetID() == mWaggonFall.GetID())
+					{
+						mWaggonFall.SetCollisionMode(PHYSIC_COLLISION_NONE);
+					}
+					break;
+			}
+		}
+	}
+	
+	void ApplyForceInWaterfallDir(GameObject *obj, float force)
+	{
+		Vector f;
+		Vector pos;
+		pos = obj->GetPosition();
+		Vector dir = (mStone.GetPosition() - pos).GetNormal();
+		f.x = dir.x*force;
+		f.y = dir.y*force;
+		f.z = dir.z*force;
+		obj->ApplyForce(0, pos, f);
+	}
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+		if (obj->GetID() == mWaggonSlide.GetID())
+		{
+			ApplyForceInWaterfallDir(obj, 10000.0f);
+		}
+		else if (obj->GetType() == ACTOR_PERSON)
+			obj->PushActionDeleteOwner(ACTION_NEWLIST);
+		//obj->StartPhysicsEvent(3);
+	}
+
+	void PlacePersonList(PersonList &list, Vector pos, int begin, int end)
+	{
+		System::Log("Place person list from %d to %d", begin, end);
+		if (begin < 0)
+			begin = 0;
+		if (end > list.GetNumPersons() - 1)
+			end = list.GetNumPersons() - 1;
+		for (int i = begin; i <= end; i++)
+		{
+			Person ps;
+			ps = list.GetPerson(i);
+			if (ps.IsHidden())
+			{
+				ps.Show();
+				Vector v = pos;
+				if (!Game::FindFreePosition(&ps, v, 250))
+					System::Error("M14: No free position for freed person found!");
+				ps.SetPosition(v);
+				System::Log("Persons placed.");
+			};
+		}
+	}
+
+	bool floatEqual(float f1, float f2)
+	{
+		if (f1 >= f2 - 0.01f && f1 <= f2 + 0.01f)
+			return true;
+		return false;
+	}
+
+	void OnActionTag(const char* Tag)
+	{
+		switch(Tag)
+		{
+			case "tag_WaggonSlide":
+				for (int i = 0; i < mWaggonSlidePersonList.GetNumPersons(); i++)
+				{
+					mWaggonSlidePersonList.GetPerson(i)->Kill();
+				}
+				mWaggonSlide.EnablePhysicsSimulation(true, false, false);
+				ApplyForceInWaterfallDir(&mWaggonFallen, 60000.0f);
+				mWaggonFallen.SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+				break;
+			case "tag_WaggonFallen":
+				if (!mWaggonFallSaved)
+				{
+					for (int i = 0; i < mWaggonFallPersonList.GetNumPersons(); i++)
+					{
+						mWaggonFallPersonList.GetPerson(i)->Kill();
+					}
+				}
+				mWaggonFallen.EnablePhysicsSimulation(true, false, false);
+				ApplyForceInWaterfallDir(&mWaggonFallen, 60000.0f);
+				mWaggonFallen.SetCollisionMode(PHYSIC_COLLISION_NORESPONSE);
+				break;
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionBasketUp":
+				{
+					if (Data->Owner->GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle car(Data->Owner);
+						if (car.GetInstallTargetID() == mVirtualHouse.GetID())
+						{
+							System::Log("Hide virtual house");
+							int enteredHouse = mPersonBridge.GetEnteredHouseID();
+							mVirtualHouse.Hide();
+							mPersonBridge.SetEnteredHouseID(enteredHouse);
+						}
+					}
+				}
+				break;
+			case "EActionLiftWithCrane":
+				if (Data->Parameters[0].iValue == mWaggonSlide.GetID())
+				{
+					System::Log("M14: Sliding waggon saved!");
+					mWaggonSlideSaved = true;
+					mWaggonSlidingDropping = true;
+				}
+				for (int i = 0; i < MAX_RECOVERABLE_WAGGONS; i++)
+				{
+					Actor target = Game::GetActor(Data->Parameters[0].iValue);
+					if (Data->Parameters[0].iValue == mRecoverableWaggons[i])
+					{
+						for (int j = 0; j < mParticleBubbleList[i].GetNumObjects(); j++)
+						{
+							mParticleBubbleList[i].GetObject(j)->StopParticleEffect();
+						}
+					}
+				}
+				break;
+			case "EActionLiftPerson":
+			case "EActionPickUp":
+				Actor target = Game::GetActor(Data->Parameters[0].iValue);
+				if (target.HasName(NAME_PERSON_DROWNING1) || target.HasName(NAME_PERSON_DROWNING2)
+					|| target.HasName(NAME_PERSON_DROWNING3) || target.HasName(NAME_PERSON_DROWNING4))
+				{
+					GameObject obj(&target);
+					obj.SetObjectPath(NULL);
+				}
+				break;
+			case "EActionUseEquipment":
+				int targetId = Data->Parameters[0].iValue;
+				if (Data->Owner->GetEquipment() == EQUIP_SHEARS)
+				{
+					Actor victim = Game::GetActor(Data->Parameters[3].iValue);					
+					//if (targetId == mWaggonFall.GetID())
+					//{
+					//	mStartTime = - TIME_WAGGON_FALL;
+					//}
+					mFirefighter = Data->Owner;
+					if (targetId == mLoc.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mLocPersonList, mLoc.GetPosition(), 0, mLocPersonList.GetNumPersons());
+					}
+					else if (targetId == mWaggonFall.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mWaggonFallPersonList, mWaggonFall.GetPosition(), 0, mWaggonFallPersonList.GetNumPersons());
+						for (int i = 0; i < mWaggonFallPersonList.GetNumPersons(); i++)
+						{
+							Vector pos;
+							int j = 0;
+							bool posFound = false;
+							while (!posFound)
+							{
+								if (j > 10)
+								{
+									System::Log("M19: No free area for squad found! Squad deleted.");
+									mWaggonFallPersonList.GetPerson(i)->PushActionDeleteOwner(ACTION_NEWLIST);
+								}
+								else
+								{
+									pos = mPersonPlace.GetTargetPoint(mPersonPlace, TARGET_RANDOM);
+									posFound = Game::FindFreePosition(mWaggonFallPersonList.GetPerson(i), pos, 100.0f);
+									j++;
+								}
+							}
+							if (posFound)
+							{
+								pos.z = mSaveFallWaggonPersonZPos;
+								mWaggonFallPersonList.GetPerson(i)->SetPosition(pos);
+							}
+						}
+					}
+					else if (targetId == mWaggonSlidePart1.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mWaggonSlidePersonList, mWaggonSlidePart1.GetPosition(), 0, mWaggonSlidePersonList.GetNumPersons()/2 - 1);
+					}
+					else if (targetId == mWaggonSlidePart2.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mWaggonSlidePersonList, mWaggonSlidePart2.GetPosition(), mWaggonSlidePersonList.GetNumPersons()/2, mWaggonSlidePersonList.GetNumPersons() - 1);
+					}
+					else if (targetId == mWaggonLand1Part1.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mWaggonLand1PersonList, mWaggonLand1Part1.GetPosition(), 0, mWaggonLand1PersonList.GetNumPersons()/2 - 1);
+					}
+					else if (targetId == mWaggonLand1Part2.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mWaggonLand1PersonList, mWaggonLand1Part2.GetPosition(), mWaggonLand1PersonList.GetNumPersons()/2, mWaggonLand1PersonList.GetNumPersons() - 1);
+					}
+					else if (targetId == mWaggonLand2Part1.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mWaggonLand2PersonList, mWaggonLand2Part1.GetPosition(), 0, mWaggonLand2PersonList.GetNumPersons()/2 - 1);
+					}
+					else if (targetId == mWaggonLand2Part2.GetID())
+					{
+						victim.Hide();
+						PlacePersonList(mWaggonLand2PersonList, mWaggonLand2Part2.GetPosition(), mWaggonLand2PersonList.GetNumPersons()/2, mWaggonLand2PersonList.GetNumPersons() - 1);
+					}
+				}
+				break;
+			case "EActionJumppadBlowup":
+				System::Log("Person at bridge is saved.");
+				mPersonBridgeSaved = true;
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+	
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch (Action)
+		{
+			case "EActionBasketDown":
+				{
+					if (Data->Owner->GetType() == ACTOR_PERSON)
+					{
+						Person ps(Data->Owner);
+						Actor vc = Game::GetActor(ps.GetEnteredCarID());
+						Vehicle car(&vc);
+						if (car.GetInstallTargetID() == mVirtualHouse.GetID())
+						{
+							System::Log("Show virtual house");
+							mVirtualHouse.Show();
+						}
+					}
+				}
+				break;
+			case "EActionUseEquipment":
+				if (Data->Owner->GetEquipment() == EQUIP_SHEARS)
+				{
+					int targetId = Data->Parameters[0].iValue;
+					if (targetId == mWaggonFall.GetID())
+					{						
+						mWaggonSwaying = false;
+						//mStartTime = - TIME_WAGGON_FALL + 8.0f;
+						Mission::StartSingleTimer("start_cs", 10.0f);
+						mWaggonFallSaved = true;
+						System::Log("Waggon at bridge is being sliced. %d", (int)mStartTime);
+					}
+				}
+				break;
+			/*case "EActionDropWithCrane":
+				if (Data->Parameters[0].iValue == mWaggonSlide.GetID())
+				{
+					System::Log("Sliding waggon dropped.");
+					mWaggonSlidingDropping = true;
+				}
+				break;*/
+		}
+		return ACTION_CONTINUE;
+	}	
+
+	ActionCallbackResult OnAbortAction(const char *Action, ActionCallback* Data)
+	{		
+		return ACTION_CONTINUE;
+	}	
+		
+	PathFinishedAction OnPathFinished(const char *PathName, GameObject *Obj)
+	{
+		//if (PathName == NAME_PATH_DROWNING1 || PathName == NAME_PATH_DROWNING2
+		//	|| PathName == NAME_PATH_DROWNING3 || PathName == NAME_PATH_DROWNING4)
+		//{
+		//	Mission::PlayHint("HINT_M14_WATERFALL");
+		//	System::Log("M14: Person falling down waterfall.");
+		//	Person pers(Obj);
+		//	pers.SetRole(ROLE_CIVILIAN);
+		//	pers.SetStandardPath("");
+		//	pers.SetEscapePath("");
+		//	pers.SetObjectPath("");
+		//	pers.Kill();
+		//	pers.EnablePhysicsSimulation(true);
+		//	pers.StartPhysicsEvent(30.0f * 5.0f);
+		//	ApplyForceInWaterfallDir(&pers, 10000.0f);
+
+		//	return PATH_STOP;
+		//}
+		return PATH_DEFAULT;
+	}
+		
+	MissionState GetMissionState()
+	{		
+		if (Mission::IsCutSceneRunning())
+			MISSION_RUNNING;
+		// only for debugging
+		//return MISSION_RUNNING;
+
+		if (Mission::GetCounter("Person deaths") > MAX_DEAD)
+		{
+			mFailedTooManyDeadCivils = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (!mHintManyDeadCivils
+			&& Mission::GetCounter("Civil deaths") > HINT_DEAD_CIVILS && Mission::GetCounter("Person injuries") > 0)
+		{
+			mHintManyDeadCivils = true;
+			Mission::PlayHint("HINT_M14_TOO_MANY_DEAD");
+			Audio::SetMusicLevel(0.3f);
+		}
+
+		if (Mission::GetCounter("Burning Houses") > MAX_BURN)
+		{
+			mFailedTooManyBuildingBurn = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (!mPersonBridgeSaved && mPersonBridge.IsValid() && !mPersonBridge.IsInjured())
+			Mission::IncCounter("Injured Persons", 1);
+
+		if (Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+			
+		return MISSION_RUNNING;
+	}
+	
+	const char *GetFailReason()
+	{
+		if (mFailedTooManyDeadCivils)
+		{
+			return "TOO_MANY_DIED";
+		}
+		else if (mFailedTooManyBuildingBurn)
+		{
+			return "TOO_MANY_FIRES";
+		}
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailedTooManyDeadCivils)
+			return "SUPERV_M14_FAIL01";
+		if (mFailedTooManyBuildingBurn)
+			return "SUPERV_M14_FAIL02";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M14_RES01";
+		if (Mission::GetCounter("Person deaths") > 5)
+			return "SUPERV_M14_RES02";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		Serializer->Write(mWaggonSlide);
+		Serializer->Write(mWaggonSlidePart1);
+		Serializer->Write(mWaggonSlidePart2);
+		Serializer->Write(mWaggonLand1);
+		Serializer->Write(mWaggonLand2);
+		Serializer->Write(mWaggonLand1Part1);
+		Serializer->Write(mWaggonLand1Part2);
+		Serializer->Write(mWaggonLand2Part1);
+		Serializer->Write(mWaggonLand2Part2);
+		Serializer->Write(mWaggonFall);
+		Serializer->Write(mWaggonFallen);
+		Serializer->Write(mLoc);
+		Serializer->Write(mStone);
+		for (int i = 0; i < MAX_RECOVERABLE_WAGGONS; i++)
+		{
+			Serializer->Write(mParticleBubbleList[i]);
+			Serializer->Write(mRecoverableWaggons[i]);
+		}
+		Serializer->Write(mParticleSplash1List);
+		Serializer->Write(mParticleSplash2List);
+		for (int i = 0; i < COUNT_WAGGON_SLIDE_FRAMES; i++)
+			Serializer->Write(mWaggonSlideFrame[i]);
+		for (int i = 0; i < COUNT_WAGGON_FALLEN_FRAMES; i++)
+			Serializer->Write(mWaggonFallenFrame[i]);
+		Serializer->Write(mLocPersonList);
+		Serializer->Write(mWaggonSlidePersonList);
+		Serializer->Write(mWaggonFallPersonList);
+		Serializer->Write(mWaggonLand1PersonList);
+		Serializer->Write(mWaggonLand2PersonList);
+		Serializer->Write(mPersonBridge);
+		Serializer->Write(mVORiver);
+		Serializer->Write(mVirtualHouse);
+		Serializer->Write(mPersonPlace);
+		Serializer->Write(mFirefighter);
+		Serializer->Write(mCurrentTransition);
+		Serializer->Write(mStartTime);
+		Serializer->Write(mRainIntensity);
+		Serializer->Write(mRainVolume);
+		Serializer->Write(mSaveFallWaggonPersonZPos);
+
+		Serializer->Write(mAlreadyFiresExt);
+		Serializer->Write(mAlreadyInjuredSaved);
+		Serializer->Write(mWaggonFallSaved);
+		Serializer->Write(mWaggonSlideSaved);
+		Serializer->Write(mPersonBridgeSaved);
+		Serializer->Write(mWaggonWaterImpact);
+		Serializer->Write(mTimerWaggonAnimStarted);
+		Serializer->Write(mCutsceneWaitForAnim);
+		Serializer->Write(mWaggonSlidingDropping);
+		Serializer->Write(mWaggonSwaying);
+		Serializer->Write(mFailedTooManyBuildingBurn);
+		Serializer->Write(mFailedTooManyDeadCivils);
+		Serializer->Write(mHintManyDeadCivils);
+		Serializer->Write(mCutsceneRun);
+		Serializer->Write(mLocFreezeCounter);
+		Serializer->Write(mWaggonSlideFreezeCounter);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		Serializer->Read(mWaggonSlide);
+		Serializer->Read(mWaggonSlidePart1);
+		Serializer->Read(mWaggonSlidePart2);
+		Serializer->Read(mWaggonLand1);
+		Serializer->Read(mWaggonLand2);
+		Serializer->Read(mWaggonLand1Part1);
+		Serializer->Read(mWaggonLand1Part2);
+		Serializer->Read(mWaggonLand2Part1);
+		Serializer->Read(mWaggonLand2Part2);
+		Serializer->Read(mWaggonFall);
+		Serializer->Read(mWaggonFallen);
+		Serializer->Read(mLoc);
+		Serializer->Read(mStone);
+		for (int i = 0; i < MAX_RECOVERABLE_WAGGONS; i++)
+		{
+			Serializer->Read(mParticleBubbleList[i]);
+			Serializer->Read(mRecoverableWaggons[i]);
+		}
+		Serializer->Read(mParticleSplash1List);
+		Serializer->Read(mParticleSplash2List);
+		for (int i = 0; i < COUNT_WAGGON_SLIDE_FRAMES; i++)
+			Serializer->Read(mWaggonSlideFrame[i]);
+		for (int i = 0; i < COUNT_WAGGON_FALLEN_FRAMES; i++)
+			Serializer->Read(mWaggonFallenFrame[i]);
+		Serializer->Read(mLocPersonList);
+		Serializer->Read(mWaggonSlidePersonList);
+		Serializer->Read(mWaggonFallPersonList);
+		Serializer->Read(mWaggonLand1PersonList);
+		Serializer->Read(mWaggonLand2PersonList);
+		Serializer->Read(mPersonBridge);
+		Serializer->Read(mVORiver);
+		Serializer->Read(mVirtualHouse);
+		Serializer->Read(mPersonPlace);
+		Serializer->Read(mFirefighter);
+		Serializer->Read(mCurrentTransition);
+		Serializer->Read(mStartTime);
+		Serializer->Read(mRainIntensity);
+		Serializer->Read(mRainVolume);
+		Serializer->Read(mSaveFallWaggonPersonZPos);
+
+		mAlreadyFiresExt = Serializer->ReadBool();
+		mAlreadyInjuredSaved = Serializer->ReadBool();
+		mAlreadyInjuredSaved = Serializer->ReadBool();
+		mWaggonSlideSaved = Serializer->ReadBool();
+		mPersonBridgeSaved = Serializer->ReadBool();
+		mWaggonWaterImpact = Serializer->ReadBool();
+		mTimerWaggonAnimStarted = Serializer->ReadBool();
+		mCutsceneWaitForAnim = Serializer->ReadBool();
+		mWaggonSlidingDropping = Serializer->ReadBool();
+		mWaggonSwaying = Serializer->ReadBool();
+		mFailedTooManyBuildingBurn = Serializer->ReadBool();
+		mFailedTooManyDeadCivils = Serializer->ReadBool();
+		mHintManyDeadCivils = Serializer->ReadBool();
+		mCutsceneRun = Serializer->ReadBool();
+		Serializer->Read(mLocFreezeCounter);
+		Serializer->Read(mWaggonSlideFreezeCounter);
+
+		return true;
+	}
+};

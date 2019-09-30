@@ -1,0 +1,61 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script UseChainsaw
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+object UseChainSaw : CommandScript
+{
+	UseChainSaw()
+	{
+		SetValidTargets(ACTOR_OBJECT);
+		SetRestrictions(RESTRICT_CUTABLE | RESTRICT_NOTBURNING);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleEquipment(EQUIP_CHAINSAW);
+		SetPossibleExists(CPE_CUTABLE_OBJECTS);
+	}
+
+	/*bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON || Caller->GetEquipment()!=EQUIP_CHAINSAW)
+			return false;
+		return Game::ExistsCutableObject();
+	}*/
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Caller->GetID() == Target->GetID() || Caller->GetEquipment()!= EQUIP_CHAINSAW)
+			return false;
+		
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		if(p.GetEnteredCarID() != -1)
+			return false;
+
+		GameObject obj(Target);    		
+		if(obj.IsValid())
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_CHAINSAW);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionUseEquipment(ACTION_APPEND, Target, ChildID, 10.f);	
+		GameObject o(Target);
+		if (o.HasNamePrefix("emma"))
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"deblock",Target,Target->GetUserData(),false);
+	}
+};

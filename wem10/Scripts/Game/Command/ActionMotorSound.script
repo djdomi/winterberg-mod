@@ -1,0 +1,125 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script ActionMotorSound
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+object ActionMotorSound : CommandScript
+{
+	ActionMotorSound()
+	{
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector CarPos = Caller->GetPosition();
+		switch (childID)
+		{
+			case 1:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/motor.wav", CarPos, true);
+			break;
+
+			case 2:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/motor_dlk.wav", CarPos, true);
+			break;
+
+			case 3:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/motor_rw.wav", CarPos, true);
+			break;
+
+			case 4:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/rueckw.wav", CarPos, false);
+			break;
+			case 41:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/rtw_rueckw.wav", CarPos, false);
+			break;
+			case 42:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/lf_rueckw.wav", CarPos, false);
+			break;
+
+			case 5:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/brake.wav", CarPos, true);
+			break;
+
+			case 6:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/brake2.wav", CarPos, true);
+			break;
+
+			case 7:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/brake3.wav", CarPos, true);
+			break;
+
+			case 8:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/brake4.wav", CarPos, true);
+			break;
+
+			case 9:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/brake5.wav", CarPos, true);
+			break;
+
+			case 10:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/brake6.wav", CarPos, true);
+			break;
+
+			case 112:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/voices/witchdoc_vu.wav", CarPos, true);
+			Caller->AssignCommand("funkfrei");
+			break;
+
+			case 1121:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/voices/vu_critical.wav", CarPos, true);
+			Caller->AssignCommand("funkfrei");
+			break;
+
+			default:
+			int ref = Audio::PlaySample3D("mod:Audio/FX/motor.wav", CarPos, true);
+		}
+		Caller->SetUserData(ref);
+		Caller->AssignCommand("ams");
+	}
+};
+
+object ActionStopSound : CommandScript
+{
+	ActionStopSound()
+	{
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Caller->HasCommand("ams")) {
+			int ref = Caller->GetUserData();
+			Audio::StopSample(ref);
+			Caller->RemoveCommand("ams");
+		}
+	}
+};

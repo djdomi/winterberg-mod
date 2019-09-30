@@ -1,0 +1,70 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script StopPull
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+const int FLAG_NOMOVE=OF_HAS_FIREAXE*64;
+
+object StopPull : CommandScript
+{
+
+	StopPull()
+	{
+		SetIcon("drop");
+		SetCursor("drop");
+		SetValidTargets(ACTOR_PERSON|ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetGroupID(CGROUP_PULLING);
+		SetDeselectCaller(false);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPriority(600);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		Person p(Caller);
+		return p.IsPulling();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON || !Caller->IsPulling())
+			return false;
+		
+		bool ok=Caller->GetID()==Target->GetID();
+		
+		if (!ok)
+		{
+			if (Target->GetType()==ACTOR_VEHICLE)
+			{
+				Vehicle v(Target);
+				ok=v.HasCommand("lbw_auf") && v.IsFlagSet(FLAG_NOMOVE) &&v.IsAnimationFinished();
+			}
+		}
+		
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Caller->GetID()==Target->GetID())
+			Caller->PushActionStopPulling(ACTION_NEWLIST); 
+		else {
+			Mission::PlayHint("Ich verkneifs mir ! Geruempel wird im GW-N abgeladen...");
+			Vehicle v(Target);
+			Vector hierhin=v.GetChildPosition("LBWand");
+			Caller->PushActionMove(ACTION_NEWLIST,hierhin);
+			Caller->PushActionTurnTo(ACTION_APPEND,Target);
+			Caller->PushActionStopPulling(ACTION_APPEND);
+			Actor a=Game::GetActor(Caller->GetUserData());
+			if (a.IsValid())
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufloesen",&a,0,false);
+		}
+	}
+};

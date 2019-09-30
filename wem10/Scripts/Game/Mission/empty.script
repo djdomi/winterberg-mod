@@ -1,0 +1,42 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script empty
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+object GenericMission : MissionScript
+{
+	GenericMission()
+	{
+	}
+	
+	~GenericMission()
+	{
+	}
+	
+	void Start()
+	{
+	}
+	
+	MissionState GetMissionState()
+	{
+		if(Mission::IsDefaultLogicNegative())
+			return MISSION_FAILED;
+		
+		if(Mission::IsDefaultLogicPositive())
+			return MISSION_SUCCEEDED;
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		return "UNKNOWN";
+	}	
+};

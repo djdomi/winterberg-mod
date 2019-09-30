@@ -1,0 +1,90 @@
+[VNUM=1.43]
+// <OPTIONS>
+// Exporter: vMax
+// Version: 4, 0, 0, 0
+// AdvancedMenu: 1
+// DisplayWindow: 0
+// DisplayModelViewer: 0
+// SaveInFile: 1
+// TextureBehaviour: 0
+// TextureSubdir: 
+// TextureUseProjDir: 1
+// DisplayMemory: 0
+// ResizeMesh: 0
+// MeshFactor: 1.000000
+// CenterMethod: 0
+// ExportHidden: 0
+// ExportPatches: 0
+// ExportSmoothing: 1
+// LodBias: 0
+// OptimizeMesh: 0
+// EpsVert: 0.000000
+// EpsUV: 0.000000
+// MeshCheckMethod: 1113
+// ExportBones: 0
+// ExportBlended: 1
+// BlendThreshold: 0.000000
+// MaxNumBones: 4
+// RemoveBones: 1
+// BoneCheckMethod: 1110
+// ExportDoubleSided: 1
+// ExportOpacity: 1
+// ExportSpecularity: 1
+// ExportEnvironment: 1
+// ExportBump: 1
+// ExportReflectivity: 0
+// ResizeTextures: 1017
+// ExportStrips: 1
+// StripPerformance: 0
+// StripObject: 0
+// StripRestriction: 0
+// MaxStripSize: 0.000000
+// SetMaxStripLength: 0
+// MaxStripLength: 0
+// SetMinStripLength: 0
+// MinStripLength: 0
+// SetMinSegLength: 0
+// MinSegLength: 0
+// ProjectPath:  - No project -
+// Granularity: 0
+// NumAnimations: 0
+// </OPTIONS>
+
+
+[NUMSURFACES=1]
+[NUMVERTICES=17]
+[NUMBLENDVERTS=0]
+[NUMPOLYGONS=8]
+[NUMBONES=0]
+[NUMMUSCLEANIMS=0]
+[NUMMUSCLEFRAMES=0]
+
+SRF, 7 - Default, 0, 0, 0, guesthouse_window.dds, 517, 2, 0, 0, , 0, 0, 0, 0, 0, 0, 0, 0
+D, 0, 116, -6069, -256, 0, 0, 408, 1024, 0, 0, 0, 0
+D, 0, 116, 6069, -256, 0, 0, 408, 2, 0, 0, 0, 0
+D, 0, 8570, 6069, -256, 0, 0, 1016, 2, 0, 0, 0, 0
+D, 0, 8570, -6069, -256, 0, 0, 1016, 1024, 0, 0, 0, 0
+D, 0, 8570, -6069, 256, 0, 0, 1016, 1024, 0, 0, 0, 0
+D, 0, 8570, 6069, 256, 0, 0, 1016, 2, 0, 0, 0, 0
+D, 0, 116, 6069, 256, 0, 0, 408, 2, 0, 0, 0, 0
+D, 0, 116, -6069, 256, 0, 0, 408, 1024, 0, 0, 0, 0
+D, 229, 116, 6069, 0, 0, 256, 21, 1001, 0, 0, 0, 0
+D, 229, 8570, 6069, 0, 0, 256, 407, 1001, 0, 0, 0, 0
+D, -251, 116, 6069, 0, 0, 256, 21, 980, 0, 0, 0, 0
+D, -251, 8570, 6069, 0, 0, 256, 407, 980, 0, 0, 0, 0
+D, 229, 8570, -6093, 0, 256, 0, 807, 1001, 0, 0, 0, 0
+D, -251, 8570, -6093, 0, 256, 0, 807, 980, 0, 0, 0, 0
+D, 229, 8570, 6069, 0, 256, 0, 407, 1001, 0, 0, 0, 0
+D, 229, 8570, 6069, 0, 256, 0, 407, 1001, 0, 0, 0, 0
+D, -251, 8570, 6069, 0, 256, 0, 407, 980, 0, 0, 0, 0
+P, 3, 3, 4, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 7, 8, 6, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 5, 6, 8, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 9, 10, 12, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 9, 12, 11, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 15, 13, 14, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 16, 14, 17, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 1, 2, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+BOX, -3, 1, -61, 3, 86, 61
+N, 0, 0, 0, 105
+CBOX, -2.518,  1.164, -60.935,  2.295, 85.703, 60.695

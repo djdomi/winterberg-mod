@@ -1,0 +1,565 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script rd_funcs
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+#pragma compile
+
+
+
+
+
+
+
+
+
+// basiert auf rufe_rtw.script für Em3 by manuelt
+//
+// Revision
+// 17.6.06 : Auswahl über Vehiclelist, Ausrückfolge nach FunkRufZeichen
+//		Alarmierungsmeldung => zusätzlich passende 5-Ton-Folge gewünscht?
+//
+// 24.6.06 : Alarmierung RTW jetzt auch ueber allgemeines Rufe_Script
+//
+// Basis: Garagenausfahrt by BigBob
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+
+// Statuskodierung durch gelöschte Bits im Testwort : 1 = auf Anfahrt, 2 = unabkömmlich, 4 = Feierabend
+
+
+object rufe_nef : CommandScript
+{
+
+   rufe_nef()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,602,false);
+   }
+};
+
+
+object RD_examine : CommandScript
+{
+
+	RD_examine()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+		bool im_haus=(Target->GetType() == ACTOR_OPEN_HOUSE);
+		bool reachable=true;
+		int houseID=0;
+		if (childID==619)
+			houseID=-1;
+
+		if (im_haus)
+		{
+			OpenHouse oh(Target);
+			reachable=(im_haus && oh.HasGroundEntrance());
+			PersonList pl=oh.GetNonSquadPersonsInside();
+			Person pat;
+			for (int x=0;x<pl.GetNumPersons();x++)
+			{
+				pat=pl.GetPerson(x);
+				if (pat.IsInjured())
+					x=pl.GetNumPersons();
+			}
+			if (reachable)
+				houseID=Target->GetID();
+		} else {
+			Person pat(Target);
+			if (!Target->IsValid() || (pat.GetEnteredCarID()!=-1) || pat.IsCarried() || !pat.IsInjured())	
+				return;  // No MapJogging
+		}
+
+		if (!im_haus || reachable)
+		{
+			v.PushActionExecuteCommand(ACTION_APPEND,"VCmdUmfeld",Caller);
+			v.PushActionExecuteCommand(ACTION_APPEND,"IRLeuchte",Caller,1,false);
+			v.PushActionExecuteCommand(ACTION_APPEND,"EmptyCar",&pat,houseID,false);
+		}
+	}
+};
+
+object Hole_NEF_Equip : CommandScript
+{
+
+   Hole_NEF_Equip()
+   {
+	SetIcon("nkoffer");
+	SetCursor("nkoffer");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+	
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	Person p(Caller);
+	return !p.IsEquipped();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return Caller->GetID()==Target->GetID();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (childID==0)
+	{
+		VehicleList vl(Caller->GetName());
+		Target=*vl.GetVehicle(0);
+	}
+
+	TargetPoint hierhin=TARGET_REARDOOR;
+	EquipmentType et=EQUIP_EMERGENCY_CASE;
+
+	Vehicle v(Target);
+	bool schiebetuer=false;
+	bool kinderna=v.HasCommand("kinderna");
+	switch (v.GetVehicleType())
+	{
+		case VT_AMBULANCE_NEF:
+			hierhin=TARGET_REARDOOR;
+			break;
+		case VT_THW_FGRI_EKW:
+			et=EQUIP_THW_CASE;
+		case VT_AMBULANCE_RTW:
+			hierhin=TARGET_EQUIPMENTDOOR;
+			schiebetuer=true;
+			break;
+	}
+
+	if (childID==-1)
+	{
+		v.PlayAnimOpenDoor(DAT_EQUIPMENT,0.5);
+		Person doc(Caller);
+		if (kinderna) {
+			doc.PlaceObjectInRightHand("HouseFurniture/schnuffi.v3o");
+			doc.AssignCommand("kinderna");
+		}
+		doc.SetEquipment(et);
+	} else {
+		Caller->PushActionMove(ACTION_INSERT, Target, hierhin);
+		if (schiebetuer || kinderna)
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Hole_NEF_Equip",Target,-1,false);
+		else
+			Caller->PushActionGetEquipment(ACTION_INSERTAFTERFIRST,Target,et);
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST,Target);
+	}
+   }
+};
+
+object Bringe_NEF_Equip : CommandScript
+{
+
+   Bringe_NEF_Equip()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Caller->IsEquipped())
+	{
+		Caller->PushActionMove(ACTION_INSERT, Target, TARGET_REARDOOR);
+		Caller->PushActionRemoveEquipment(ACTION_INSERTAFTERFIRST);
+		Caller->PushActionTurnTo(ACTION_INSERTAFTERFIRST,Target);
+	}
+   }
+};
+
+object nachbarhilfe : CommandScript
+{
+
+   nachbarhilfe()
+   {
+	SetValidTargets(ACTOR_VEHICLE);
+	SetIcon("sama8583");
+	SetCursor("sama8583");
+	SetGroupID(3);
+	SetGroupLeader(true);
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return true;
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return true;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObject o(Target);
+	bool ok=o.HasChild("SEGOUT") || o.HasNamePrefix("mtk8583");
+	return ok;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Target->GetType() == ACTOR_VEHICLE)
+	{
+		Vehicle tg(Target);
+		int anz=1;
+		if (tg.HasChild("SEGOUT"))
+		{
+			if (Input::LShiftPressed())
+				for (anz=7;anz>0;anz--) {
+					Caller->PushActionWait(ACTION_INSERTAFTERFIRST,1.0);
+					Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,655,false);
+			} else
+				Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,653,false);
+		} else if (tg.HasNamePrefix("mtk8583")) 
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,654,false);
+	}
+   }
+};
+
+object manv_alarm : CommandScript
+{
+
+   manv_alarm()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+
+	// Tagdiensthintergrund alarmieren
+	VehicleList vl(VT_AMBULANCE_RTW,VT_AMBULANCE_RTW);
+	Vehicle v;
+	for (int x=0;x<vl.GetNumVehicles();x++)
+	{
+		v=vl.GetVehicle(x);
+		if (tdienst::HasFeierabend(v) && v.HasCommand("ich_bin_nicht_frei"))
+		{
+			PersonList pl(v.GetName());
+			if (pl.GetNumPersons()==0)
+				v.PushActionExecuteCommand(ACTION_NEWLIST,"FzFrei",&v,2,false);
+		}
+	}
+   }
+};
+
+object CheckHubiDown : CommandScript
+{
+
+	CheckHubiDown()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		GameObject landing(Target);
+
+		if ((v.GetVehicleType() == VT_AMBULANCE_RHC) || (v.GetVehicleType()==VT_POLICE_PHC))
+		{
+			if (!v.IsOnGround())
+			{
+				Caller->PushActionWait(ACTION_NEWLIST,1.0f);		
+			} else {
+				switch (ChildID)
+				{
+					case 0:
+						break;
+					case 12:
+						if (tdienst::rth_nicht_sicher(&v))
+						{
+							// Caller->PushActionExecuteCommand(ACTION_APPEND,"EmptyCar",Caller,0,false);
+							v.SetSmoking(true);
+							v.SetSmokeLevelDuration(30.0f);
+							Mission::PlayHint("WTD_ITH_UNSICHER");
+						}
+					default:
+						Caller->PushActionExecuteCommand(ACTION_INSERT,"EmptyCar",Caller,0,false);
+						break;
+				}
+			}
+		}
+	}
+};
+
+object TransportBegleiten : CommandScript
+{
+
+	TransportBegleiten()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle nef(Caller);
+		Vehicle rtw(Target);
+		Person doc;
+		bool ziel_klar=rtw.GetNumPassengers()>0;
+		int ziel=999;
+	
+		if (rtw.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			if (ziel_klar)
+			{
+				PersonList pl=rtw.GetPassengers();
+				ziel=pl.GetPerson(0)->GetUserData();
+			}
+			bool umsteigen=true;
+			
+			System::Log("Begleiten %s Ziel %u",rtw.GetName(),ziel);
+
+			PersonList pl=nef.GetPassengers();
+			for (int i=0; i<pl.GetNumPersons(); i++)
+			{
+				doc=pl.GetPerson(i);
+				if (umsteigen && (doc.IsDoctor() || nef.IsPolice()))
+				{
+					doc.PushActionLeaveCar(ACTION_NEWLIST, Caller);
+					doc.PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,true); #modi 95
+					umsteigen=false;
+				} else 	if (ziel_klar)
+						doc.SetUserData(ziel);
+					else
+						doc.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+			}				
+		}
+	}
+};
+
+
+object rd117 : CommandScript
+{
+
+   rd117()
+   {
+      SetValidTargets(ACTOR_FLOOR | ACTOR_PERSON);
+	SetCursor("schwarz");
+	SetIcon("schwarz");
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	Person p(Caller);
+	return p.IsDead() || p.IsDoctor();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( (Caller->GetID() == Target->GetID() && !Input::RCtrlPressed()) || Target->GetType() == ACTOR_VEHICLE || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+         return false;
+      return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (childID<1000) {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",Target,600,false);
+	}
+   }
+};
+
+object rufeDoc : CommandScript
+{
+
+   rufeDoc()
+   {
+	SetIcon("heal");
+	SetCursor("heal");
+	SetGroupID(10);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LCtrlPressed() && Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,101901,false);
+   }
+};
+		
+object rufeDanny : CommandScript
+{
+
+   rufeDanny()
+   {
+	SetIcon("heal");
+	SetCursor("heal");
+	SetGroupID(11);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LCtrlPressed() && Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,100900,false);
+   }
+};
+
+object rufeDedo : CommandScript
+{
+
+   rufeDedo()
+   {
+	SetIcon("heal");
+	SetCursor("heal");
+	SetGroupID(12);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LCtrlPressed() && Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,102902,false);
+   }
+};
+
+object rufeMM : CommandScript
+{
+
+   rufeMM()
+   {
+	SetIcon("heal");
+	SetCursor("heal");
+	SetGroupID(13);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LCtrlPressed() && Input::LShiftPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE)
+         return false;
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::hierhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+		}
+		Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"rufe_winterberg",Target,145517,false);
+   }
+};
+
+class bungarext : CommandScript
+{
+
+	GameObject hierhin (Vector cp, GameObject *zug)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetUserData(zug->GetUserData());
+		zug->SetUserData(0);
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		obj.PushActionWait(ACTION_NEWLIST,500.0);
+		obj.PushActionDisappear(ACTION_APPEND,10.0,150.0,true);
+		return obj;
+	}
+	
+	void debung (Actor *bung)
+	{
+		if (bung->HasNamePrefix("bungar"))
+		{
+			GameObject db(bung);
+			db.PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+	}
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;
+

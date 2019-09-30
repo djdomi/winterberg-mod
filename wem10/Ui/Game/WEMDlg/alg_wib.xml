@@ -1,0 +1,785 @@
+<?xml version="1.0" ?>
+<dialog version="1" id="FZA" x=0 y=220 width="1020" height="550">
+
+	<stylesheet file="base:UI/Game/def_templates.xml" />
+	<stylesheet file="base:UI/Game/MainMenu/mainmenu_templates.xml"/>
+
+    <box id="WEMAG1" x="790" y="0" width="55" height="550">
+<staticbitmap id="stgr101" x="25" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd101" x="10" y="20" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl101" x="40" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb101"    x="0" y="0" width="46" height="25" tooltip="TABINFO_101">
+  <normal image="mod:UI/Game/wemdlg/winterberg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/winterberg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/winterberg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/winterberg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr102" x="25" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd102" x="10" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl102" x="40" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb102"    x="0" y="30" width="46" height="25" tooltip="TABINFO_102">
+  <normal image="mod:UI/Game/wemdlg/zueschen_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/zueschen_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/zueschen_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/zueschen_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr103" x="25" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd103" x="10" y="80" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl103" x="40" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb103"    x="0" y="60" width="46" height="25" tooltip="TABINFO_103">
+  <normal image="mod:UI/Game/wemdlg/siehausen_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/siehausen_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/siehausen_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/siehausen_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr104" x="25" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd104" x="10" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl104" x="40" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb104"    x="0" y="90" width="46" height="25" tooltip="TABINFO_104">
+  <normal image="mod:UI/Game/wemdlg/langewiese_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/langewiese_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/langewiese_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/langewiese_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr105" x="25" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd105" x="10" y="140" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl105" x="40" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb105"    x="0" y="120" width="46" height="25" tooltip="TABINFO_105">
+  <normal image="mod:UI/Game/wemdlg/langewiese_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/langewiese_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/langewiese_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/langewiese_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr106" x="25" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd106" x="10" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl106" x="40" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb106"    x="0" y="150" width="46" height="25" tooltip="TABINFO_106">
+  <normal image="mod:UI/Game/wemdlg/elkeringhausen_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/elkeringhausen_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/elkeringhausen_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/elkeringhausen_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr107" x="25" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd107" x="10" y="200" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl107" x="40" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb107"    x="0" y="180" width="46" height="25" tooltip="TABINFO_107">
+  <normal image="mod:UI/Game/wemdlg/altenfeld_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/altenfeld_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/altenfeld_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/altenfeld_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr108" x="25" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd108" x="10" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl108" x="40" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb108"    x="0" y="210" width="46" height="25" tooltip="TABINFO_108">
+  <normal image="mod:UI/Game/wemdlg/silbach_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/silbach_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/silbach_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/silbach_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr109" x="25" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd109" x="10" y="260" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl109" x="40" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb109"    x="0" y="240" width="46" height="25" tooltip="TABINFO_109">
+  <normal image="mod:UI/Game/wemdlg/altasten_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/altasten_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/altasten_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/altasten_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr110" x="25" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd110" x="10" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl110" x="40" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb110"    x="0" y="270" width="46" height="25" tooltip="TABINFO_110">
+  <normal image="mod:UI/Game/wemdlg/neuastenberg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/neuastenberg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/neuastenberg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/neuastenberg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr111" x="25" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd111" x="10" y="320" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl111" x="40" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb111"    x="0" y="300" width="46" height="25" tooltip="TABINFO_111">
+  <normal image="mod:UI/Game/wemdlg/niedersfeld_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/niedersfeld_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/niedersfeld_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/niedersfeld_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr112" x="25" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd112" x="10" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl112" x="40" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb112"    x="0" y="330" width="46" height="25" tooltip="TABINFO_112">
+  <normal image="mod:UI/Game/wemdlg/hildefeld_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/hildefeld_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/hildefeld_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/hildefeld_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr113" x="25" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd113" x="10" y="380" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl113" x="40" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb113"    x="0" y="360" width="46" height="25" tooltip="TABINFO_113">
+  <normal image="mod:UI/Game/wemdlg/alg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/alg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/alg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/alg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr114" x="25" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd114" x="10" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl114" x="40" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb114"    x="0" y="390" width="46" height="25" tooltip="TABINFO_114">
+  <normal image="mod:UI/Game/wemdlg/drehleiter_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/drehleiter_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/drehleiter_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/drehleiter_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr115" x="25" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd115" x="10" y="440" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl115" x="40" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb115"    x="0" y="420" width="46" height="25" tooltip="TABINFO_115">
+  <normal image="mod:UI/Game/wemdlg/tlf_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/tlf_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/tlf_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/tlf_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr116" x="25" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd116" x="10" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl116" x="40" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb116"    x="0" y="450" width="46" height="25" tooltip="TABINFO_116">
+  <normal image="mod:UI/Game/wemdlg/gwas_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/gwas_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/gwas_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/gwas_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr117" x="25" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd117" x="10" y="500" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl117" x="40" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb117"    x="0" y="480" width="46" height="25" tooltip="TABINFO_117">
+  <normal image="mod:UI/Game/wemdlg/gwl_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/gwl_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/gwl_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/gwl_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr118" x="25" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd118" x="10" y="530" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl118" x="40" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb118"    x="0" y="510" width="46" height="25" tooltip="TABINFO_118">
+  <normal image="mod:UI/Game/wemdlg/lboot_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/lboot_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/lboot_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/lboot_true.dds"/>
+</togglebutton>
+    </box>
+
+    <box id="WEMAG2" x="850" y="0" width="55" height="550">
+<staticbitmap id="stgr121" x="25" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd121" x="10" y="20" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl121" x="40" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb121"    x="0" y="0" width="46" height="25" tooltip="TABINFO_121">
+  <normal image="mod:UI/Game/wemdlg/rtw_wib_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/rtw_wib_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/rtw_wib_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/rtw_wib_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr122" x="25" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd122" x="10" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl122" x="40" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb122"    x="0" y="30" width="46" height="25" tooltip="TABINFO_122">
+  <normal image="mod:UI/Game/wemdlg/mede_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/mede_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/mede_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/mede_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr123" x="25" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd123" x="10" y="80" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl123" x="40" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb123"    x="0" y="60" width="46" height="25" tooltip="TABINFO_123">
+  <normal image="mod:UI/Game/wemdlg/rtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/rtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/rtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/rtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr124" x="25" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd124" x="10" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl124" x="40" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb124"    x="0" y="90" width="46" height="25" tooltip="TABINFO_124">
+  <normal image="mod:UI/Game/wemdlg/rtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/rtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/rtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/rtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr125" x="25" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd125" x="10" y="140" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl125" x="40" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb125"    x="0" y="120" width="46" height="25" tooltip="TABINFO_125">
+  <normal image="mod:UI/Game/wemdlg/rtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/rtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/rtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/rtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr126" x="25" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd126" x="10" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl126" x="40" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb126"    x="0" y="150" width="46" height="25" tooltip="TABINFO_126">
+  <normal image="mod:UI/Game/wemdlg/korbach_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/korbach_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/korbach_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/korbach_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr127" x="25" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd127" x="10" y="200" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl127" x="40" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb127"    x="0" y="180" width="46" height="25" tooltip="TABINFO_127">
+  <normal image="mod:UI/Game/wemdlg/brilon_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/brilon_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/brilon_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/brilon_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr128" x="25" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd128" x="10" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl128" x="40" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb128"    x="0" y="210" width="46" height="25" tooltip="TABINFO_128">
+  <normal image="mod:UI/Game/wemdlg/rtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/rtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/rtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/rtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr129" x="25" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd129" x="10" y="260" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl129" x="40" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb129"    x="0" y="240" width="46" height="25" tooltip="TABINFO_129">
+  <normal image="mod:UI/Game/wemdlg/mars_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/mars_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/mars_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/mars_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr130" x="25" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd130" x="10" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl130" x="40" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb130"    x="0" y="270" width="46" height="25" tooltip="TABINFO_130">
+  <normal image="mod:UI/Game/wemdlg/rtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/rtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/rtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/rtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr131" x="25" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd131" x="10" y="320" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl131" x="40" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb131"    x="0" y="300" width="46" height="25" tooltip="TABINFO_131">
+  <normal image="mod:UI/Game/wemdlg/eslohe_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/eslohe_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/eslohe_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/eslohe_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr132" x="25" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd132" x="10" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl132" x="40" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb132"    x="0" y="330" width="46" height="25" tooltip="TABINFO_132">
+  <normal image="mod:UI/Game/wemdlg/mars_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/mars_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/mars_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/mars_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr133" x="25" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd133" x="10" y="380" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl133" x="40" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb133"    x="0" y="360" width="46" height="25" tooltip="TABINFO_133">
+  <normal image="mod:UI/Game/wemdlg/arnsrtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/arnsrtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/arnsrtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/arnsrtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr134" x="25" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd134" x="10" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl134" x="40" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb134"    x="0" y="390" width="46" height="25" tooltip="TABINFO_134">
+  <normal image="mod:UI/Game/wemdlg/hagel_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/hagel_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/hagel_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/hagel_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr135" x="25" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd135" x="10" y="440" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl135" x="40" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb135"    x="0" y="420" width="46" height="25" tooltip="TABINFO_135">
+  <normal image="mod:UI/Game/wemdlg/hagel2_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/hagel2_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/hagel2_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/hagel2_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr136" x="25" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd136" x="10" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl136" x="40" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb136"    x="0" y="450" width="46" height="25" tooltip="TABINFO_136">
+  <normal image="mod:UI/Game/wemdlg/bktw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/bktw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/bktw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/bktw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr137" x="25" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd137" x="10" y="500" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl137" x="40" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb137"    x="0" y="480" width="46" height="25" tooltip="TABINFO_137">
+  <normal image="mod:UI/Game/wemdlg/hrtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/hrtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/hrtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/hrtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr138" x="25" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd138" x="10" y="530" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl138" x="40" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb138"    x="0" y="510" width="46" height="25" tooltip="TABINFO_138">
+  <normal image="mod:UI/Game/wemdlg/ktw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/ktw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/ktw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/ktw_true.dds"/>
+</togglebutton>
+    </box>
+
+    <box id="WEMAG3" x="910" y="0" width="55" height="550">
+<staticbitmap id="stgr141" x="25" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd141" x="10" y="20" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl141" x="40" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb141"    x="0" y="0" width="46" height="25" tooltip="TABINFO_141">
+  <normal image="mod:UI/Game/wemdlg/nefwib_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/nefwib_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/nefwib_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/nefwib_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr142" x="25" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd142" x="10" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl142" x="40" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb142"    x="0" y="30" width="46" height="25" tooltip="TABINFO_142">
+  <normal image="mod:UI/Game/wemdlg/olsberg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/olsberg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/olsberg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/olsberg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr143" x="25" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd143" x="10" y="80" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl143" x="40" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb143"    x="0" y="60" width="46" height="25" tooltip="TABINFO_143">
+  <normal image="mod:UI/Game/wemdlg/nefsundern_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/nefsundern_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/nefsundern_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/nefsundern_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr144" x="25" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd144" x="10" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl144" x="40" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb144"    x="0" y="90" width="46" height="25" tooltip="TABINFO_144">
+  <normal image="mod:UI/Game/wemdlg/berleburg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/berleburg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/berleburg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/berleburg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr145" x="25" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd145" x="10" y="140" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl145" x="40" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb145"    x="0" y="120" width="46" height="25" tooltip="TABINFO_145">
+  <normal image="mod:UI/Game/wemdlg/nefwib_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/nefwib_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/nefwib_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/nefwib_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr146" x="25" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd146" x="10" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl146" x="40" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb146"    x="0" y="150" width="46" height="25" tooltip="TABINFO_146">
+  <normal image="mod:UI/Game/wemdlg/nefwib_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/nefwib_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/nefwib_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/nefwib_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr147" x="25" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd147" x="10" y="200" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl147" x="40" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb147"    x="0" y="180" width="46" height="25" tooltip="TABINFO_147">
+  <normal image="mod:UI/Game/wemdlg/nefsundern_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/nefsundern_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/nefsundern_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/nefsundern_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr148" x="25" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd148" x="10" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl148" x="40" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb148"    x="0" y="210" width="46" height="25" tooltip="TABINFO_148">
+  <normal image="mod:UI/Game/wemdlg/arnsberg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/arnsberg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/arnsberg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/arnsberg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr149" x="25" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd149" x="10" y="260" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl149" x="40" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb149"    x="0" y="240" width="46" height="25" tooltip="TABINFO_149">
+  <normal image="mod:UI/Game/wemdlg/lna_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/lna_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/lna_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/lna_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr150" x="25" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd150" x="10" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl150" x="40" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb150"    x="0" y="270" width="46" height="25" tooltip="TABINFO_150">
+  <normal image="mod:UI/Game/wemdlg/naw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/naw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/naw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/naw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr151" x="25" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd151" x="10" y="320" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl151" x="40" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb151"    x="0" y="300" width="46" height="25" tooltip="TABINFO_151">
+  <normal image="mod:UI/Game/wemdlg/seg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/seg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/seg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/seg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr152" x="25" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd152" x="10" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl152" x="40" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb152"    x="0" y="330" width="46" height="25" tooltip="TABINFO_152">
+  <normal image="mod:UI/Game/wemdlg/chr25_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/chr25_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/chr25_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/chr25_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr153" x="25" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd153" x="10" y="380" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl153" x="40" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb153"    x="0" y="360" width="46" height="25" tooltip="TABINFO_153">
+  <normal image="mod:UI/Game/wemdlg/chr07_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/chr07_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/chr07_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/chr07_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr154" x="25" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd154" x="10" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl154" x="40" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb154"    x="0" y="390" width="46" height="25" tooltip="TABINFO_154">
+  <normal image="mod:UI/Game/wemdlg/chr08_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/chr08_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/chr08_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/chr08_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr155" x="25" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd155" x="10" y="440" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl155" x="40" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb155"    x="0" y="420" width="46" height="25" tooltip="TABINFO_155">
+  <normal image="mod:UI/Game/wemdlg/nefwib_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/nefwib_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/nefwib_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/nefwib_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr156" x="25" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd156" x="10" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl156" x="40" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb156"    x="0" y="450" width="46" height="25" tooltip="TABINFO_156">
+  <normal image="mod:UI/Game/wemdlg/hunde_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/hunde_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/hunde_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/hunde_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr157" x="25" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd157" x="10" y="500" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl157" x="40" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb157"    x="0" y="480" width="46" height="25" tooltip="TABINFO_157">
+  <normal image="mod:UI/Game/wemdlg/ith_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/ith_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/ith_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/ith_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr158" x="25" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd158" x="10" y="530" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl158" x="40" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb158"    x="0" y="510" width="46" height="25" tooltip="TABINFO_158">
+  <normal image="mod:UI/Game/wemdlg/sar_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/sar_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/sar_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/sar_true.dds"/>
+</togglebutton>
+    </box>
+
+    <box id="WEMAG4" x="970" y="0" width="55" height="550">
+<staticbitmap id="stgr161" x="25" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd161" x="10" y="20" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl161" x="40" y="20" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb161"    x="0" y="0" width="46" height="25" tooltip="TABINFO_161">
+  <normal image="mod:UI/Game/wemdlg/polizei_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/polizei_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/polizei_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/polizei_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr162" x="25" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd162" x="10" y="50" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl162" x="40" y="50" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb162"    x="0" y="30" width="46" height="25" tooltip="TABINFO_162">
+  <normal image="mod:UI/Game/wemdlg/polizei_mtw_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/polizei_mtw_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/polizei_mtw_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/polizei_mtw_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr163" x="25" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd163" x="10" y="80" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl163" x="40" y="80" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb163"    x="0" y="60" width="46" height="25" tooltip="TABINFO_163">
+  <normal image="mod:UI/Game/wemdlg/kripo_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/kripo_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/kripo_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/kripo_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr164" x="25" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd164" x="10" y="110" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl164" x="40" y="110" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb164"    x="0" y="90" width="46" height="25" tooltip="TABINFO_164">
+  <normal image="mod:UI/Game/wemdlg/vk_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/vk_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/vk_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/vk_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr165" x="25" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd165" x="10" y="140" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl165" x="40" y="140" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb165"    x="0" y="120" width="46" height="25" tooltip="TABINFO_165">
+  <normal image="mod:UI/Game/wemdlg/asf_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/asf_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/asf_seld.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/asf_sel.dds"/>
+</togglebutton>
+<staticbitmap id="stgr166" x="25" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd166" x="10" y="170" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl166" x="40" y="170" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb166"    x="0" y="150" width="46" height="25" tooltip="TABINFO_166">
+  <normal image="mod:UI/Game/wemdlg/siemens_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/siemens_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/siemens_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/siemens_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr167" x="25" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd167" x="10" y="200" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl167" x="40" y="200" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb167"    x="0" y="180" width="46" height="25" tooltip="TABINFO_167">
+  <normal image="mod:UI/Game/wemdlg/wwerk_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/wwerk_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/wwerk_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/wwerk_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr168" x="25" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd168" x="10" y="230" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl168" x="40" y="230" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb168"    x="0" y="210" width="46" height="25" tooltip="TABINFO_168">
+  <normal image="mod:UI/Game/wemdlg/db_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/db_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/db_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/db_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr169" x="25" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd169" x="10" y="260" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl169" x="40" y="260" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb169"    x="0" y="240" width="46" height="25" tooltip="TABINFO_169">
+  <normal image="mod:UI/Game/wemdlg/kmrd_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/kmrd_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/kmrd_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/kmrd_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr170" x="25" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd170" x="10" y="290" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl170" x="40" y="290" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb170"    x="0" y="270" width="46" height="25" tooltip="TABINFO_170">
+  <normal image="mod:UI/Game/wemdlg/sek_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/sek_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/sek_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/sek_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr171" x="25" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd171" x="10" y="320" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl171" x="40" y="320" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb171"    x="0" y="300" width="46" height="25" tooltip="TABINFO_171">
+  <normal image="mod:UI/Game/wemdlg/demo_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/demo_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/demo_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/demo_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr172" x="25" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd172" x="10" y="350" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl172" x="40" y="350" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb172"    x="0" y="330" width="46" height="25" tooltip="TABINFO_172">
+  <normal image="mod:UI/Game/wemdlg/feldj_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/feldj_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/feldj_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/feldj_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr173" x="25" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd173" x="10" y="380" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl173" x="40" y="380" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb173"    x="0" y="360" width="46" height="25" tooltip="TABINFO_173">
+  <normal image="mod:UI/Game/wemdlg/ring_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/ring_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/ring_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/ring_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr174" x="25" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd174" x="10" y="410" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl174" x="40" y="410" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb174"    x="0" y="390" width="46" height="25" tooltip="TABINFO_174">
+  <normal image="mod:UI/Game/wemdlg/op_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/op_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/op_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/op_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr175" x="25" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd175" x="10" y="440" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl175" x="40" y="440" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb175"    x="0" y="420" width="46" height="25" tooltip="TABINFO_175">
+  <normal image="mod:UI/Game/wemdlg/pheli_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/pheli_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/pheli_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/pheli_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr176" x="25" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd176" x="10" y="470" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl176" x="40" y="470" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb176"    x="0" y="450" width="46" height="25" tooltip="TABINFO_176">
+  <normal image="mod:UI/Game/wemdlg/alg_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/alg_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/alg_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/alg_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr177" x="25" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd177" x="10" y="500" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl177" x="40" y="500" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb177"    x="0" y="480" width="46" height="25" tooltip="TABINFO_177">
+  <normal image="mod:UI/Game/wemdlg/schlepper_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/schlepper_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/schlepper_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/schlepper_true.dds"/>
+</togglebutton>
+<staticbitmap id="stgr178" x="25" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gruen.dds" />
+<staticbitmap id="strd178" x="10" y="530" width="5" height="5" image="mod:ui/game/wemdlg/rot.dds" />
+<staticbitmap id="styl178" x="40" y="530" width="5" height="5" image="mod:ui/game/wemdlg/gelb.dds" />
+<togglebutton id="tb178"    x="0" y="510" width="46" height="25" tooltip="TABINFO_178">
+  <normal image="mod:UI/Game/wemdlg/kran_butt.dds"/>
+  <highlighted image="mod:UI/Game/wemdlg/kran_high.dds"/>
+  <pressed image="mod:UI/Game/wemdlg/kran_sel.dds"/>
+  <disabled image="mod:UI/Game/Icons/commands/tb101_disable.dds"/>
+  <true image="mod:UI/Game/wemdlg/kran_true.dds"/>
+</togglebutton>
+    </box>
+
+    <box id="modifier" x="670" y="390" width="300" height="200">
+        <togglebutton id="ec101"  x="0" y="0" width="46" height="25" tooltip="Loeschzug">
+			<normal image="mod:UI/Game/wemdlg/loeschzug_butt.dds"/>
+			<highlighted image="mod:UI/Game/wemdlg/loeschzug_high.dds"/>
+			<pressed image="mod:UI/Game/wemdlg/loeschzug_sel.dds"/>
+			<disabled image="mod:UI/Game/wemdlg/loeschzug_butt.dds"/>
+			<true image="mod:UI/Game/wemdlg/loeschzug_sel.dds"/>
+	</togglebutton>
+        <togglebutton id="ec102"    x="0" y="30" width="46" height="25" tooltip="TH/Ruestzug">
+			<normal image="mod:UI/Game/wemdlg/ruestzug_butt.dds"/>
+			<highlighted image="mod:UI/Game/wemdlg/ruestzug_high.dds"/>
+			<pressed image="mod:UI/Game/wemdlg/ruestzug_sel.dds"/>
+			<disabled image="mod:UI/Game/wemdlg/ruestzug_butt.dds"/>
+			<true image="mod:UI/Game/wemdlg/ruestzug_sel.dds"/>
+	</togglebutton>
+        <togglebutton id="ec104"    x="0" y="60" width="46" height="25" tooltip="Gefahrgut">
+			<normal image="mod:UI/Game/wemdlg/gsz_butt.dds"/>
+			<highlighted image="mod:UI/Game/wemdlg/gsz_high.dds"/>
+			<pressed image="mod:UI/Game/wemdlg/gsz_sel.dds"/>
+			<disabled image="mod:UI/Game/wemdlg/gsz_butt.dds"/>
+			<true image="mod:UI/Game/wemdlg/gsz_sel.dds"/>
+	</togglebutton>
+        <togglebutton id="ec105"    x="0" y="90" width="46" height="25" tooltip="Waldbrand">
+			<normal image="mod:UI/Game/wemdlg/waldbrand_butt.dds"/>
+			<highlighted image="mod:UI/Game/wemdlg/waldbrand_high.dds"/>
+			<pressed image="mod:UI/Game/wemdlg/waldbrand_sel.dds"/>
+			<disabled image="mod:UI/Game/wemdlg/waldbrand_butt.dds"/>
+			<true image="mod:UI/Game/wemdlg/waldbrand_sel.dds"/>
+	</togglebutton>
+        <togglebutton id="ec106"    x="50" y="90" width="46" height="25" tooltip="EinzelFz">
+			<normal image="mod:UI/Game/wemdlg/einzel_butt.dds"/>
+			<highlighted image="mod:UI/Game/wemdlg/einzel_high.dds"/>
+			<pressed image="mod:UI/Game/wemdlg/einzel_sel.dds"/>
+			<disabled image="mod:UI/Game/wemdlg/einzel_butt.dds"/>
+			<true image="mod:UI/Game/wemdlg/einzel_sel.dds"/>
+	</togglebutton>
+        <togglebutton id="ec103"    x="50" y="120" width="46" height="25" tooltip="First Responder">
+			<normal image="mod:UI/Game/Icons/commands/fr_normal.dds"/>
+			<highlighted image="mod:UI/Game/Icons/commands/fr_over.dds"/>
+			<pressed image="mod:UI/Game/Icons/commands/fr_mousedown.dds"/>
+			<disabled image="mod:UI/Game/Icons/commands/fr_disable.dds"/>
+			<true image="mod:UI/Game/Icons/commands/fr_mousedown.dds"/>
+	</togglebutton>
+    </box>
+#
+
+</dialog>

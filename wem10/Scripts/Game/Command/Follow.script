@@ -1,0 +1,58 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script Follow
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+object Follow : CommandScript
+{
+	Follow()
+	{
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_PERSON);
+		SetRestrictions(RESTRICT_NOTINJURED | RESTRICT_NOTDESTROYED);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		Vehicle v(Caller);
+		return !v.IsOnGround();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		bool doit=false;
+		if (!Caller || !Target)
+			return false;
+
+		Vehicle v(Caller);
+		Person tp(Target);
+		Vehicle tv(Target);
+
+		if (v.IsValid() && !v.IsOnGround() && (tp.IsValid() || tv.IsValid()))
+		{	
+			doit=(!tv.IsDestroyed() && tv.IsCivilCar()) || (Target->GetType()==ACTOR_PERSON);
+		}
+		return doit;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		//System::Print("push heli follow");
+		Caller->PushActionHeliFollow(ACTION_NEWLIST, Target);
+	}
+};
+

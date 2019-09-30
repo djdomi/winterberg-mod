@@ -1,0 +1,99 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script funkstatus
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+object Funkfrei : CommandScript
+{
+	Funkfrei()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetIcon("funkfrei");
+		SetCursor("funkfrei");
+		SetGroupID(1);
+	}
+
+	   bool CheckGroupVisibility(GameObject *Caller)
+	   {
+		return !Caller->IsFlagSet(FLAG_TL);
+	   }
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		int lp=0;
+		int lt=1;
+		Vehicle v(Caller);
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			lp=1;
+			lt=1;
+		}
+		if ((v.GetFreePassengers()>lp) || (v.GetNumTransported()>0))
+			return false;
+		else
+			return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"FzFrei",Caller,0,false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"WT_SoSi",Caller,1,false);
+	}
+};
+
+object Status6 : CommandScript
+{
+	Status6()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetGroupID(2);
+	}
+
+	   bool CheckGroupVisibility(GameObject *Caller)
+	   {
+		return !Caller->IsFlagSet(FLAG_TL);
+	   }
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST,"aufsitzen",Caller,60,false);
+	}
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;

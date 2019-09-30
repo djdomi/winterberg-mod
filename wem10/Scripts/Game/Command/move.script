@@ -1,0 +1,309 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script move
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//**************************************************************************************************
+// #Version 2.0#										****
+//												****
+// 		Changes: - Disables Sirens after arriving targetpoint.				****
+//												****
+//												****
+// 		DO NEVER REPLACE ORIGINAL SCRIPTS USED BY EM4 IN YOUR DATA-FOLDER!		****
+//**************************************************************************************************
+
+const char DUMMY_DISABLE[] = "WT_SoSi";
+
+object MoveTo : CommandScript
+{
+	MoveResult mr;
+	
+	MoveTo()
+	{
+		SetValidTargets(ACTOR_FLOOR | ACTOR_OBJECT | ACTOR_VIRTUAL | ACTOR_HOUSE | ACTOR_OPEN_HOUSE | ACTOR_PERSON | ACTOR_VEHICLE);
+		SetHighlightingEnabled(false);
+		SetDeselectCaller(false);
+		SetActivationByLeftClick(true);
+		SetPriority(95);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		bool moveit=true;
+		switch (Caller->GetType())
+		{
+			case ACTOR_VEHICLE:
+				Vehicle v(Caller);
+				moveit=((v.GetNumPassengers()>0) || (v.GetFreePassengers()==0));
+				moveit=(moveit && !v.IsInstalled() && (!v.HasChild("winde")||v.IsChildEnabled("winde")));
+				break;
+			case ACTOR_PERSON:
+				Person p(Caller);
+				moveit=!p.IsInjured() && !p.IsDead();
+		}
+		return moveit;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Target->GetType()==ACTOR_VEHICLE && childID==0)
+			return false;
+		
+		bool wh=Caller->GetType()==ACTOR_PERSON;
+		if (wh)
+		{
+			Person p(Caller);
+			wh=wh && p.GetFirehoseID()>0 && Target->GetType()==ACTOR_OPEN_HOUSE;
+			if (wh)
+			{
+				OpenHouse oh(Target);
+				// wh=wh && !oh.IsCeilingOpen();
+			}
+		}
+
+		if(Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if(v.GetFreePassengers() > 0 && v.GetNumPassengers() == 0)
+				return false;
+		}
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (Target->GetType() == ACTOR_PERSON))
+		{
+			Vehicle v(Caller);
+			if (v.GetNumPassengers()==0 || v.GetVehicleType()==VT_FIREFIGHTERS_FMB)
+				return false;
+			else
+				return true;
+		}
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (Target->GetType() == ACTOR_VEHICLE))
+		{
+			Vehicle v(Target);
+			if (v.HasChild("SEGOUT") && v.GetNumTransported()>0) 
+				;
+			else
+				return false;
+		}
+
+		int ckid=childID;
+
+		if (childID==112)
+			ckid=0;
+			
+		mr = Commands::CheckMoveConditions(Caller, Target, ckid);
+		if (mr.Mode == MOVE_ABORT && !wh && childID!=112 )
+			return false;
+		
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		// System::Log("Move start");
+		// System::Log(Caller->GetName());
+		ActionInsertMode doit=ACTION_APPEND;
+		Person p(Caller);
+		Caller->ClearFlag(OF_LOCKED);
+					
+		if (Caller->GetType()==ACTOR_VEHICLE)
+		{
+			Caller->AssignCommand("ich_bin_nicht_frei");
+			Vehicle v(Caller);
+			VehicleType vt=v.GetVehicleType();
+			if (v.IsFirefighter())
+				bool canon=(v.IsCurrentAction("EActionCool") || v.IsCurrentAction("EActionExtinguish"));
+		}
+
+
+		if (childID==112)
+			doit=ACTION_INSERTBEFORELAST;
+		else
+			Caller->PushActionWait(ACTION_NEWLIST,0.1f);
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (Target->GetType() == ACTOR_PERSON))
+		{
+			Vector ziel=Target->GetPosition()+Vector (70,70,0);
+			Game::FindFreePosition(Caller,ziel,100);
+			Caller->PushActionMove(ACTION_NEWLIST,ziel,true);
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"WT_SoSi",Caller,5,false);
+		} else {
+		
+
+		bool w_hose=Caller->GetFirehoseID() > 0;
+		if (mr.Mode == MOVE_ABORT && !w_hose && childID!=112)
+			return;
+
+		switch(mr.Mode)
+		{
+			case MOVE_TO_POSITION:
+			{
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Target);
+				} else
+					Caller->PushActionMove(doit, mr.Target, true);
+				break;
+			}
+			
+			case MOVE_INTO_HOUSE:
+			{
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Intermediate1);
+					p.EnableAutoTarget(false);
+				} else
+					Caller->PushActionMove(doit, mr.Intermediate1, true);
+				Caller->PushActionEnterHouse(doit, &mr.EnterHouse);
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Target);
+				} else
+					Caller->PushActionMove(doit, mr.Target, true);
+				break;
+			}
+			
+			case MOVE_HOUSE_TO_HOUSE:
+			{
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Intermediate1);
+				} else
+					Caller->PushActionMove(doit, mr.Intermediate1, true);
+				Caller->PushActionLeaveHouse(doit, &mr.LeaveHouse);
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Intermediate2);
+				} else
+					Caller->PushActionMove(doit, mr.Intermediate2, true);
+				Caller->PushActionEnterHouse(doit, &mr.EnterHouse);
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Target);
+				} else
+					Caller->PushActionMove(doit, mr.Target, true);
+				break;
+			}
+			
+			case MOVE_HOUSE_TO_POSITION:
+			{
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Intermediate1);
+					p.EnableAutoTarget(true);
+				} else
+					Caller->PushActionMove(doit, mr.Intermediate1, true);
+				Caller->PushActionLeaveHouse(doit, &mr.LeaveHouse);
+				if (w_hose)
+				{
+					Caller->PushActionMoveWithHose(doit, mr.Target);
+				} else
+					Caller->PushActionMove(doit, mr.Target, true);
+				break;
+			}
+		}
+		}
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			if (v.IsLightOn())
+			{
+				Caller->PushActionLightOn(ACTION_INSERT, false);
+			}
+			Caller->PushActionExecuteCommand(doit,"StatusSenden",Caller,4,false);
+			if (v.IsBlueLightEnabled())
+				Caller->PushActionExecuteCommand(doit, DUMMY_DISABLE, Caller, 2, false);
+			switch (vt)
+			{
+				case VT_FIREFIGHTERS_TLF:
+					if (canon)
+						v.PushActionWaterOn(doit);
+					break;
+				case VT_POLICE_WAW:
+					break;
+				default:
+					break;
+			}
+		}
+
+		// Special code for fgrr (Bergefahrzeug). Deinstalls itself automatically
+		if (mr.UnInstall) 
+		{
+			Vehicle v(Caller);
+			if (vt == VT_THW_FGRR_BKF)
+			{
+				//System::Print("FGRR: Mode 1 - DeInstall");
+				Caller->PushActionDeinstall(ACTION_INSERT);
+			}
+
+			else if (vt == VT_FIREFIGHTERS_DLK)
+			{
+				if (mr.BasketDown && mr.UnInstall)
+				{
+					Caller->PushActionExecuteCommand(doit, "DUMMYEnableLights", Caller, 2, false);
+					Caller->PushActionDeinstall(ACTION_INSERT);
+					Caller->PushActionBasketDown(ACTION_INSERT, Vector(0.f, 0.f, 0.f));
+				}
+				else if (mr.BasketDown)
+				     	Caller->PushActionBasketDown(ACTION_INSERT, Vector(0.f, 0.f, 0.f));
+				else if (mr.UnInstall)
+					Caller->PushActionExecuteCommand(doit, "DUMMYEnableLights", Caller, 2, false);
+				     	Caller->PushActionDeinstall(ACTION_INSERT);
+			}
+		}
+
+		if (Caller->GetType() == ACTOR_VEHICLE && Target->GetType() == ACTOR_PERSON)
+		{
+			Person pt(Target);
+			if (pt.IsInjured()) 
+			{
+				Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"RD_examine",Target,0,false);
+			} else {
+				if (vt == VT_POLICE_STW || vt == VT_POLICE_MTW)
+					Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"POL_arrest",Target,0,false);
+			}
+		}
+
+		if ((Caller->GetType() == ACTOR_VEHICLE) && (vt == VT_AMBULANCE_RTW) && (Target->GetType() == ACTOR_VEHICLE))
+		{
+			Vehicle zelt(Target);
+			if (zelt.GetNumTransported()>0) 
+			{
+				Caller->PushActionExecuteCommand(doit,"SEG_an_RTW",Target,0,false);
+			} 
+		}
+
+		
+
+		if ((Caller->GetType() == ACTOR_PERSON))
+		{
+			switch(Caller->GetUserData())
+			{
+				case 106:
+				case 107:
+					Caller->PushActionUseEquipment(doit,Target,0,3.0);
+					break;
+			}
+		}
+//		System::Log("Move Ende");
+	}
+};

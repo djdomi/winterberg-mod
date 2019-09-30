@@ -1,0 +1,91 @@
+[VNUM=1.43]
+// <OPTIONS>
+// Exporter: vMax
+// Version: 4, 0, 1, 1
+// AdvancedMenu: 1
+// DisplayWindow: 0
+// DisplayModelViewer: 0
+// SaveInFile: 1
+// TextureBehaviour: 0
+// TextureSubdir: 
+// TextureUseProjDir: 1
+// DisplayMemory: 0
+// ResizeMesh: 0
+// MeshFactor: 1.000000
+// CenterMethod: 0
+// ExportHidden: 0
+// ExportPatches: 0
+// ExportSmoothing: 1
+// LodBias: 0
+// OptimizeMesh: 1
+// EpsVert: 0.000000
+// EpsUV: 0.000000
+// MeshCheckMethod: 1113
+// ExportBones: 0
+// ExportBlended: 1
+// BlendThreshold: 0.000000
+// MaxNumBones: 4
+// RemoveBones: 1
+// BoneCheckMethod: 1110
+// ExportDoubleSided: 1
+// ExportOpacity: 1
+// ExportSpecularity: 1
+// ExportEnvironment: 1
+// ExportBump: 1
+// ExportReflectivity: 0
+// ResizeTextures: 1017
+// ExportStrips: 1
+// StripPerformance: 0
+// StripObject: 0
+// StripRestriction: 0
+// MaxStripSize: 0.000000
+// SetMaxStripLength: 0
+// MaxStripLength: 0
+// SetMinStripLength: 0
+// MinStripLength: 0
+// SetMinSegLength: 0
+// MinSegLength: 0
+// ProjectPath:  - No project -
+// Granularity: 0
+// NumAnimations: 0
+// </OPTIONS>
+
+
+[NUMSURFACES=1]
+[NUMVERTICES=16]
+[NUMBLENDVERTS=0]
+[NUMPOLYGONS=10]
+[NUMBONES=0]
+[NUMMUSCLEANIMS=0]
+[NUMMUSCLEFRAMES=0]
+
+SRF, cafee_windows01, 0, 0, 0, cafe_01_windows.dds, 517, 2, 0, 0, , 0, 0, 0, 0, 0, 0, 0, 0
+D, 185, -23, 5477, 181, -181, 0, 1027, 0, 0, 0, 0, 0
+D, 185, 5009, 5477, 181, 181, 0, 787, 0, 0, 0, 0, 0
+D, 185, 5009, -8522, 181, 181, 0, 787, 1006, 0, 0, 0, 0
+D, 185, -23, -8522, 181, -181, 0, 1027, 1006, 0, 0, 0, 0
+D, -185, 5009, -8522, -256, 0, 0, 787, 1006, 0, 0, 0, 0
+D, -185, 5009, 5477, -256, 0, 0, 787, 0, 0, 0, 0, 0
+D, -185, -23, 5477, -256, 0, 0, 1027, 0, 0, 0, 0, 0
+D, -185, -23, -8522, -256, 0, 0, 1027, 1006, 0, 0, 0, 0
+D, -185, 5009, -8522, 0, 256, 0, 787, 1006, 0, 0, 0, 0
+D, -185, 5009, 5477, 0, 256, 0, 787, 0, 0, 0, 0, 0
+D, -185, -23, 5477, 0, 0, 256, 678, 210, 0, 0, 0, 0
+D, -185, -23, -8522, 0, -256, 0, 1027, 1006, 0, 0, 0, 0
+D, -185, 5009, 5477, 0, 0, 256, 474, 210, 0, 0, 0, 10
+D, 185, -23, 5477, 0, 0, 256, 678, 231, 0, 0, 0, 1
+D, 185, 5009, 5477, 0, 0, 256, 474, 231, 0, 0, 0, 2
+D, -185, -23, 5477, 0, -256, 0, 1027, 0, 0, 0, 0, 11
+P, 3, 3, 2, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 1, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 5, 8, 7, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 7, 6, 5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 9, 10, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 2, 3, 9, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 13, 11, 14, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 14, 15, 13, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 16, 12, 4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 4, 1, 16, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+BOX, -2, -1, -86, 2, 51, 55
+N, 0, 0, 0, 99
+CBOX, -1.858, -0.233, -85.229,  1.858, 50.092, 54.771

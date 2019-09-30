@@ -1,0 +1,4456 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 1
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+const char TIMER_NAME_WAIT_STATE_1C2[]		= "t_wait_1c2";
+const float TIMER_TIME_WAIT_STATE_1C2		= 15.f;
+const char TIMER_NAME_WAIT_STATE_2C2[]		= "t_wait_2c2";
+const float TIMER_TIME_WAIT_STATE_2C2		= 15.f;
+const char TIMER_NAME_WAIT_STATE_3B2[]		= "t_wait_3b2";
+const float TIMER_TIME_WAIT_STATE_3B2		= 15.f;
+const char TIMER_NAME_WAIT_STATE_4B2[]		= "t_wait_4b2";
+const float TIMER_TIME_WAIT_STATE_4B2		= 15.f;
+const char TIMER_NAME_WAIT_STATE_6B2[]		= "t_wait_6b2";
+const float TIMER_TIME_WAIT_STATE_6B2		= 15.f;
+const char TIMER_NAME_ENDCUTSCENE[]			= "t_endcs";
+const float TIMER_TIME_ENDCUTSCENE			= 8.5f;
+const char COUNTER_INJURED_PERSONS[]		= "Injured Persons";
+const char COUNTER_BURNING_HOUSES[]			= "Burning Houses";
+const char COUNTER_BURNING_OBJECTS[]		= "Burning Objects";
+const char COUNTER_DEAD_CIVILS[]			= "Dead Civils";
+const char NAME_TRIGGER_CHURCH[]			= "target_church";
+const char NAME_AREALIGHT[]					= "arealight";
+const char NAME_HYDRANT[]					= "hydrant";
+const char M01_STATE_NO_RTW[]				= "M01_STATE_NO_RTW";
+const char M01_STATE_NO_RW[]				= "M01_STATE_NO_RW";
+
+object Mission01 : MissionScript
+{
+	enum
+	{
+		RAINCUTINTERVAL = 5,		// sec
+		CS0TIME = 20,				// sec
+		CS1TIME = 22,				// sec
+		CS2TIME = 23,				// sec
+		CS3TIME = 37,
+		COLLAPSETIME = 21,			// sec
+		WORKERSRUNTIME = 24,		// sec
+		PLANKHINTOFFSET = 15000,	// msec
+		WEATHER_OFF_TIME = 180,		// sec
+	};
+
+	enum State
+	{
+		STATE_1A1,
+		STATE_1A2,
+		STATE_1A3,
+		STATE_1A4,
+		STATE_1B1,
+		STATE_1C1,
+		STATE_1C2,
+		STATE_1C3,
+		STATE_1D1,
+		STATE_1D2,
+		STATE_1E1,	// 10
+		STATE_1E2,
+		STATE_1E3,
+		STATE_1F1,
+		STATE_1F2,
+		STATE_1F3,
+		STATE_1G1,
+		STATE_1G2,
+		STATE_1G3,
+		STATE_1H1,
+		STATE_1H2,	// 20
+		STATE_1H3,
+		STATE_1I1,
+		STATE_1I2,
+		STATE_1I3,
+		STATE_2A1,
+		STATE_2A2,
+		STATE_2A3,
+		STATE_2B1,
+		STATE_2C1,
+		STATE_2C2,	// 30
+		STATE_2C3,
+		STATE_2D1,
+		STATE_2E1,
+		STATE_2E2,
+		STATE_2E3,
+		STATE_2F1,
+		STATE_2F2,
+		STATE_2F3,
+		STATE_2F4,
+		STATE_3A1,	// 40
+		STATE_3A2,
+		STATE_3A3,
+		STATE_3A4,
+		STATE_3A5,
+		STATE_3B1,
+		STATE_3B2,
+		STATE_3B3,
+		STATE_3C1,
+		STATE_3D1,
+		STATE_3D2,	// 50
+		STATE_3D3,
+		STATE_3D4,
+		STATE_3E1,
+		STATE_3E2,
+		STATE_3E3,
+		STATE_3F1,
+		STATE_3F2,
+		STATE_3F3,
+		STATE_4A1,
+		STATE_4A2,	// 60;
+		STATE_4A3,
+		STATE_4B1,
+		STATE_4B2,
+		STATE_4B3,
+		STATE_4C1,
+		STATE_4C2,
+		STATE_4D1,
+		STATE_4D2,
+		STATE_4D3,
+		STATE_4E1,	// 70
+		STATE_4E2,
+		STATE_4E3,
+		STATE_4F1,
+		STATE_4F2,
+		STATE_4F3,
+		STATE_4G1,
+		STATE_4G2,
+		STATE_4G3,
+		STATE_4H1,
+		STATE_4H2,	// 80
+		STATE_4H3,
+		STATE_5A1,
+		STATE_5A2,
+		STATE_5A3,
+		STATE_5A4,
+		STATE_5A5,
+		STATE_5B1,
+		STATE_5B2,
+		STATE_5B3,
+		STATE_5C1,	// 90
+		STATE_5C2,
+		STATE_5C3,
+		STATE_6A0,
+		STATE_6A1,
+		STATE_6A2,
+		STATE_6A3,
+		STATE_6B1,
+		STATE_6B2,
+		STATE_6B3,
+		STATE_6C1,	// 100
+		STATE_6C2,
+		STATE_6D1,
+		STATE_6D2,
+		STATE_6D3,
+		STATE_6E1,
+		STATE_6E2,
+		STATE_6E3,
+		STATE_6E4,
+		STATE_6F1,
+		STATE_6F2,	// 110
+		STATE_6F3,
+		STATE_6G1,
+		STATE_6G2,
+		STATE_6G3,
+		STATE_6H1,
+		STATE_6H2,
+		STATE_6H3,
+		STATE_7A1,
+		STATE_7A2,
+		STATE_7A3,	// 120
+		STATE_7A4,
+		STATE_7A5,
+		STATE_7B1,
+		STATE_7B2,
+		STATE_7B3,
+		STATE_7C1,
+		STATE_7C2,
+		STATE_7C3,
+		STATE_1F1_ALT1,
+		STATE_1F1_ALT2,	// 130
+		STATE_4E1_ALT1,
+		STATE_4E1_ALT2,
+		STATE_6E1_ALT1,
+		STATE_6E1_ALT2,
+		STATE_7C4,
+		STATE_1D2_ALT,
+		STATE_3D0,
+		STATE_4C2_ALT,
+		STATE_5A0,
+		STATE_6C2_ALT,
+	};
+	
+	GameObject mBarrel;
+	GameObject mPlank;
+	GameObject mDebris[2];
+	GameObject mFireSparks;
+	GameObject mHeap;
+	Person mWorker[2];
+	Path mWorkerPath[2];
+	Person mInjured2;
+	Person mInjured1;	// mit Planke
+	Person mInjured3;	// optional
+			
+	float mRainStrength;
+	float mRainVolume;
+	bool mPlankRemoved;
+	bool mFireHint;
+	bool mInjuriesHint;
+	int mLastPlankHintTime;
+	bool mFirstVehicleArrival;
+	bool mInCutscene;
+	bool mForceApplied;
+	bool mEmptyCarHint;
+	bool mTreatPersonHint;
+	bool mTooManyDied;
+	bool mFireOutOfControl;
+	bool mCutscenePlayed;
+	State mState;
+	int mAwaitedVehicleID;
+	bool mFireStarted;
+
+	GameObjectList mAreaLights;
+	GameObjectList mHydrants;
+						
+	Mission01()
+	{
+		mRainVolume = 1.f;
+	}
+	
+	void Start()
+	{
+		System::Log("Doc GOT me !");
+		Game::CreateAreaLightsAroundTrigger(NAME_TRIGGER_CHURCH, NAME_AREALIGHT, 400.f );
+		mAreaLights = Game::GetGameObjects(NAME_AREALIGHT);
+		SwitchAreaLights(&mAreaLights, false);
+		
+		GameObjectList bl = Game::GetGameObjects("Barrel");
+		if(bl.GetNumObjects() == 0)
+			System::Log("?Object 'Barrel' not found!");
+		else
+			mBarrel = *bl.GetObject(0);
+		
+		GameObjectList pl = Game::GetGameObjects("Plank");
+		if(pl.GetNumObjects() == 0)
+			System::Log("?Object 'Plank' not found!");
+		else
+			mPlank = *pl.GetObject(0);
+		
+		GameObjectList dl = Game::GetGameObjects("Debris");
+		if(dl.GetNumObjects() != 2)
+			System::Log("?Objects 'Debris' (2 objects) not found!");
+		else
+		{
+			mDebris[0] = *dl.GetObject(0);
+			mDebris[1] = *dl.GetObject(1);
+		}
+		
+		GameObjectList el = Game::GetGameObjects("Sparks");
+		if(el.GetNumObjects() == 0)
+			System::Log("?Emitter object 'Sparks' not found!");
+		else
+			mFireSparks = *el.GetObject(0);
+
+		GameObjectList hl = Game::GetGameObjects("Heap");
+		if(hl.GetNumObjects() == 0)
+			System::Log("?Object 'Heap' not found!");
+		else
+			mHeap = *hl.GetObject(0);
+		Game::ExecuteCommand("wem_init",&mHeap);
+
+		PersonList w1l("worker01");
+		if(w1l.GetNumPersons() == 0)
+			System::Log("?Person 'worker1' not found!");
+		else
+			mWorker[0] = *w1l.GetPerson(0);
+
+		PersonList w2l("worker02");
+		if(w2l.GetNumPersons() == 0)
+			System::Log("?Person 'worker2' not found!");
+		else
+			mWorker[1] = *w2l.GetPerson(0);
+
+		PersonList i1l("injured2");
+		if(i1l.GetNumPersons() == 0)
+			System::Log("?Person 'injured2' not found!");
+		else
+			mInjured2 = *i1l.GetPerson(0);
+
+		PersonList i2l("injured");
+		if(i2l.GetNumPersons() == 0)
+			System::Log("?Person 'injured' not found!");
+		else
+			mInjured1 = *i2l.GetPerson(0);
+
+		PathList p1l("run_worker01");
+		if(p1l.GetNumPaths() == 0)
+			System::Log("?Path 'run_worker01' not found!");
+		else
+			mWorkerPath[0] = *p1l.GetPath(0);
+		mWorkerPath[0].SetOnFinishDeleteObject(false);
+
+		PathList p2l("run_worker02");
+		if(p2l.GetNumPaths() == 0)
+			System::Log("?Path 'run_worker02' not found!");
+		else
+			mWorkerPath[1] = *p2l.GetPath(0);
+		mWorkerPath[1].SetOnFinishDeleteObject(false);
+
+		mHydrants = Game::GetGameObjectsWithPrefix(NAME_HYDRANT);
+
+		mInCutscene = false;
+		mPlankRemoved = false;
+		mForceApplied = false;
+		mFireHint = false;
+		mInjuriesHint = false;
+		mFirstVehicleArrival = true;
+		mEmptyCarHint = false;
+		mTreatPersonHint = false;
+		mTooManyDied = false;
+		mFireOutOfControl = false;
+		mCutscenePlayed = false;
+		mFireStarted = false;
+		mLastPlankHintTime = System::GetTickCount() - PLANKHINTOFFSET;
+		Mission::StartSingleTimer("HelpRTW", 1);
+		Mission::StartIntervalTimer("CutDownRain", RAINCUTINTERVAL);
+		mRainStrength = Weather::GetRainIntensity();
+		mState = STATE_1A1;
+		mAwaitedVehicleID = -1;
+		Audio::PlaySoundtrack("1");
+	}
+	
+	void OnTimer(const char* timer_, float time_)
+	{
+		//System::Log("The Timer Cage ");
+		switch(timer_)
+		{
+			case "CutDownRain" :
+			{
+				float rainIntensity = Weather::GetRainIntensity();
+				rainIntensity -= 5.f/WEATHER_OFF_TIME * mRainStrength;
+				mRainVolume -= 5.f/WEATHER_OFF_TIME;
+				if (rainIntensity < 0.f)
+				{
+					rainIntensity = 0.f;
+					Game::StopAmbientSound("rain");
+					Weather::SetRainVisible(false);
+					Mission::StopTimer("CutDownRain");
+				}
+				Weather::SetRainIntensity(rainIntensity);
+				Game::SetAmbientSoundVolumeByName("rain", mRainVolume);
+				break;
+			}
+			break;
+			
+			case "cs0" :
+			{
+				Audio::SetMusicLevel(0.1f);
+				Mission::StartCutScene();
+				Mission::StartSingleTimer("cs1", CS1TIME - CS0TIME);
+				Mission::StartSingleTimer("cs2", (float)(CS1TIME - CS0TIME) + 0.5f);// CS2TIME - CS0TIME);
+				Mission::StartSingleTimer("cs3", CS3TIME - CS0TIME);
+				Mission::StartSingleTimer("Collapse", COLLAPSETIME - CS0TIME);
+				Mission::StartSingleTimer("WorkersRun", WORKERSRUNTIME - CS0TIME);
+				Mission::StartSingleTimer(TIMER_NAME_ENDCUTSCENE, TIMER_TIME_ENDCUTSCENE);
+				Mission::ShowBlackBars();
+				Camera::StartTransition("cs0", 1.0f);
+				mInCutscene = true;
+			}
+			break;
+			
+			case "cs1" :
+			{
+				Camera::StartTransition("cs1", 0.8f);
+			}
+			break;
+			
+			case "cs2" :
+			{
+				Camera::StartTransition("cs2", 1.0f);				
+				Mission::HideBlackBars();
+				//mCutscenePlayed = true;
+			}
+			break;
+
+			case "cs3" :
+			{
+				mInCutscene = false;				
+				// System::Log("Messi group");
+				Game::SetDefaultMessageGroup("2");
+				// System::Log("Messi group");
+			}
+			break;
+			
+			case "Collapse" :
+			{
+				mDebris[0].UnfreezePhysics();
+				mDebris[1].UnfreezePhysics();
+				Audio::PlaySample("mod:Audio/FX/destruction/csmission01_a.wav");
+			}
+			break;
+
+			case "WorkersRun":
+			{
+				mWorker[0].SetEscapePath("run_worker01");
+				//mWorker[1].SetEscapePath("run_worker02");
+				mWorker[0].SetFleeing(true);
+				//mWorker[1].SetFleeing(true);
+			}
+			break;
+			
+			case "HelpRTW" :
+			{
+				Game::ShowHelpTextWindow("M01_STATE_1A1", 0);
+				ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+				ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+				mState = STATE_1A2;
+			}
+			break;
+
+			/*case "help_plank" :
+			{
+				Game::ShowHelpTextWindow("M01_HELP_MOVE_PLANK");
+			}
+			break;*/
+
+			case TIMER_NAME_WAIT_STATE_1C2:
+			{
+				mState = STATE_1D1;
+				SwitchAreaLights(&mAreaLights, false);
+			}
+			break;
+
+			case TIMER_NAME_WAIT_STATE_2C2:
+			{
+				mState = STATE_2D1;
+				Game::ShowHelpTextWindow("M01_STATE_2D1", 0);
+				ScriptInterface::BlinkActionButton("EmptyCar");
+				SwitchAreaLights(&mAreaLights, false);
+			}
+			break;
+
+			case TIMER_NAME_WAIT_STATE_3B2:
+			{
+				mState = STATE_3C1;
+				Game::ShowHelpTextWindow("M01_STATE_3C1", 0);
+				ScriptInterface::BlinkActionButton("EmptyCar");
+				SwitchAreaLights(&mAreaLights, false);
+			}
+			break;
+
+			case TIMER_NAME_WAIT_STATE_4B2:
+			{
+				mState = STATE_4C1;
+				SwitchAreaLights(&mAreaLights, false);
+			}
+			break;
+
+			case TIMER_NAME_WAIT_STATE_6B2:
+			{
+				mState = STATE_6C1;
+				SwitchAreaLights(&mAreaLights, false);
+			}
+			break;
+
+			case TIMER_NAME_ENDCUTSCENE:
+			{
+				Mission::EndCutScene();
+				mCutscenePlayed = true;				
+			}
+			break;
+		}
+	}
+
+	void SwitchAreaLights(GameObjectList *lights_, bool enable_)
+	{
+		for ( int i=0; i<lights_->GetNumObjects(); ++i )
+		{
+			if ( enable_ )
+				lights_->GetObject(i)->Show();
+			else
+				lights_->GetObject(i)->Hide();
+		}
+	}
+
+	void BlinkHydrants(bool blink_)
+	{
+		for ( int i=0; i<mHydrants.GetNumObjects(); ++i )
+		{
+			if (!blink_)
+				mHydrants.GetObject(i)->SetHighlighted(false);
+			else if (!mHydrants.GetObject(i)->IsHydrantInUse())
+				mHydrants.GetObject(i)->SetHighlighted(true);
+		}
+	}
+	
+	void Update()
+	{
+		// System::Log("Reckoning Mod");
+		if(!mCutscenePlayed && mPlankRemoved && !mInCutscene && /*Mission::GetCounter("Injured Persons")==0 &&*/ !Mission::TimerIsStarted("cs0"))
+			Mission::StartSingleTimer("cs0", CS0TIME);
+
+		GameObjectList sellist = Game::GetSelectedGameObjects();
+		bool ffSelected = false, paramedicSelected = false, docSelected = false;
+		for(int i = 0; i < sellist.GetNumObjects(); i++)
+		{
+			if (sellist.GetObject(i)->GetType() == ACTOR_PERSON && sellist.GetObject(i)->IsIdle())
+			{
+				Person p(sellist.GetObject(i));
+				if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL)
+				{
+					ffSelected = true;
+				}
+				else if (p.GetPersonType() == PT_DOCTOR)
+				{
+					docSelected = true;
+				}
+				else if (p.GetPersonType() == PT_PARAMEDIC)
+				{
+					paramedicSelected = true;
+				}
+			}
+		}
+		if (docSelected && !paramedicSelected && !ffSelected)
+		{
+			if (mInjured3.IsValid() && !mInjured3.IsHealing() && !mInjured3.IsCarried() && !mInjured3.IsFlagSet(OF_BLOCKED))
+					mInjured3.SetHighlighted(true);
+			if (mInjured1.IsValid() && !mInjured1.IsHealing() && !mInjured1.IsCarried() && !mInjured1.IsFlagSet(OF_BLOCKED))
+					mInjured1.SetHighlighted(true);
+			if (mInjured2.IsValid() && !mInjured2.IsHealing() && !mInjured2.IsCarried() && !mInjured2.IsFlagSet(OF_BLOCKED))
+					mInjured2.SetHighlighted(true);
+		}
+		else if (!docSelected && paramedicSelected && !ffSelected)
+		{
+			if (mInjured3.IsValid() && !mInjured3.IsHealing() && !mInjured3.IsCarried() && !mInjured3.IsFlagSet(OF_BLOCKED))
+					mInjured3.SetHighlighted(true);
+			if (mInjured1.IsValid() && !mInjured1.IsHealing() && !mInjured1.IsCarried() && !mInjured1.IsFlagSet(OF_BLOCKED))
+					mInjured1.SetHighlighted(true);
+			if (mInjured2.IsValid() && !mInjured2.IsHealing() && !mInjured2.IsCarried() && !mInjured2.IsFlagSet(OF_BLOCKED))
+					mInjured2.SetHighlighted(true);
+		}
+		else if (!docSelected && !paramedicSelected && ffSelected)
+		{
+			if (mInjured3.IsValid() && !mInjured3.IsHealing() && !mInjured3.IsCarried() && !mInjured3.IsFlagSet(OF_BLOCKED))
+					mInjured3.SetHighlighted(true);
+			if (mInjured1.IsValid() && !mInjured1.IsHealing() && !mInjured1.IsCarried() && !mInjured1.IsFlagSet(OF_BLOCKED))
+					mInjured1.SetHighlighted(true);
+			if (mInjured2.IsValid() && !mInjured2.IsHealing() && !mInjured2.IsCarried() && !mInjured2.IsFlagSet(OF_BLOCKED))
+					mInjured2.SetHighlighted(true);
+			if (!mPlankRemoved && mPlank.IsValid())
+				mPlank.SetHighlighted(true);
+		}
+		else
+		{
+			if (mInjured3.IsValid())
+				mInjured3.SetHighlighted(false);
+			if (mInjured1.IsValid())
+				mInjured1.SetHighlighted(false);
+			if (mInjured2.IsValid())
+				mInjured2.SetHighlighted(false);
+			if (mPlank.IsValid())
+				mPlank.SetHighlighted(false);
+		}
+		
+		if (mCutscenePlayed && mState < STATE_3A1)
+		{
+			if ((Mission::GetCounter(COUNTER_BURNING_HOUSES) + Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 0)
+				|| (Mission::GetCounter(COUNTER_BURNING_HOUSES) + Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 1 && mBarrel.IsBurning()))
+			{
+				if (!mInjured1.IsValid())
+				{
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_5A1;
+				}
+				else if (mInjured1.GetLife() >= 0.9f * mInjured1.GetMaxLife())
+				{
+					mState = STATE_4D2;
+				}
+				else if (!mInjured1.IsHealing())
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+				}
+			}
+			else
+			{
+				PersonList ffighters = Game::GetFirefighters();
+				int numFFs = 0;
+				int numFFSinCar = 0;
+				for (int i = 0; i < ffighters.GetNumPersons(); i++)
+				{
+					numFFs++;
+					if (ffighters.GetPerson(i)->GetEnteredCarID() > 0)
+						numFFSinCar++;
+				}
+				bool RW = Game::ExistsFreeVehicle(VT_FIREFIGHTERS_RW, 0, 0);
+				if (RW && numFFSinCar >= 3)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3B1", 0);
+					mState = STATE_3B1;
+				}
+				else if (RW && numFFs >= 3)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					mState = STATE_3D1;
+				}
+				else
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3A1", 0);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_3A1;
+				}
+			}
+		}
+
+		switch(mState)
+		{
+			case STATE_1C2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_1A2;
+				}
+			}
+			break;
+			case STATE_1D1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool foundSelectedRTW = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					if (list.GetVehicle(i)->IsSelected())
+					{
+						foundSelectedRTW = true;
+						break;
+					}
+				}
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_1A2;
+					break;
+				}
+				if (!foundSelectedRTW)
+					Game::ShowHelpTextWindow("M01_STATE_1D1", 0);
+				mState = STATE_1D2;
+			}
+			break;
+			case STATE_1D2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_1A2;
+					break;
+				}
+				bool bothFound = false;
+				bool RTWisSelected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					bool paramedicFound = false;
+					bool doctorFound = false;
+					PersonList passengers = list.GetVehicle(i)->GetPassengers();
+					for(int j = 0; j < passengers.GetNumPersons(); j++)
+					{
+						PersonType type = passengers.GetPerson(j)->GetPersonType();
+						if (type == PT_PARAMEDIC)
+							paramedicFound = true;
+						else if (type == PT_DOCTOR)
+							doctorFound = true;
+					}
+					if (paramedicFound && doctorFound)
+					{
+						bothFound = true;
+						if (list.GetVehicle(i)->IsSelected())
+						{
+							RTWisSelected = true;
+							break;
+						}
+					}
+				}
+				if (!bothFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE1D2_ALT", 0);
+					Mission::StartSingleTimer("HelpRTW", 5);
+					mState = STATE_1A1;
+				}
+				if (RTWisSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1D2", 0);
+					ScriptInterface::BlinkActionButton("EmptyCar");
+					mState = STATE_1E1;
+				}
+			}
+			break;
+			case STATE_1D2_ALT:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_1A2;
+					break;
+				}
+				bool RTWisSelected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					bool doctorFound = false;
+					PersonList passengers = list.GetVehicle(i)->GetPassengers();
+					for(int j = 0; j < passengers.GetNumPersons(); j++)
+					{
+						PersonType type = passengers.GetPerson(j)->GetPersonType();
+						if (type == PT_DOCTOR)
+							doctorFound = true;
+					}
+					if (doctorFound)
+					{
+						if (list.GetVehicle(i)->IsSelected())
+						{
+							RTWisSelected = true;
+							break;
+						}
+					}
+				}
+				if (RTWisSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1D2", 0);
+					ScriptInterface::BlinkActionButton("EmptyCar");
+					mState = STATE_1E1;
+				}
+			}
+			break;
+			case STATE_1E1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool foundSelectedRTW = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					if (list.GetVehicle(i)->IsSelected())
+					{
+						foundSelectedRTW = true;
+						break;
+					}
+				}
+				if (!foundSelectedRTW)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1D1", 0);
+					mState = STATE_1D2;
+				}
+			}
+			break;
+			case STATE_1E2:
+			{
+				if (mInjured2.IsHealing())
+				{
+					mState = STATE_1E3;
+					break;
+				}
+				PersonList doctors = Game::GetDoctors();
+				bool docNotInCar = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->GetEnteredCarID() == -1)
+						docNotInCar = true;
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						// TODO Person highlighten
+						mInjured2.SetHighlighted(true);
+						Game::ShowHelpTextWindow("M01_STATE_1E2", 0);
+						mState = STATE_1E3;
+						break;
+					}
+				}
+				if (doctors.GetNumPersons() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE1D2_ALT", 0);
+					Mission::StartSingleTimer("HelpRTW", 5);
+					mState = STATE_1A1;
+				}
+				else if (!docNotInCar)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1D1", 0);
+					mState = STATE_1D2_ALT;
+				}
+			}
+			break;
+			case STATE_1E3:
+			{
+				if (mInjured2.IsHealing())
+					Game::CloseHelpTextWindow();
+				if (!mInjured2.IsHealing())
+				{
+					PersonList doctors = Game::GetDoctors();
+					bool docSelected = false;
+					for(int i = 0; i < doctors.GetNumPersons(); i++)
+					{
+						if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							docSelected = true;
+							break;
+						}
+					}
+					if (!docSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1E1", 0);
+						mInjured2.SetHighlighted(false);
+						ScriptInterface::BlinkActionButton(-1);
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_1C2);
+						SwitchAreaLights(&mAreaLights, false);
+						mState = STATE_1E2;
+					}
+				}
+				else if (mInjured2.GetLife() >= 0.9f * mInjured2.GetMaxLife())
+				{
+					PersonList paramedics = Game::GetParamedics();
+					if (paramedics.GetNumPersons() == 0)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1F1_ALT1", 0);
+						mState = STATE_1F1_ALT1;
+						break;
+					}
+					bool paramedicSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paramedicSelected = true;
+							break;
+						}
+					}
+					if (!paramedicSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1F1", 0);
+						mState = STATE_1F1;
+					}
+					else
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1F2", 0);
+						ScriptInterface::BlinkActionButton("Lift");
+						mState = STATE_1F2;
+					}
+				}
+			}
+			break;
+			case STATE_1F1:
+			{
+				if (mInjured2.IsCarried())
+				{
+					mState = STATE_1G1;
+					break;
+				}
+				PersonList paramedics = Game::GetParamedics();
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1F2", 0);
+						ScriptInterface::BlinkActionButton("Lift");
+						mState = STATE_1F2;
+						break;
+					}
+				}
+				if (paramedics.GetNumPersons() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1F1_ALT", 0);
+					mState = STATE_1F1_ALT1;
+				}
+			}
+			break;
+			case STATE_1F2:
+			{
+				if (mInjured2.IsCarried())
+				{
+					mState = STATE_1G1;
+					break;
+				}
+				if (ScriptInterface::IsCurrentCommand("Lift"))
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1F3", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					mInjured2.SetHighlighted(true);
+					mState = STATE_1F3;
+				}
+				else if (!mInjured2.IsCarried())
+				{
+					ScriptInterface::BlinkActionButton("Lift");
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1F1", 0);
+						mInjured2.SetHighlighted(false);
+						ScriptInterface::BlinkActionButton(-1);
+						mState = STATE_1F1;
+					}
+				}
+			}
+			break;
+			case STATE_1F3:
+			{
+				if (!mInjured2.IsCarried())
+				{
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1F1", 0);
+						mInjured2.SetHighlighted(false);
+						mState = STATE_1F1;
+					}
+				}	
+			}
+			break;
+			case STATE_1G1:
+			{
+				ScriptInterface::BlinkActionButton(-1);
+				PersonList paramedics = Game::GetParamedics();
+				bool paramedicSelected = false;
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						paramedicSelected = true;
+						break;
+					}
+				}
+				if (!paramedicSelected)
+					Game::ShowHelpTextWindow("M01_STATE_1G1", 0);
+				mState = STATE_1G2;
+			}
+			break;
+			case STATE_1G2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					mState = STATE_1I2;
+					break;
+				}
+				PersonList paramedics = Game::GetParamedics();
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1G2", 0);
+						mState = STATE_1G3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_1G3:
+			{
+				if (mInjured2.GetEnteredCarID() == -1)
+				{
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1G1", 0);
+						mState = STATE_1G2;
+					}
+				}
+			}
+			break;
+			case STATE_1H1:
+			{
+				PersonList doctors = Game::GetDoctors();
+				bool doctorSelected = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						doctorSelected = true;
+						break;
+					}
+				}
+				if (!doctorSelected)
+					Game::ShowHelpTextWindow("M01_STATE_1H1", 0);
+				mState = STATE_1H2;
+			}
+			break;
+			case STATE_1H2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					mState = STATE_1I2;
+					break;
+				}
+				PersonList doctors = Game::GetDoctors();
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_1H2", 0);
+						mState = STATE_1H3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_1H3:
+			{
+				PersonList doctors = Game::GetDoctors();
+				bool docSelected = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						docSelected = true;
+						break;
+					}
+				}
+				if (!docSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1H1", 0);
+					mState = STATE_1H2;
+				}
+			}
+			break;
+			case STATE_1I1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool RTWselected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured2.GetID() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							RTWselected = true;
+							break;
+						}
+					}
+				}
+				if (!RTWselected)
+					Game::ShowHelpTextWindow("M01_STATE_1I1", 0);
+				mState = STATE_1I2;
+			}
+			break;
+			case STATE_1I2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured2.GetID() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_1I2", 0);
+							ScriptInterface::BlinkActionButton("GoHome");
+							mState = STATE_1I3;
+							break;
+						}
+					}
+				}
+			}
+			break;
+			case STATE_1I3:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool RTWselected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured2.GetID() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							RTWselected = true;
+							break;
+						}
+					}
+				}
+				if (!RTWselected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1I1", 0);
+					mState = STATE_1I2;
+				}
+			}
+			break;
+			case STATE_2C2:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() == 0)
+				{
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+					ScriptInterface::BlinkActionButton(-1);
+					Game::ShowHelpTextWindow("M01_STATE_2A1", 0);
+					mState = STATE_2A1;
+					break;
+				}
+			}
+			break;
+			case STATE_2D1:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() == 0)
+				{
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+					ScriptInterface::BlinkActionButton(-1);
+					Game::ShowHelpTextWindow("M01_STATE_2A1", 0);
+					mState = STATE_2A1;
+					break;
+				}
+				ScriptInterface::BlinkActionButton("EmptyCar");
+			}
+			break;
+			case STATE_2E2:
+			{
+				PersonList ffs = Game::GetFirefighters();
+				bool ffSelected = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						ffSelected = true;
+						break;
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_2E1", 0);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_2C2);
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_2E1;
+					break;
+				}
+				ScriptInterface::BlinkActionButton("Pull");
+				if (ScriptInterface::IsCurrentCommand("Pull"))
+				{
+					Game::ShowHelpTextWindow("M01_STATE_2E3", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_2E3;
+				}
+			}
+			break;
+			case STATE_2F1:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_2F1", 0);
+				mState = STATE_2F2;
+			}
+			break;
+			case STATE_2F2:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_2F2", 0);
+							mState = STATE_2F3;
+							ScriptInterface::BlinkActionButton("StopPull");
+							break;
+						}
+					}
+				}
+			}
+			break;
+			case STATE_3A3:
+			{
+				if (ScriptInterface::IsFireDepartmentVehicleSelected("RW") && ScriptInterface::GetNumVehicleCrewMembersAdded() > 1)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3A4", 0);
+					ScriptInterface::BlinkCrewButton("FIREFIGHTER", true);
+					mState = STATE_3A4;
+				}
+			}
+			break;
+			case STATE_3A4:
+			{
+				if (ScriptInterface::IsFireDepartmentVehicleSelected("RW") && ScriptInterface::GetNumVehicleCrewMembersAdded() > 2)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3A5", 0);
+					ScriptInterface::BlinkCrewButton("FIREFIGHTER", false);
+					ScriptInterface::BlinkSendVehicleTargetButton(true);
+					Game::EnableUpdateMissionOnPause(false);
+					mState = STATE_3A5;
+				}
+			}
+			break;
+			case STATE_3B2:
+			{
+				Actor rw = Game::GetActor(mAwaitedVehicleID);
+				if (!rw.IsValid())
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3A1", 0);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_3A1;
+					break;
+				}
+			}
+			break;
+			case STATE_3C1:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3A1", 0);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_3A1;
+					break;
+				}
+				ScriptInterface::BlinkActionButton("EmptyCar");
+			}
+			break;
+			case STATE_3D0:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() > 0)
+					mState = STATE_3D2;
+			}
+			break;
+			case STATE_3D1:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RW);
+					mState = STATE_3D0;
+				}
+			}
+			break;
+			case STATE_3D2:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RW);
+					mState = STATE_3D0;
+					break;
+				}
+				PersonList ffs = Game::GetFirefighters();
+				bool ffSelected = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						ffSelected = true;
+						break;
+					}	
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					mState = STATE_3D1;
+					break;
+				}
+				ScriptInterface::BlinkActionButton("GetEquipment");
+				if (ScriptInterface::IsEquipmentMenuOpen())
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D3", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					ScriptInterface::BlinkEquipmentButton("GetFirehose");
+					mState = STATE_3D3;
+				}
+			}
+			break;
+			case STATE_3D3:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RW);
+					mState = STATE_3D0;
+					break;
+				}
+				PersonList ffs = Game::GetFirefighters();
+				bool ffSelected = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						ffSelected = true;
+						break;
+					}	
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					mState = STATE_3D1;
+					break;
+				}
+				if (ScriptInterface::IsCurrentCommand("GetFirehose"))
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D4", 0);
+					ScriptInterface::BlinkEquipmentButton(-1);
+					mState = STATE_3D4;
+				}
+			}
+			break;
+			case STATE_3D4:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RW);
+					mState = STATE_3D0;
+					break;
+				}
+				PersonList ffs = Game::GetFirefighters();
+				bool ffSelected = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						ffSelected = true;
+						break;
+					}	
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					mState = STATE_3D1;
+					break;
+				}
+			}
+			break;
+			case STATE_3E1:
+			{
+				PersonList ffs = Game::GetFirefighters();
+				bool ffWithHose = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->GetEquipment() == EQUIP_FIREHOSE)
+					{
+						ffWithHose = true;
+						break;
+					}
+				}
+				if (!ffWithHose)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					mState = STATE_3D1;
+					break;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}	
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_3E1", 0);
+				mState = STATE_3E2;
+			}
+			break;
+			case STATE_3E2:
+			{
+				PersonList ffs = Game::GetFirefighters();
+				bool ffWithHose = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->GetEquipment() == EQUIP_FIREHOSE)
+					{
+						ffWithHose = true;
+						break;
+					}
+				}
+				if (!ffWithHose)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					mState = STATE_3D1;
+					break;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_3E2", 0);
+							BlinkHydrants(true);
+							mState = STATE_3E3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_3E3:
+			{
+				BlinkHydrants(true);
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3E1", 0);
+					BlinkHydrants(false);
+					mState = STATE_3E2;
+				}
+			}
+			break;
+			case STATE_3F1:
+			{
+				PersonList ffs = Game::GetFirefighters();
+				bool ffWithHose = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->GetEquipment() == EQUIP_FIREHOSE && ffs.GetPerson(i)->GetFirehoseID() > 0)
+					{
+						ffWithHose = true;
+						break;
+					}
+				}
+				if (!ffWithHose)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					mState = STATE_3D1;
+					break;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0 && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}	
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_3F1", 0);
+				mState = STATE_3F2;
+			}
+			break;
+			case STATE_3F2:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0 && Game::GetNumSelectedGameObjects() == 1)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_3F2", 0);
+							mState = STATE_3F3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_3F3:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0 && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_3F1", 0);
+					mState = STATE_3F2;
+				}
+			}
+			break;
+			case STATE_4B2:
+			{
+				Actor rtw = Game::GetActor(mAwaitedVehicleID);
+				if (!rtw.IsValid())
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+					break;
+				}
+			}
+			break;
+			case STATE_4C1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+					break;
+				}	
+			}
+			break;
+			case STATE_4C2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+					break;
+				}
+				bool paramedicFound = false;
+				bool doctorFound = false;
+				bool RTWSelected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					Vehicle v(list.GetVehicle(i));
+					if (v.IsSelected())
+						RTWSelected = true;
+					paramedicFound = false;
+					doctorFound = false;
+					PersonList passengers = v.GetPassengers();
+					for(int j = 0; j < passengers.GetNumPersons(); j++)
+					{
+						PersonType type = passengers.GetPerson(j)->GetPersonType();
+						if (type == PT_PARAMEDIC)
+							paramedicFound = true;
+						else if (type == PT_DOCTOR)
+							doctorFound = true;
+					}
+					if (paramedicFound && doctorFound)
+						break;
+				}
+				if (!paramedicFound || !doctorFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE4C1_ALT", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+				}
+				else if (!RTWSelected)
+				{
+					mState = STATE_4C1;
+					Game::ShowHelpTextWindow("M01_STATE_4C1", 0);
+					//Game::DeactivateTrigger("target_place");
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_4B2);
+				}
+			}
+			break;
+			case STATE_4C2_ALT:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+					break;
+				}
+				bool doctorFound = false;
+				bool RTWSelected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					Vehicle v(list.GetVehicle(i));
+					if (v.IsSelected())
+						RTWSelected = true;
+					doctorFound = false;
+					PersonList passengers = v.GetPassengers();
+					for(int j = 0; j < passengers.GetNumPersons(); j++)
+					{
+						PersonType type = passengers.GetPerson(j)->GetPersonType();
+						if (type == PT_DOCTOR)
+							doctorFound = true;
+					}
+					if (doctorFound)
+						break;
+				}
+				if (!doctorFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE4C1_ALT", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+				}
+				else if (!RTWSelected)
+				{
+					mState = STATE_4C1;
+					Game::ShowHelpTextWindow("M01_STATE_4C1", 0);
+					//Game::DeactivateTrigger("target_place");
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_4B2);
+				}
+			}
+			break;
+			case STATE_4D2:
+			{
+				if (mInjured1.IsHealing())
+					Game::CloseHelpTextWindow();
+				if (!mInjured1.IsHealing())
+				{
+					PersonList doctors = Game::GetDoctors();
+					bool docSelected = false;
+					bool docNotInCar = false;
+					for(int i = 0; i < doctors.GetNumPersons(); i++)
+					{
+						if (doctors.GetPerson(i)->GetEnteredCarID() == -1)
+							docNotInCar = true;
+						if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							docSelected = true;
+							break;
+						}
+					}
+					if (!docSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4D1", 0);
+						ScriptInterface::BlinkActionButton(-1);
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_4B2);
+						mInjured1.SetHighlighted(false);
+						mState = STATE_4D1;
+						break;
+					}
+					else if (!docNotInCar)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4C1", 0);
+						mState = STATE_4C2_ALT;
+					}
+				}
+				else if (mInjured1.GetLife() >= 0.9f * mInjured1.GetMaxLife())
+				{
+					PersonList paramedics = Game::GetParamedics();
+					bool paramedicSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paramedicSelected = true;
+							break;
+						}
+					}
+					if (!paramedicSelected)
+					{
+						if (paramedics.GetNumPersons() == 0)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_4E1_ALT1", 0);
+							mState = STATE_4E1_ALT1;
+						}
+						else
+						{
+							Game::ShowHelpTextWindow("M01_STATE_4E1", 0);
+							mState = STATE_4E1;
+						}
+					}
+					else
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4E2", 0);
+						ScriptInterface::BlinkActionButton("Lift");
+						mState = STATE_4E2;
+					}
+				}
+			}
+			break;
+			case STATE_4E1:
+			{
+				if (mInjured1.IsCarried())
+				{
+					mState = STATE_4F1;
+					break;
+				}
+				PersonList paramedics = Game::GetParamedics();
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4E2", 0);
+						ScriptInterface::BlinkActionButton("Lift");
+						mState = STATE_4E2;
+						break;
+					}
+				}
+				if (paramedics.GetNumPersons() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4E1_ALT", 0);
+					mState = STATE_4E1_ALT1;
+				}
+			}
+			break;
+			case STATE_4E2:
+			{
+				if (mInjured2.IsCarried())
+				{
+					mState = STATE_4F1;
+					break;
+				}
+				if (ScriptInterface::IsCurrentCommand("Lift"))
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4E3", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					mInjured1.SetHighlighted(true);
+					mState = STATE_4E3;
+				}
+				else if (!mInjured1.IsCarried())
+				{
+					ScriptInterface::BlinkActionButton("Lift");
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4E1", 0);
+						mInjured1.SetHighlighted(false);
+						ScriptInterface::BlinkActionButton(-1);
+						mState = STATE_4E1;
+					}
+				}
+			}
+			break;
+			case STATE_4E3:
+			{
+				if (!mInjured1.IsCarried())
+				{
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4E1", 0);
+						mInjured1.SetHighlighted(false);
+						mState = STATE_4E1;
+					}
+				}	
+			}
+			break;
+			case STATE_4F1:
+			{
+				PersonList paramedics = Game::GetParamedics();
+				bool paramedicSelected = false;
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						paramedicSelected = true;
+						break;
+					}
+				}
+				if (!paramedicSelected)
+					Game::ShowHelpTextWindow("M01_STATE_4F1", 0);
+				mState = STATE_4F2;
+			}
+			break;
+			case STATE_4F2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					mState = STATE_4H2;
+					break;
+				}
+				PersonList paramedics = Game::GetParamedics();
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4F2", 0);
+						mState = STATE_4F3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_4F3:
+			{
+				if (mInjured1.GetEnteredCarID() == -1)
+				{
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4F1", 0);
+						mState = STATE_4F2;
+					}
+				}
+			}
+			break;
+			case STATE_4G1:
+			{
+				PersonList doctors = Game::GetDoctors();
+				bool doctorSelected = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						doctorSelected = true;
+						break;
+					}
+				}
+				if (!doctorSelected)
+					Game::ShowHelpTextWindow("M01_STATE_4G1", 0);
+				mState = STATE_4G2;
+			}
+			break;
+			case STATE_4G2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					mState = STATE_1I2;
+					break;
+				}
+				PersonList doctors = Game::GetDoctors();
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4G2", 0);
+						mState = STATE_4G3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_4G3:
+			{
+				PersonList doctors = Game::GetDoctors();
+				bool docSelected = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						docSelected = true;
+						break;
+					}
+				}
+				if (!docSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4G1", 0);
+					mState = STATE_4G2;
+				}
+			}
+			break;
+			case STATE_4H1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool RTWselected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured1.GetID())
+						{
+							RTWselected = true;
+							break;
+						}
+					}
+				}
+				if (!RTWselected)
+					Game::ShowHelpTextWindow("M01_STATE_4H1", 0);
+				mState = STATE_4H2;
+			}
+			break;
+			case STATE_4H2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured1.GetID())
+						{
+							Game::ShowHelpTextWindow("M01_STATE_4H2", 0);
+							ScriptInterface::BlinkActionButton("GoHome");
+							mState = STATE_4H3;
+						}
+					}
+				}
+			}
+			break;
+			case STATE_4H3:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool RTWselected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured1.GetID() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							RTWselected = true;
+							break;
+						}
+					}
+				}
+				if (!RTWselected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4H1", 0);
+					mState = STATE_4H2;
+				}
+			}
+			break;
+			case STATE_5A0:
+			{
+				VehicleList list(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list.GetNumVehicles() > 0)
+					mState = STATE_5A2;
+			}
+			break;
+			case STATE_5A1:
+			{
+				if (Mission::GetCounter(COUNTER_BURNING_HOUSES) + Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 0)
+				{
+					mState = STATE_6A0;
+				}
+				else
+				{
+					GameObjectList list = Game::GetSelectedGameObjects();
+					bool ffSelected = false;
+					for(int i = 0; i < list.GetNumObjects(); i++)
+					{
+						if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+						{
+							Person p(list.GetObject(i));
+							if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_NONE && Game::GetNumSelectedGameObjects() == 1)
+							{
+								ffSelected = true;
+								break;
+							}
+						}
+					}
+					if (!ffSelected)
+						Game::ShowHelpTextWindow("M01_STATE_5A1", 0);
+					mState = STATE_5A2;
+				}
+			}
+			break;
+			case STATE_5A2:
+			{
+				VehicleList list1(VT_FIREFIGHTERS_RW, VT_FIREFIGHTERS_RW);
+				if (list1.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RW);
+					mState = STATE_5A0;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_NONE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_5A2", 0);
+							ScriptInterface::BlinkActionButton("GetEquipment");
+							mState = STATE_5A3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_5A3:
+			{
+				bool ffSelected = false;
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_NONE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_5A1", 0);
+					mState = STATE_5A2;
+					break;
+				}
+				ScriptInterface::BlinkActionButton("GetEquipment");
+				if (ScriptInterface::IsEquipmentMenuOpen())
+				{
+					Game::ShowHelpTextWindow("M01_STATE_5A3", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					ScriptInterface::BlinkEquipmentButton("GetFirehose");
+					mState = STATE_5A4;
+				}
+			}
+			break;
+			case STATE_5A4:
+			{
+				bool ffSelected = false;
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && Game::GetNumSelectedGameObjects() == 1 && (p.GetEquipment() == EQUIP_NONE || p.IsCurrentAction("EActionGetEquipment")))
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_5A1", 0);
+					mState = STATE_5A2;
+					break;
+				}
+				ScriptInterface::BlinkEquipmentButton("GetFirehose");
+				if (ScriptInterface::IsCurrentCommand("GetFirehose"))
+				{
+					Game::ShowHelpTextWindow("M01_STATE_5A4", 0);
+					ScriptInterface::BlinkEquipmentButton(-1);
+					mState = STATE_5A5;
+				}
+			}
+			break;
+			case STATE_5B1:
+			{
+				PersonList ffs = Game::GetFirefighters();
+				bool ffWithHose = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->GetEquipment() == EQUIP_FIREHOSE)
+					{
+						ffWithHose = true;
+						break;
+					}
+				}
+				if (!ffWithHose)
+				{
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_5A1;
+					break;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_5B1", 0);
+				mState = STATE_5B2;
+			}
+			break;
+			case STATE_5B2:
+			{
+				PersonList ffs = Game::GetFirefighters();
+				bool ffWithHose = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->GetEquipment() == EQUIP_FIREHOSE)
+					{
+						ffWithHose = true;
+						break;
+					}
+				}
+				if (!ffWithHose)
+				{
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_5A1;
+					break;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_5B2", 0);
+							BlinkHydrants(true);
+							mState = STATE_5B3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_5B3:
+			{
+				BlinkHydrants(true);
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_5B1", 0);
+					BlinkHydrants(false);
+					mState = STATE_5B2;
+				}
+			}
+			break;
+			case STATE_5C1:
+			{
+				PersonList ffs = Game::GetFirefighters();
+				bool ffWithHose = false;
+				for(int i = 0; i < ffs.GetNumPersons(); i++)
+				{
+					if (ffs.GetPerson(i)->GetEquipment() == EQUIP_FIREHOSE && ffs.GetPerson(i)->GetFirehoseID() > 0)
+					{
+						ffWithHose = true;
+						break;
+					}
+				}
+				if (!ffWithHose)
+				{
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_5B1;
+					break;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_5C1", 0);
+				mState = STATE_5C2;
+			}
+			break;
+			case STATE_5C2:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_5C2", 0);
+							mState = STATE_5C3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_5C3:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0 && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_5C1", 0);
+					mState = STATE_5C2;
+				}
+			}
+			break;
+			case STATE_6A0:
+			{
+				if (Mission::GetCounter(COUNTER_INJURED_PERSONS) == 0)
+					mState = STATE_7A1;
+				else
+				{
+					if (mWorker[0].IsInjured())
+						mInjured3 = mWorker[0];
+					else if (mWorker[1].IsInjured())
+						mInjured3 = mWorker[1];
+					if (mInjured3.IsHealing())
+					{
+						if (mInjured3.GetLife() >= 0.9f * mInjured3.GetMaxLife())
+							mState = STATE_6E1;
+						else
+							mState = STATE_6D3;
+					}
+					else if (mInjured3.IsValid())
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6A1", 0);
+						ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+						ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+						mState = STATE_6A1;
+					}
+				}
+			}
+			break;
+			case STATE_6B2:
+			{
+				Actor rtw = Game::GetActor(mAwaitedVehicleID);
+				if (!rtw.IsValid())
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_6A1;
+					break;
+				}
+			}
+			break;
+			case STATE_6C1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_6A1;
+					break;
+				}	
+			}
+			break;
+			case STATE_6C2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_6A1;
+					break;
+				}
+				bool paramedicFound = false;
+				bool doctorFound = false;
+				bool RTWSelected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					Vehicle v(list.GetVehicle(i));
+					if (v.IsSelected())
+						RTWSelected = true;
+					paramedicFound = false;
+					doctorFound = false;
+					PersonList passengers = v.GetPassengers();
+					for(int j = 0; j < passengers.GetNumPersons(); j++)
+					{
+						PersonType type = passengers.GetPerson(j)->GetPersonType();
+						if (type == PT_PARAMEDIC)
+							paramedicFound = true;
+						else if (type == PT_DOCTOR)
+							doctorFound = true;
+					}
+					if (paramedicFound && doctorFound)
+						break;
+				}
+				if (!paramedicFound || !doctorFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE6C1_ALT", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_6A1;
+				}
+				else if (!RTWSelected)
+				{
+					mState = STATE_6C1;
+					Game::ShowHelpTextWindow("M01_STATE_6C1", 0);
+					//Game::DeactivateTrigger("target_place");
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_6B2);
+				}
+			}
+			break;
+			case STATE_6C2_ALT:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6A1", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_6A1;
+					break;
+				}
+				bool doctorFound = false;
+				bool RTWSelected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					Vehicle v(list.GetVehicle(i));
+					if (v.IsSelected())
+						RTWSelected = true;
+					doctorFound = false;
+					PersonList passengers = v.GetPassengers();
+					for(int j = 0; j < passengers.GetNumPersons(); j++)
+					{
+						PersonType type = passengers.GetPerson(j)->GetPersonType();
+						if (type == PT_DOCTOR)
+							doctorFound = true;
+					}
+					if (doctorFound)
+						break;
+				}
+				if (!doctorFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE6C1_ALT", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_6A1;
+				}
+				else if (!RTWSelected)
+				{
+					mState = STATE_6C1;
+					Game::ShowHelpTextWindow("M01_STATE_6C1", 0);
+					//Game::DeactivateTrigger("target_place");
+					Mission::StopTimer(TIMER_NAME_WAIT_STATE_6B2);
+				}
+			}
+			break;
+			case STATE_6D1:
+			{
+				PersonList doctors = Game::GetDoctors();
+				bool doctorSelected = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected())
+					{
+						doctorSelected = true;
+						break;
+					}
+				}
+				if (!doctorSelected)
+					Game::ShowHelpTextWindow("M01_STATE_6D1", 0);
+				mState = STATE_6D2;
+			}
+			break;
+			case STATE_6D2:
+			{
+				PersonList doctors = Game::GetDoctors();
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected())
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6D2", 0);
+						mInjured3.SetHighlighted(true);
+						mState = STATE_6D3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_6D3:
+			{
+				if (mInjured3.IsHealing())
+					Game::CloseHelpTextWindow();
+				if (!mInjured3.IsHealing())
+				{
+					PersonList doctors = Game::GetDoctors();
+					bool docSelected = false;
+					bool docNotInCar = false;
+					for(int i = 0; i < doctors.GetNumPersons(); i++)
+					{
+						if (doctors.GetPerson(i)->GetEnteredCarID() == -1)
+							docNotInCar = true;
+						if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							docSelected = true;
+							break;
+						}
+					}
+					if (!docSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6D1", 0);
+						ScriptInterface::BlinkActionButton(-1);
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_6B2);
+						mInjured3.SetHighlighted(false);
+						mState = STATE_6D1;
+						break;
+					}
+					else if (!docNotInCar)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6C1", 0);
+						mState = STATE_6C2_ALT;
+					}
+				}
+				else if (mInjured3.GetLife() >= 0.9f * mInjured3.GetMaxLife())
+				{
+					mState = STATE_6E1;
+				}
+			}
+			break;
+			case STATE_6E1:
+			{
+				PersonList paramedics = Game::GetParamedics();
+				bool paramedicSelected = false;
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected())
+					{
+						paramedicSelected = true;
+						break;
+					}
+				}
+				if (!paramedicSelected)
+				{
+					if (paramedics.GetNumPersons() == 0)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6E1_ALT1", 0);
+						mState = STATE_6E1_ALT1;
+					}
+					else
+						Game::ShowHelpTextWindow("M01_STATE_6E1", 0);
+				mState = STATE_6E2;
+				}
+			}
+			break;
+			case STATE_6E2:
+			{
+				PersonList paramedics = Game::GetParamedics();
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected())
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6E2", 0);
+						ScriptInterface::BlinkActionButton("Lift");
+						mState = STATE_6E3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_6E3:
+			{
+				if (mInjured3.IsCarried())
+				{
+					mState = STATE_6F1;
+					break;
+				}
+				if (ScriptInterface::IsCurrentCommand("Lift"))
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6E3", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					mInjured3.SetHighlighted(true);
+					mState = STATE_6E3;
+				}
+				else if (!mInjured3.IsCarried())
+				{
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6E1", 0);
+						mInjured3.SetHighlighted(false);
+						mState = STATE_6E2;
+					}
+				}
+			}
+			break;
+			case STATE_6F1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_6H2;
+					break;
+				}
+				PersonList paramedics = Game::GetParamedics();
+				bool paramedicSelected = false;
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected())
+					{
+						paramedicSelected = true;
+						break;
+					}
+				}
+				if (!paramedicSelected)
+					Game::ShowHelpTextWindow("M01_STATE_6F1", 0);
+				mState = STATE_6F2;
+			}
+			break;
+			case STATE_6F2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					ScriptInterface::BlinkActionButton(-1);
+					mState = STATE_6H3;
+					break;
+				}
+				PersonList paramedics = Game::GetParamedics();
+				for(int i = 0; i < paramedics.GetNumPersons(); i++)
+				{
+					if (paramedics.GetPerson(i)->IsSelected())
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6F2", 0);
+						mState = STATE_6F3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_6F3:
+			{
+				if (mInjured3.GetEnteredCarID() == -1)
+				{
+					VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+					if (list.GetNumVehicles() == 0)
+					{
+						Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+						ScriptInterface::BlinkActionButton(-1);
+						mState = STATE_6H2;
+						break;
+					}
+					PersonList paramedics = Game::GetParamedics();
+					bool paraSelected = false;
+					for(int i = 0; i < paramedics.GetNumPersons(); i++)
+					{
+						if (paramedics.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							paraSelected = true;
+							break;
+						}
+					}
+					if (!paraSelected)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6F1", 0);
+						mState = STATE_6F2;
+					}
+				}
+			}
+			break;
+			case STATE_6G1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					mState = STATE_6H3;
+					break;
+				}
+				PersonList doctors = Game::GetDoctors();
+				bool doctorSelected = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected())
+					{
+						doctorSelected = true;
+						break;
+					}
+				}
+				if (!doctorSelected)
+					Game::ShowHelpTextWindow("M01_STATE_6G1", 0);
+				mState = STATE_6G2;
+			}
+			break;
+			case STATE_6G2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				if (list.GetNumVehicles() == 0)
+				{
+					Game::ShowHelpTextWindow(M01_STATE_NO_RTW);
+					mState = STATE_6H3;
+					break;
+				}
+				PersonList doctors = Game::GetDoctors();
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected())
+					{
+						Game::ShowHelpTextWindow("M01_STATE_6G2", 0);
+						mState = STATE_6G3;
+						break;
+					}
+				}
+			}
+			break;
+			case STATE_6G3:
+			{
+				PersonList doctors = Game::GetDoctors();
+				bool docSelected = false;
+				for(int i = 0; i < doctors.GetNumPersons(); i++)
+				{
+					if (doctors.GetPerson(i)->IsSelected() && Game::GetNumSelectedGameObjects() == 1)
+					{
+						docSelected = true;
+						break;
+					}
+				}
+				if (!docSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6G1", 0);
+					mState = STATE_6G2;
+				}
+			}
+			break;
+			case STATE_6H1:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool RTWselected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured3.GetID())
+						{
+							RTWselected = true;
+							break;
+						}
+					}
+				}
+				if (!RTWselected)
+					Game::ShowHelpTextWindow("M01_STATE_6H1", 0);
+				mState = STATE_6H2;
+			}
+			break;
+			case STATE_6H2:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured3.GetID())
+						{
+							Game::ShowHelpTextWindow("M01_STATE_6H2", 0);
+							ScriptInterface::BlinkActionButton("GoHome");
+							mState = STATE_6H3;
+						}
+					}
+				}
+			}
+			break;
+			case STATE_6H3:
+			{
+				VehicleList list(VT_AMBULANCE_RTW, VT_AMBULANCE_RTW);
+				bool RTWselected = false;
+				for(int i = 0; i < list.GetNumVehicles(); i++)
+				{
+					PersonList transports = list.GetVehicle(i)->GetTransports();
+					for(int j = 0; j < transports.GetNumPersons(); j++)
+					{
+						if (transports.GetPerson(j)->GetID() == mInjured3.GetID() && Game::GetNumSelectedGameObjects() == 1)
+						{
+							RTWselected = true;
+							break;
+						}
+					}
+				}
+				if (!RTWselected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6H1", 0);
+					mState = STATE_6H2;
+				}
+			}
+			break;
+			case STATE_7A1:
+			{
+				if ((Mission::GetCounter(COUNTER_BURNING_HOUSES) + Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 0)
+					|| (Mission::GetCounter(COUNTER_BURNING_HOUSES) + Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 1 && mBarrel.IsBurning()))
+				{
+					mState = STATE_7C4;
+					Game::CloseHelpTextWindow();
+					break;
+				}
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_NONE)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_7A1", 0);
+				mState = STATE_7A2;
+			}
+			break;
+			case STATE_7A2:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_NONE)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_7A2", 0);
+							ScriptInterface::BlinkActionButton("GetEquipment");
+							mState = STATE_7A3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_7A3:
+			{
+				bool ffSelected = false;
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_NONE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_7A1", 0);
+					mState = STATE_7A2;
+					break;
+				}
+				ScriptInterface::BlinkActionButton("GetEquipment");
+				if (ScriptInterface::IsEquipmentMenuOpen())
+				{
+					Game::ShowHelpTextWindow("M01_STATE_7A3", 0);
+					ScriptInterface::BlinkActionButton(-1);
+					ScriptInterface::BlinkEquipmentButton("GetFirehose");
+					mState = STATE_7A4;
+				}
+			}
+			break;
+			case STATE_7A4:
+			{
+				bool ffSelected = false;
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && Game::GetNumSelectedGameObjects() == 1 && (p.GetEquipment() == EQUIP_NONE || p.IsCurrentAction("EActionGetEquipment")))
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_7A1", 0);
+					mState = STATE_7A2;
+					break;
+				}
+				ScriptInterface::BlinkEquipmentButton("GetFirehose");
+				if (ScriptInterface::IsCurrentCommand("GetFirehose"))
+				{
+					Game::ShowHelpTextWindow("M01_STATE_7A4", 0);
+					ScriptInterface::BlinkEquipmentButton(-1);
+					mState = STATE_7A5;
+				}
+			}
+			break;
+			case STATE_7B1:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_7B1", 0);
+				mState = STATE_7B2;
+			}
+			break;
+			case STATE_7B2:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_7B2", 0);
+							BlinkHydrants(true);
+							mState = STATE_7B3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_7B3:
+			{
+				BlinkHydrants(true);
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetEquipment() == EQUIP_FIREHOSE && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_7B1", 0);
+					BlinkHydrants(false);
+					mState = STATE_7B2;
+				}
+			}
+			break;
+			case STATE_7C1:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+					Game::ShowHelpTextWindow("M01_STATE_7C1", 0);
+				mState = STATE_7C2;
+			}
+			break;
+			case STATE_7C2:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_7C2", 0);
+							mState = STATE_7C3;
+							break;
+						}
+					}
+				}	
+			}
+			break;
+			case STATE_7C3:
+			{
+				GameObjectList list = Game::GetSelectedGameObjects();
+				bool ffSelected = false;
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					if (list.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.GetFirehoseID() > 0 && Game::GetNumSelectedGameObjects() == 1)
+						{
+							ffSelected = true;
+							break;
+						}
+					}
+				}
+				if (!ffSelected)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_7C1", 0);
+					mState = STATE_7C2;
+				}
+			}
+			break;
+		}
+	}
+	
+	MissionState GetMissionState()
+	{
+		// System::Log("Pulsoxy mission");
+		if(Mission::GetCounter(COUNTER_BURNING_OBJECTS) > 0 && !(Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 1 && mBarrel.IsBurning()))
+		{
+			if(!Mission::HasObjective("EXTINGUISH_FIRES"))
+			{
+                                Mission::AddObjective("EXTINGUISH_FIRES", "SUPERV_M01_OBJ04", "SUPERV_OBJ_EXTINGUISHED");
+                                Mission::PlayComment("SUPERV_M01_OBJ04");
+                        }
+				
+			if(Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+				Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", false);
+		} else
+		if(Mission::HasObjective("EXTINGUISH_FIRES") && !Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+		{
+			Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+			if (mCutscenePlayed)
+				Audio::SetMusicLevel(0.5f);
+		}
+		
+		if(Mission::GetCounter("Injured Persons") > 0)
+		{
+			if(!Mission::HasObjective("TRANSPORT_INJURED"))
+				Mission::AddObjective("TRANSPORT_INJURED", "SUPERV_M01_OBJ03", "SUPERV_OBJ_VICTIMS_TRANSPORTED");
+				
+			if(Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+				Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+		} else
+		if(Mission::HasObjective("TRANSPORT_INJURED") && !Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+		{
+			Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", true);
+		}
+
+		if (Mission::GetCounter("Civil deaths") > 1)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+		if (Mission::GetCounter(COUNTER_BURNING_HOUSES) > 0)
+		{
+			mFireOutOfControl = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+		
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+		
+		if(mCutscenePlayed && Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_SUCCEEDED;
+		}
+		
+		if(!mInjuriesHint)
+		{
+			if(Mission::GetCounter(COUNTER_DEAD_CIVILS) > 0)
+			{
+				Mission::PlayHint("HINT_M01_INJURIES");
+				Audio::SetMusicLevel(0.3f);
+				mInjuriesHint = true;
+			}
+		}
+		
+		return MISSION_RUNNING;
+	}
+	
+	void OnCollision(GameObject *a, GameObject *b)
+	{
+		if(mInCutscene && a && b)
+		{
+			GameObject *Barrel = NULL, *Debris = NULL;
+	
+			if(a->GetID() == mBarrel.GetID())
+				Barrel = a;
+			
+			if(b->GetID() == mBarrel.GetID())
+				Barrel = b;
+						
+			if(a->GetID() == mDebris[0].GetID() || a->GetID() == mDebris[1].GetID())
+				Debris = a;
+			
+			if(!Debris && b->GetID() == mDebris[0].GetID() || b->GetID() == mDebris[1].GetID())
+				Debris = b;
+			
+			if(Debris)
+			{
+				GameObject *po = NULL;
+				if(a==Debris)
+				{
+					if(b->GetType()==ACTOR_PERSON)
+						po = b;
+				} else
+				if(b==Debris)
+				{
+					if(a->GetType()==ACTOR_PERSON)
+						po = a;
+				}
+				
+				if(po && po->GetID() != mWorker[0].GetID())
+				{
+					Person p(po);
+					if(!p.IsInjured())
+						p.Injure(INJUREREASON_UNKNOWN, true);
+					if (mWorker[0].IsInjured())
+						mInjured3 = mWorker[0];
+					else if (mWorker[1].IsInjured())
+						mInjured3 = mWorker[1];
+				}
+			}
+			
+			if(!mForceApplied && Barrel && Debris)
+			{
+				mBarrel.ApplyForce(0, mBarrel.GetPosition(), Vector(-400.0f, 0, 0));
+				Vector sp = mBarrel.GetPosition();
+				sp.z += 50.0f;
+				sp.x -= 50.0f;
+				mFireSparks.SetPosition(sp);
+				mFireSparks.StartParticleEffect();
+			 	//mBarrel.StopBurning();
+			 	if(mBarrel.IsBurning())
+				{
+			 		mHeap.Burn();
+					mFireStarted = true;
+				}
+			 	mForceApplied = true;
+				Audio::PlaySample("mod:Audio/FX/destruction/csmission01_b.wav");
+				Mission::EndCutScene();
+				mCutscenePlayed = true;
+				Mission::StopTimer(TIMER_NAME_ENDCUTSCENE);
+				//Audio::SetMusicLevel(0.2f);
+			}
+		}
+	}
+	
+	bool OnStartBurning(GameObject *Obj)
+	{
+		// System::Log("Feuer Feuer");
+		if(!mFireHint && Obj->HasName("HintBurner"))
+		{
+			Mission::PlayHint("HINT_M01_FIRECONTROL");
+			Audio::SetMusicLevel(0.4f);
+			mFireHint = true;
+		}
+		
+		return true;
+	}
+	
+	bool IsInjuredPerson(int ID)
+	{
+		// System::Log("Ein Opfer?");
+		Actor a = Game::GetActor(ID);
+		return (a.GetType()==ACTOR_PERSON) && (a.HasName("Injured"));
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback *Data)
+	{
+			switch(Action)
+			{
+				case "EActionExtinguish":
+				{
+					if (mState == STATE_3F3 || mState == STATE_3F2)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4A1", 0);
+						ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+						ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+						mState = STATE_4A1;
+					}
+					else if (mState == STATE_5C3 || mState == STATE_5C2)
+					{
+						mState = STATE_6A0;
+					}
+					else if (mState == STATE_7C3 || mState == STATE_7C2)
+					{
+						mState = STATE_7C4;
+						Game::CloseHelpTextWindow();
+					}
+				}
+				break;
+				case "EActionCool":
+				{
+					if (mState == STATE_3F3 || mState == STATE_3F2)
+					{
+						Game::ShowHelpTextWindow("M01_STATE_4A1", 0);
+						ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+						ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+						mState = STATE_4A1;
+					}
+					else if (mState == STATE_5C3 || mState == STATE_5C2)
+					{
+						mState = STATE_6A0;
+					}
+					else if (mState == STATE_7C3 || mState == STATE_7C2)
+					{
+						mState = STATE_7C4;
+						Game::CloseHelpTextWindow();
+					}
+				}
+				break;
+				case "EActionLeaveCar":
+				{
+					if (mState == STATE_4C1 || mState == STATE_4C2 || mState == STATE_4C2_ALT || mState == STATE_4B3 || mState == STATE_4A3)
+					{
+						Actor car = Game::GetActor(Data->Parameters[0].iValue);
+						if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(&car);
+							if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+							{
+								Game::ShowHelpTextWindow("M01_STATE_4D1", 0);
+								ScriptInterface::BlinkActionButton(-1);
+								Mission::StopTimer(TIMER_NAME_WAIT_STATE_4B2);
+								mState = STATE_4D1;
+							}
+						}
+					}
+					else if (mState == STATE_6C1 || mState == STATE_6C2 || mState == STATE_6B3 || mState == STATE_6A3)
+					{
+						Actor car = Game::GetActor(Data->Parameters[0].iValue);
+						if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(&car);
+							if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+							{
+								Game::ShowHelpTextWindow("M01_STATE_6D1", 0);
+								ScriptInterface::BlinkActionButton(-1);
+								Mission::StopTimer(TIMER_NAME_WAIT_STATE_6B2);
+								mState = STATE_6D1;
+							}
+						}
+					}
+				}
+				break;
+				case "EActionTreatPerson":
+				{
+					Actor person = Game::GetActor(Data->Parameters[0].iValue);
+					if (person.IsValid() && person.GetType() == ACTOR_PERSON)
+					{
+						Person p(&person);
+						p.SetHighlighted(false);
+					}
+				}
+				break;
+			}
+			return ACTION_CONTINUE;
+	}
+	
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback *Data)
+	{
+		if(!mPlankRemoved && Action=="EActionPull")
+		{
+			if(Data->Parameters[0].iValue == mPlank.GetID())
+			{
+				mPlankRemoved = true;				
+				Mission::PlayHint("HINT_M01_CAUTION");
+				mState = STATE_2F1;
+				// TODO: evtl. distanz checken?
+			}
+		}/* else 
+		if(!mTreatPersonHint && Action=="EActionLeaveCar")
+		{
+			if (Data->Owner->GetType() == ACTOR_PERSON)
+			{
+				Person p(Data->Owner);
+				if (p.GetPersonType() == PT_DOCTOR)
+				{
+					Game::ShowHelpTextWindow("M01_HELP_TREAT_PERSON");
+					mTreatPersonHint = true;
+				}
+			}
+		}*/
+		switch(Action)
+		{
+			case "EActionLeaveCar":
+			{
+				if (mState == STATE_1E1 || mState == STATE_1C3)
+				{
+					Actor car = Game::GetActor(Data->Parameters[0].iValue);
+					if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(&car);
+						if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_1E1", 0);
+							ScriptInterface::BlinkActionButton(-1);
+							Mission::StopTimer(TIMER_NAME_WAIT_STATE_1C2);
+							SwitchAreaLights(&mAreaLights, false);
+							mState = STATE_1E2;
+						}
+					}
+				}
+				else if (mState == STATE_2C3 || mState == STATE_2A3 || mState == STATE_2D1)
+				{
+					Actor car = Game::GetActor(Data->Parameters[0].iValue);
+					if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(&car);
+						if (v.GetVehicleType() == VT_FIREFIGHTERS_RW)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_2E1", 0);
+							Mission::StopTimer(TIMER_NAME_WAIT_STATE_2C2);
+							SwitchAreaLights(&mAreaLights, false);
+							ScriptInterface::BlinkActionButton(-1);
+							mState = STATE_2E1;
+						}
+					}
+				}
+				else if (mState == STATE_3C1 || mState == STATE_3B3 || mState == STATE_3A5 || mState == STATE_3A4 || mState == STATE_3A3)
+				{
+					Actor car = Game::GetActor(Data->Parameters[0].iValue);
+					if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(&car);
+						if (v.GetVehicleType() == VT_FIREFIGHTERS_RW)
+						{
+							PersonList FFs = Game::GetFirefighters();
+							if (FFs.GetNumPersons() < 3)
+							{
+								Game::ShowHelpTextWindow("M01_STATE_3C1_ALT", 0);
+								ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+								ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+								ScriptInterface::BlinkActionButton(-1);
+								Game::EnableUpdateMissionOnPause(false);
+								mState = STATE_3A1;
+							}
+							else
+							{
+								Game::ShowHelpTextWindow("M01_STATE_3D1", 0);
+								ScriptInterface::BlinkActionButton(-1);
+								Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+								Game::EnableUpdateMissionOnPause(false);
+								mState = STATE_3D1;
+							}
+						}
+					}
+				}
+				else if (mState == STATE_4C1 || mState == STATE_4C2 || mState == STATE_4B3 || mState == STATE_4A3)
+				{
+					Actor car = Game::GetActor(Data->Parameters[0].iValue);
+					if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(&car);
+						if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+						{
+							Game::ShowHelpTextWindow("M01_STATE_4D1", 0);
+							ScriptInterface::BlinkActionButton(-1);
+							Mission::StopTimer(TIMER_NAME_WAIT_STATE_4B2);
+							mState = STATE_4D1;
+						}
+					}
+				}
+				else if (mState == STATE_6C1 || mState == STATE_6C2 || mState == STATE_6B3 || mState == STATE_6A3)
+				{
+					Actor car = Game::GetActor(Data->Parameters[0].iValue);
+					if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+					{
+						Vehicle v(&car);
+						if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+						{
+							PersonList paramedics = Game::GetParamedics();
+							PersonList doctors = Game::GetDoctors();
+							if (paramedics.GetNumPersons() == 0 || doctors.GetNumPersons())
+							{
+								Game::ShowHelpTextWindow("M01_STATE_6C1_ALT", 0);
+								ScriptInterface::BlinkActionButton(-1);
+								Mission::StopTimer(TIMER_NAME_WAIT_STATE_6B2);
+								mState = STATE_6A1;
+							}
+							else
+							{
+								Game::ShowHelpTextWindow("M01_STATE_6D1", 0);
+								ScriptInterface::BlinkActionButton(-1);
+								Mission::StopTimer(TIMER_NAME_WAIT_STATE_6B2);
+								mState = STATE_6D1;
+							}
+						}
+					}
+				}
+				else if (mState == STATE_1F1_ALT2)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_1F1", 0);
+					mState = STATE_1F1;
+
+				}
+				else if (mState == STATE_4E1_ALT2)
+				{
+					mState = STATE_4E1;
+				}
+				else if (mState == STATE_6E1_ALT2)
+				{
+					mState = STATE_6E1;
+				}
+			}
+			break;
+			case "EActionLiftPerson":
+			{
+				if (mState == STATE_1F3 || mState == STATE_1F2)
+				{
+					if (Data->Parameters[0].iValue == mInjured2.GetID())
+					{
+						mState = STATE_1G1;
+						//ScriptInterface::BlinkActionButton("EnterCar");
+						ScriptInterface::BlinkActionButton(-1);
+						mInjured2.SetHighlighted(false);
+					}
+				}
+				else if (mState == STATE_4E3 || mState == STATE_4E2)
+				{
+					if (Data->Parameters[0].iValue == mInjured1.GetID())
+					{
+						mState = STATE_4F1;
+						ScriptInterface::BlinkActionButton(-1);
+						mInjured1.SetHighlighted(false);
+					}
+				}
+				else if (mState == STATE_6E3 || mState == STATE_6E4)
+				{
+					if (Data->Parameters[0].iValue == mInjured3.GetID())
+					{
+						mState = STATE_6F1;
+						ScriptInterface::BlinkActionButton(-1);
+						mInjured3.SetHighlighted(false);
+					}
+				}
+			}
+			break;
+			case "EActionEnterCar":
+			{
+				if (mState == STATE_1G3 || mState == STATE_1G2)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_PARAMEDIC)
+					{
+						if (p.IsCarryingPerson())
+						{
+							Person carried = p.GetCarried();
+							if (carried.GetID() == mInjured2.GetID())
+								mState = STATE_1H1;
+						}
+					}
+				}
+				else if (mState == STATE_1H3 || mState == STATE_1H2)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_DOCTOR)
+					{
+						Actor car = Game::GetActor(Data->Parameters[0].iValue);
+						if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(&car);
+							if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+							{
+								PersonList transports = v.GetTransports();
+								for(int i = 0; i < transports.GetNumPersons(); i++)
+								{
+									if (transports.GetPerson(i)->GetID() == mInjured2.GetID())
+									{
+										mState = STATE_1I1;
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+				else if (mState == STATE_4F3 || mState == STATE_4F2)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_PARAMEDIC)
+					{
+						if (p.IsCarryingPerson())
+						{
+							Person carried = p.GetCarried();
+							if (carried.GetID() == mInjured1.GetID())
+								mState = STATE_4G1;
+						}
+					}
+				}
+				else if (mState == STATE_4G3 || mState == STATE_4G2)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_DOCTOR)
+					{
+						Actor car = Game::GetActor(Data->Parameters[0].iValue);
+						if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(&car);
+							if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+							{
+								PersonList transports = v.GetTransports();
+								for(int i = 0; i < transports.GetNumPersons(); i++)
+								{
+									if (transports.GetPerson(i)->GetID() == mInjured1.GetID())
+									{
+										mState = STATE_4H1;
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+				else if (mState == STATE_6F3 || mState == STATE_6F2)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_PARAMEDIC)
+					{
+						if (p.IsCarryingPerson())
+						{
+							Person carried = p.GetCarried();
+							if (carried.GetID() == mInjured3.GetID())
+								mState = STATE_6G1;
+						}
+					}
+				}
+				else if (mState == STATE_6G3 || mState == STATE_6G2)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_DOCTOR)
+					{
+						Actor car = Game::GetActor(Data->Parameters[0].iValue);
+						if (car.IsValid() && car.GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(&car);
+							if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+							{
+								PersonList transports = v.GetTransports();
+								for(int i = 0; i < transports.GetNumPersons(); i++)
+								{
+									if (transports.GetPerson(i)->GetID() == mInjured3.GetID())
+									{
+										mState = STATE_6H1;
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			break;
+			case "EActionPull":
+			{
+				if (mState == STATE_2E3 || mState == STATE_2E2)
+				{
+					if (Data->Parameters[0].iValue == mPlank.GetID())
+					{
+						ScriptInterface::BlinkActionButton(-1);
+						mState = STATE_2F1;
+					}
+				}
+			}
+			break;
+			case "EActionFindPath":
+			{
+				if (mState == STATE_2F3 && Data->Owner->GetType() == ACTOR_PERSON)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL && p.IsPulling())
+					{
+						Game::ShowHelpTextWindow("M01_STATE_2F3", 0);
+						mState = STATE_2F4;
+					}
+				}
+			}
+			break;
+			case "EActionStopPulling":
+			{
+				if (mState == STATE_2F3 || mState == STATE_2F4)
+				{
+					Person p(Data->Owner);
+					if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL)
+					{
+						//Game::ShowHelpTextWindow("M01_STATE_3A1", 0);
+						//ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+						ScriptInterface::BlinkActionButton(-1);
+						Game::CloseHelpTextWindow();
+						//mState = STATE_3A1;
+					}
+				}
+			}
+			break;
+			case "EActionGetEquipment":
+			{
+				if (mState == STATE_3D3 || mState == STATE_3D4 || mState == STATE_3D1 || mState == STATE_3D2)
+				{
+					if (Data->Parameters[1].iValue == EQUIP_FIREHOSE)
+						mState = STATE_3E1;
+					else
+						Game::ShowHelpTextWindow("M01_STATE_3D4_ALT", 0);
+				}
+				else if (mState == STATE_5A5 || mState == STATE_5A4)
+				{
+					if (Data->Parameters[1].iValue == EQUIP_FIREHOSE)
+						mState = STATE_5B1;
+					else
+					{
+						Game::ShowHelpTextWindow("M01_STATE_5A4_ALT", 0);
+						mState = STATE_5A2;
+					}
+				}
+				else if (mState == STATE_7A5 || mState == STATE_7A4)
+				{
+					if (Data->Parameters[1].iValue == EQUIP_FIREHOSE)
+						mState = STATE_7B1;
+					else
+					{
+						Game::ShowHelpTextWindow("M01_STATE_7A4_ALT", 0);
+						mState = STATE_7A2;
+					}
+				}
+			}
+			break;
+			case "EActionUseEquipment":
+			{
+				if ((mState == STATE_3E3 || mState == STATE_3E2) && Data->Parameters[2].iValue == EQUIP_FIREHOSE)
+				{
+					BlinkHydrants(false);
+					mState = STATE_3F1;
+				}
+				else if ((mState == STATE_5B3 || mState == STATE_5B2) && Data->Parameters[2].iValue == EQUIP_FIREHOSE)
+				{
+					BlinkHydrants(false);
+					mState = STATE_5C1;
+				}
+				else if ((mState == STATE_7B3 || mState == STATE_7B2) && Data->Parameters[2].iValue == EQUIP_FIREHOSE)
+				{
+					BlinkHydrants(false);
+					mState = STATE_7C1;
+				}
+			}
+			break;
+		}
+		
+		return ACTION_CONTINUE;
+	}
+
+	void OnPostCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		// System::Log("PostCommand");
+		switch(Cmd_)
+		{
+			case "GoHome":
+			{
+				if (mState <= STATE_1I3)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+					{
+						PersonList transports = v.GetTransports();
+						for(int i = 0; i < transports.GetNumPersons(); i++)
+						{
+							if (transports.GetPerson(i)->GetID() == mInjured2.GetID())
+							{
+								ScriptInterface::BlinkNavigatorFireDepartmentButton(true);
+								ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+								ScriptInterface::BlinkActionButton(-1);
+								Game::ShowHelpTextWindow("M01_STATE_2A1", 0);
+								mState = STATE_2A1;
+								break;
+							}
+						}
+					}
+				}
+				else if (mState <= STATE_4H3)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+					{
+						PersonList transports = v.GetTransports();
+						for(int i = 0; i < transports.GetNumPersons(); i++)
+						{
+							if (transports.GetPerson(i)->GetID() == mInjured1.GetID())
+							{
+								if ((Mission::GetCounter(COUNTER_BURNING_HOUSES) + Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 0)
+									|| (Mission::GetCounter(COUNTER_BURNING_HOUSES) + Mission::GetCounter(COUNTER_BURNING_OBJECTS) == 1 && mBarrel.IsBurning()))
+								{
+									mState = STATE_6A0;
+									Game::CloseHelpTextWindow();
+								}
+								else
+									mState = STATE_5A1;
+								ScriptInterface::BlinkActionButton(-1);
+								break;
+							}
+						}
+					}
+				}
+				else if (mState == STATE_6H3)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() <= VT_AMBULANCE_RTW)
+					{
+						PersonList transports = v.GetTransports();
+						for(int i = 0; i < transports.GetNumPersons(); i++)
+						{
+							if (transports.GetPerson(i)->GetID() == mInjured3.GetID())
+							{
+								mState = STATE_7A1;
+								ScriptInterface::BlinkActionButton(-1);
+								break;
+							}
+						}
+					}
+				}
+			}
+			break;
+			case "MoveTo":
+			{
+				if (mState == STATE_1C2 && Caller_->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+					{
+						Mission::StartSingleTimer(TIMER_NAME_WAIT_STATE_1C2, 15.f);
+						mState = STATE_1C3;
+					}
+				}
+				else if (mState == STATE_2C2 && Caller_->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() == VT_FIREFIGHTERS_RW)
+					{
+						Mission::StartSingleTimer(TIMER_NAME_WAIT_STATE_2C2, 15.f);
+						mState = STATE_2C3;
+					}
+				}
+				else if (mState == STATE_3B2 && Caller_->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() == VT_FIREFIGHTERS_RW)
+					{
+						Mission::StartSingleTimer(TIMER_NAME_WAIT_STATE_3B2, 15.f);
+						mState = STATE_3B3;
+					}
+				}
+				else if (mState == STATE_4B2 && Caller_->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+					{
+						Mission::StartSingleTimer(TIMER_NAME_WAIT_STATE_4B2, 15.f);
+						mState = STATE_4B3;
+					}
+				}
+				else if (mState == STATE_6B2 && Caller_->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Caller_);
+					if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+					{
+						Mission::StartSingleTimer(TIMER_NAME_WAIT_STATE_6B2, 15.f);
+						mState = STATE_6B3;
+					}
+				}
+			}
+			break;
+			case "EnterCar":
+			{
+				if (mState == STATE_1E2)
+				{
+					Person p(Caller_);
+					if (p.GetCarried().GetID() == mInjured2.GetID() && !p.IsClassified())
+						p.PushActionUnloadPerson(ACTION_NEWLIST);
+				}
+			}
+			break;
+		}
+	}
+
+	void OnVehicleBrowserOpened(OrderGroupID group)
+	{
+		// System::Log("M01: state: %d", mState);
+		if (mState <= STATE_1A2 && group == GROUP_AMBULANCE)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_1A2", 0);
+			ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+			ScriptInterface::BlinkAmbulanceVehicle("RTW", true);
+			Mission::StopTimer("HelpRTW");
+			mState = STATE_1A3;
+		}
+		else if (mState == STATE_2A1 && group == GROUP_FIREDEPT)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_2A2", 0);
+			ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+			ScriptInterface::BlinkFireDepartmentVehicle("RW", true);
+			mState = STATE_2A2;
+		}
+		else if (mState == STATE_3A1 && group == GROUP_FIREDEPT)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_3A2", 0);
+			ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+			ScriptInterface::BlinkFireDepartmentVehicle("RW", true);
+			mState = STATE_3A2;
+		}
+		else if (mState == STATE_4A1 && group == GROUP_AMBULANCE)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_4A2", 0);
+			ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+			ScriptInterface::BlinkAmbulanceVehicle("RTW", true);
+			mState = STATE_4A2;
+		}
+		else if (mState == STATE_6A1 && group == GROUP_AMBULANCE)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_6A2", 0);
+			ScriptInterface::BlinkNavigatorAmbulanceButton(false);
+			ScriptInterface::BlinkAmbulanceVehicle("RTW", true);
+			mState = STATE_6A2;
+		}
+	}
+
+	void OnVehicleBrowserClicked(VehicleType type)
+	{
+		//System::Log("M01: state: %d", mState);
+		if (mState == STATE_1A3 && type == VT_AMBULANCE_RTW)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_1A3", 0);
+			SwitchAreaLights(&mAreaLights, true);
+			ScriptInterface::BlinkAmbulanceVehicle("RTW", false);
+			ScriptInterface::BlinkSendVehicleTargetButton(true);
+			mState = STATE_1A4;
+		}
+		else if (mState == STATE_2A2 && type == VT_FIREFIGHTERS_RW)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_2A3", 0);
+			ScriptInterface::BlinkFireDepartmentVehicle("RW", false);
+			ScriptInterface::BlinkSendVehicleTargetButton(true);
+			mState = STATE_2A3;
+		}
+		else if (mState == STATE_3A2 && type == VT_FIREFIGHTERS_RW)
+		{
+			Game::EnableUpdateMissionOnPause(true);
+			Game::ShowHelpTextWindow("M01_STATE_3A3", 0);
+			ScriptInterface::BlinkFireDepartmentVehicle("RW", false);
+			//ScriptInterface::BlinkSendVehicleTargetButton(true);
+			ScriptInterface::BlinkCrewButton("FIREFIGHTER", true);
+			mState = STATE_3A3;
+		}
+		else if (mState == STATE_4A2 && type == VT_AMBULANCE_RTW)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_4A3", 0);
+			ScriptInterface::BlinkAmbulanceVehicle("RTW", false);
+			ScriptInterface::BlinkSendVehicleTargetButton(true);
+			mState = STATE_4A3;
+		}
+		else if (mState == STATE_6A2 && type == VT_AMBULANCE_RTW)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_6A3", 0);
+			ScriptInterface::BlinkAmbulanceVehicle("RTW", false);
+			ScriptInterface::BlinkSendVehicleTargetButton(true);
+			mState = STATE_6A3;
+		}
+	}
+	
+	void OnSquadVehicleArrived(Vehicle *v)
+	{
+		/*if (!mEmptyCarHint)
+		{
+			mEmptyCarHint =  true;
+			Mission::StartSingleTimer("emptycar", 15.f);
+		}*/
+		/*if(!mFirstVehicleArrival)
+			return;*/
+		if (mState == STATE_1A4 && v->GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			SwitchAreaLights(&mAreaLights, false);
+			mAwaitedVehicleID = v->GetID();
+			ScriptInterface::BlinkSendVehicleTargetButton(false);
+			Game::CloseHelpTextWindow();
+			if (v->GetNumActions() == 1)
+			{
+				mState = STATE_1B1;
+				Game::ShowHelpTextWindow("M01_STATE_1B1", 0); // TODO Text
+			}
+		}
+		else if (mState == STATE_2A3 && v->GetVehicleType() == VT_FIREFIGHTERS_RW)
+		{
+			mAwaitedVehicleID = v->GetID();
+			ScriptInterface::BlinkSendVehicleTargetButton(false);
+			Game::CloseHelpTextWindow();
+			if (v->GetNumActions() == 1)
+			{
+				mState = STATE_2B1;
+				Game::ShowHelpTextWindow("M01_STATE_2B1", 0); // TODO Text
+			}
+		}
+		else if ((mState == STATE_3A5 || mState == STATE_3A4 ||mState == STATE_3A3)  && v->GetVehicleType() == VT_FIREFIGHTERS_RW)// && v->GetNumPassengers() >= 3)
+		{
+			mAwaitedVehicleID = v->GetID();
+			ScriptInterface::BlinkCrewButton("FIREFIGHTER", false);
+			ScriptInterface::BlinkSendVehicleTargetButton(false);
+			Game::CloseHelpTextWindow();
+			if (v->GetNumActions() == 1)
+			{
+				mState = STATE_3B1;
+				Game::ShowHelpTextWindow("M01_STATE_3B1", 0); // TODO Text
+			}
+		}
+		else if (mState == STATE_4A3 && v->GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			mAwaitedVehicleID = v->GetID();
+			ScriptInterface::BlinkSendVehicleTargetButton(false);
+			Game::CloseHelpTextWindow();
+			if (v->GetNumActions() == 1)
+			{
+				mState = STATE_4B1;
+				Game::ShowHelpTextWindow("M01_STATE_4B1", 0); // TODO Text
+			}
+		}
+		else if (mState == STATE_6A3 && v->GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			mAwaitedVehicleID = v->GetID();
+			ScriptInterface::BlinkSendVehicleTargetButton(false);
+			Game::CloseHelpTextWindow();
+			if (v->GetNumActions() == 1)
+			{
+				mState = STATE_6B1;
+				Game::ShowHelpTextWindow("M01_STATE_6B1", 0); // TODO Text
+			}
+		}
+		else if (mState == STATE_1F1_ALT1 && v->GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			PersonList paramedics = Game::GetParamedics();
+			if (paramedics.GetNumPersons() > 0)
+			{
+				mAwaitedVehicleID = v->GetID();
+				Game::ShowHelpTextWindow("M01_STATE_1F1_ALT2", 0);
+				mState = STATE_1F1_ALT2;
+			}
+			else
+				Game::ShowHelpTextWindow("M01_STATE_1F1_ALT1", 0);
+		}
+		else if (mState == STATE_4E1_ALT1 && v->GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			PersonList paramedics = Game::GetParamedics();
+			if (paramedics.GetNumPersons() > 0)
+			{
+				mAwaitedVehicleID = v->GetID();
+				Game::ShowHelpTextWindow("M01_STATE_4E1_ALT2", 0);
+				mState = STATE_4E1_ALT2;
+			}
+			else
+				Game::ShowHelpTextWindow("M01_STATE_4E1_ALT1", 0);
+		}
+		else if (mState == STATE_6E1_ALT1 && v->GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			PersonList paramedics = Game::GetParamedics();
+			if (paramedics.GetNumPersons() > 0)
+			{
+				mAwaitedVehicleID = v->GetID();
+				Game::ShowHelpTextWindow("M01_STATE_6E1_ALT2", 0);
+				mState = STATE_6E1_ALT2;
+			}
+			else
+				Game::ShowHelpTextWindow("M01_STATE_6E1_ALT1", 0);
+		}
+		/*if (v->GetNumActions() > 1) // zum Ziel geordert
+			return;
+		
+		Game::ShowHelpTextWindow("M01_HELP_HOME");
+		mFirstVehicleArrival = false;*/
+	}
+
+	void OnJumpToEntryPoint()
+	{
+		// System::Log("M01 jump to entrypoint state: %d", mState);
+		if (mState == STATE_1B1 || mState == STATE_1A4)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_1C1", 0);
+			mState = STATE_1C1;
+		}
+		else if (mState == STATE_2B1 || mState == STATE_2A3)
+		{
+			Game::ShowHelpTextWindow("M01_STATE_2C1", 0);
+			mState = STATE_2C1;
+		}
+	}
+
+	bool OnUnitSelected(GameObject *Unit_)
+	{
+		if ((mState == STATE_1C1 || mState == STATE_1B1) && Unit_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Unit_);
+			if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_1C2", 0);
+				SwitchAreaLights(&mAreaLights, true);
+				mState = STATE_1C2;
+			}
+		}
+		else if (mState == STATE_2C1 && Unit_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Unit_);
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_RW)
+			{
+				PersonList passengers = v.GetPassengers();
+				bool ffFound = false;
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					if (passengers.GetPerson(i)->GetPersonType() == PT_FIREFIGHTER_NORMAL)
+					{
+						ffFound = true;
+						break;
+					}
+				}
+				if (!ffFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE_2D1_ALT", 0);
+					mState = STATE_2A1;
+				}
+				else
+				{
+					Game::ShowHelpTextWindow("M01_STATE_2C2", 0);
+					SwitchAreaLights(&mAreaLights, true);
+					mState = STATE_2C2;
+				}
+			}
+		}
+		else if (mState == STATE_2E1 && Unit_->GetType() == ACTOR_PERSON)
+		{
+			Person p(Unit_);
+			if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_2E2", 0);
+				ScriptInterface::BlinkActionButton("Pull");
+				mState = STATE_2E2;
+			}
+		}
+		else if (mState == STATE_3B1 && Unit_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Unit_);
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_RW)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_3B2", 0);
+				SwitchAreaLights(&mAreaLights, true);
+				mState = STATE_3B2;
+			}
+		}
+		else if (mState == STATE_3D1 && Unit_->GetType() == ACTOR_PERSON)
+		{
+			Person p(Unit_);
+			if (p.GetPersonType() == PT_FIREFIGHTER_NORMAL)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_3D2", 0);
+				ScriptInterface::BlinkActionButton("GetEquipment");
+				mState = STATE_3D2;
+			}
+		}
+		else if (mState == STATE_4B1 && Unit_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Unit_);
+			if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_4B2", 0);
+				SwitchAreaLights(&mAreaLights, true);
+				mState = STATE_4B2;
+			}
+		}
+		else if (mState == STATE_4C1 && Unit_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Unit_);
+			if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			{
+				bool paramedicFound = false;
+				bool doctorFound = false;
+				PersonList passengers = v.GetPassengers();
+				for(int j = 0; j < passengers.GetNumPersons(); j++)
+				{
+					PersonType type = passengers.GetPerson(j)->GetPersonType();
+					if (type == PT_PARAMEDIC)
+						paramedicFound = true;
+					else if (type == PT_DOCTOR)
+						doctorFound = true;
+				}
+				if (!paramedicFound || !doctorFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE4C1_ALT", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_4A1;
+				}
+				else
+				{
+					Game::ShowHelpTextWindow("M01_STATE_4C2", 0);
+					ScriptInterface::BlinkActionButton("EmptyCar");
+					mState = STATE_4C2;
+				}
+			}
+		}
+		else if (mState == STATE_4D1 && Unit_->GetType() == ACTOR_PERSON)
+		{
+			Person p(Unit_);
+			if (p.GetPersonType() == PT_DOCTOR)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_4D2", 0);
+				mInjured1.SetHighlighted(true);
+				mState = STATE_4D2;
+			}
+		}
+		else if (mState == STATE_4E1 && Unit_->GetType() == ACTOR_PERSON)
+		{
+			Person p(Unit_);
+			if (p.GetPersonType() == PT_PARAMEDIC)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_4E2", 0);
+				mState = STATE_4E2;
+			}
+		}
+		else if (mState == STATE_6B1 && Unit_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Unit_);
+			if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			{
+				Game::ShowHelpTextWindow("M01_STATE_6B2", 0);
+				SwitchAreaLights(&mAreaLights, true);
+				mState = STATE_6B2;
+			}
+		}
+		else if (mState == STATE_6C1 && Unit_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Unit_);
+			if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+			{
+				bool paramedicFound = false;
+				bool doctorFound = false;
+				PersonList passengers = v.GetPassengers();
+				for(int j = 0; j < passengers.GetNumPersons(); j++)
+				{
+					PersonType type = passengers.GetPerson(j)->GetPersonType();
+					if (type == PT_PARAMEDIC)
+						paramedicFound = true;
+					else if (type == PT_DOCTOR)
+						doctorFound = true;
+				}
+				if (!paramedicFound || !doctorFound)
+				{
+					Game::ShowHelpTextWindow("M01_STATE6C1_ALT", 0);
+					ScriptInterface::BlinkNavigatorAmbulanceButton(true);
+					ScriptInterface::BlinkNavigatorFireDepartmentButton(false);
+					mState = STATE_6A1;
+				}
+				else
+				{
+					Game::ShowHelpTextWindow("M01_STATE_6C2", 0);
+					ScriptInterface::BlinkActionButton("EmptyCar");
+					mState = STATE_6C2;
+				}
+			}
+		}
+		return true;
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		// System::Log("Trigger");
+		switch(Trigger)
+		{
+			case "move_plank":
+			{
+				if (Collider->GetType() == ACTOR_PERSON)
+				{
+					Person p(Collider);
+					if (p.GetRole() == ROLE_SQUAD)
+					{
+						Mission::PlayHint("HINT_M01_MOVE_PLANK");
+						//Mission::StartSingleTimer("help_plank", 20.f);
+						Game::DeactivateTrigger("move_plank");
+					}
+				}
+				else if (Collider->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Collider);
+					if (!v.IsCivilCar())
+					{
+						Mission::PlayHint("HINT_M01_MOVE_PLANK");
+						//Mission::StartSingleTimer("help_plank", 20.f);
+						Game::DeactivateTrigger("move_plank");
+					}
+				}
+			}
+			break;
+			case "target_church":
+			{
+				if (mState == STATE_1A2 || mState == STATE_1A4 || mState == STATE_1C2 || mState == STATE_1C3)
+				{
+					if (Collider->GetID() == mAwaitedVehicleID)
+					{
+						mAwaitedVehicleID = -1;
+						mState = STATE_1D1;
+						//Game::DeactivateTrigger("target_place");
+						SwitchAreaLights(&mAreaLights, false);
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_1C2);
+					}
+				}
+				else if (mState == STATE_2A3 || mState == STATE_2C2 || mState == STATE_2C3)
+				{
+					if (Collider->GetID() == mAwaitedVehicleID)
+					{
+						mAwaitedVehicleID = -1;
+						mState = STATE_2D1;
+						Game::ShowHelpTextWindow("M01_STATE_2D1", 0);
+						//Game::DeactivateTrigger("target_place");
+						SwitchAreaLights(&mAreaLights, false);
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_2C2);
+						ScriptInterface::BlinkActionButton("EmptyCar");
+					}
+				}
+				else if (mState == STATE_3A5 || mState == STATE_3A4 || mState == STATE_3A3 || mState == STATE_3B2 || mState == STATE_3B3)
+				{
+					if (Collider->GetID() == mAwaitedVehicleID)
+					{
+						mAwaitedVehicleID = -1;
+						mState = STATE_3C1;
+						Game::ShowHelpTextWindow("M01_STATE_3C1", 0);
+						//Game::DeactivateTrigger("target_place");
+						SwitchAreaLights(&mAreaLights, false);
+						ScriptInterface::BlinkActionButton("EmptyCar");
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_3B2);
+					}
+				}
+				else if (mState == STATE_4A3 || mState == STATE_4B2 || mState == STATE_4B3)
+				{
+					if (Collider->GetID() == mAwaitedVehicleID)
+					{
+						mAwaitedVehicleID = -1;
+						//mState = STATE_4C1;
+						Vehicle v(Collider);
+						if (!v.IsSelected())
+						{
+							Game::ShowHelpTextWindow("M01_STATE_4C1", 0);
+							mState = STATE_4C1;
+						}
+						else
+						{
+							Game::ShowHelpTextWindow("M01_STATE_4C2", 0);
+							mState = STATE_4C2;
+						}
+						//Game::DeactivateTrigger("target_place");
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_4B2);
+						SwitchAreaLights(&mAreaLights, false);
+					}
+				}
+				else if (mState == STATE_6A3 || mState == STATE_6B2 || mState == STATE_6B3)
+				{
+					if (Collider->GetID() == mAwaitedVehicleID)
+					{
+						mAwaitedVehicleID = -1;
+						//mState = STATE_6C1;
+						Vehicle v(Collider);
+						if (!v.IsSelected())
+						{
+							Game::ShowHelpTextWindow("M01_STATE_6C1", 0);
+							mState = STATE_6C1;
+						}
+						else
+						{
+							Game::ShowHelpTextWindow("M01_STATE_6C2", 0);
+							mState = STATE_6C2;
+						}
+						//Game::DeactivateTrigger("target_place");
+						Mission::StopTimer(TIMER_NAME_WAIT_STATE_6B2);
+						SwitchAreaLights(&mAreaLights, false);
+					}
+				}
+			}
+			break;
+		}
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M01_FAIL01";
+		if (mFireOutOfControl)
+			return "SUPERV_M01_FAIL02";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f && mFireStarted)
+			return "SUPERV_M01_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f
+			&& Mission::GetCounter(COUNTER_DEAD_CIVILS) == 1)
+			return "SUPERV_M01_RES02";
+
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+	
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0101;
+		System::Log("Serialize to %s",Serializer->GetName());
+		Serializer->Write(Version);
+		System::Log("Serialize to %s",Serializer->GetName());
+		
+		Serializer->Write(mBarrel);
+		Serializer->Write(mPlank);
+		Serializer->Write(mRainStrength);
+		Serializer->Write(mRainVolume);
+		Serializer->Write(mPlankRemoved);
+		Serializer->Write(mFireHint);
+		Serializer->Write(mInjuriesHint);
+		Serializer->Write(mFirstVehicleArrival);
+		Serializer->Write(mDebris[0]);
+		Serializer->Write(mDebris[1]);
+		Serializer->Write(mInCutscene);
+		Serializer->Write(mWorker[0]);
+		Serializer->Write(mWorker[1]);
+		Serializer->Write(mWorkerPath[0]);
+		Serializer->Write(mWorkerPath[1]);
+		Serializer->Write(mEmptyCarHint);
+		Serializer->Write(mTreatPersonHint);
+		Serializer->Write(mTooManyDied);
+		Serializer->Write(mFireOutOfControl);
+		Serializer->Write(mCutscenePlayed);
+		Serializer->Write(mInjured2);
+		Serializer->Write(mInjured1);
+		Serializer->Write(mInjured3);
+		Serializer->Write((int)mState);
+		Serializer->Write(mAwaitedVehicleID);
+		Serializer->Write(mForceApplied);
+		Serializer->Write(mFireSparks);
+		Serializer->Write(mHeap);
+		Serializer->Write(mAreaLights);
+		Serializer->Write(mHydrants);
+		Serializer->Write(mFireStarted);
+		
+		return true;
+	}
+	
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		System::Log("Serialize from %s",Serializer->GetName());
+		Serializer->Read(Version);
+		
+		Serializer->Read(mBarrel);
+		Serializer->Read(mPlank);
+		Serializer->Read(mRainStrength);
+		Serializer->Read(mRainVolume);
+		mPlankRemoved = Serializer->ReadBool();
+		mFireHint = Serializer->ReadBool();
+		mInjuriesHint = Serializer->ReadBool();
+		mFirstVehicleArrival = Serializer->ReadBool();
+		Serializer->Read(mDebris[0]);
+		Serializer->Read(mDebris[1]);
+		mInCutscene = Serializer->ReadBool();
+		Serializer->Read(mWorker[0]);
+		Serializer->Read(mWorker[1]);
+		Serializer->Read(mWorkerPath[0]);
+		Serializer->Read(mWorkerPath[1]);
+		mEmptyCarHint = Serializer->ReadBool();
+		mTreatPersonHint = Serializer->ReadBool();
+		mTooManyDied = Serializer->ReadBool();
+		mFireOutOfControl = Serializer->ReadBool();
+		mCutscenePlayed = Serializer->ReadBool();
+		Serializer->Read(mInjured2);
+		Serializer->Read(mInjured1);
+		Serializer->Read(mInjured3);
+		int state = 0;
+		Serializer->Read(state);
+		mState = (State)state;
+		Serializer->Read(mAwaitedVehicleID);
+		Serializer->Read(mForceApplied);
+		Serializer->Read(mFireSparks);
+		Serializer->Read(mHeap);
+		Serializer->Read(mAreaLights);
+		Serializer->Read(mHydrants);
+		if (Version >= 0x0101)
+			mFireStarted = Serializer->ReadBool();
+		
+		mLastPlankHintTime = System::GetTickCount() - PLANKHINTOFFSET;
+		
+		return true;
+	}
+};

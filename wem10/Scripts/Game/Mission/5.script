@@ -1,0 +1,998 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 5
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+/* TODO
+	- Musik und Sounds
+*/
+
+enum DealerState
+{
+	DS_MISSING,
+	DS_NORMAL,
+	DS_INJURED,
+	DS_DEAD,
+	DS_FLEEING,
+	DS_MOLOTOV,
+	DS_TRANSPORTED,
+};
+
+const int	MAX_HINTS = 6;					// maximale Anzahl Hints
+const int	MAX_BURNING_HOUSES = 9;			// ->fail
+const int	MAX_BURNING_HOUSES_HINT5 = 5;	// brennen soviel Häuser -> Hint abspielen
+const int	MAX_INNOCENT_ARRESTED = 3;		// ->fail
+const int	MAX_CIVIL_DEATHS = 5;			// ->fail
+const int	MAX_NUM_DEALERS = 5;			// Anzahl Dealer
+const int	INDEX_MOLOTOV_DEALER = 2;
+const float ACTION_RADIUS_MOLOTOV = 1500.f;	// Radius in dem Gangster mit Molotov nach Polizisten schaut
+const float THROW_RADIUS_MOLOTOV = 2500.f;	// Radius in dem Gangster mit Molotov nach Haus zum Bewerfen sucht
+const float TIME_TRAIN_START = 30.f;		// Zeit bis Zug startet
+const float TIME_TRAIN_WAIT = 35.f;			// Zeit die Zug wartet
+const float TIME_DEAL = 8.f;				// Zeit in der sie verhandeln
+const float CHANCE_FOR_DEAL = 1.f;		// Chance, das ein Kunde zum Dealer geht
+const float MOLOTOV_POWER = 150000.f;			// Stärke der Molotov-Cocktails
+const float MOLOTOV_MINDISTANCE = 1000.f;	// Ziel musst mindestens soweit entfernt sein
+const float LIGHTS_DISTANCE = 400.f;		// Abstand der Lichter für inneren Bereich
+
+const char NAME_DEALER[]					= "dealer";
+const char NAME_HOT_GIRL[]					= "hotgirl";
+const char NAME_CUSTOMER[]					= "customer";
+const char NAME_CIVILIAN[]					= "Unnamed";
+const char NAME_FLIGHTPATH1[]				= "flight1";
+const char NAME_FLIGHTPATH2[]				= "flight2";
+const char NAME_FLIGHTPATH3[]				= "flight3";
+const char NAME_FLIGHTPATH4[]				= "flight4";
+const char NAME_FLIGHTPATH5[]				= "flight5";
+const char NAME_AREA_OUTER[]				= "outer";
+const char NAME_AREA_INNER[]				= "inner";
+const char NAME_TRIGGER_DEALER1[]			= "tdealer1";
+const char NAME_TRIGGER_DEALER2[]			= "tdealer2";
+const char NAME_TRIGGER_DEALER3[]			= "tdealer3";
+const char NAME_TRIGGER_DEALER4[]			= "tdealer4";
+const char NAME_TRIGGER_DEALER5[]			= "tdealer5";
+const char NAME_TRAIN[]						= "train";
+const char NAME_WAGGON[]					= "waggon";
+const char NAME_TRAINPATH1[]				= "trainpath1";
+const char NAME_TRAINPATH2[]				= "trainpath2";
+const char NAME_AREA_LIGHTS[]				= "al_inner";
+const char ANIM_USEOBJMID[]					= "useobjmid";
+const char ANIM_DEALERWAITING2[]			= "dealerwaiting2";
+
+const char COUNTER_BURNING_HOUSES[]			= "Burning Houses";
+
+const char OBJECTIVE_TRANSPORT_INJURED[]	= "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]		= "EXTINGUISH_FIRES";
+const char OBJECTIVE_TRANSPORT_DEALER[]		= "M05_TRANSPORT_DEALER";
+
+const char HINT_DEALERS_MIGHT_FLEE[]		= "HINT_M05_DEALERS_MIGHT_FLEE";
+const char HINT_DEALER_FLEEING[]			= "HINT_M05_DEALERS_FLEEING";
+const char HINT_MOLOTOV_THROWN[]			= "HINT_M05_MOLOTOV_THROWN";
+const char HINT_CUSTOMER_ARRESTED[]			= "HINT_M05_CUSTOMER_ARRESTED";
+const char HINT_INNOCENT_ARRESTED[]			= "HINT_M05_INNOCENT_ARRESTED";
+const char HINT_HOUSES_BURNING[]			= "HINT_M05_HOUSES_BURNING";
+
+const char NAME_TRANSITION_MOLOTOV[]		= "cs_molotov";
+const float TIME_TRANSITION_MOLOTOV			= 3.0f;
+
+const char TIMER_NAME_UPDATE_DEALERS[]		= "t_dealers";
+const float TIMER_TIME_UPDATE_DEALERS		= 2.f;
+const char TIMER_NAME_REACTIVATE_TRIGGER1[]	= "t_reactivate1";
+const char TIMER_NAME_REACTIVATE_TRIGGER2[]	= "t_reactivate2";
+const char TIMER_NAME_REACTIVATE_TRIGGER3[]	= "t_reactivate3";
+const char TIMER_NAME_REACTIVATE_TRIGGER4[]	= "t_reactivate4";
+const char TIMER_NAME_REACTIVATE_TRIGGER5[]	= "t_reactivate5";
+const float TIMER_TIME_REACTIVATE_TRIGGER	= 25.f;
+const char TIMER_NAME_UPDATE_AREAS[]		= "t_areas";
+const float TIMER_TIME_UPDATE_AREAS			= 1.f;
+const char TIMER_NAME_END_CUTSCENE[]		= "t_endcutscene";
+const float TIMER_TIME_END_CUTSCENE			= 5.0f;
+
+object Mission05 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mFireOutOfControl;
+	bool mDealerEscaped;
+	bool mDealerKilled;
+	bool mCivilShot;
+	bool mTooManyInnocentArrested;
+	int mNumInnocentArrested;
+	Person mDealers[MAX_NUM_DEALERS];
+	DealerState mDealerStates[MAX_NUM_DEALERS];
+	int mNumDealers;
+	bool mDealersFleeing;
+	Vehicle mTrain;
+	float mDealerWaitTimes[MAX_NUM_DEALERS];
+	GameObjectList mAreaLights;
+	bool mTooManyDied;
+	GameObject mTarget;
+
+	Mission05()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mFireOutOfControl = false;
+		mDealerEscaped = false;
+		mDealerKilled = false;
+		mCivilShot = false;
+		mTooManyInnocentArrested = false;
+		mNumInnocentArrested = 0;
+		mNumDealers = 0;
+		mDealersFleeing = false;
+		mTooManyDied = false;
+
+		for(int i = 0; i < MAX_NUM_DEALERS; i++)
+			mDealerStates[i] = DS_MISSING;
+		mDealerWaitTimes[0] = 180.f;	// Zeit die Dealer 1 wartet bevor er flieht
+		mDealerWaitTimes[1] = 180.f;
+		mDealerWaitTimes[2] = 0.f;
+		mDealerWaitTimes[3] = 60.f;
+		mDealerWaitTimes[4] = 120.f;
+	}
+
+	~Mission05()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M05 Start");
+
+		Game::CreateAreaLightsAroundTrigger(NAME_AREA_INNER, NAME_AREA_LIGHTS, LIGHTS_DISTANCE );
+		mAreaLights = Game::GetGameObjects(NAME_AREA_LIGHTS);
+		
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		int count = 0;
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasNamePrefix(NAME_DEALER) && mNumDealers < MAX_NUM_DEALERS)
+			{
+				mDealers[mNumDealers] = Person(obj);
+				mDealerStates[mNumDealers++] = DS_NORMAL;
+			}
+
+			if ( obj->GetType() == ACTOR_VEHICLE )
+			{
+				Vehicle v(obj);
+				if ( v.HasName(NAME_TRAIN) )
+				{
+					mTrain = v;
+					mTrain.PushActionWait(ACTION_NEWLIST, TIME_TRAIN_START);
+					mTrain.PushActionUsePath(ACTION_APPEND, NAME_TRAINPATH1, 0.f);
+				}
+			}
+		}
+		GameObjectList waggons(NAME_WAGGON);
+		for (int i = 0; i < waggons.GetNumObjects(); i++)
+		{
+			mTrain.AddTrainWaggon(waggons.GetObject(i));
+		}
+		Game::DeactivateTrigger(NAME_AREA_INNER);
+		Game::DeactivateTrigger(NAME_AREA_OUTER);
+
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_DEALERS, TIMER_TIME_UPDATE_DEALERS);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_AREAS, TIMER_TIME_UPDATE_AREAS);
+
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_DEALER);
+
+		Audio::PlaySoundtrack("5", 0.0f);
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionThrowMolotov":
+					ShowHint(2);
+				break;
+			case "EActionLinkPerson":
+				{
+					System::Log("M05: Link person");
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.IsValid())
+					{
+						if (target.HasName(NAME_CUSTOMER))
+							ShowHint(3);
+						else if (target.HasName(NAME_HOT_GIRL) || target.HasName(NAME_CIVILIAN))
+						{
+							mNumInnocentArrested++;
+							ShowHint(4);
+						}
+					}
+					break;
+				}
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionArrestPerson":
+				{
+					Actor target = Game::GetActor(Data_->Parameters[0].iValue);
+					if (target.IsValid())
+					{
+						if (target.HasName(NAME_CUSTOMER) || target.HasName(NAME_HOT_GIRL))
+						{
+							if (!Data_->Parameters[1].bValue)
+							{
+								// start fighting
+								Data_->Owner->PushActionArrest(ACTION_INSERTAFTERFIRST, &target, true);
+								return ACTION_SKIP;
+							}
+						}
+						else if (target.HasNamePrefix(NAME_DEALER) && mHintCounter[1] == 0)
+						{
+							StartFlight();
+							Mission::StopTimer(TIMER_NAME_UPDATE_AREAS);
+							//return ACTION_SKIP;
+						}
+					}
+					
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void OnPostCommand(const char *Cmd_, GameObject *Caller_, Actor *Target_)
+	{
+		switch(Cmd_)
+		{
+			case "SearchLightOn":
+				{
+					if (Caller_->GetType() != ACTOR_VEHICLE)
+						return;
+					Vehicle v(Caller_);
+					GameObject followtarget = v.GetFollowTarget();
+					if (followtarget.IsValid() && followtarget.HasNamePrefix(NAME_DEALER) && v.DistanceXY(followtarget) < 1000.f)
+					{
+						StartFlight();
+						Mission::StopTimer(TIMER_NAME_UPDATE_AREAS);
+					}
+					break;
+				}
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path, GameObject *Obj)
+	{
+		System::Log("M05: End of path: %s",Path);
+		switch(Path)
+		{
+			case NAME_FLIGHTPATH1:
+			case NAME_FLIGHTPATH2:
+			case NAME_FLIGHTPATH3:
+			case NAME_FLIGHTPATH4:
+			case NAME_FLIGHTPATH5:
+				mDealerEscaped = true;
+				break;
+			case NAME_TRAINPATH1:
+				mTrain.PushActionWait(ACTION_APPEND, TIME_TRAIN_WAIT);
+				mTrain.PushActionUsePath(ACTION_APPEND, NAME_TRAINPATH2, 0.f);
+				return PATH_STOP;
+				break;
+		}
+		return PATH_DEFAULT;
+	}
+
+	void OnCameraTransitionFinished()
+	{			
+		if (mTarget.IsValid() && mDealerStates[INDEX_MOLOTOV_DEALER] == DS_MOLOTOV)
+		{
+			mDealers[INDEX_MOLOTOV_DEALER].PushActionTurnTo(ACTION_NEWLIST, mTarget.GetPosition(), 0.4f);
+			mDealers[INDEX_MOLOTOV_DEALER].PushActionThrowMolotov(ACTION_APPEND, mTarget.GetPosition(), MOLOTOV_POWER);
+			mDealers[INDEX_MOLOTOV_DEALER].SetFleeing(true);
+			Mission::StartSingleTimer(TIMER_NAME_END_CUTSCENE, TIMER_TIME_END_CUTSCENE);
+		}		
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_NAME_END_CUTSCENE:
+			{
+				mDealers[INDEX_MOLOTOV_DEALER].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+				mDealerStates[INDEX_MOLOTOV_DEALER] = DS_FLEEING;
+				mDealers[INDEX_MOLOTOV_DEALER].SetNeverResort(true);
+				System::Log("End cutscene");
+				Mission::HideBlackBars();
+				Mission::EndCutScene(true, 2.0f);
+				Mission::StartIntervalTimer(TIMER_NAME_UPDATE_DEALERS, TIMER_TIME_UPDATE_DEALERS);
+			}
+			break;
+			case TIMER_NAME_UPDATE_DEALERS:	
+			{
+				int numDealers = 0;
+				int numTransported = 0;
+				for(int i = 0; i < MAX_NUM_DEALERS; i++)
+				{
+					if (mDealerStates[i] == DS_MISSING)
+						continue;
+					if (!mDealers[i].IsValid() && mDealerStates[i] != DS_TRANSPORTED)
+					{
+						// abtransportiert
+						mDealerStates[i] = DS_TRANSPORTED;
+						continue;
+					}
+					if (mDealers[i].IsInjured() && mDealerStates[i] != DS_INJURED && mDealerStates[i] != DS_DEAD)
+					{
+						if (!mDealers[i].IsDead())
+							mDealerStates[i] = DS_INJURED;
+						else
+						{
+							mDealerStates[i] = DS_DEAD;
+							mDealerKilled = true;
+						}
+						continue;
+					}
+					if (mDealerStates[i] == DS_MOLOTOV)
+					{
+						if (mDealers[i].IsPoliceSquadInRange(ACTION_RADIUS_MOLOTOV))
+						{
+							mTarget = mDealers[i].GetClosestObjectInRange(THROW_RADIUS_MOLOTOV, MOLOTOV_MINDISTANCE, ACTOR_HOUSE | ACTOR_OPEN_HOUSE);
+							if (mTarget.IsValid())
+							{								
+								mDealers[i].SetBehaviour(BEHAVIOUR_GANGSTER_CIVILARMED);
+								mDealers[i].PushActionTurnTo(ACTION_NEWLIST, mTarget.GetPosition(), 0.4f);
+								mDealers[i].SetNeverResort(false);
+								Mission::StartCutScene(false);
+								Mission::ShowBlackBars();
+								Vector pos, dir;
+								float yaw, pitch, roll;
+								Camera::GetTransition(NAME_TRANSITION_MOLOTOV, pos, yaw, pitch, roll);
+								Camera::StartTransition(mDealers[i].GetPosition(), pos.z, yaw, pitch, roll, TIME_TRANSITION_MOLOTOV);
+								Mission::StopTimer(TIMER_NAME_UPDATE_DEALERS);
+								Audio::SetMusicLevel(0.6f);
+							}
+						}
+					}
+					numDealers++;
+					if (mDealerStates[i] == DS_TRANSPORTED)
+						numTransported++;
+				}
+				if (numDealers > 0 && numDealers == numTransported)
+				{
+					Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_DEALER, true);
+					Mission::PlayComment("SUPERV_M05_OBJ01");
+					Mission::StopTimer(TIMER_NAME_UPDATE_DEALERS);
+				}
+			}
+			break;
+			case TIMER_NAME_REACTIVATE_TRIGGER1:
+			{
+				Game::ActivateTrigger(NAME_TRIGGER_DEALER1);
+			}
+			break;
+			case TIMER_NAME_REACTIVATE_TRIGGER2:
+			{
+				Game::ActivateTrigger(NAME_TRIGGER_DEALER2);
+			}
+			break;
+			case TIMER_NAME_REACTIVATE_TRIGGER3:
+			{
+				Game::ActivateTrigger(NAME_TRIGGER_DEALER3);
+			}
+			break;
+			case TIMER_NAME_REACTIVATE_TRIGGER4:
+			{
+				Game::ActivateTrigger(NAME_TRIGGER_DEALER4);
+			}
+			break;
+			case TIMER_NAME_REACTIVATE_TRIGGER5:
+			{
+				Game::ActivateTrigger(NAME_TRIGGER_DEALER5);
+			}
+			break;
+			case TIMER_NAME_UPDATE_AREAS:
+			{
+				if (mHintCounter[0] == 0)
+				{
+					GameObjectList list;
+					Game::CollectObstaclesOnTrigger(NAME_AREA_OUTER, list, ACTOR_VEHICLE|ACTOR_PERSON);
+					if (list.ContainsPoliceSquad())
+						ShowHint(0);
+				}
+				if (mHintCounter[1] == 0)
+				{
+					GameObjectList list;
+					Game::CollectObstaclesOnTrigger(NAME_AREA_INNER, list, ACTOR_VEHICLE|ACTOR_PERSON);
+					if (list.ContainsPoliceSquad())
+					{
+						StartFlight();
+					}
+				}
+				if (mHintCounter[0] > 0 && mHintCounter[1] > 0)
+					Mission::StopTimer(TIMER_NAME_UPDATE_AREAS);
+			}
+			break;
+		}
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+		switch(Trigger)
+		{
+			case NAME_AREA_OUTER:
+				if (Collider->GetType() == ACTOR_PERSON)
+				{
+					Person p(Collider);
+					PersonType type = p.GetPersonType();
+					if (p.GetRole() == ROLE_SQUAD && (type == PT_POLICEMEN || type == PT_SHOOTER || type == PT_SHARPSHOOTER || type == PT_PSYCHOLOGIST || type == PT_SCOUT))
+					{
+						if (mHintCounter[0] == 0)
+						{
+							Game::DeactivateTrigger(NAME_AREA_OUTER);
+							ShowHint(0);
+						}
+					}
+				}
+				else if (Collider->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Collider);
+					VehicleType type = v.GetVehicleType();
+					if (type == VT_POLICE_GTW || type == VT_POLICE_MTW || type == VT_POLICE_PHC || type == VT_POLICE_STW || type == VT_POLICE_SW || type == VT_POLICE_WAW)
+					{
+						if (mHintCounter[0] == 0)
+						{
+							Game::DeactivateTrigger(NAME_AREA_OUTER);
+							ShowHint(0);
+						}
+					}
+				}
+				break;
+			case NAME_AREA_INNER:
+				if (Collider->GetType() == ACTOR_PERSON)
+				{
+					Person p(Collider);
+					PersonType type = p.GetPersonType();
+					if (p.GetRole() == ROLE_SQUAD && (type == PT_POLICEMEN || type == PT_SHOOTER || type == PT_SHARPSHOOTER || type == PT_PSYCHOLOGIST || type == PT_SCOUT))
+					{
+						if (mHintCounter[1] == 0)
+						{
+							StartFlight();
+						}
+					}
+				}
+				else if (Collider->GetType() == ACTOR_VEHICLE)
+				{
+					Vehicle v(Collider);
+					VehicleType type = v.GetVehicleType();
+					if (type == VT_POLICE_GTW || type == VT_POLICE_MTW || type == VT_POLICE_PHC || type == VT_POLICE_STW || type == VT_POLICE_SW || type == VT_POLICE_WAW)
+					{
+						if (mHintCounter[1] == 0)
+						{
+							StartFlight();
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_DEALER1:
+				{
+					if (Collider->GetType() == ACTOR_PERSON && Collider->HasName(NAME_CUSTOMER))
+					{
+						Game::DeactivateTrigger(NAME_TRIGGER_DEALER1);
+						Mission::StartSingleTimer(TIMER_NAME_REACTIVATE_TRIGGER1, TIMER_TIME_REACTIVATE_TRIGGER);
+						if (GetRandomValue(0, 101) > (int)(100.f*CHANCE_FOR_DEAL))
+							return;
+						Person p(Collider);
+						int i = 0;
+						for(; i < MAX_NUM_DEALERS; i++)
+						{
+							if (mDealerStates[i] == DS_NORMAL && mDealers[i].IsValid() && mDealers[i].IsCollidingWithTrigger(NAME_TRIGGER_DEALER1))
+								break;
+						}
+						if (i == MAX_NUM_DEALERS)
+						{
+							System::Log("M05: No dealer found in trigger1 %s", Trigger);
+							return;
+						}
+						if (!p.IsInjured() && !p.IsArrested()
+							&& !mDealers[i].IsInjured() && !mDealers[i].IsArrested())
+						{
+							p.PushActionMove(ACTION_NEWLIST, &mDealers[i], TARGET_TOUCHPERSON);
+							p.PushActionTurnTo(ACTION_APPEND, &mDealers[i], 0.5f);
+							p.PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID); // Animation
+							p.PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionWait(ACTION_NEWLIST, 5.f);
+							mDealers[i].PushActionTurnTo(ACTION_APPEND, &p, 0.5f);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID);
+							mDealers[i].PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_DEALERWAITING2);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_DEALER2:
+				{
+					if (Collider->GetType() == ACTOR_PERSON && Collider->HasName(NAME_CUSTOMER))
+					{
+						Game::DeactivateTrigger(NAME_TRIGGER_DEALER2);
+						Mission::StartSingleTimer(TIMER_NAME_REACTIVATE_TRIGGER2, TIMER_TIME_REACTIVATE_TRIGGER);
+						if (GetRandomValue(0, 101) > (int)(100.f*CHANCE_FOR_DEAL))
+							return;
+						Person p(Collider);
+						int i = 0;
+						for(; i < MAX_NUM_DEALERS; i++)
+						{
+							if (mDealerStates[i] == DS_NORMAL && mDealers[i].IsValid() && mDealers[i].IsCollidingWithTrigger(NAME_TRIGGER_DEALER2))
+								break;
+						}
+						if (i == MAX_NUM_DEALERS)
+						{
+							System::Log("M05: No dealer found in trigger2 %s", Trigger);
+							return;
+						}
+						if (!p.IsInjured() && !p.IsArrested()
+							&& !mDealers[i].IsInjured() && !mDealers[i].IsArrested())
+						{
+							p.PushActionMove(ACTION_NEWLIST, &mDealers[i], TARGET_TOUCHPERSON);
+							p.PushActionTurnTo(ACTION_APPEND, &mDealers[i], 0.5f);
+							p.PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID); // Animation
+							p.PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionWait(ACTION_NEWLIST, 5.f);
+							mDealers[i].PushActionTurnTo(ACTION_APPEND, &p, 0.5f);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID);
+							mDealers[i].PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_DEALERWAITING2);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_DEALER3:
+				{
+					if (Collider->GetType() == ACTOR_PERSON && Collider->HasName(NAME_CUSTOMER))
+					{
+						Game::DeactivateTrigger(NAME_TRIGGER_DEALER3);
+						Mission::StartSingleTimer(TIMER_NAME_REACTIVATE_TRIGGER3, TIMER_TIME_REACTIVATE_TRIGGER);
+						if (GetRandomValue(0, 101) > (int)(100.f*CHANCE_FOR_DEAL))
+							return;
+						Person p(Collider);
+						int i = 0;
+						for(; i < MAX_NUM_DEALERS; i++)
+						{
+							if (mDealerStates[i] == DS_NORMAL && mDealers[i].IsValid() && mDealers[i].IsCollidingWithTrigger(NAME_TRIGGER_DEALER3))
+								break;
+						}
+						if (i == MAX_NUM_DEALERS)
+						{
+							System::Log("M05: No dealer found in trigger3 %s", Trigger);
+							return;
+						}
+						if (!p.IsInjured() && !p.IsArrested()
+							&& !mDealers[i].IsInjured() && !mDealers[i].IsArrested())
+						{
+							p.PushActionMove(ACTION_NEWLIST, &mDealers[i], TARGET_TOUCHPERSON);
+							p.PushActionTurnTo(ACTION_APPEND, &mDealers[i], 0.5f);
+							p.PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID); // Animation
+							p.PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionWait(ACTION_NEWLIST, 5.f);
+							mDealers[i].PushActionTurnTo(ACTION_APPEND, &p, 0.5f);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID);
+							mDealers[i].PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_DEALERWAITING2);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_DEALER4:
+				{
+					if (Collider->GetType() == ACTOR_PERSON && Collider->HasName(NAME_CUSTOMER))
+					{
+						Game::DeactivateTrigger(NAME_TRIGGER_DEALER4);
+						Mission::StartSingleTimer(TIMER_NAME_REACTIVATE_TRIGGER4, TIMER_TIME_REACTIVATE_TRIGGER);
+						if (GetRandomValue(0, 101) > (int)(100.f*CHANCE_FOR_DEAL))
+							return;
+						Person p(Collider);
+						int i = 0;
+						for(; i < MAX_NUM_DEALERS; i++)
+						{
+							if (mDealerStates[i] == DS_NORMAL && mDealers[i].IsValid() && mDealers[i].IsCollidingWithTrigger(NAME_TRIGGER_DEALER4))
+								break;
+						}
+						if (i == MAX_NUM_DEALERS)
+						{
+							System::Log("M05: No dealer found in trigger4 %s", Trigger);
+							return;
+						}
+						if (!p.IsInjured() && !p.IsArrested()
+							&& !mDealers[i].IsInjured() && !mDealers[i].IsArrested())
+						{
+							p.PushActionMove(ACTION_NEWLIST, &mDealers[i], TARGET_TOUCHPERSON);
+							p.PushActionTurnTo(ACTION_APPEND, &mDealers[i], 0.5f);
+							p.PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID); // Animation
+							p.PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionWait(ACTION_NEWLIST, 5.f);
+							mDealers[i].PushActionTurnTo(ACTION_APPEND, &p, 0.5f);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID);
+							mDealers[i].PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_DEALERWAITING2);
+						}
+					}
+				}
+				break;
+			case NAME_TRIGGER_DEALER5:
+				{
+					if (Collider->GetType() == ACTOR_PERSON && Collider->HasName(NAME_CUSTOMER))
+					{
+						Game::DeactivateTrigger(NAME_TRIGGER_DEALER5);
+						Mission::StartSingleTimer(TIMER_NAME_REACTIVATE_TRIGGER5, TIMER_TIME_REACTIVATE_TRIGGER);
+						if (GetRandomValue(0, 101) > (int)(100.f*CHANCE_FOR_DEAL))
+							return;
+						Person p(Collider);
+						int i = 0;
+						for(; i < MAX_NUM_DEALERS; i++)
+						{
+							if (mDealerStates[i] == DS_NORMAL && mDealers[i].IsValid() && mDealers[i].IsCollidingWithTrigger(NAME_TRIGGER_DEALER5))
+								break;
+						}
+						if (i == MAX_NUM_DEALERS)
+						{
+							System::Log("M05: No dealer found in trigger5 %s", Trigger);
+							return;
+						}
+						if (!p.IsInjured() && !p.IsArrested()
+							&& !mDealers[i].IsInjured() && !mDealers[i].IsArrested())
+						{
+							p.PushActionMove(ACTION_NEWLIST, &mDealers[i], TARGET_TOUCHPERSON);
+							p.PushActionTurnTo(ACTION_APPEND, &mDealers[i], 0.5f);
+							p.PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID); // Animation
+							p.PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionWait(ACTION_NEWLIST, 5.f);
+							mDealers[i].PushActionTurnTo(ACTION_APPEND, &p, 0.5f);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_USEOBJMID);
+							mDealers[i].PushActionWait(ACTION_APPEND, TIME_DEAL);
+							mDealers[i].PushActionSwitchAnim(ACTION_APPEND, ANIM_DEALERWAITING2);
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	bool OnHit(GameObject *Shooter_, GameObject *HitObject_, Vector *HitPoint_)
+	{
+		if (Shooter_->GetType() == ACTOR_PERSON && HitObject_->GetType() == ACTOR_PERSON)
+		{
+			Person s(Shooter_);
+			Person h(HitObject_);
+			if (s.GetRole() == ROLE_SQUAD && h.GetRole() == ROLE_CIVILIAN && h.GetHealth() < 0.1f * h.GetMaxHealth())
+			{
+				h.Injure(INJUREREASON_SHOT);
+				mCivilShot = true;
+			}
+		}
+		return true;
+	}
+
+	void OnHeliHasReachedFollowTarget(GameObject *heli_, GameObject *target_)
+	{
+		if (mDealersFleeing || heli_->GetType() != ACTOR_VEHICLE)
+			return;
+		Vehicle v(heli_);
+		if (target_->HasNamePrefix(NAME_DEALER) && v.IsSearchlightOn())
+		{
+			StartFlight();
+			Mission::StopTimer(TIMER_NAME_UPDATE_AREAS);
+		}
+	}
+
+	void SwitchAreaLights(GameObjectList *lights_, bool enable_)
+	{
+		for ( int i=0; i<lights_->GetNumObjects(); ++i )
+		{
+			if ( enable_ )
+				lights_->GetObject(i)->Show();
+			else
+				lights_->GetObject(i)->Hide();
+		}
+	}
+
+	void StartFlight()
+	{
+		System::Log("Start flight");
+		Game::DeactivateTrigger(NAME_AREA_OUTER);
+		Game::DeactivateTrigger(NAME_AREA_INNER);
+		Game::DeactivateTrigger(NAME_TRIGGER_DEALER1);
+		Game::DeactivateTrigger(NAME_TRIGGER_DEALER2);
+		Game::DeactivateTrigger(NAME_TRIGGER_DEALER3);
+		Game::DeactivateTrigger(NAME_TRIGGER_DEALER4);
+		Game::DeactivateTrigger(NAME_TRIGGER_DEALER5);
+		Mission::StopTimer(TIMER_NAME_REACTIVATE_TRIGGER1);
+		Mission::StopTimer(TIMER_NAME_REACTIVATE_TRIGGER2);
+		Mission::StopTimer(TIMER_NAME_REACTIVATE_TRIGGER3);
+		Mission::StopTimer(TIMER_NAME_REACTIVATE_TRIGGER4);
+		Mission::StopTimer(TIMER_NAME_REACTIVATE_TRIGGER5);
+		ShowHint(1);
+		/*int index0 = GetRandomValue(0, MAX_NUM_DEALERS);
+		int index1 = index0;
+		do {
+			index1 = GetRandomValue(0, MAX_NUM_DEALERS);
+		} while(index1 == index0);*/
+		int index0 = INDEX_MOLOTOV_DEALER;
+		int index1 = 3;
+		for(int i = 0; i < MAX_NUM_DEALERS; i++)
+		{
+			if (mDealers[i].IsValid() && mDealerStates[i] == DS_NORMAL && !mDealers[i].IsHidden() && !mDealers[i].IsFlagSet(OF_HIDDEN) && !mDealers[i].IsInjured() && !mDealers[i].IsArrested())
+			{
+				//mDealers[i].SetRole(ROLE_GANGSTER);
+				mDealers[i].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+				if (i == index0)// || i == index1)
+				{
+					mDealerStates[i] = DS_MOLOTOV;
+					System::Log("M05: Dealer %d is a molotov thrower!", i);
+				}
+				else
+				{
+					mDealerStates[i] = DS_FLEEING;
+					mDealers[i].SetEquipment(EQUIP_PISTOL);
+					System::Log("M05: Dealer %d has a gun!", i);
+				}
+				mDealers[i].SetFleeing(true);
+				mDealers[i].PushActionWait(ACTION_INSERT, mDealerWaitTimes[i]);
+			}
+		}
+		SwitchAreaLights(&mAreaLights, false);
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int res = Math::rand();
+		res %= max - min;
+		return res + min;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M05: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+		case 0:
+			Mission::PlayHint(HINT_DEALERS_MIGHT_FLEE);
+			Audio::SetMusicLevel(0.1f);
+			break;
+		case 1:
+			Mission::PlayHint(HINT_DEALER_FLEEING);
+			break;
+		case 2:
+			Mission::PlayHint(HINT_MOLOTOV_THROWN);
+			break;
+		case 3:
+			Mission::PlayHint(HINT_CUSTOMER_ARRESTED);
+			break;
+		case 4:
+			Mission::PlayHint(HINT_INNOCENT_ARRESTED);
+			break;
+		case 5:
+			Mission::PlayHint(HINT_HOUSES_BURNING);
+			Audio::SetMusicLevel(0.2f);
+			break;
+		}
+	}
+
+	MissionState GetMissionState()
+	{
+		if (Mission::GetCounter("Burning Objects") > 0 || Mission::GetCounter(COUNTER_BURNING_HOUSES) > 0)
+		{
+			if (!Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE) )
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRE1");
+			}
+		}
+		else
+		{			
+			if(Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+				Audio::SetMusicLevel(0.3f);
+			}
+		}
+
+		if (Mission::GetCounter("Injured Persons") + Mission::GetCounter("Dead Persons") == 0)
+		{			
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+			}
+		}
+		else
+		{
+			if (!Mission::HasObjective(OBJECTIVE_TRANSPORT_INJURED) )
+				Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+			
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		if (mDealerEscaped || mDealerKilled || mCivilShot)
+		{
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Civil deaths") > = MAX_CIVIL_DEATHS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (mHintCounter[5] == 0 && Mission::GetCounter(COUNTER_BURNING_HOUSES) >= MAX_BURNING_HOUSES_HINT5)
+			ShowHint(5);
+
+		if (Mission::GetCounter(COUNTER_BURNING_HOUSES) >= MAX_BURNING_HOUSES)
+		{
+			mFireOutOfControl = true;
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if (mNumInnocentArrested >= MAX_INNOCENT_ARRESTED)
+		{
+			mTooManyInnocentArrested = true;
+			Audio::SetMusicLevel(0.4f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+		if (mDealerEscaped)
+			return "M05_DEALER_ESCAPED";
+		if (mDealerKilled)
+			return "M05_DEALER_KILLED";
+		if (mCivilShot)
+			return "M05_CIVIL_SHOT";
+		if (mTooManyInnocentArrested)
+			return "M05_INNOCENT_ARRESTED";
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mDealerEscaped)
+			return "SUPERV_M05_FAIL01";
+		if (mDealerKilled)
+			return "SUPERV_M05_FAIL02";
+		if (mCivilShot)
+			return "SUPERV_M05_FAIL03";
+		if (mTooManyInnocentArrested)
+			return "SUPERV_M05_FAIL04";
+		if (mFireOutOfControl)
+			return "SUPERV_M05_FAIL05";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		System::Log("Efficiency: %d", (int)(scoring->Efficiency*100.0f));
+		System::Log("ThingsResult: %d", (int)(scoring->ThingsResult*100.0f));
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M05_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->ThingsResult <= 0.5f)
+			return "SUPERV_M05_RES02";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		return 1.0f;
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mFireOutOfControl);
+		serializer_->Write(mDealerEscaped);
+		serializer_->Write(mDealerKilled);
+		serializer_->Write(mCivilShot);
+		serializer_->Write(mTooManyInnocentArrested);
+		serializer_->Write(mNumInnocentArrested);
+		serializer_->Write((int)MAX_NUM_DEALERS);
+		for(int i = 0; i < MAX_NUM_DEALERS; i++)
+		{
+			serializer_->Write(mDealers[i]);
+			serializer_->Write((int)mDealerStates[i]);
+			serializer_->Write(mDealerWaitTimes[i]);
+		}
+		serializer_->Write(mNumDealers);
+		serializer_->Write(mDealersFleeing);
+		serializer_->Write(mTrain);
+		serializer_->Write(mAreaLights);
+		serializer_->Write(mTooManyDied);
+		serializer_->Write(mTarget);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mFireOutOfControl = serializer_->ReadBool();
+		mDealerEscaped = serializer_->ReadBool();
+		mDealerKilled = serializer_->ReadBool();
+		mCivilShot = serializer_->ReadBool();
+		mTooManyInnocentArrested = serializer_->ReadBool();
+		serializer_->Read(mNumInnocentArrested);
+		int numDealers = 0;
+		serializer_->Read(numDealers);
+		if (numDealers != MAX_NUM_DEALERS)
+		{
+			System::Log("M05: num dealers differs from savegame");
+			return false;
+		}
+		for(int i = 0; i < MAX_NUM_DEALERS; i++)
+		{
+			serializer_->Read(mDealers[i]);
+			int temp;
+			serializer_->Read(temp);
+			mDealerStates[i] = (DealerState)temp;
+			serializer_->Read(mDealerWaitTimes[i]);
+		}
+		serializer_->Read(mNumDealers);
+		mDealersFleeing = serializer_->ReadBool();
+		serializer_->Read(mTrain);
+		serializer_->Read(mAreaLights);
+		mTooManyDied = serializer_->ReadBool();
+		serializer_->Read(mTarget);
+
+		return true;
+	}
+
+};

@@ -1,0 +1,27 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script harry_fahr_den_wagen_vor
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+object harry : CommandScript
+{
+	harry()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+	void PushActions (GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->SetUserData(childID);
+	}
+};

@@ -1,0 +1,133 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script UploadVehicle
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+//
+
+
+object UploadVehicle : CommandScript
+{
+	Vehicle mTargetVehicle;
+
+	UploadVehicle()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetGroupID(CGROUP_UNLOADVEHICLE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		if (Caller->IsCarryingAnything())
+			return false;
+		Vehicle v(Caller);
+		if (v.GetVehicleType() == VT_THW_FGRR_TRL)
+			return !v.HasVehicleUploaded();
+		else if (v.GetVehicleType() == VT_THW_FGRR_RL)
+			return true;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		Vehicle v(Caller);
+		if (v.GetVehicleType() == VT_THW_FGRR_TRL)
+			return Game::ExistsEmptyFGRR_RL();
+		else if (v.GetVehicleType() == VT_THW_FGRR_RL)
+			return Game::ExistsEmptyFGRR_TRL();
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+		
+		if (Caller->IsValid() && Caller->GetObjectType() == TYPE_VEHICLE)
+		{
+			Vehicle transporter;
+			Vehicle TargetVehicle(Target);
+			Vehicle vehicle;
+			Vehicle CallerVehicle(Caller);
+
+			// ggf. noch auf andere Fahrzeuge prüfen
+			if (CallerVehicle.GetVehicleType() == VT_THW_FGRR_TRL && TargetVehicle.GetVehicleType() == VT_THW_FGRR_RL)
+			{
+				transporter = CallerVehicle;
+				vehicle = TargetVehicle;
+			}
+			else if (CallerVehicle.GetVehicleType() == VT_THW_FGRR_RL && TargetVehicle.GetVehicleType() == VT_THW_FGRR_TRL)
+			{
+				transporter = TargetVehicle;
+				vehicle = CallerVehicle;
+			}			
+
+			if (!transporter.IsValid() || !vehicle.IsValid() || transporter.IsDestroyed() || vehicle.IsDestroyed())
+				return false;
+			// Noch nichts installiert
+			if (transporter.HasVehicleUploaded())
+				return false;
+			// nur wenn Fahrzeug unbeladen 
+			GameObjectList ol = transporter.GetCarriedObjects();
+			if (ol.GetNumObjects() > 0)
+				return false;
+			// nur wenn Fahrzeug keine Passagiere/Transporte
+			if ((vehicle.GetNumPassengers() > 0) || (vehicle.GetNumTransported() > 0))
+				return false;
+			return true;
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle vehicle;
+		Vehicle transporter;
+		Vehicle CallerVehicle(Caller);
+		bool rolesSwaped;
+
+		// ggf. noch auf andere Fahrzeuge prüfen
+		if (CallerVehicle.GetVehicleType() == VT_THW_FGRR_TRL)
+		{
+			vehicle = Target;
+			transporter = Caller;
+			rolesSwaped = false;
+		}
+		else if (CallerVehicle.GetVehicleType() == VT_THW_FGRR_RL)
+		{
+			vehicle = Caller;
+			transporter = Target;
+			if (transporter.IsMoving())
+				transporter.ClearActions();
+			rolesSwaped = true;
+		}
+		mTargetVehicle = vehicle;
+		mTargetVehicle.SetCommandable(false);
+		float dx, dy, dz;
+		Vector VehiclePos = transporter.GetPosition();
+		Vector TargetPos;
+		vehicle.GetLookatDir(dx, dy, dz);
+		TargetPos = VehiclePos - transporter.GetLookatDir()*(vehicle.GetBoundingRadiusXY() + transporter.GetBoundingRadiusXY());
+
+		if (!rolesSwaped)
+		{
+			vehicle.PushActionMove(ACTION_NEWLIST, TargetPos);
+			vehicle.PushActionLoadUp(ACTION_APPEND, Caller);
+		}
+		else
+		{
+			GameObject obj(Target);
+			vehicle.PushActionMove(ACTION_NEWLIST, TargetPos);
+			vehicle.PushActionLoadUp(ACTION_APPEND, Target);
+		}
+	}
+};

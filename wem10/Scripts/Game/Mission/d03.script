@@ -1,0 +1,1135 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script d03
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+/* TODO
+- Kontaminierung / Dekontaminierung-
+- Zeltlogik--
+- Messagegroups--
+- Cutscene--
+- Abbruchbedingungen--
+- Objectives--
+- Hints--
+- Supervisor--
+- Serialisierung
+*/
+
+const int MAX_HINTS						= 11;
+const int MAX_INJURED_PERSONS			= 12;
+const int MAX_PERSON_DEATHS				= 5;
+const int MAX_DEAD_PERSONS_HINT7		= 3;
+const int MAX_PERSONS					= 30;
+const float COUNTDOWN_TIME				= 4.f * 60.f;	// 4 Minuten
+const int MAX_BEDS						= 12;
+const int NUM_BEDS_USED_HINT6			= 8;
+const int MAX_FIREOBJECTS_REACTOR2		= 8;
+const int MAX_TOWN_BUILDINGS			= 10;
+const int NUM_TOWN_BUILDINGS_BURN_FAIL	= 3;	// wenn soviele brennen -> Abbruch
+const float AMBIENT_LOW_FACTOR			= 0.5f;
+
+const char HINT_DECONTAMINATE[]			= "HINT_D03_DECONTAMINATE";			//0-
+const char HINT_RADIATION[]				= "HINT_D03_RADIATION";				//1-
+const char HINT_REACTOR_IN_DANGER[]		= "HINT_D03_REACTOR_IN_DANGER";		//2-
+const char HINT_SPECIAL_TENT[]			= "HINT_D03_SPECIAL_TENT";			//3-
+const char HINT_FIRST_DECONTAMINATION[]	= "HINT_D03_FIRST_DECONTAMINATION";	//4
+const char HINT_TENT_CONTAMINATED[]		= "HINT_D03_TENT_CONTAMINATED";		//5-
+const char HINT_TENT_CAPACITY[]			= "HINT_D03_TENT_CAPACITY";			//6-
+const char HINT_TOO_MANY_INJURED[]		= "HINT_10_TOO_MANY_INJUREDS";		//7-
+const char HINT_TOWN_IN_DANGER[]		= "HINT_D03_TOWN_IN_DANGER";		//8-
+const char HINT_REACTOR_BURNING[]		= "HINT_D03_REACTOR_BURNING";		//9-
+const char HINT_ITW[]					= "HINT_D03_ITW";					//10-
+
+const char OBJECTIVE_DECONTAMINATE[]		= "OBJECTIVE_D03_DECONTAMINATE";
+const char OBJECTIVE_EVACUATE_PERSONS[]		= "OBJECTIVE_D03_EVACUATE_PERSONS";
+const char OBJECTIVE_EXTINGUISH[]			= "OBJECTIVE_D03_EXTINGUISH";
+const char DECONTAMINATE_ACCOMPLISHED[]		= "SUPERV_D03_COMMENT1";
+const char DECONTAMINATE_REOPEN[]			= "SUPERV_D03_COMMENT2";
+const char EVACUATE_PERSONS_ACCOMPLISHED[]	= "SUPERV_D03_COMMENT3";
+const char EVACUATE_PERSONS_REOPEN[]		= "SUPERV_D03_VICTIMS";
+const char EXTINGUISH_ACCOMPLISHED[]		= "SUPERV_D03_COMMENT4";
+const char EXTINGUISH_REOPEN[]				= "SUPERV_D03_FIRE1";
+
+const char COUNTER_CONTAMINATED_PERSONS[]	= "Contaminated Persons";
+const char COUNTER_PERSON_DEATHS[]			= "Person deaths";
+const char COUNTER_DEAD_PERSONS[]			= "Dead Persons";
+const char COUNTER_INJURED_PERSONS[]		= "Injured Persons";
+const char COUNTER_BURNING_OBJECTS[]		= "Burning Objects";
+const char COUNTER_BURNING_HOUSES[]			= "Burning Houses";
+
+const char NAME_TRIGGER_AIRPORT[]			= "t_airport";
+const char NAME_TRIGGER_TOWN_ENTRANCE[]		= "t_entrance";
+const char NAME_TRIGGER_REACTOR[]			= "t_reactor";
+const char NAME_TRIGGER_TENT[]				= "t_tent";
+const char NAME_TREE_BURNING_HINT8[]		= "tree_hint";
+const char NAME_REACTOR2[]					= "reactor2";
+const char NAME_TENT[]						= "tent";
+const char NAME_PREFIX_BED[]				= "bed";
+const char NAME_BED0[]						= "bed0";
+const char NAME_BED1[]						= "bed1";
+const char NAME_BED2[]						= "bed2";
+const char NAME_BED3[]						= "bed3";
+const char NAME_BED4[]						= "bed4";
+const char NAME_BED5[]						= "bed5";
+const char NAME_BED6[]						= "bed6";
+const char NAME_BED7[]						= "bed7";
+const char NAME_BED8[]						= "bed8";
+const char NAME_BED9[]						= "bed9";
+const char NAME_BED10[]						= "bed10";
+const char NAME_BED11[]						= "bed11";
+const char MESSAGEGROUP_NORMAL[]			= "normal";
+const char MESSAGEGROUP_CONTAMINATED[]		= "contaminated";
+const char COMMAND_PUTINCAR[]				= "putincar";
+const char COMMAND_MD03PUTINCAR[]			= "md03putincar";
+const char COMMAND_EMPTYCAR[]				= "emptyCar";
+const char COMMAND_MD03EMPTYCAR[]			= "md03emptyCar";
+const char COMMAND_MD03PUTINTENT[]			= "md03PutInTent";
+const char COMMAND_GETCHAINSAW[]			= "getchainsaw";
+const char COMMAND_USECHAINSAW[]			= "usechainsaw";
+const char NAME_FIREOBJECT_PREFIX[]			= "FireObject";
+const char NAME_FIREOBJECT0[]				= "FireObject1";
+const char NAME_FIREOBJECT1[]				= "FireObject2";
+const char NAME_FIREOBJECT2[]				= "FireObject3";
+const char NAME_FIREOBJECT3[]				= "FireObject4";
+const char NAME_FIREOBJECT4[]				= "FireObject5";
+const char NAME_FIREOBJECT5[]				= "FireObject6";
+const char NAME_FIREOBJECT6[]				= "FireObject7";
+const char NAME_FIREOBJECT7[]				= "FireObject8";
+const char NAME_EFFECT0[]					= "fireeffect1";
+const char NAME_EFFECT1[]					= "fireeffect2";
+const char NAME_EFFECT2[]					= "fireeffect3";
+const char NAME_EFFECT3[]					= "fireeffect4";
+const char NAME_EFFECT4[]					= "fireeffect5";
+const char NAME_EFFECT5[]					= "fireeffect6";
+const char NAME_EFFECT6[]					= "fireeffect7";
+const char NAME_EFFECT7[]					= "fireeffect8";
+const char CAMERA_LOCATION1[]				= "cs1";
+const char NAME_TOWN_BUILDING[]				= "town";
+const char NAME_DECON_EFFECT1[]				= "decon_gas1";
+const char NAME_DECON_EFFECT2[]				= "decon_gas2";
+const char NAME_TRIGGER_ENTRY[]				= "entry";
+const char NAME_OIL01[]						= "oil01";
+const char NAME_OIL02[]						= "oil02";
+const char NAME_FO_OIL01[]					= "oilburned01";
+const char NAME_FO_OIL02[]					= "oilburned02";
+const char NAME_SAMPLE_DECON[]				= "mod:Audio/FX/misc/tentd03.wav";
+const char NAME_AMBIENT_HIGH[]				= "warningsiren_high";
+const char NAME_AMBIENT_LOW[]				= "warningsiren_low";
+const char NAME_SPARK_OBJECT1[]				= "spark_object1";
+const char NAME_SPARK_EMIT1[]				= "spark_emit1";
+const char NAME_SPARK_DEST1[]				= "spark_dest1";
+
+const char TIMER_NAME_INIT[]				= "t_init";
+const float TIMER_TIME_INIT					= 1.f;
+const char TIMER_NAME_UPDATE_PERSONS[]		= "t_persons";
+const float TIMER_TIME_UPDATE_PERSONS		= 1.f;
+const char TIMER_NAME_UPDATE_REACTOR2[]		= "t_reactor2";
+const float TIMER_TIME_UPDATE_REACTOR2		= 1.3f;
+const char TIMER_NAME_UPDATE_TOWN[]			= "t_town";
+const float TIMER_TIME_UPDATE_TOWN			= 1.4f;
+const char TIMER_NAME_ENDMISSION_FAIL[]		= "t_fail";
+const float TIMER_TIME_ENDMISSION_FAIL		= 7.f;
+const char TIMER_NAME_UPDATE_ENTRY[]		= "t_entry";
+const float TIMER_TIME_UPDATE_ENTRY			= 0.7f;
+const float TIME_TILL_SNOWSTOP				= 2.f *60.f;	// minuten bis der Schnee aufhört
+const char TIMER_NAME_SNOWSTOP[]			= "t_snow";
+const float TIMER_TIME_SNOWSTOP				= 5.f;
+const char TIMER_NAME_SNOWSTOP_START[]		= "t_snowstart";
+const float TIMER_TIME_SNOWSTOP_START		= 5.f * 60.f;
+const char TIMER_NAME_AMBIENT_OFF[]			= "t_ambient";
+const float TIMER_TIME_AMBIENT_OFF			= 1.f;
+const float AMBIENT_OFF_TIME				= 5.f;
+const char TIMER_NAME_SPARK_1[]				= "t_spark1";
+const float TIMER_TIME_SPARK_1				= 45.0f;
+
+object MissionD03 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mTooManyInjureds;
+	bool mTooManyDeaths;
+	bool mTooManyBurningHouses;
+	bool mReactorExploded;
+	bool mCutscene;
+	Person mPersons[MAX_PERSONS];
+	float mPersonTimers[MAX_PERSONS];
+	int mNumPersons;
+	int mNumPersonsNotInTent;
+	int mNumInjuredNotInTent;
+	OpenHouse mTent;
+	const char * mNameBeds[MAX_BEDS];
+	GameObject mBeds[MAX_BEDS];
+	int mNextFreeBed;
+	char mObjectiveName[255];
+	char mObjectiveBuffer[255];
+	GameObject mReactor2;
+	FireObject mFireObjects[MAX_FIREOBJECTS_REACTOR2];
+	GameObject mEffects[MAX_FIREOBJECTS_REACTOR2];
+	GameObject mTownBuildings[MAX_TOWN_BUILDINGS];
+	int mNumTownBuildings;
+	int mTownBuildingExplosionIndex;
+	GameObject mDeconEffect1;
+	GameObject mDeconEffect2;
+	float mSnowIntensity;
+	GameObject mOil01;
+	GameObject mOil02;
+	FireObject mOilBurned01;
+	FireObject mOilBurned02;
+	float mAmbientVolume;
+	GameObject mSparkObj;
+	GameObjectList mSparkEmitList;
+	GameObject mSparkDest;
+	
+	MissionD03()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		for(int i = 0; i < MAX_PERSONS; i++)
+		{
+			mPersonTimers[i] = -1.f;
+		}
+		mNameBeds[0] = NAME_BED0;
+		mNameBeds[1] = NAME_BED1;
+		mNameBeds[2] = NAME_BED2;
+		mNameBeds[3] = NAME_BED3;
+		mNameBeds[4] = NAME_BED4;
+		mNameBeds[5] = NAME_BED5;
+		mNameBeds[6] = NAME_BED6;
+		mNameBeds[7] = NAME_BED7;
+		mNameBeds[8] = NAME_BED8;
+		mNameBeds[9] = NAME_BED9;
+		mNameBeds[10] = NAME_BED10;
+		mNameBeds[11] = NAME_BED11;
+		mTooManyInjureds = false;
+		mTooManyDeaths = false;
+		mTooManyBurningHouses = false;
+		mReactorExploded = false;
+		mCutscene = false;
+		mNumPersons = 0;
+		mNumInjuredNotInTent = 1000;
+		mNumPersonsNotInTent = 1000;
+		mNextFreeBed = 0;
+		mNumTownBuildings = 0;
+		mTownBuildingExplosionIndex = -1;
+		mAmbientVolume = 1.f;
+		Game::GetGameString(OBJECTIVE_EVACUATE_PERSONS, mObjectiveName, 255);
+	}
+	
+	~MissionD03()
+	{
+	}
+	
+	void Start()
+	{		
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_TENT))
+			{
+				mTent = OpenHouse(obj);
+			}
+			else if (obj->HasName(NAME_REACTOR2))
+			{
+				mReactor2 = *obj;
+				for(int j = 0; j < MAX_FIREOBJECTS_REACTOR2; j++)
+				{
+					mFireObjects[j] = mReactor2.GetFireChild(j);
+					//mFireObjects[j].SetEnergy(0.16f);
+				}
+			}
+			else if (obj->HasName(NAME_EFFECT0))
+			{
+				mEffects[0] = *obj;
+				mEffects[0].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_EFFECT1))
+			{
+				mEffects[1] = *obj;
+				mEffects[1].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_EFFECT2))
+			{
+				mEffects[2] = *obj;
+				mEffects[2].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_EFFECT3))
+			{
+				mEffects[3] = *obj;
+				mEffects[3].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_EFFECT4))
+			{
+				mEffects[4] = *obj;
+				mEffects[4].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_EFFECT5))
+			{
+				mEffects[5] = *obj;
+				mEffects[5].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_EFFECT6))
+			{
+				mEffects[6] = *obj;
+				mEffects[6].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_EFFECT7))
+			{
+				mEffects[7] = *obj;
+				mEffects[7].StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_TOWN_BUILDING) && mNumTownBuildings < MAX_TOWN_BUILDINGS)
+			{
+				mTownBuildings[mNumTownBuildings++] = *obj;
+			}
+			else if (obj->HasName(NAME_DECON_EFFECT1))
+			{
+				mDeconEffect1 = *obj;
+				mDeconEffect1.StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_DECON_EFFECT2))
+			{
+				mDeconEffect2 = *obj;
+				mDeconEffect2.StopParticleEffect();
+			}
+			else if (obj->HasName(NAME_OIL01))
+			{
+				mOil01 = *obj;
+			}
+			else if (obj->HasName(NAME_OIL02))
+			{
+				mOil02 = *obj;
+			}
+			else if (obj->HasName(NAME_SPARK_OBJECT1))
+			{
+				mSparkObj = *obj;
+			}
+			else if (obj->HasName(NAME_SPARK_DEST1))
+			{
+				mSparkDest = *obj;
+			}
+			else if (obj->HasNamePrefix(NAME_PREFIX_BED))
+			{
+				for(int j = 0; j < MAX_BEDS; j++)
+				{
+					if (obj->HasName(mNameBeds[j]))
+					{
+						mBeds[j] = *obj;
+						break;
+					}
+				}
+			}
+		}
+		Game::DeactivateTrigger(NAME_TRIGGER_ENTRY);
+
+		ActorList fo1(NAME_FO_OIL01);
+		if (fo1.GetNumActors() > 0)
+			mOilBurned01 = FireObject(fo1.GetActor(0));
+		ActorList fo2(NAME_FO_OIL02);
+		if (fo2.GetNumActors() > 0)
+			mOilBurned02 = FireObject(fo2.GetActor(0));
+
+		mSparkEmitList = Game::GetGameObjects(NAME_SPARK_EMIT1);
+		for(int i = 0; i < mSparkEmitList.GetNumObjects(); i++)
+			mSparkEmitList.GetObject(i)->StopParticleEffect();
+
+		snprintf(mObjectiveBuffer, 255, mObjectiveName, mNumPersonsNotInTent);
+		mSnowIntensity = Weather::GetSnowIntensity();
+
+		Mission::AddObjective(OBJECTIVE_DECONTAMINATE, DECONTAMINATE_REOPEN,DECONTAMINATE_ACCOMPLISHED);
+		Mission::AddObjective(OBJECTIVE_EXTINGUISH, EXTINGUISH_REOPEN, EXTINGUISH_ACCOMPLISHED);
+		Mission::AddObjective(mObjectiveBuffer);
+
+		Mission::StartSingleTimer(TIMER_NAME_INIT, TIMER_TIME_INIT);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_REACTOR2, TIMER_TIME_UPDATE_REACTOR2);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_TOWN, TIMER_TIME_UPDATE_TOWN);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_ENTRY, TIMER_TIME_UPDATE_ENTRY);
+		Mission::StartSingleTimer(TIMER_NAME_SNOWSTOP_START, TIMER_TIME_SNOWSTOP_START);
+
+		Audio::PlaySoundtrack("25", 0.f);
+		Game::SetAmbientSoundVolumeByName(NAME_AMBIENT_LOW, AMBIENT_LOW_FACTOR);
+	}
+
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionUse":
+				{
+					if (Data->Owner->GetType() == ACTOR_PERSON)
+					{
+						Person c(Data->Owner);
+						if (c.IsCarryingPerson() && c.GetEnteredHouseID() == mTent.GetID())
+						{
+							Person carried = c.GetCarried();
+							if (carried.IsValid())
+							{
+								int bed = carried.GetUserData();
+								carried.Carried(false, false, &c);
+								carried.SetIdleAnimation();
+								c.SetIdleAnimation();
+								carried.SetPlacement(PLACEMENT_NONE);
+								Vector pos = mBeds[bed].GetPosition();
+								pos.z += 50.f;
+								carried.SetPosition(pos);
+								carried.SetRotation(&mBeds[bed]);
+								carried.SetFlag(OF_BLOCKED);
+								carried.SetInjuredLifeDrain(0.f);
+							}
+							c.SetCommandable(true);
+							return ACTION_SKIP;
+						}
+					}
+					else if (Data->Owner->GetType() == ACTOR_VEHICLE)
+					{
+						if (Data->Parameters[0].iValue == mTent.GetID())
+						{
+							Vehicle v(Data->Owner);
+							PersonList l = v.GetTransports();
+							for(int i = 0; i < l.GetNumPersons(); i++)
+							{
+								l.GetPerson(i)->Show();
+								l.GetPerson(i)->SetEnteredHouseID(mTent.GetID());
+								l.GetPerson(i)->SetIdleAnimation();
+								l.GetPerson(i)->SetPlacement(PLACEMENT_NONE);
+								Vector pos = mBeds[mNextFreeBed].GetPosition();
+								pos.z += 50.f;
+								l.GetPerson(i)->SetPosition(pos);
+								l.GetPerson(i)->SetRotation(&mBeds[mNextFreeBed++]);
+								l.GetPerson(i)->SetFlag(OF_BLOCKED);
+								l.GetPerson(i)->SetInjuredLifeDrain(0.f);
+								v.RemoveTransport(*l.GetPerson(i));
+							}
+							return ACTION_SKIP;
+						}
+					}
+				}
+				break;
+			case "EActionLiftPerson":
+				{
+					Actor target = Game::GetActor(Data->Parameters[0].iValue);
+					if (target.IsValid() && target.GetType() == ACTOR_PERSON)
+					{
+						Person t(&target);
+						t.SetClassified(true);
+					}
+				}
+				break;
+			case "EActionEnterHouse":
+				{
+					if (Data->Parameters[0].iValue == mTent.GetID())
+					{
+						Person p(Data->Owner);
+						if (p.GetRole() == ROLE_SQUAD && !p.IsInjured())
+						{
+							//mDeconEffect1.StartParticleEffect();
+							//mDeconEffect2.StartParticleEffect();
+							//Audio::PlaySample3D(NAME_SAMPLE_DECON, mDeconEffect1.GetPosition());
+							p.Decontaminate(CONTAMINATION_ATOMIC);
+							Person carried = p.GetCarried();
+							Person linked = p.GetArrested();
+							carried.Decontaminate(CONTAMINATION_ATOMIC);
+							linked.Decontaminate(CONTAMINATION_ATOMIC);
+						}
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionLeaveHouse":
+				{
+					if (Data->Parameters[0].iValue == mTent.GetID())
+					{
+						Person p(Data->Owner);
+						if (p.GetRole() == ROLE_SQUAD && !p.IsCommandable() && !p.IsInjured())
+							p.SetCommandable(true);	// wieder steuerbar machen
+					}
+				}
+				break;
+			case "EActionEnterHouse":
+				{
+					if (Data->Parameters[0].iValue == mTent.GetID())
+					{
+						Person p(Data->Owner);
+						if (p.GetRole() == ROLE_SQUAD && !p.IsInjured())
+						{
+							mDeconEffect1.StartParticleEffect();
+							mDeconEffect2.StartParticleEffect();
+							Audio::PlaySample3D(NAME_SAMPLE_DECON, mDeconEffect1.GetPosition());
+							p.Decontaminate(CONTAMINATION_ATOMIC);
+							Person carried = p.GetCarried();
+							Person linked = p.GetArrested();
+							carried.Decontaminate(CONTAMINATION_ATOMIC);
+							linked.Decontaminate(CONTAMINATION_ATOMIC);
+						}
+					}
+				}
+				break;
+			case "EActionPutInCar":
+				{
+					if (mHintCounter[10] == 0)
+					{
+						Actor target = Game::GetActor(Data->Parameters[0].iValue);
+						if (target.GetType() == ACTOR_VEHICLE)
+						{
+							Vehicle v(&target);
+							if (v.GetVehicleType() == VT_AMBULANCE_ITW)
+								ShowHint(10);
+						}
+					}
+				}
+				break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		//System::Log("MD01: Timer : %s, numPersons: %d", Timer, mNumPersons);
+		switch(Timer)
+		{
+			case TIMER_NAME_INIT:
+				{
+					GameObjectList list = Game::GetGameObjects(TYPE_PERSON);
+					//System::Log("MD01: persons : %d", list.GetNumObjects());
+					for(int i = 0; i < list.GetNumObjects(); i++)
+					{
+						Person p(list.GetObject(i));
+						if (p.GetRole() == ROLE_ANIMAL)
+							continue;
+						if (list.GetObject(i)->HasCommand(COMMAND_PUTINCAR))
+						{
+							list.GetObject(i)->RemoveCommand(COMMAND_PUTINCAR);
+							list.GetObject(i)->AssignCommand(COMMAND_MD03PUTINCAR);
+							list.GetObject(i)->AssignCommand(COMMAND_GETCHAINSAW);
+							list.GetObject(i)->AssignCommand(COMMAND_USECHAINSAW);
+						}
+						if (mNumPersons < MAX_PERSONS)
+						{
+							mPersons[mNumPersons] = Person(list.GetObject(i));
+							if (!mPersons[mNumPersons].IsContaminated())
+								mPersonTimers[mNumPersons] = COUNTDOWN_TIME;
+							mNumPersons++;
+							//System::Log("MD03: person found %s", list.GetObject(i)->GetPrototypeFileName());
+						}
+						else
+							System::Log("MD03: Too many persons found!");
+					}
+					VehicleList vlist(VT_POLICE_GTW, VT_POLICE_GTW);
+					for(int i = 0; i < vlist.GetNumVehicles(); i++)
+					{
+						vlist.GetVehicle(i)->AssignCommand(COMMAND_MD03EMPTYCAR);
+					}
+					VehicleList vlist2(VT_AMBULANCE_ITW, VT_AMBULANCE_ITW);
+					for(int i = 0; i < vlist2.GetNumVehicles(); i++)
+					{
+						//vlist2.GetVehicle(i)->RemoveCommand(COMMAND_EMPTYCAR);
+						vlist2.GetVehicle(i)->AssignCommand(COMMAND_MD03PUTINTENT);
+					}
+					Mission::StartIntervalTimer(TIMER_NAME_UPDATE_PERSONS, TIMER_TIME_UPDATE_PERSONS);
+				}
+				break;
+			case TIMER_NAME_UPDATE_PERSONS:
+				{
+					mNumInjuredNotInTent = 0;
+					mNumPersonsNotInTent = 0;
+					for(int i = 0; i < mNumPersons; i++)
+					{
+						if (mPersons[i].GetRole() == ROLE_CIVILIAN)
+						{
+							if (mPersons[i].IsContaminated())
+								mPersons[i].SetMessageGroup(MESSAGEGROUP_CONTAMINATED);
+							else
+								mPersons[i].SetMessageGroup(MESSAGEGROUP_NORMAL);
+						}
+						if ((mPersons[i].GetRole() == ROLE_CIVILIAN || mPersons[i].GetRole() == ROLE_SQUAD) && !mPersons[i].IsDead() && (mPersons[i].GetEnteredHouseID() == -1 || (mPersons[i].GetEnteredHouseID() == mTent.GetID() && mPersons[i].IsContaminated())))
+						{
+							if (mPersons[i].GetRole() == ROLE_CIVILIAN)
+								mNumPersonsNotInTent++;
+							if (mPersons[i].IsInjured())
+								mNumInjuredNotInTent++;
+						}
+						if (mPersons[i].GetEnteredCarID() != -1 || mPersons[i].GetEnteredHouseID() != -1)
+						{
+							mPersonTimers[i] = COUNTDOWN_TIME;	// Timer zurücksetzen
+						}
+						else if (!mPersons[i].IsContaminated() && !mPersons[i].IsDead())
+						{
+							mPersonTimers[i] -= 1.f;
+							if (mPersonTimers[i] <= 0.f)
+								mPersons[i].ExposeContamination(CONTAMINATION_ATOMIC);
+						}
+					}
+					//System::Log("MD03: mNumInjuredNotInTent: %d", mNumInjuredNotInTent);
+					//System::Log("MD03: mNumPersonsNotInTent: %d", mNumPersonsNotInTent);
+				}
+				break;
+			case TIMER_NAME_UPDATE_REACTOR2:
+				{
+					if (mOilBurned01.IsValid() && mOilBurned01.GetEnergy() <= 0.01f)
+					{
+						mOil01.PushActionDisappear(ACTION_NEWLIST, 1.5f, 0.f, true);
+						mOilBurned01 = FireObject();
+					}
+					if (mOilBurned02.IsValid() && mOilBurned02.GetEnergy() <= 0.01f)
+					{
+						mOil02.PushActionDisappear(ACTION_NEWLIST, 1.5f, 0.f, true);
+						mOilBurned02 = FireObject();
+					}
+					
+					if (mReactor2.IsBurning())
+					{
+						for(int i = 0; i < MAX_FIREOBJECTS_REACTOR2; i++)
+						{
+							if (mFireObjects[i].IsValid() && mFireObjects[i].GetEnergy() <= 0.1f && mFireObjects[i].HasNamePrefix(NAME_FIREOBJECT_PREFIX))
+							{
+								// Cutscene starten
+								mCutscene = true;
+								System::Log("MD03 Start Cutscene");
+								Mission::StartCutScene();
+								Mission::ShowBlackBars(0.8f);
+								Vector pos = mFireObjects[i].GetPosition(), pos2;
+								float yaw, pitch, roll;
+								Camera::GetTransition(CAMERA_LOCATION1, pos2, yaw, pitch, roll);
+								Camera::StartTransition(pos, pos2.z, yaw, pitch, roll, 2.f);
+								Mission::StopTimer(TIMER_NAME_UPDATE_REACTOR2);
+								mTownBuildingExplosionIndex = i;
+								break;
+							}
+						}
+					}
+				}
+				break;
+			case TIMER_NAME_UPDATE_TOWN:
+				{
+					int numBurning = 0;
+					for(int i = 0; i < mNumTownBuildings; i++)
+					{
+						if (mTownBuildings[i].IsValid() && mTownBuildings[i].IsBurning())
+							numBurning++;
+					}
+					if (numBurning >= NUM_TOWN_BUILDINGS_BURN_FAIL)
+					{
+						mTooManyBurningHouses = true;
+						Mission::StopTimer(TIMER_NAME_UPDATE_TOWN);
+					}
+				}
+				break;
+			case TIMER_NAME_ENDMISSION_FAIL:
+				{
+					mReactorExploded = true;
+					mCutscene = false;
+				}
+				break;
+			case TIMER_NAME_UPDATE_ENTRY:
+				{
+					GameObjectList list;
+					if (Game::CollectObstaclesOnTrigger(NAME_TRIGGER_ENTRY, list, ACTOR_PERSON))
+					{
+						mTent.OpenDoor(mTent.GetChildID(1));
+					}
+					else
+					{
+						mTent.CloseDoor(mTent.GetChildID(1));
+					}
+				}
+				break;
+			case TIMER_NAME_SNOWSTOP_START:
+				{
+					Mission::StartIntervalTimer(TIMER_NAME_SNOWSTOP, TIMER_TIME_SNOWSTOP);
+				}
+				break;
+			case TIMER_NAME_SNOWSTOP:
+				{
+					float snowIntensity = Weather::GetSnowIntensity();
+					snowIntensity -= TIMER_TIME_SNOWSTOP/TIME_TILL_SNOWSTOP * mSnowIntensity;
+					if (snowIntensity < 0.f)
+					{
+						snowIntensity = 0.f;
+						Weather::SetSnowVisible(false);
+						Mission::StopTimer(TIMER_NAME_SNOWSTOP);
+					}
+					Weather::SetSnowIntensity(snowIntensity);
+					break;
+				}
+				break;
+			case TIMER_NAME_AMBIENT_OFF:
+				{
+					mAmbientVolume -= TIMER_TIME_AMBIENT_OFF / AMBIENT_OFF_TIME;
+					Game::SetAmbientSoundVolumeByName(NAME_AMBIENT_HIGH, mAmbientVolume);
+					Game::SetAmbientSoundVolumeByName(NAME_AMBIENT_LOW, mAmbientVolume * AMBIENT_LOW_FACTOR);
+					if (mAmbientVolume <= 0.f)
+					{
+						Game::StopAmbientSound(NAME_AMBIENT_HIGH);
+						Game::StopAmbientSound(NAME_AMBIENT_LOW);
+						Mission::StopTimer(TIMER_NAME_AMBIENT_OFF);
+					}
+				}
+				break;
+			case TIMER_NAME_SPARK_1:
+				{
+					mSparkDest.Burn();
+				}
+				break;
+		}
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (Mission::IsCutSceneRunning())
+		{
+			if (mCutscene)
+			{
+				//System::Log("MD03: index: %d", mTownBuildingExplosionIndex);
+				mEffects[mTownBuildingExplosionIndex].StartParticleEffect();
+				//Mission::HideBlackBars(1.f);				
+				Mission::StartSingleTimer(TIMER_NAME_ENDMISSION_FAIL, TIMER_TIME_ENDMISSION_FAIL);
+				//mCutscene = false;				
+			}
+		}
+	}
+
+	void OnTrigger(const char *Trigger_, Actor *Collider_)
+	{
+		switch (Trigger_)
+		{
+			case NAME_TRIGGER_AIRPORT:
+				{
+					if (mHintCounter[0] == 0)
+						ShowHint(0);
+					Game::DeactivateTrigger(NAME_TRIGGER_AIRPORT);
+					Mission::StartIntervalTimer(TIMER_NAME_AMBIENT_OFF, TIMER_TIME_AMBIENT_OFF);
+				}
+				break;
+			case NAME_TRIGGER_TOWN_ENTRANCE:
+				{
+					if (mHintCounter[1] == 0)
+						ShowHint(1);
+					Game::DeactivateTrigger(NAME_TRIGGER_TOWN_ENTRANCE);
+				}
+				break;
+			case NAME_TRIGGER_REACTOR:
+				{
+					if (mHintCounter[2] == 0)
+						ShowHint(2);
+					Game::DeactivateTrigger(NAME_TRIGGER_REACTOR);
+				}
+				break;
+			case NAME_TRIGGER_TENT:
+				{
+					if (mHintCounter[3] == 0)
+						ShowHint(3);
+					if (Collider_->GetType() != ACTOR_PERSON)
+						return;
+					Person p(Collider_);
+					p.Decontaminate(CONTAMINATION_ATOMIC);
+					Person linked = p.GetArrested();
+					linked.Decontaminate(CONTAMINATION_ATOMIC);
+					/*if ((p.IsCarryingContaminatedPerson() || p.IsLinkedWithContaminatedPerson() || p.IsContaminated()) && p.GetEnteredHouseID() == mTent.GetID() && p.IsCommandable())
+					{
+						ShowHint(5);
+						p.SetCommandable(false);
+						Vector pos = p.GetEnteredHouseEntrancePosition(true);
+						p.PushActionMove(ACTION_NEWLIST, pos);
+					}
+					else*/ if (p.IsCarryingPerson() && p.GetEnteredHouseID() == mTent.GetID() && p.IsCommandable())
+					{
+						Person carried = p.GetCarried();
+						if (!carried.IsDead())
+						{
+							for(;mNextFreeBed < MAX_BEDS; mNextFreeBed++)
+							{
+								if (mBeds[mNextFreeBed].IsValid())
+									break;
+							}
+							if (mNextFreeBed < MAX_BEDS)
+							{
+								p.SetCommandable(false);
+								p.PushActionMove(ACTION_NEWLIST, mBeds[mNextFreeBed].GetID(), TARGET_OBJECTSURFACE);
+								p.PushActionUse(ACTION_APPEND, &mBeds[mNextFreeBed]);
+								carried.SetUserData(mNextFreeBed);
+								carried.Decontaminate(CONTAMINATION_ATOMIC);
+								mNextFreeBed++;
+							}
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path_, GameObject *Caller_)
+	{
+		switch(Path_)
+		{
+		}
+		
+		return PATH_DEFAULT;
+	}
+
+	bool OnStartBurning(GameObject *obj)
+	{
+		if (!obj->IsValid())
+			return true;
+		if (mHintCounter[8] == 0 && obj->HasName(NAME_TREE_BURNING_HINT8))
+			ShowHint(8);
+		else if (mHintCounter[9] == 0 && obj->HasName(NAME_REACTOR2))
+			ShowHint(9);
+		else if (obj->GetID() == mSparkObj.GetID())
+		{
+			for(int i = 0; i < mSparkEmitList.GetNumObjects(); i++)
+				mSparkEmitList.GetObject(i)->StartParticleEffect();
+			Mission::StartSingleTimer(TIMER_NAME_SPARK_1, TIMER_TIME_SPARK_1);
+		}
+		return true;
+	}
+
+	bool OnStopBurning(GameObject *obj)
+	{
+		if (!obj->IsValid())
+			return true;
+		if (obj->GetID() == mSparkObj.GetID())
+		{
+			for(int i = 0; i < mSparkEmitList.GetNumObjects(); i++)
+				mSparkEmitList.GetObject(i)->StopParticleEffect();
+			Mission::StopTimer(TIMER_NAME_SPARK_1);
+		}
+		return true;
+	}
+
+	int GetRandomValue(int min, int max)
+	{
+		int diff = max - min;
+		if (diff <= 0)
+			return min;
+		int res = Math::rand() % diff;
+		return res + min;
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Collider1, Actor *Collider2)
+	{
+		return MCC_HALT_CONTINUE;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("MD03: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Mission::PlayHint(HINT_DECONTAMINATE);
+				break;
+			case 1:
+				Mission::PlayHint(HINT_RADIATION);
+				break;
+			case 2:
+				Mission::PlayHint(HINT_REACTOR_IN_DANGER);
+				Audio::SetMusicLevel(0.1f);
+				break;
+			case 3:
+				Mission::PlayHint(HINT_SPECIAL_TENT);
+				break;
+			case 4:
+				Mission::PlayHint(HINT_FIRST_DECONTAMINATION);
+				break;
+			case 5:
+				Mission::PlayHint(HINT_TENT_CONTAMINATED);
+				break;
+			case 6:
+				Mission::PlayHint(HINT_TENT_CAPACITY);
+				Audio::SetMusicLevel(0.2f);
+				break;
+			case 7:
+				Mission::PlayHint(HINT_TOO_MANY_INJURED);
+				break;
+			case 8:
+				Mission::PlayHint(HINT_TOWN_IN_DANGER);
+				Audio::SetMusicLevel(0.3f);
+				break;
+			case 9:
+				Mission::PlayHint(HINT_REACTOR_BURNING);
+				Audio::SetMusicLevel(0.4f);
+				break;
+			case 10:
+				Mission::PlayHint(HINT_ITW);
+				break;
+		}
+	}
+	
+	MissionState GetMissionState()
+	{
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		/*if (Mission::GetCounter(COUNTER_INJURED_PERSONS) > MAX_INJURED_PERSONS)
+		{
+			mTooManyInjureds = true;
+			return MISSION_FAILED;
+		}*/
+
+		if (Mission::GetCounter(COUNTER_PERSON_DEATHS) > MAX_PERSON_DEATHS)
+		{
+			mTooManyDeaths = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (mNumInjuredNotInTent < 1000 && mNumInjuredNotInTent + mNextFreeBed > MAX_BEDS)
+		{
+			mTooManyInjureds = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (mTooManyBurningHouses || mReactorExploded)
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (mHintCounter[7] == 0 && Mission::GetCounter(COUNTER_DEAD_PERSONS) >= MAX_DEAD_PERSONS_HINT7)
+			ShowHint(7);
+		if (mHintCounter[6] == 0 && mNextFreeBed >= NUM_BEDS_USED_HINT6)
+			ShowHint(6);
+
+		bool oldStatus = Mission::IsObjectiveAccomplished(mObjectiveBuffer);
+		Mission::RemoveObjective(mObjectiveBuffer);
+		snprintf(mObjectiveBuffer, 255, mObjectiveName, mNumPersonsNotInTent);
+		Mission::AddObjective(mObjectiveBuffer);
+		
+		if (Mission::GetCounter(COUNTER_CONTAMINATED_PERSONS) == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE))
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE, true);
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE))
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE, false);
+		}
+
+		if (Mission::GetCounter(COUNTER_BURNING_OBJECTS) + Mission::GetCounter(COUNTER_BURNING_HOUSES) == 0)
+		{
+			if(!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH, true);
+			}
+		}
+		else
+		{
+			if(	Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH, false);
+			}
+		}
+		if (mNumPersonsNotInTent == 0)
+		{
+			if(!Mission::IsObjectiveAccomplished(mObjectiveBuffer))
+			{
+				Mission::SetObjectiveAccomplished(mObjectiveBuffer, true);
+				if (!oldStatus)
+					Mission::PlayComment(EVACUATE_PERSONS_ACCOMPLISHED);
+			}
+		}
+		else
+		{
+			if(	Mission::IsObjectiveAccomplished(mObjectiveBuffer))
+			{
+				Mission::SetObjectiveAccomplished(mObjectiveBuffer, false);
+				if (oldStatus)
+					Mission::PlayComment(EVACUATE_PERSONS_REOPEN);
+			}
+		}
+		
+		if(Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{		
+		if (mTooManyInjureds)
+			return "MD03_TOO_MANY_DIED";
+		else if (mTooManyDeaths)
+			return "MD03_TOO_MANY_DIED";
+		if (mTooManyBurningHouses)
+			return "MD03_TOO_MANY_FIRES";
+		else if (mReactorExploded)
+			return "MD03_REACTOR_EXPLODED";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyInjureds)
+			return "SUPERV_MD03_FAIL01";
+		else if (mTooManyDeaths)
+			return "SUPERV_MD03_FAIL02";
+		if (mTooManyBurningHouses)
+			return "SUPERV_MD03_FAIL03";
+		else if (mReactorExploded)
+			return "SUPERV_MD03_FAIL04";
+		
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_MD03_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f &&(mHintCounter[8] > 0 || mHintCounter[9] > 0))
+			return "SUPERV_MD03_RES02";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.5f && mHintCounter[6] > 0)
+			return "SUPERV_MD03_RES03";
+		if (scoring->Efficiency < 0.4f && mHintCounter[7] > 0)
+			return "SUPERV_MD03_RES04";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mTooManyInjureds);
+		serializer_->Write(mTooManyDeaths);
+		serializer_->Write(mTooManyBurningHouses);
+		serializer_->Write(mReactorExploded);
+		serializer_->Write(mCutscene);
+		serializer_->Write(MAX_PERSONS);
+		for(int i = 0; i < MAX_PERSONS; i++)
+		{
+			serializer_->Write(mPersons[i]);
+			serializer_->Write(mPersonTimers[i]);
+		}
+		serializer_->Write(mNumPersons);
+		serializer_->Write(mNumPersonsNotInTent);
+		serializer_->Write(mNumInjuredNotInTent);
+		serializer_->Write(mTent);
+		serializer_->Write(MAX_BEDS);
+		for(int i = 0; i < MAX_BEDS; i++)
+			serializer_->Write(mBeds[i]);
+		serializer_->Write(mNextFreeBed);
+		serializer_->Write(mObjectiveName);
+		serializer_->Write(mObjectiveBuffer);
+		serializer_->Write(mReactor2);
+		serializer_->Write(MAX_FIREOBJECTS_REACTOR2);
+		for(int i = 0; i < MAX_FIREOBJECTS_REACTOR2; i++)
+		{
+			serializer_->Write(mFireObjects[i]);
+			serializer_->Write(mEffects[i]);
+		}
+		serializer_->Write(MAX_TOWN_BUILDINGS);
+		for(int i = 0; i < MAX_TOWN_BUILDINGS; i++)
+			serializer_->Write(mTownBuildings[i]);
+		serializer_->Write(mNumTownBuildings);
+		serializer_->Write(mTownBuildingExplosionIndex);
+		serializer_->Write(mDeconEffect1);
+		serializer_->Write(mDeconEffect2);
+		serializer_->Write(mSnowIntensity);
+		serializer_->Write(mOil01);
+		serializer_->Write(mOil02);
+		serializer_->Write(mOilBurned01);
+		serializer_->Write(mOilBurned02);
+		serializer_->Write(mAmbientVolume);
+		serializer_->Write(mSparkObj);
+		serializer_->Write(mSparkEmitList);
+		serializer_->Write(mSparkDest);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		System::Log("MD03: SerializeFrom");
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mTooManyInjureds = serializer_->ReadBool();
+		mTooManyDeaths = serializer_->ReadBool();
+		mTooManyBurningHouses = serializer_->ReadBool();
+		mReactorExploded = serializer_->ReadBool();
+		serializer_->Read(mCutscene);
+		int temp = -1;
+		serializer_->Read(temp);
+		if (temp != MAX_PERSONS)
+			return false;
+		for(int i = 0; i < MAX_PERSONS; i++)
+		{
+			serializer_->Read(mPersons[i]);
+			serializer_->Read(mPersonTimers[i]);
+		}
+		serializer_->Read(mNumPersons);
+		serializer_->Read(mNumPersonsNotInTent);
+		serializer_->Read(mNumInjuredNotInTent);
+		serializer_->Read(mTent);
+		serializer_->Read(temp);
+		if (temp != MAX_BEDS)
+			return false;
+		for(int i = 0; i < MAX_BEDS; i++)
+			serializer_->Read(mBeds[i]);
+		serializer_->Read(mNextFreeBed);
+		serializer_->Read(mObjectiveName);
+		serializer_->Read(mObjectiveBuffer);
+		serializer_->Read(mReactor2);
+		serializer_->Read(temp);
+		if (temp != MAX_FIREOBJECTS_REACTOR2)
+			return false;
+		for(int i = 0; i < MAX_FIREOBJECTS_REACTOR2; i++)
+		{
+			serializer_->Read(mFireObjects[i]);
+			serializer_->Read(mEffects[i]);
+		}
+		serializer_->Read(temp);
+		if (temp != MAX_TOWN_BUILDINGS)
+			return false;
+		for(int i = 0; i < MAX_TOWN_BUILDINGS; i++)
+			serializer_->Read(mTownBuildings[i]);
+		serializer_->Read(mNumTownBuildings);
+		serializer_->Read(mTownBuildingExplosionIndex);
+		serializer_->Read(mDeconEffect1);
+		serializer_->Read(mDeconEffect2);
+		serializer_->Read(mSnowIntensity);
+		serializer_->Read(mOil01);
+		serializer_->Read(mOil02);
+		serializer_->Read(mOilBurned01);
+		serializer_->Read(mOilBurned02);
+		serializer_->Read(mAmbientVolume);
+		serializer_->Read(mSparkObj);
+		serializer_->Read(mSparkEmitList);
+		serializer_->Read(mSparkDest);
+
+		return true;
+	}
+};

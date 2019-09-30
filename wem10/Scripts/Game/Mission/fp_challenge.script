@@ -1,0 +1,44 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script fp_challenge
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Winterberger Em4 Start-Script by WitchDoc
+// basiert auf start V0.1a by manuelt
+// Rotation function by bass-ti
+//
+// Revision:
+// 16.7.2006 : Doppelte Ausführung verhindern
+
+	void alles_auf_start()
+	{
+		GameObjectList ol=Game::GetGameObjects();
+		GameObject obj=ol.GetObject(0);
+		Game::ExecuteCommand("wem_init",&obj);
+	};
+
+bool OnLoad()
+{
+	alles_auf_start();
+	Process::Kill();
+	return true;
+}
+

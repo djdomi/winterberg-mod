@@ -1,0 +1,1223 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script hatakeskus
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+#pragma compile
+
+// Leitstellenroutine -> legt die E-Stelle fest und alarmiert die Kraefte
+
+object lst_estelle : CommandScript
+{
+	lst_estelle()
+	{
+		SetIcon("faz");
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+int rain;
+int fog;
+int storm;
+int snow;
+int stormspeed;
+bool hasfza=true;
+bool wetter=false;
+
+
+int ndmask=524288;
+int stmask=ndmask*2;
+int nfmask=stmask*2;
+int folgemask=nfmask*2;
+
+int ampelzivi=0;
+
+const char*wmeld[]=":%s:%u";
+
+int fz_ort[450];
+
+
+object lst_einschalten : CommandScript
+{
+
+	lst_einschalten()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		System::Log("Lst einschalten %s Stufe %u",Caller->GetName(),code);
+
+		if (code==1) {
+			fzafunc::tableau_init();
+		} else {
+			GameObjectList lfz;
+			lfz=Game::GetGameObjectsWithPrefix("platz");
+			for (int i=0;i<4;i++)
+				lfz.GetObject(i)->SetCommandable(true);
+		}
+	}
+};
+
+
+object lst_alarm : CommandScript
+{
+
+	lst_alarm()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int code)
+	{
+		lst_func::lst_alarmieren(Caller,Target,code,0);
+	}
+};
+
+
+class lst_func : CommandScript
+{
+
+	void lst_alarmieren (GameObject *Caller, Actor *Target, int wache, int ecode)
+	{
+		System::Log("Leitstelle alarmieren Wache %u mit Code %u",wache,ecode);
+		Vector TargetPos=Target->GetPosition();
+		GameObject ziel(Target);
+		bool neue_estelle=true;
+		int TargetID=Caller->GetUserData();
+
+		bool fuenfton=(ecode&256) == 0;
+		bool mittel=(ecode&512)>0;
+		ecode=(ecode&255)+100;
+		bool erstalarm=false;
+
+		switch (Target->GetType())
+		{
+			case ACTOR_OBJECT:
+				GameObject p(Target);
+				neue_estelle=!p.HasCommand("lst_estelle") && !p.HasNamePrefix("wm_");
+				if (neue_estelle)
+					TargetID=p.GetUserData();
+				else
+					TargetID=p.GetID();
+				break;
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				if (v.HasCommand("lst_estelle"))
+					TargetID=v.GetID();
+				else
+					if (v.HasCommand("ErwarteNA")) {
+						TargetID=v.GetID();
+						neue_estelle=false;
+					} else {
+						TargetID=v.GetUserData();
+						neue_estelle=v.IsFirefighter() && TargetID==0 && !v.HasCommand("lst_estelle");
+					}
+				break;
+			case ACTOR_PERSON:
+				GameObject p(Target);
+				neue_estelle=!p.HasCommand("fuehrung");
+				TargetID=p.GetUserData();
+				break;
+		}
+				
+		if (neue_estelle)
+		{
+			// System::Log("Leitstelle Neue Estelle %u",TargetID);
+			Vehicle pv= Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/fsammel.e4p", "estelle");
+			if (TargetID==0) {
+				pv.AssignCommand("lst_estelle");
+				pv.AssignCommand("tl_squad_1");
+				pv.AssignCommand("tl_squad_2");
+				pv.AssignCommand("tl_squad_3");
+				pv.AssignCommand("tl_squad_4");
+				pv.AssignCommand("tl_squad_5");
+				pv.AssignCommand("tl_squad_6");
+				pv.AssignCommand("tl_squad_7");
+				pv.AssignCommand("tl_squad_8");
+				pv.AssignCommand("tl_squad_9");
+				pv.AssignCommand("tl_squad_10");
+			} else {
+				pv.RemoveCommand("lst_estelle");
+				pv.SetFlag(FLAG_TL);
+			}
+			GameObject p(&pv);
+			p.ClearFlags();
+			if (Game::IsMultiplayer())
+				p.SetPlayerMP(Caller->GetPlayerMP());
+			// System::Log("Leitstelle Estelle platzieren");
+			Game::FindFreePosition(&p,TargetPos);
+			p.SetPosition(TargetPos);
+			p.SetCommandable(true);
+			p.SetSelectable(false);
+			p.SetUserData(TargetID);		
+			// System::Log("Leitstelle EStelle Debung");
+			bungarext::debung (Target);
+		} else {
+			Actor a=Game::GetActor(TargetID);
+			GameObject p(&a);
+			if (p.HasNamePrefix("wm_"))
+				p.AssignCommand("lst_estelle");
+		}
+		
+		switch (wache)
+		{	
+			case 305:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",&p,305,false); 
+				break;
+			case 306:
+				p.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",&p,306,false);
+				break;
+			case 999:
+				p.PushActionExecuteCommand(ACTION_INSERT,"Kats",&p,999,false);
+				break;
+			case 108:
+				wache=2;
+			default:
+				lst_func::alarmierung(&p,Target,ecode,wache,!fuenfton);
+				break;
+		}
+   	}
+
+	GameObject neue_estelle (GameObject *Caller,Actor *Target)
+	{
+		Vehicle p= Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/fsammel.e4p", "estelle");
+		p.AssignCommand("lst_estelle");
+		p.AssignCommand("tl_squad_1");
+		p.AssignCommand("tl_squad_2");
+		p.AssignCommand("tl_squad_3");
+		p.AssignCommand("tl_squad_4");
+		p.AssignCommand("tl_squad_5");
+		p.AssignCommand("tl_squad_6");
+		p.AssignCommand("tl_squad_7");
+		p.AssignCommand("tl_squad_8");
+		p.AssignCommand("tl_squad_9");
+		p.AssignCommand("tl_squad_10");
+		p.ClearFlags();
+		if (Game::IsMultiplayer())
+			p.SetPlayerMP(Caller->GetPlayerMP());
+		Vector TargetPos=Target->GetPosition();
+		Game::FindFreePosition(&p,TargetPos);
+		p.SetPosition(TargetPos);
+		p.SetCommandable(true);
+		p.SetSelectable(false);
+		p.SetUserData(0);		
+		bungarext::debung (Target);
+		GameObject rp(&p);
+		return rp;
+	}
+
+	void alarmierung (GameObject *Caller, Actor *Target, int zugtyp, int wache, bool sir)
+	{
+		System::Log("Leitstelle mit Alarm Code %u auf %s",zugtyp,Target->GetName());
+		int alarmtype=101;
+		int cid;
+		int zug21,zug22;
+
+		GameObject p(Target);
+		bool alarmstufe1=!p.IsFlagSet(OF_LOCKED);
+		char * aao="                                                                                                                                                                                                                                                                     ";
+		char *aoname="            ";
+		snprintf(aoname,12,"DOC_ALARM%u",zugtyp);
+		Game::GetGameString(aoname,aao,250);
+		System::Log("Leitstelle Alarm Wache %u %s %s",wache,aoname,aao);
+		bool dosir;
+		bool dofirst;
+		bool keinewache;
+		bool alarm;
+		bool neuerzug;
+
+		int fzcode=int(aao[0]);
+		// p.PushActionWait(ACTION_NEWLIST,0.1);
+		sir=sir || ((fzcode&1)>0);
+		fzcode=fzcode&254;
+			
+
+		switch (fzcode)
+		{
+			case 64:
+				alarmtype=101;
+				if (sir)
+					alarmtype=201;
+				break;
+			case 80:
+				if (sir)
+					alarmtype=301;
+				break;
+			case 96:
+				alarmtype=121;
+				break;
+			case 72:
+				alarmtype=108;
+				p.PushActionExecuteCommand(ACTION_APPEND,"senden",&p,101,false);	// Zugsequenz einschalten
+				break;
+		}
+
+		System::Log("Neue Alarmierung Zugtype %u %s",alarmtype,aao);
+		char *aaoanal="    ";
+		wache=1000*wache;
+	
+		p.PushActionExecuteCommand(ACTION_APPEND,"senden",&p,alarmtype,false);	// Zugsequenz einschalten
+		for (int c=1;int(aao[c])>32;c++)
+		{
+				
+			fzcode=int(aao[c]);
+			aaoanal[0]=aao[c];
+			dosir=(fzcode&1)>0;
+			dofirst=(fzcode&2)>0;
+			keinewache=(fzcode&4)>0;
+			neuerzug=(fzcode&8)>0;
+
+			c++;
+			aaoanal[1]=aao[c];
+			fzcode=int(aao[c])-48;
+			c++;
+			aaoanal[2]=aao[c];
+			fzcode=fzcode*10+int(aao[c])-48;
+			c++;
+			aaoanal[3]=aao[c];
+			fzcode=fzcode*10+int(aao[c])-48;
+
+			alarm=true;
+			if (dosir)
+				alarm=sir;
+			if (dofirst)
+				alarm=alarm&&alarmstufe1;
+
+			// System::Log("AlarmString %s",aaoanal);
+			// System::Log("Alarmcode Fz %u dosir %u dofirst %u Wacheunabhängig %u",fzcode,int(dosir),int(dofirst),int(keinewache));
+
+			if (neuerzug) {
+				wache=490000;
+				p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,10,false); 
+			}
+			if (keinewache)
+				cid=490000;
+			else
+				cid=wache;
+			if (alarm)
+				tdienst::rufe_einheit(&p,Target,cid+fzcode,0);
+		}
+		p.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",&p,2,false);	// AlarmDummy Loeschen	
+		p.SetFlag(OF_LOCKED);
+		// System::Log("Neue Alarmierung Ende");
+	}
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;
+const int FLAG_P_NEU=OF_HAS_FIREAXE * 32;
+const int FLAG_NOMOVE=OF_HAS_FIREAXE * 64;
+const int FLAG_C_NA=OF_HAS_FIREAXE * 128;
+const int FLAG_C_TRANS=OF_HAS_FIREAXE;
+
+object dienstbeginn : CommandScript
+{
+
+   dienstbeginn()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return false;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int h,m,s;
+	Game::GetTime(h,m,s);
+	tdienst::hubiwetter();
+	Caller->PushActionWait(ACTION_APPEND,7.0);
+
+	// System::Log("Dienstbeginn ? %u %u %s %s",h,childID,Caller->GetName(),Target->GetName());
+
+	if (h==childID)
+	{
+		// System::Log("Dienstbeginn jetz ? %u %u %s %s",h,childID,Caller->GetName(),Target->GetName());
+		Vehicle v(Caller);
+		if (v.HasCommand("ich_bin_nicht_frei"))
+		{
+			PersonList pl(v.GetName());
+
+			// System::Log("Dienstbeginn ! %u %u %s %s %u",h,childID,Caller->GetName(),Target->GetName(),pl.GetNumPersons());
+			if (pl.GetNumPersons()==0) 
+			{
+				v.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",&v,22,false);
+				if (v.IsPolice())
+					v.PushActionExecuteCommand(ACTION_APPEND,"Fahre_Patrouille",&v,0,false);	
+			}
+			v.RemoveCommand("feierabend");
+			v.SetChildEnabled("INFEKT",false);
+		}
+		GameObject dispo(Target);
+		dispo.PushActionExecuteCommand(ACTION_APPEND,"dienstende",Caller,tdienst::Ende(Caller),false);
+	} else if (Caller->IsValid() && Target->IsValid()) {
+		Caller->PushActionWait(ACTION_INSERT,2.0);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"dienstbeginn",Target,childID,false);
+	}
+   }
+};
+
+object Teilzeit : CommandScript
+{
+
+   Teilzeit()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return false;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int cid)
+   {
+	int h,m,s;
+	Game::GetTime(h,m,s);
+	int aktiv=tdienst::Beginn(Caller);
+	GameObject dispo(Target);
+	ActionInsertMode go=ACTION_NEWLIST;
+	if (cid>0)
+		go=ACTION_INSERT;
+	
+	// System::Log("Teilzeit %u %u %s %s",h,cid,Caller->GetName(),Target->GetName());
+	if (h<aktiv || cid>0)
+	{
+		Vehicle v(Caller);
+		v.AssignCommand("feierabend");
+		if (!v.HasCommand("ich_bin_nicht_frei") || cid==2)
+		{
+			v.PushActionExecuteCommand(go,"StatusSenden",&v,6,false);
+			v.PushActionExecuteCommand(ACTION_APPEND,"dienstbeginn",Target,aktiv,false);
+		}
+	} else 
+		dispo.PushActionExecuteCommand(ACTION_APPEND,"dienstende",Caller,tdienst::Ende(Caller),false);
+   }
+};
+
+ 
+object dienstende : CommandScript
+{
+
+   dienstende()
+   {
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return false;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	int h,m,s;
+	tdienst::hubiwetter();
+	Game::GetTime(h,m,s);
+	Vehicle v(Target);
+	bool FzBesetzt=v.IsFlagSet(FLAG_FUNK);
+	bool ende=false;
+
+	// System::Log("Dienstende ? %u %u %s %s",h,childID,Target->GetName(),Caller->GetName());
+
+	if (h==childID) 
+		v.AssignCommand("feierabend");
+
+	if (v.HasCommand("feierabend") && !v.HasCommand("ich_bin_nicht_frei"))
+	{
+		if (!FzBesetzt) {
+			v.PushActionExecuteCommand(ACTION_NEWLIST,"StatusSenden",&v,6,false);
+			v.PushActionExecuteCommand(ACTION_APPEND,"dienstbeginn",Caller,tdienst::Beginn(Target),false);
+			ende=true;
+		} else 
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"dienstende",Target,childID,false);
+	} else 
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"dienstende",Target,childID,false);
+	if (!ende)
+		Caller->PushActionWait(ACTION_INSERT,2.0);
+	// System::Log("DE ende");
+   }
+};
+
+class tdienst : CommandScript
+{
+	void nef_mark(Actor *Haus)
+	{
+		OpenHouse oh(Haus);
+		PersonList pl=oh.GetNonSquadPersonsInside();
+		for (int i=0;i<pl.GetNumPersons();i++)
+			if (pl.GetPerson(i)->GetState()!=PERSONSTATE_NORMAL)
+				pl.GetPerson(i)->SetFlag(FLAG_C_NA);
+	}
+
+   void rufe_einheit (GameObject *Caller, Actor *Target, int cid, int ecode)
+   {
+	// System::Log("Nuevo Rufe Einheit %u",cid);
+	GameObject opfer(Target);
+
+	// Code für Normale Fahrt , Folgeauftrag, Storno, Neudispo wird direkt via Ecode vom 
+	// Alarmtableau übermittelt.
+	// Automatische NEF/RTW Mitalarmierung nicht mehr erforderlich, alle Fz werden vom Tableau gewählt
+
+	bool na=false;
+	bool eh=Target->GetType()==ACTOR_PERSON;
+	int test=15;
+	cid=cid&(folgemask-1);
+	int code=cid%1000;
+
+	if (code>600 && code<630) {
+
+		switch (code)
+		{
+			case 602:
+			case 601:
+				na=true;
+				opfer.SetFlag(FLAG_C_NA);
+				break;
+			case 610:
+			case 611:
+			case 612:
+				opfer.SetFlag(FLAG_C_TRANS);
+				break;
+			case 620:
+			case 612:
+				opfer.SetFlag(FLAG_C_NA|FLAG_C_TRANS);
+				break;
+			case 		
+		}
+
+		if (na & (Target->GetType()==ACTOR_OPEN_HOUSE))
+			nef_mark(Target);
+
+		if (eh)
+			opfer.PushActionExecuteCommand(ACTION_INSERT,"Ersthelfer",Target,0,true);
+		System::Log ("RD Unit %u nach %s : Flag %u",cid,opfer.GetName(),0);
+	}
+	
+	if (opfer. HasCommand("lst_estelle"))
+		opfer.PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,ecode+cid,false);
+	else
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"rufe_winterberg",Target,ecode+cid,false);
+   }
+
+	bool HasFeierabend (Vehicle v)
+	{
+		char * kennung=v.GetName();
+		bool fabend=(int(kennung[14])<0) || v.IsChildEnabled("INFEKT");
+		return fabend;
+	}
+
+	void hubiwetter()
+	{
+		int erg;
+		char * buf[]="               ";
+		int x=Weather::GetFogIntensity()*100;
+		if (x!=fog)
+		{
+			erg=snprintf(buf,15,wmeld,"FOG",x);
+			System::Log(buf);
+			fog=x;
+		}		
+		x=Weather::GetRainIntensity()*100;
+		if (x!=rain)
+		{
+			erg=snprintf(buf,15,wmeld,"RAIN",x);
+			System::Log(buf);
+			rain=x;
+		}		
+		int x=Weather::GetStormIntensity()*100;
+		if (x!=storm)
+		{
+			erg=snprintf(buf,15,wmeld,"STORM",x);
+			System::Log(buf);
+			storm=x;
+		}		
+		int x=Weather::GetSnowIntensity()*100;
+		if (x!=snow)
+		{
+			erg=snprintf(buf,15,wmeld,"snow",x);
+			System::Log(buf);
+			snow=x;
+		}		
+		wetter=((Weather::GetFogIntensity()<0.5) && (Weather::GetStormIntensity()<0.5) && (Weather::GetRainIntensity()<0.5) && (Weather::GetSnowIntensity()<0.7));
+	}
+
+	int Beginn (Actor *Fz)
+	{
+		char * kennung=Fz->GetName();
+		char tz=kennung[14];
+		int base=5;
+		int offset=(int (tz)&112)/16;
+		// System::Log("Teilzeit Fz Beginn %u %u %s",base,offset,kennung);
+		return base+offset;
+	}
+
+	int Ende (Actor *Fz)
+	{
+		char * kennung=Fz->GetName();
+		char tz=kennung[14];
+		int base=5;
+		int offset=(int (tz)&15);
+		// System::Log("Teilzeit Fz Ende %u %u %s",base,offset,kennung);
+		return base+offset;
+	}
+
+	bool rth_nicht_sicher(Actor *Target)
+	{
+		
+		int h,m,s;
+		tdienst::hubiwetter();
+		Game::GetTime(h,m,s);
+		if (!wetter || h<8 || h>18)
+			int lima=3;
+		else
+			int lima=0;
+		int hose=1;
+		GameObject punkt(Target);
+
+			GameObjectList ol=punkt.GetObjectsInRange(500.0,ACTOR_PERSON|ACTOR_VEHICLE);
+			GameObject o;
+
+			for (int i=0;i<ol.GetNumObjects();i++)
+			{
+				o=ol.GetObject(i);
+				// System::Log("ITHLog %s %d",o.GetName(),o.DistanceXY(punkt));
+				switch (o.GetType())
+				{
+					case ACTOR_PERSON:
+						if (o.GetFirehoseID()!=0)
+							hose--;
+						break;
+					case ACTOR_VEHICLE:
+						if (o.GetUserData()==104 && !o.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+							lima--;
+						else
+							if (o.GetUserData()==-104)
+								lima=0;
+						break;						
+				}	
+			}
+		return lima>0 || hose>0;
+	}
+};
+ 
+ 
+object feierabend : CommandScript
+{
+
+   feierabend()
+   {
+	SetGroupID(20);
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+   }
+};
+
+
+GameDialog Alarm;
+GameDialog FZA;
+GameDialog FMS;
+int maxtab;
+int fztableau[450];
+bool tabvisible=false;
+bool fzavisible=false;
+bool IsProfiMode=false;
+char *fmslist;
+
+object tableau : CommandScript
+{
+
+   tableau()
+   {
+     	SetIcon("faz");
+	SetCursor("faz");
+	SetPriority(10);
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return true;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Target->GetType()!=ACTOR_OBJECT;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Input::LCtrlPressed())
+		fzafunc::tableau_init();
+	else
+		fzafunc::tableau_prepare(0);
+   }
+};
+
+object tabfae : CommandScript
+{
+
+   tabfae()
+   {
+     	SetIcon("fme");
+	SetCursor("fme");
+	SetPriority(1000);
+	SetGroupID(1);
+	SetGroupLeader(true);
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return tabvisible;
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return !Input::LShiftPressed() && !Input::LCtrlPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->GetID()!=Target->GetID();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	fzafunc::tableau_alarm(Caller,Target,0,0);
+
+   }
+};
+
+
+object tabsir : CommandScript
+{
+
+   tabsir()
+   {
+     	SetIcon("sir");
+	SetCursor("sir");
+	SetPriority(1000);
+	SetGroupID(1);
+	SetGroupLeader(false);
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return tabvisible;
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LShiftPressed() && !Input::LCtrlPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->GetID()!=Target->GetID();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	fzafunc::tableau_alarm(Caller,Target,0,256);
+
+   }
+};
+
+object tabstorno : CommandScript
+{
+
+   tabstorno()
+   {
+     	SetIcon("storno");
+	SetCursor("storno");
+	SetPriority(1000);
+	SetGroupID(1);
+	SetGroupLeader(false);
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return tabvisible;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return Input::LShiftPressed() && Input::LCtrlPressed();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	fzafunc::tableau_alarm(Caller,Target,stmask,0);
+
+   }
+};
+
+object tabohnesosi:CommandScript
+{
+   tabohnesosi()
+   {
+	SetIcon("umdisponieren");
+	SetCursor("umdisponieren");
+	SetGroupLeader(false);
+	SetPriority(1000);
+	SetGroupID(1);
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return tabvisible;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->GetID()!=Target->GetID();
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return !Input::LShiftPressed() && Input::LCtrlPressed();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	fzafunc::tableau_alarm(Caller,Target,nfmask,0);
+   }
+};
+
+object tabdrive : CommandScript
+{
+
+   tabdrive()
+   {
+     	SetIcon("ego");
+	SetCursor("ego");
+	SetGroupID(5);
+	SetGroupLeader(true);
+   }
+
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return tabvisible;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return Caller->GetID()==Target->GetID();
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	fzafunc::tableau_drive(Caller,Target);
+
+   }
+};
+
+
+
+object tabupdate : CommandScript
+{
+
+   tabupdate()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int code)
+   {
+	if (code<0) {
+		code=-code;
+		fzafunc::fza_load(Target);
+	}		
+	fzafunc::tableau_update(Target,code);
+   }
+};
+
+object wemfza : CommandScript
+{
+
+   wemfza()
+   {
+     	SetIcon("faz");
+	SetCursor("faz");
+	SetGroupID(2);
+	SetGroupLeader(false);
+   }
+
+   bool CheckGroupVisibility(GameObject *Caller)
+   {
+	return true;
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+	return true;
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	fzafunc::tableau_prepare(1);
+   }
+};
+
+class fzafunc : CommandScript
+{
+	int fzid(Actor *Caller)
+	{
+		const char * fz;
+		fz=Caller->GetName();
+		int id=int(fz[11])-32;
+		if (id<0)
+		{
+			id+=256;
+		}
+		return id;
+	}
+
+	int fzort(Actor *Caller)
+	{
+		const char * fz;
+		fz=Caller->GetName();
+		int id=int(fz[7])-32;
+		return id;
+	}
+
+	void tableau_init() {
+		char *buf=" ";
+		Game::GetGameString("WEM_FZA",buf,1);
+		hasfza=int(buf[0])>48;
+		GameObjectList ol=Game::GetGameObjectsWithPrefix("alg_");
+		if (ol.GetNumObjects()==0) {
+			Alarm.Load("mod:UI/Game/WemDlg/alarmgeber.xml");
+			if (hasfza)
+				FZA.Load("mod:UI/Game/WEMDlg/fza.xml");
+		} else {
+			char *algname="                                                         ";              
+			snprintf(algname,40,"mod:UI/Game/WemDlg/%s.xml",ol.GetObject(0)->GetName());
+			Alarm.Load(algname);
+			if (hasfza) {
+				snprintf(algname,40,"mod:UI/Game/WemDlg/%s_fza.xml",ol.GetObject(0)->GetName());
+				FZA.Load(algname);
+			}
+		}
+		FMS.Load("mod:UI/Game/WEMDlg/fms.xml");
+		char*buf="          ";
+		Game::GetGameString("maxtb",buf,9);
+		maxtab=atoi(buf)+1;
+		IsProfiMode=true;
+		char*buf="     ";
+		char*get="         ";
+		char *tb="     ";
+		char *green="gg     ";
+		char *yellow="yy     ";
+		char *red="rr     ";
+		int code;
+
+		for (int x=0;x<maxtab;x++) {
+			snprintf(green,7,"stgr%u",101+x);
+			snprintf(yellow,7,"styl%u",101+x);
+			snprintf(tb,5,"tb%u",101+x);
+			snprintf(red,7,"strd%u",101+x);
+			Game::GetGameString(tb,get,6);
+			// System::Log("TAB Init Pos %s Code %s",tb,get);
+			if (StrCompare(tb,get)==0)
+				Alarm.Show(buf,false);
+			else {
+				code=atoi(get)/1000;
+				if (code<500 && code>0)
+					fztableau[code]=x+101;
+				// System::Log("TAB Init Fz %u Pos %u X ist %u",code,fztableau[code],x);
+			}
+			Alarm.Show(green,false);
+			Alarm.Show(red,false);
+			Alarm.Show(yellow,false);
+		}
+		
+		PathList zp("zivi_path");
+		if (zp.GetNumPaths()>0) {
+			Game::GetGameString("ampelzivi",get,6);
+			ampelzivi=atoi(get);
+		}
+
+		fmslist="                                                                                                                                                                                           ";
+		FMS.Show(true);
+		tabvisible=false;
+		// System::Log("%u ToggleButtons im Tableau",maxtab);
+	}
+
+	void tableau_prepare(int switch) {
+		if (switch==0) {
+			tabvisible=!tabvisible;		
+			Alarm.Show(tabvisible);
+		
+			if (tabvisible)
+				ScriptInterface::HideInfoBar();
+			else
+				ScriptInterface::ShowInfoBar();
+		} else  {
+			fzavisible=!fzavisible;		
+			if (hasfza)
+				FZA.Show(fzavisible);
+		}
+	}
+
+	int tableau_check (int x) {
+		char *code="     ";
+		char *buf="          ";
+		int rc;
+
+		snprintf(code,5,"tb%u",100+x);
+		bool ok=Alarm.Togglebutton_GetValue(code);
+		Alarm.Togglebutton_SetValue(code,false);
+
+		if (ok) {
+			if (!Game::GetGameString(code,buf,9))
+				rc=-100000;
+			else {
+				rc=atoi(buf);
+				System::Log("Got Code %s for Tab %u",buf,x);
+			}
+		} else
+			rc=-100000;
+		
+		return rc;
+	}
+
+	int tableau_ecode () {
+		int ec=0;
+		char *ecc="ec113";
+		bool stop=false;
+		for (ec=13;ec>0 && !Alarm.Togglebutton_GetValue(ecc);ec--) 
+			snprintf(ecc,5,"ec%u",99+ec);
+		Alarm.Togglebutton_SetValue(ecc,false);
+		// System::Log("ECODE Tableau %s %u",ecc,ec);
+		return ec;
+	}
+	
+	void tableau_update(Actor *v,int status) {
+
+
+		bool intakt=status!=6 && status!=9;
+		bool notruf=status==0;
+		bool inuse=(status>2) && intakt && (status<10);
+		bool disposed=status>5;
+		bool free=(status==1) || status==3 || status==23;
+		int fz=fzid(v);
+		int fzt=fztableau[fz];
+		int fzap=100+fz;
+
+		// System::Log("FZA Update Fz %u Status %u Name %s Tab %u FZA %u",fz,status,v->GetName(),fzt,fzap);
+
+		char *tb="     ";
+		char *green="gg     ";
+		char *yellow="yy     ";
+		char *red="rr     ";
+
+		if (fzt>0) {
+			snprintf(green,7,"stgr%u",fzt);
+			snprintf(yellow,7,"styl%u",fzt);
+			snprintf(tb,5,"tb%u",fzt);
+			snprintf(red,7,"strd%u",fzt);
+
+			Alarm.Show(tb,intakt);
+			Alarm.Show(green,free||notruf);
+			Alarm.Show(red,inuse||notruf);
+			Alarm.Show(yellow,disposed||notruf);
+		}
+
+
+		if (hasfza) {
+
+			snprintf(green,7,"stgr%u",fzap);
+			snprintf(yellow,7,"styl%u",fzap);
+			snprintf(red,7,"strd%u",fzap);
+
+			FZA.Show(green,free||notruf);
+			FZA.Show(red,inuse||notruf);
+			FZA.Show(yellow,disposed||notruf);
+
+			// System::Log("FZA Update %s %s %s %s",tb,green,yellow,red);
+		}
+
+		if (status<99) {
+			char *tel="                    ";
+			int h,m,s;
+			Game::GetTime(h,m,s);
+
+			if (status>9)
+				status=19;
+			snprintf(tel,18,"%02u:%02u %7.7s  %c%c%c",h,m,v->GetName(),48+status,char(10),char(13));
+			char *buf="                                                                                                                                                                                                   ";
+			snprintf(buf,195,"%c%18.18s%18.170s",char(13),tel,fmslist);
+			fmslist=buf;
+			FMS.StaticText_SetText("Telegramm",fmslist);
+		}
+				
+	}
+
+
+	void fza_load (Actor *v) {
+		if (hasfza) {
+			char *tb="      ";
+			char *fzbez="       ";
+			snprintf(tb,5,"fz%u",100+fzid(v));
+			strncpy(fzbez,v->GetName(),7);
+			FZA.StaticText_SetText(tb,fzbez);
+			// System::Log("Fza beschriften Tafel %s Name %s",tb,fzbez);
+		}
+		fz_ort[fzid(v)]=fzort(v);    // Wachkennung/Standort für Fz registrieren
+	}
+
+	void tableau_alarm(GameObject *Caller,Actor *Target, int mask, int sircode) {
+
+		int alcode=-1;
+		bool has_estelle=true;
+		int zugdone=false;
+		int zugcode=10;
+
+		if (Target->GetType()==ACTOR_FLOOR || Target->GetType()==ACTOR_STREET)
+		{
+			GameObject t=bungarext::clickhin(Game::GetCommandPos(),Caller);
+			Target=&t;
+			GameObject tt=lst_func::neue_estelle(Caller,Target);
+			Target=&tt;
+			zugcode=101;
+
+		} else if (Target->GetType()==ACTOR_VEHICLE && sircode==256) {
+				Vehicle chk(Target);
+				if (chk.IsFirefighter()) {
+					alcode=fzort(&chk);
+					lst_func::lst_alarmieren(Caller,Target,alcode,9);
+				}
+		}
+
+		alcode=-1;
+		int has_kbi=1;
+		int ecode=tableau_ecode();
+		if (ecode==0)
+			has_kbi=-1;
+		int zcode,t1,t2;
+		
+		sircode=sircode|ecode|512;
+	
+
+		for (int x=1;x<maxtab;x++) {
+			zcode=0;
+			alcode=tableau_check(x);
+			if (alcode > -100000) {
+ 				if (alcode<-999) {
+					zcode=-alcode%100;
+					alcode=alcode/1000;
+					System::Log("Tableau Code %u zcode %u",alcode,zcode);
+				}
+
+				if (alcode>0 && ecode!=0) {
+					t2=alcode/1000;t1=(alcode%1000)/100;
+					if (t1==5)
+						alcode=-fz_ort[t2];
+				}
+
+				if (alcode>0) {
+					if (alcode==ampelzivi && (rand()%7>4))
+						alcode+=2;
+					if (!zugdone && (x>79)) {
+						zugdone=true;	
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,zugcode,false);	// Zugsequenz einschalten
+					}
+					tdienst::rufe_einheit(Caller,Target,alcode,mask);
+				} else {
+					if (alcode<-99) 
+						sircode=-alcode-100;
+					if (has_kbi==0)
+						tdienst::rufe_einheit(Caller,Target,302,mask);
+					lst_func::lst_alarmieren(Caller,Target,-alcode,sircode|zcode);
+					has_kbi--;
+					sircode=sircode&511;
+					sircode=sircode&!ecode;
+				}
+			}
+		}
+		if (zugdone)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"senden",Target,2,false);	// Zugsequenz einschalten
+		// Mission::PlayHint("Alarmierung abgeschlossen");
+	}
+
+	void tableau_drive(GameObject *Caller,Actor *Target) {
+
+
+		int alcode=-1;
+		for (int x=1;x<maxtab;x++) {
+			alcode=tableau_check(x);
+			if (alcode>-1000)
+				if (alcode>0) {
+					Caller->PushActionExecuteCommand(ACTION_INSERT,"send_drive",Caller,alcode/1000,false);
+					x=maxtab;
+				} 
+		}
+	}
+};
+
+
+
+// Bungar Extensions
+
+class bungarext : CommandScript
+{
+
+	GameObject hierhin (Vector cp)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		//obj.Hide();
+		return obj;
+	}
+	
+	GameObject clickhin (Vector cp, GameObject *zug)
+	{
+		GameObject obj=Game::CreateObject("mod:Prototypes/Objects/Equipment/marker.e4p","bungar");
+		obj.SetUserData(zug->GetUserData());
+		zug->SetUserData(0);
+		obj.SetPosition(cp);
+		obj.AssignCommand("alarmdummy");
+		obj.PushActionWait(ACTION_NEWLIST,500.0);
+		obj.PushActionDisappear(ACTION_APPEND,10.0,150.0,true);
+		return obj;
+	}
+
+	void debung (Actor *bung)
+	{
+		// System::Log("Bungar Debung Modul Leitstelle %s",bung->GetName());
+		if (bung->HasNamePrefix("bungar"))
+		{
+			GameObject db(bung);
+			db.PushActionDeleteOwner(ACTION_NEWLIST);
+		}
+		// System::Log("Debunged");
+	}
+};

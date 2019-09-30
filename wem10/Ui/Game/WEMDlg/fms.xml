@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<dialog version="1" id="FMS" x=14 y=610 width="130" height="150">
+
+	<stylesheet file="base:UI/Game/def_templates.xml" />
+	<stylesheet file="base:UI/Game/MainMenu/mainmenu_templates.xml"/>
+
+    <box id="fmslist" x="10" y="2" width="110" height="140">
+	<statictext id="Telegramm" x="0" y="0" width="110" height="145" color="00:77" texthalign="left" textvalign="top" font="base:Fonts/arial_8_bold_noshadow" singleline="false"/>
+    </box>
+    <staticbitmap id="bg" x="0" y="0" width="130" height="160" image="mod:ui/Game/Wemdlg/fmsback.dds"/>
+
+
+</dialog>

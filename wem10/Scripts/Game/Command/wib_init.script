@@ -1,0 +1,303 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script wib_init
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+bool WEMCam=true; // für normale Kameraparameter diese Zeile löschen
+
+const int maxdispo=15;
+const char * dispo[maxdispo];
+dispo[1]="platz1";
+dispo[2]="platz2";
+dispo[3]="platz3";
+dispo[4]="platz4";
+dispo[5]="fza";
+dispo[6]="SmallGod";
+dispo[10]="disponent";
+dispo[11]="disponent1";
+dispo[12]="disponent2";
+dispo[13]="disponent3";
+dispo[14]="disponent4";
+const char *Killcode="12345";
+const char *EvCode="2011";
+const char *XmasCode="2412";
+
+object wem_init : CommandScript
+{
+
+   wem_init()
+   {
+   }
+
+	void check_map()
+	{
+		GameObjectList ml=Game::GetGameObjectsWithPrefix("WEM4");
+		bool ok=ml.GetNumObjects()>0;
+		if (ok)
+			ok=ml.GetObject(0)->HasNamePrefix("WEM4 8");
+		if (ok)
+			System::Log("Winterberg Map  %s",ml.GetObject(0)->GetName());
+		else {
+			Mission::PlayHint("WEM running Non-Winterberg Map. Some features may be disabled or working different");
+		}
+	}
+
+	bool betame()
+	{
+		char *buf="00000";
+		Game::GetGameString("DOC_MISSION200",buf,5);
+		return (StrCompare(buf,Killcode)==0);
+	}
+
+	int auto_event()
+	{
+		char *buf="0000";
+		Game::GetGameString("WEMEVENT",buf,4);
+		int erg=-1;
+		if (StrCompare(buf,EvCode)==0)
+			erg=0;
+		else if (StrCompare(buf,XmasCode)==0)
+			erg=1;
+		return erg;
+	}
+
+	void logthis (int vcode)
+	{
+		System::Log(":RESTART");
+		char * buf="                         ";
+		Game::GetGameString("WIB_VER_LENNOX",buf,25);
+		System::Log(":MAP:%u",vcode-10);
+		System::Log(buf);
+	}
+
+	void taikago ()
+	{
+		GameObjectList taika("taikago");
+		taikanr=taika.GetNumObjects();
+		if (taikanr>0) {
+			Game::SetTime(4,0,0);
+			for (int i=0;i<taikanr,i++)
+				taika.GetObject(i)->StartParticleEffect();
+		}
+	}
+
+	int desk_init (int rd, int ass, int grp, int block) {
+
+		GameObjectList list;
+		GameObject *desk;
+		list=Game::GetGameObjects(dispo[ass]);
+		desk = *list.GetObject(0);
+		desk->SetCommandable(block);
+		desk->SetUserData(0);
+		Game::AddToGroup(desk,grp);
+
+		int n;
+		bool goon=true;
+		char *command="                                                        ";
+		char *code="                       ";
+
+		for (n=0;goon;n++) {
+			snprintf(code,30,"%s.%u",dispo[rd],n);
+			Game::GetGameString(code,command,30);
+			System::Log("Desk Init Tisch %u Code %s Command %s Objekt %s",ass,code,command,desk->GetName());
+			goon=n<25;
+			if (goon)
+				desk->AssignCommand(command);
+		}
+
+		if (Game::IsMultiplayer())
+			desk->SetPlayerMP(grp);
+
+		return n-1;
+
+	}
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+
+		System::LogFile("mod:wem9.log");
+
+		System::Log("Winterberg Init");
+
+		// Parameter fuer Fahrzeugerzeugung definieren
+		char *proto[];
+		char *kenn[];
+		Vehicle vec;
+		int MaxPass, maxTrans;
+		char *Act[];
+		Actor fz;
+		int i;
+		GameObject *ofz;
+		GameObject *init;
+		GameObjectList lfz;
+		ActorList fzl;
+		int ver=11;
+		bool campaign=Game::IsCampaign() || Game::IsMission();
+
+		bool incomplete=false;
+		GameObjectList inil("start");
+		if (inil.GetNumObjects()==0)
+			incomplete=true;
+		if (!campaign && !incomplete)
+			check_map();
+
+
+		bool SimbaMission=Caller->GetUserData()==19 || Caller->GetUserData()==11;
+		int q;
+
+		if (campaign || incomplete)
+		{
+			Vehicle dummy=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/funktisch1.e4p",dispo[1]);
+			dummy=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/funktisch1.e4p",dispo[2]);
+			dummy=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/funktisch1.e4p",dispo[3]);
+			dummy=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/funktisch1.e4p",dispo[4]);
+			dummy=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/funktisch1.e4p",dispo[10]);
+			dummy=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/funktisch1.e4p","start");
+		}
+		Vehicle dummy=Game::CreateVehicle("mod:Prototypes/Vehicles/Winterberg/funktisch1.e4p",dispo[5]);
+		
+		GameObjectList inil("start");
+		init=*inil.GetObject(0);
+		init->SetUserData(ver);
+		init->SetCommandable(false);
+
+		logthis(10); // Fuer Lennox keine Trennung mehr von Standard und Deluxe 
+
+		init->PushActionExecuteCommand(ACTION_NEWLIST,"setver",init,ver,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"wtd_setver",init,ver,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"KlinikInit",init,ver,false);	
+		if (!campaign) {
+			init->PushActionExecuteCommand(ACTION_APPEND,"BMAChange",init,ver,false);
+			init->PushActionExecuteCommand(ACTION_APPEND,"wt_bma_init",init,0,false);
+		}
+		if (!campaign && !incomplete) {
+			init->PushActionExecuteCommand(ACTION_APPEND,"CoreInit",init,0,false);
+		} else
+			init->PushActionExecuteCommand(ACTION_APPEND,"CoreInit",init,11,false);
+
+		desk_init(1,1,0,false);
+		desk_init(1,2,1,false);
+		desk_init(1,3,2,false);
+		desk_init(1,4,3,false);
+		// desk_init(1,5,5,true);
+		desk_init(10,10,4,true);
+
+		if (incomplete)
+			init->SetUserData(112);
+		else
+			init->SetUserData(0);
+
+		init->PushActionExecuteCommand(ACTION_APPEND,"lst_einschalten",init,1,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"Fuhrpark_init",ofz,0,false);	
+		
+		init->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",init,99,false);
+		
+		int aev=auto_event();
+
+		if (!campaign && !incomplete) {
+			init->PushActionExecuteCommand(ACTION_APPEND,"CoreInit",init,1,false);
+			if (aev>-1)
+				init->PushActionExecuteCommand(ACTION_APPEND,"plug_init",init,aev,false);	
+		} else {
+			int step=10;
+			if (campaign)
+				step=100;
+			init->PushActionExecuteCommand(ACTION_APPEND,"CoreInit",init,step,false);
+			if (aev==1)
+				init->PushActionExecuteCommand(ACTION_APPEND,"plug_init",init,aev,false);	
+		}
+	
+		if (Game::IsMultiplayer())
+		{
+			System::Log("Disponenten in der LST erstellen");
+			for (int i=0;i<4;i++)
+				init->PushActionExecuteCommand(ACTION_APPEND,"CreateNewPerson",init,192+i*1000,false);
+		}
+	
+		init->PushActionExecuteCommand(ACTION_APPEND,"lst_einschalten",init,0,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"vk_um_init",init,0,false);
+
+		init->PushActionShowHide(ACTION_APPEND,true);
+
+
+		System::Log("FzBeschaffung abgeschlossen");
+
+		lfz=Game::GetGameObjects("leitstelle");
+	
+		for (i=0;i<lfz.GetNumObjects();i++)
+		{
+			ofz = *lfz.GetObject(i);
+			if (ofz->GetType()==ACTOR_OPEN_HOUSE)
+			{
+				OpenHouse oh(ofz);
+				oh.ShowCeiling(false,false,false);
+			}
+		}
+
+		System::Log("Leitstelle oeffnen");
+
+		lfz=Game::GetGameObjectsWithPrefix("ehrang");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+
+		lfz=Game::GetGameObjectsWithPrefix("sbahn");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+		lfz=Game::GetGameObjectsWithPrefix("Air_Berlin");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+		
+		
+		//disable hydrants
+		ActorList al = Game::GetActors(ACTOR_LIQUID);
+		for (int i=0; i<al.GetNumActors(); i++)
+			if (al.GetActor(i)->HasNamePrefix("hydrant") || al.GetActor(i)->HasNamePrefix("flut"))
+				Game::DeactivateLiquid(al.GetActor(i)->GetName());	
+
+		GameObjectList ol = Game::GetGameObjectsWithPrefix("hydrant");
+		for (int i=0; i<ol.GetNumObjects(); i++)
+			ol.GetObject(i)->StopParticleEffect();
+
+		//disable fireworks
+		ol = Game::GetGameObjects("firework");
+		for (int i=0; i<ol.GetNumObjects(); i++)
+			ol.GetObject(i)->StopParticleEffect();
+
+		Game::ShowHelpText("WIB_VERSION");
+
+		init->PushActionExecuteCommand(ACTION_APPEND,"tableau",init,0,false);
+		init->PushActionExecuteCommand(ACTION_APPEND,"taikaswitch",init,-1,false);
+
+		System::Log("FP Init Ende %u %u",Game::GetTimeSpeed(),int(Game::GetGameSpeed()*100));
+
+	}
+};
+
+char *KillCode="54507";

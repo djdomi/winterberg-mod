@@ -1,0 +1,1514 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 13
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+// mission 13 script
+
+const float TEST_FACTOR = 1.0f; // for debugging: 1.0f means normal speed
+const int MAX_DEAD_CIVILIANS = 6; // > misssion abort
+const int CUTSCENE_TIME = 5.0f; // time between finishing ponton bridge and cutscene
+const float CRACKSOUND1_TIME = 3*60.0f*TEST_FACTOR;
+const float CRACKSOUND2_TIME = 6.5*60.0f*TEST_FACTOR;
+const float CRACKSOUND3_TIME = 8.5*60.0f*TEST_FACTOR;
+const int HINT_BRIDGE_TIME = 2*60.0f*TEST_FACTOR; // first bridge warning
+const int HINT_BRIDGEWARNING1_TIME = CRACKSOUND1_TIME + 5.0f*TEST_FACTOR;
+const int HINT_BRIDGEWARNING2_TIME = CRACKSOUND2_TIME + 5.0f*TEST_FACTOR;
+const int HINT_BRIDGEWARNING3_TIME = CRACKSOUND3_TIME + 5.0f*TEST_FACTOR;
+const float HINT_DROWNING_TIME = 5*60.0f*TEST_FACTOR; // for hint HINT_M13_DROWNING
+const float HINT_CARSINWATER_TIME = 6*60.0f*TEST_FACTOR; // for hint HINT_M13_CARS_NOT_SAVED
+const float SPLASH1_TIME = 1.0f; // time between cs_splash and cs_splash1 particles
+const float SPLASH2_TIME = 2.0f; // time between cs_splash and cs_splash2 particles
+const float SPLASH3_TIME = 3.0f; // time between cs_splash and cs_splash3 particles
+const float SPLASH4_TIME = 4.0f; // time between cs_splash and cs_splash4 particles
+
+const char NAME_SOUND_BRIDGEWARNING1[] = "mod:Audio/FX/destruction/mission_bridge_warning_01.wav";
+const char NAME_SOUND_BRIDGEWARNING2[] = "mod:Audio/FX/destruction/mission_bridge_warning_02.wav";
+const char NAME_SOUND_BRIDGEWARNING3[] = "mod:Audio/FX/destruction/mission_bridge_warning_03.wav";
+const char NAME_SOUND_BRIDGECOLLAPSE[] = "mod:Audio/FX/destruction/mission_bridge_breakdown.wav";
+
+const char NAME_DROWNING1[] = "drowning01";
+const char NAME_DROWNING2[] = "drowning02";
+const char NAME_PATH_DROWNING1[] = "drowning_path01";
+const char NAME_PATH_DROWNING2[] = "drowning_path02";
+
+
+const int MAX_VEHICLES_FALL_IN_WATER = 4;
+const int MAX_DEBRIS = 10;
+const int MAX_EMITTERS_CRACK1 = 30;
+const int MAX_EMITTERS_CRACK2 = 30;
+const int MAX_EMITTERS_SPLASH = 50;
+const int MAX_EMITTERS_SPLASH1 = 30;
+const int MAX_EMITTERS_SPLASH2 = 30;
+const int MAX_EMITTERS_SPLASH3 = 30;
+const int MAX_EMITTERS_SPLASH4 = 30;
+const int SUNK_CAR_COUNT = 4;
+const int ACS_SUNK_CAR_COUNT = 2;
+const int MAX_DROWNING_CIVIL = 4;
+const int MAX_CRACKSOUNDS = 3;
+const int MAX_BURNING_OBJECTS = 20;
+const int HINT_BURNING_NUMBER = 15;
+const int HINT_VICTIMS_NUMBER = 4;
+const int HINT_DROWNING_NUMBER = 5;
+const int HINT_CARSINWATER_NUMBER = 2;
+const int WORKER_COUNT = 2;
+
+object Mission13 : MissionScript
+{
+	// cutscene vars
+	GameObject mBridgeA1, mBridgeA2, mBridgeB1, mBridgeB2, mBridgeA3, mBridgeB3;
+	GameObject mCSBridgeA1, mCSBridgeA2, mCSBridgeB1, mCSBridgeB2, mCSBridgeA3, mCSBridgeB3;
+	GameObject mACSBridgeA1, mACSBridgeA2, mACSBridgeB1, mACSBridgeB2;
+	GameObject mCSInvisiblePillar;
+	GameObject mCrashDebris[MAX_DEBRIS];
+	GameObject mCSEmitterCrack1[MAX_EMITTERS_CRACK1];
+	int mCSEmitterCrack1Count;
+	GameObject mCSEmitterCrack2[MAX_EMITTERS_CRACK2];
+	int mCSEmitterCrack2Count;
+	GameObject mCSEmitterSplash[MAX_EMITTERS_SPLASH];
+	int mCSEmitterSplashCount;
+	GameObject mCSEmitterSplash1[MAX_EMITTERS_SPLASH1];
+	int mCSEmitterSplash1Count;
+	GameObject mCSEmitterSplash2[MAX_EMITTERS_SPLASH2];
+	int mCSEmitterSplash2Count;
+	GameObject mCSEmitterSplash3[MAX_EMITTERS_SPLASH3];
+	int mCSEmitterSplash3Count;
+	GameObject mCSEmitterSplash4[MAX_EMITTERS_SPLASH4];
+	int mCSEmitterSplash4Count;
+	int mCrashDebrisCount;	
+	int mCSPhaseNr;
+	Vector mDrowningSpawn;
+
+	const char mCrackSounds1[] = "mod:Audio/FX/destruction/bridgecrack1.wav";
+	const char mCrackSounds2[] = "mod:Audio/FX/destruction/bridgecrack2.wav";
+	const char mCrackSounds3[] = "mod:Audio/FX/destruction/bridgecrack3.wav";
+	bool mBridgeCollapsed;
+	bool mHintVictims;
+	GameObjectList mFallingObjects;
+	int mVehiclesUnderWater;
+	bool mAlreadyFiresExt;
+	bool mAlreadyInjuredSaved;
+	bool mAlreadyDrowningSaved;
+	bool mFailedTooManyDeadCivils;
+	bool mFailedTooManyFallingVehiclesWithEnclosedPersons;
+	bool mFailedTooManyBurningObjects;
+	bool mCutsceneTimerStarted;
+	bool mHintBurning;
+	Vehicle mCarsCouldFall[ACS_SUNK_CAR_COUNT];
+	Vehicle mCarsEmpty[5];
+	Person mWorker[5];
+	GameObject mDebris[5];
+	int mCarsEmptyCount;
+	int mCarsCouldFallCount;
+	//Person mCivilsCouldFall[MAX_DROWNING_CIVIL];
+	//int mCivilsCouldFallCount;
+	Vehicle mACSSunkCars[ACS_SUNK_CAR_COUNT];
+	GameObject mACSSunkCarBubbles[ACS_SUNK_CAR_COUNT];
+	Vehicle mSunkCars[SUNK_CAR_COUNT];
+	GameObject mSunkCarBubbles[SUNK_CAR_COUNT];
+	Person mDrowningCivils[MAX_DROWNING_CIVIL];
+	GameObject mCables;
+	int mDrowningCivilsCount;
+	int mVehiclesUnderWaterWithEnclosedPersons;
+	int mVehiclesFellInWater;
+	int mPersonsFellInWater;
+	GameObjectList mRoadPartList;
+	Vector mCraneTargetPos;
+	ActorList mBridgeBarricadeList;
+
+	Mission13()
+	{
+		// TODO: remove when campaign is edited
+		//Game::LoadMap("base:/Maps/m13.e4m");
+	}
+	
+	~Mission13()
+	{
+	}
+	
+	void Start()
+	{
+		// start music
+		//Audio::PlaySoundtrack("4", 0.0f);
+
+		mCrashDebrisCount = 0;
+		mCSEmitterCrack1Count = 0;
+		mCSEmitterCrack2Count = 0;
+		mCSEmitterSplashCount = 0;
+		mCSEmitterSplash1Count = 0;
+		mCSEmitterSplash2Count = 0;
+		mCSEmitterSplash3Count = 0;
+		mCSEmitterSplash4Count = 0;
+		mBridgeCollapsed = false;
+		mCSPhaseNr = 0;
+		mVehiclesUnderWater = 0;
+		mVehiclesUnderWaterWithEnclosedPersons = 4;
+		mVehiclesFellInWater = 0;
+		mPersonsFellInWater = 0;
+		mAlreadyFiresExt = false;
+		mAlreadyInjuredSaved = false;
+		mAlreadyDrowningSaved = false;
+		mHintVictims = false;
+		mFailedTooManyDeadCivils = false;
+		mFailedTooManyFallingVehiclesWithEnclosedPersons = false;
+		mFailedTooManyBurningObjects = false;
+		mCutsceneTimerStarted = false;
+		mHintBurning = false;
+		mCarsEmptyCount = 0;
+
+		// read game objects
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName("bridgea1"))
+				mBridgeA1 = *obj;
+			else if (obj->HasName("bridgea2"))
+				mBridgeA2 = *obj;
+			else if (obj->HasName("bridgea3"))
+				mBridgeA3 = *obj;
+			else if (obj->HasName("bridgeb1"))
+				mBridgeB1 = *obj;
+			else if (obj->HasName("bridgeb2"))
+				mBridgeB2 = *obj;
+			else if (obj->HasName("bridgeb3"))
+				mBridgeB3 = *obj;
+
+			else if (obj->HasName("worker1"))
+				mWorker[0] = (Person*)obj;
+			else if (obj->HasName("worker2"))
+				mWorker[1] = (Person*)obj;
+			else if (obj->HasName("debris1"))
+				mDebris[0] = *obj;
+			else if (obj->HasName("debris2"))
+				mDebris[1] = *obj;
+
+			else if (obj->HasName("acs_bridgea1"))
+			{
+				mACSBridgeA1 = *obj;
+				mACSBridgeA1.Hide();
+			}
+			else if (obj->HasName("acs_bridgea2"))
+			{
+				mACSBridgeA2 = *obj;
+				mACSBridgeA2.Hide();
+			}
+			else if (obj->HasName("acs_bridgeb1"))
+			{
+				mACSBridgeB1 = *obj;
+				mACSBridgeB1.Hide();
+			}
+			else if (obj->HasName("acs_bridgeb2"))
+			{
+				mACSBridgeB2 = *obj;
+				mACSBridgeB2.Hide();
+			}
+
+			else if (obj->HasName("debris"))
+			{
+				if (mCrashDebrisCount < MAX_DEBRIS)
+				{
+					mCrashDebris[mCrashDebrisCount] = *obj;
+					mCrashDebrisCount++;
+				}
+			}
+
+			else if (obj->HasName("CS_Splash"))
+			{
+				if (mCSEmitterSplashCount < MAX_EMITTERS_SPLASH)
+				{
+					mCSEmitterSplash[mCSEmitterSplashCount] = *obj;
+					mCSEmitterSplash[mCSEmitterSplashCount].Hide();
+					mCSEmitterSplash[mCSEmitterSplashCount].StopParticleEffect();
+					mCSEmitterSplashCount++;
+				}
+			}
+			else if (obj->HasName("CS_Splash1"))
+			{
+				if (mCSEmitterSplash1Count < MAX_EMITTERS_SPLASH1)
+				{
+					mCSEmitterSplash1[mCSEmitterSplash1Count] = *obj;
+					mCSEmitterSplash1[mCSEmitterSplash1Count].Hide();
+					mCSEmitterSplash1[mCSEmitterSplash1Count].StopParticleEffect();
+					mCSEmitterSplash1Count++;
+				}
+			}
+			else if (obj->HasName("CS_Splash2"))
+			{
+				if (mCSEmitterSplash2Count < MAX_EMITTERS_SPLASH2)
+				{
+					mCSEmitterSplash2[mCSEmitterSplash2Count] = *obj;
+					mCSEmitterSplash2[mCSEmitterSplash2Count].Hide();
+					mCSEmitterSplash2[mCSEmitterSplash2Count].StopParticleEffect();
+					mCSEmitterSplash2Count++;
+				}
+			}
+			else if (obj->HasName("CS_Splash3"))
+			{
+				if (mCSEmitterSplash3Count < MAX_EMITTERS_SPLASH2)
+				{
+					mCSEmitterSplash3[mCSEmitterSplash3Count] = *obj;
+					mCSEmitterSplash3[mCSEmitterSplash3Count].Hide();
+					mCSEmitterSplash3[mCSEmitterSplash3Count].StopParticleEffect();
+					mCSEmitterSplash3Count++;
+				}
+			}
+			else if (obj->HasName("CS_Splash4"))
+			{
+				if (mCSEmitterSplash4Count < MAX_EMITTERS_SPLASH2)
+				{
+					mCSEmitterSplash4[mCSEmitterSplash4Count] = *obj;
+					mCSEmitterSplash4[mCSEmitterSplash4Count].Hide();
+					mCSEmitterSplash4[mCSEmitterSplash4Count].StopParticleEffect();
+					mCSEmitterSplash4Count++;
+				}
+			}
+			else if (obj->HasName("CS_Crack1"))
+			{
+				if (mCSEmitterCrack1Count < MAX_EMITTERS_CRACK1)
+				{
+					mCSEmitterCrack1[mCSEmitterCrack1Count] = *obj;
+					mCSEmitterCrack1[mCSEmitterCrack1Count].Hide();
+					mCSEmitterCrack1[mCSEmitterCrack1Count].StopParticleEffect();
+					mCSEmitterCrack1Count++;
+				}
+			}
+			else if (obj->HasName("CS_Crack2"))
+			{
+				if (mCSEmitterCrack2Count < MAX_EMITTERS_CRACK2)
+				{
+					mCSEmitterCrack2[mCSEmitterCrack2Count] = *obj;
+					mCSEmitterCrack2[mCSEmitterCrack2Count].Hide();
+					mCSEmitterCrack2[mCSEmitterCrack2Count].StopParticleEffect();
+					mCSEmitterCrack2Count++;
+				}
+			}
+
+			else if (obj->HasName("cs_invisiblepillar"))
+			{
+				mCSInvisiblePillar = *obj;
+			}
+
+			else if (obj->HasName("cs_emptycar1"))
+			{
+				mCarsEmpty[0] = (Vehicle*)obj;
+				mCarsEmptyCount++;
+			}
+			else if (obj->HasName("cs_emptycar2"))
+			{
+				mCarsEmpty[1] = (Vehicle*)obj;
+				mCarsEmptyCount++;
+			}
+			else if (obj->HasName("cs_waterwreck1"))
+			{
+				mCarsCouldFall[0] = (Vehicle*)obj;
+				mCarsCouldFallCount++;
+			}
+			else if (obj->HasName("cs_waterwreck2"))
+			{
+				mCarsCouldFall[1] = (Vehicle*)obj;
+				mCarsCouldFallCount++;
+			}
+			//if (obj->HasName("cs_person1"))
+			//{
+			//	mCivilsCouldFall[0] = (Person*)obj;
+			//}
+			//if (obj->HasName("cs_person2"))
+			//{
+			//	mCivilsCouldFall[1] = (Person*)obj;
+			//}
+			//if (obj->HasName("cs_person3"))
+			//{
+			//	mCivilsCouldFall[2] = (Person*)obj;
+			//}
+			//if (obj->HasName("cs_person4"))
+			//{
+			//	mCivilsCouldFall[3] = (Person*)obj;
+			//}
+			else if (obj->HasName("acs_waterwreck1"))
+			{
+				mACSSunkCars[0] = (Vehicle*)obj;
+				mACSSunkCars[0].Hide();
+			}
+			else if (obj->HasName("acs_waterwreck1_bubbles"))
+			{
+				mACSSunkCarBubbles[0] = obj;
+				mACSSunkCarBubbles[0].Hide();
+			}
+			else if (obj->HasName("acs_waterwreck2"))
+			{
+				mACSSunkCars[1] = (Vehicle*)obj;
+				mACSSunkCars[1].Hide();
+			}
+			else if (obj->HasName("acs_waterwreck2_bubbles"))
+			{
+				mACSSunkCarBubbles[1] = obj;
+				mACSSunkCarBubbles[1].Hide();
+			}
+			else if (obj->HasName("cs_person1"))
+			{
+				mDrowningCivils[0] = (Person*)obj;
+				mDrowningCivils[0].Hide();
+			}
+			else if (obj->HasName("cs_person2"))
+			{
+				mDrowningCivils[1] = (Person*)obj;
+				mDrowningCivils[1].Hide();
+			}
+			else if (obj->HasName("acs_person3"))
+			{
+				mDrowningCivils[2] = (Person*)obj;
+				mDrowningCivils[2].Hide();
+			}
+			else if (obj->HasName("acs_person4"))
+			{
+				mDrowningCivils[3] = (Person*)obj;
+				mDrowningCivils[3].Hide();
+			}
+
+			else if (obj->HasName("waterwreck1"))
+			{
+				mSunkCars[0] = (Vehicle*)obj;
+				mSunkCars[0].UpdatePlacement();
+			}
+			else if (obj->HasName("waterwreck1_bubbles"))
+			{
+				mSunkCarBubbles[0] = obj;
+			}
+			else if (obj->HasName("waterwreck2"))
+			{
+				mSunkCars[1] = (Vehicle*)obj;
+				mSunkCars[1].UpdatePlacement();
+			}
+			else if (obj->HasName("waterwreck2_bubbles"))
+			{
+				mSunkCarBubbles[1] = obj;
+			}
+			else if (obj->HasName("waterwreck3"))
+			{
+				mSunkCars[2] = (Vehicle*)obj;
+				mSunkCars[2].UpdatePlacement();
+			}
+			else if (obj->HasName("waterwreck3_bubbles"))
+			{
+				mSunkCarBubbles[2] = obj;
+			}
+			else if (obj->HasName("waterwreck4"))
+			{
+				mSunkCars[3] = (Vehicle*)obj;
+				mSunkCars[3].UpdatePlacement();
+			}
+			else if (obj->HasName("waterwreck4_bubbles"))
+			{
+				mSunkCarBubbles[3] = obj;
+			}
+			else if (obj->HasName("cables"))
+			{
+				mCables = obj;
+			}
+			else if (obj->HasName(NAME_DROWNING1))
+				obj->SetObjectPath(NAME_PATH_DROWNING1);
+			else if (obj->HasName(NAME_DROWNING2))
+				obj->SetObjectPath(NAME_PATH_DROWNING2);
+		}
+		System::Print("Number of crack1 particles: %d", mCSEmitterCrack1Count);
+		System::Print("Number of crack2 particles: %d", mCSEmitterCrack2Count);
+		System::Print("Number of splash particles: %d", mCSEmitterSplashCount);
+		System::Print("Number of splash1 particles: %d", mCSEmitterSplash1Count);
+		System::Print("Number of splash2 particles: %d", mCSEmitterSplash2Count);
+		System::Print("Number of splash3 particles: %d", mCSEmitterSplash3Count);
+		System::Print("Number of splash4 particles: %d", mCSEmitterSplash4Count);
+
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName("cs_bridgea1"))
+			{
+				mCSBridgeA1 = *obj;
+				mCSBridgeA1.SetPosition(&mBridgeA1);
+				mCSBridgeA1.SetRotation(&mBridgeA1);
+				mCSBridgeA1.Hide();
+			}
+			if (obj->HasName("cs_bridgea2"))
+			{
+				mCSBridgeA2 = *obj;
+				mCSBridgeA2.SetPosition(&mBridgeA2);
+				mCSBridgeA2.SetRotation(&mBridgeA2);
+				mCSBridgeA2.Hide();
+			}
+			if (obj->HasName("cs_bridgea3"))
+			{
+				mCSBridgeA3 = *obj;
+				mCSBridgeA3.SetPosition(&mBridgeA3);
+				mCSBridgeA3.SetRotation(&mBridgeA3);
+				mCSBridgeA3.Hide();
+			}
+			if (obj->HasName("cs_bridgeb1"))
+			{
+				mCSBridgeB1 = *obj;
+				mCSBridgeB1.SetPosition(&mBridgeB1);
+				mCSBridgeB1.SetRotation(&mBridgeB1);
+				mCSBridgeB1.Hide();
+			}
+			if (obj->HasName("cs_bridgeb2"))
+			{
+				mCSBridgeB2 = *obj;
+				mCSBridgeB2.SetPosition(&mBridgeB2);
+				mCSBridgeB2.SetRotation(&mBridgeB2);
+				mCSBridgeB2.Hide();
+			}
+			if (obj->HasName("cs_bridgeb3"))
+			{
+				mCSBridgeB3 = *obj;
+				mCSBridgeB3.SetPosition(&mBridgeB3);
+				mCSBridgeB3.SetRotation(&mBridgeB3);
+				mCSBridgeB3.Hide();
+			}
+		}
+
+		mDrowningSpawn = mCSInvisiblePillar.GetPosition();
+		mCSInvisiblePillar.Hide();
+
+		mRoadPartList = Game::GetGameObjects("roadpart");
+		System::Log("Number of roadparts: %d", mRoadPartList.GetNumObjects());
+
+		ActorList actList = Game::GetActors("cranetarget");
+		if (actList.GetNumActors() > 0)
+		{
+			mCraneTargetPos = actList.GetActor(0)->GetPosition();
+		}
+		else
+			System::Log("cranetarget virtual object missing!");
+
+		mBridgeBarricadeList = Game::GetActors("bridge_blocker");
+		if (mBridgeBarricadeList.GetNumActors() == 0)
+			System::Log("no bridge blockers found!");
+
+		// add initial missfion objectives
+		Mission::AddObjective("M13_CAR_TO_SAVE");
+		Mission::SetObjectiveAccomplished("M13_CAR_TO_SAVE", false);
+		Mission::AddObjective("TRANSPORT_INJURED");
+		Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+		Mission::AddObjective("RESCUE_DROWNING_PERSONS");
+		Mission::SetObjectiveAccomplished("RESCUE_DROWNING_PERSONS", false);
+		
+		// set initial timers
+		Mission::StartSingleTimer("CrackSound1", CRACKSOUND1_TIME);
+		Mission::StartSingleTimer("CrackSound2", CRACKSOUND2_TIME);
+		Mission::StartSingleTimer("CrackSound3", CRACKSOUND3_TIME);
+		Mission::StartSingleTimer("HintBridge", HINT_BRIDGE_TIME);
+		Mission::StartSingleTimer("HintBridge1", HINT_BRIDGEWARNING1_TIME);
+		Mission::StartSingleTimer("HintBridge2", HINT_BRIDGEWARNING2_TIME);
+		Mission::StartSingleTimer("HintBridge3", HINT_BRIDGEWARNING3_TIME);
+		System::Log("warning1 time: %d", HINT_BRIDGEWARNING1_TIME);
+		System::Log("warning2 time: %d", HINT_BRIDGEWARNING2_TIME);
+		System::Log("warning3 time: %d", HINT_BRIDGEWARNING3_TIME);
+		// uncomment for debugging cutscene
+		//Mission::StartSingleTimer("Cutscene", 1.0f);
+		Mission::StartIntervalTimer("CheckMissionState", 1.0f);
+		Mission::StartSingleTimer("HintCarsInWater", HINT_CARSINWATER_TIME);
+		CheckVehiclesUnderWater();
+
+		Audio::PlaySoundtrack("13", 0.0f);
+	}	
+
+	void OnPhysicsEvent(GameObject *obj)
+	{
+		if (mCSPhaseNr == 1)
+		{
+			CutSceneSecondPhase();
+			return;
+		}
+		if (mCSPhaseNr == 2)
+		{
+			CutSceneThirdPhase();
+			return;
+		}
+		if (mCSPhaseNr == 3)
+		{
+			CutSceneFourthPhase();
+			return;
+		}
+	}
+
+	void CutSceneFirstPhase()
+	{
+		System::Log("Cutscene 1st Phase");
+
+		GameObjectList list;
+		Game::CollectObstaclesOnVirtualObject("StopMoveArea", list);
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			obj->ClearActions();
+		}
+
+		Game::CollectObstaclesOnVirtualObject("BridgeCollapseArea", mFallingObjects);
+		for(int i = 0; i < mFallingObjects.GetNumObjects(); i++)
+		{
+			GameObject *obj = mFallingObjects.GetObject(i);
+			if (obj->GetType() == ACTOR_PERSON)
+			{
+				Person pers = (Person*)obj;				
+				pers.EnablePhysicsSimulation();
+				mPersonsFellInWater++;
+			}
+			if (obj->GetType() == ACTOR_VEHICLE)
+			{
+				obj->EnablePhysicsSimulation();
+				obj->UnfreezePhysics();
+				Vector v;
+				obj->GetPhysicsPosition(v);
+				v.z += 5.0f;
+				obj->SetPhysicsPosition(v);
+				Vehicle vehi = (Vehicle*)obj;
+				//if (vehi.GetVehicleType() == VT_NOSQUAD)
+				//	vehi.Hide();
+				mVehiclesFellInWater++;
+			}
+		}
+		System::Log("Number of vehicles falling into water: %d", mVehiclesFellInWater);
+		System::Log("Number of persons falling into water: %d", mPersonsFellInWater);
+		for (int i = 0; i < mRoadPartList.GetNumObjects(); i++)
+			mRoadPartList.GetObject(i)->DisablePhysics();
+		mBridgeA1.Hide();
+		mBridgeA2.Hide();
+		mBridgeA3.Hide();
+		mBridgeB1.Hide();
+		mBridgeB2.Hide();
+		mBridgeB3.Hide();
+		mCSBridgeA1.DisablePhysicsSimulation();
+		mCSBridgeA1.Show();				
+		mCSBridgeA1.EnablePhysicsSimulation();		
+		mCSBridgeA1.UnfreezePhysics();
+		mCSBridgeA1.SetCollisionMode(PHYSIC_COLLISION_NOWORLD);
+		mCSBridgeA2.DisablePhysicsSimulation();
+		mCSBridgeA2.Show();		
+		mCSBridgeA2.EnablePhysicsSimulation();
+		mCSBridgeA2.SetCollisionMode(PHYSIC_COLLISION_NOWORLD);
+		mCSBridgeA2.UnfreezePhysics();
+		mCSBridgeA3.DisablePhysicsSimulation();
+		mCSBridgeA3.Show();		
+		mCSBridgeA3.EnablePhysicsSimulation();
+		mCSBridgeA3.UnfreezePhysics();
+		mCSBridgeA3.SetCollisionMode(PHYSIC_COLLISION_NONE);// + PHYSIC_COLLISION_NOEXTERNALBODIES);
+		mCSBridgeB1.DisablePhysicsSimulation();
+		mCSBridgeB1.Show();		
+		mCSBridgeB1.EnablePhysicsSimulation();
+		mCSBridgeB1.UnfreezePhysics();
+		mCSBridgeB1.SetCollisionMode(PHYSIC_COLLISION_NOWORLD);
+		mCSBridgeB2.DisablePhysicsSimulation();
+		mCSBridgeB2.Show();		
+		mCSBridgeB2.EnablePhysicsSimulation();
+		mCSBridgeB2.UnfreezePhysics();
+		mCSBridgeB2.SetCollisionMode(PHYSIC_COLLISION_NOWORLD);
+		mCSBridgeB3.DisablePhysicsSimulation();
+		mCSBridgeB3.Show();		
+		mCSBridgeB3.EnablePhysicsSimulation();
+		mCSBridgeB3.UnfreezePhysics();
+		mCSBridgeB3.SetCollisionMode(PHYSIC_COLLISION_NONE);// + PHYSIC_COLLISION_NOEXTERNALBODIES);
+		mCSBridgeA1.SetFloatage(100.0f);
+		mCSBridgeA2.SetFloatage(100.0f);
+		mCSBridgeB1.SetFloatage(100.0f);
+		mCSBridgeB2.SetFloatage(100.0f);
+		mCSInvisiblePillar.DisablePhysicsSimulation();
+		mCSInvisiblePillar.Show();
+		mCSInvisiblePillar.EnablePhysicsSimulation();
+		mCSInvisiblePillar.SetPosition(mDrowningSpawn);
+
+		Vector v;
+		mCSInvisiblePillar.GetPhysicsPosition(v);
+		v.z -= 50.0f;
+		mCSInvisiblePillar.SetPhysicsPosition(v);
+
+		for (int i = 0; i < mCSEmitterCrack1Count; i++)
+		{
+			mCSEmitterCrack1[i].Show();
+			mCSEmitterCrack1[i].StartParticleEffect();
+		}
+
+		for (int i = 0; i < mCrashDebrisCount; i++)
+			mCrashDebris[i].Hide();
+
+		mCSPhaseNr = 1;
+
+		mCSBridgeA1.StartPhysicsEvent(35);		
+	}
+
+	void CutSceneSecondPhase()
+	{
+		System::Log("Cutscene 2nd Phase");
+		Vector v;		
+		mCSInvisiblePillar.GetPhysicsPosition(v);
+		v.z -= 200.0f;
+		mCSInvisiblePillar.SetPhysicsPosition(v);
+		mCSBridgeA1.UnfreezePhysics();
+		mCSBridgeA2.UnfreezePhysics();
+		mCSBridgeB1.UnfreezePhysics();
+		mCSBridgeB2.UnfreezePhysics();
+
+		for (int i = 0; i < mCSEmitterCrack2Count; i++)
+		{
+			mCSEmitterCrack2[i].Show();
+			mCSEmitterCrack2[i].StartParticleEffect();
+		}
+		mCables.Hide();
+
+		mCSPhaseNr = 2;
+		mCSBridgeA1.StartPhysicsEvent(20);
+	}
+
+	void CutSceneThirdPhase()
+	{
+		System::Log("Cutscene 3rd Phase");
+		for (int i = 0; i < mCSEmitterSplashCount; i++)
+		{
+			mCSEmitterSplash[i].Show();
+			mCSEmitterSplash[i].StartParticleEffect();
+		}
+		Mission::StartSingleTimer("cs_particles_splash1", SPLASH1_TIME);
+		Mission::StartSingleTimer("cs_particles_splash2", SPLASH2_TIME);
+		Mission::StartSingleTimer("cs_particles_splash3", SPLASH3_TIME);
+		//Mission::StartSingleTimer("cs_particles_splash4", SPLASH4_TIME);
+		mCSInvisiblePillar.Hide();
+		mCSBridgeA1.EnablePhysicsSimulation();
+		mCSBridgeA1.UnfreezePhysics();
+		mCSBridgeA2.EnablePhysicsSimulation();
+		mCSBridgeA2.UnfreezePhysics();
+		mCSBridgeB1.EnablePhysicsSimulation();
+		mCSBridgeB1.UnfreezePhysics();
+		mCSBridgeB2.EnablePhysicsSimulation();
+		mCSBridgeB2.UnfreezePhysics();
+		mCSPhaseNr = 3;
+		mCSBridgeA1.StartPhysicsEvent(100);
+	}
+
+	void CutSceneFourthPhase()
+	{
+		for (int i = 0; i < mBridgeBarricadeList.GetNumActors(); i++)
+			mBridgeBarricadeList.GetActor(i)->SetVirtualObjectTerrain("Barricade");
+		//Mission::CloseBlackBars(3.0f, 1.0f);		
+		Mission::EndCutScene();//true, 2.0f);
+		Mission::HideBlackBars();
+		Mission::StartSingleTimer("CutsceneEnd", 3.5f);
+	}
+
+	void CutSceneEnding()
+	{
+		System::Log("Cutscene Ending");
+		//mCSBridgeA1.Hide();
+		//mCSBridgeA2.Hide();
+		//mCSBridgeB1.Hide();
+		//mCSBridgeB2.Hide();
+		for (int i = 0; i < mCarsEmptyCount; i++)
+			mCarsEmpty[i].Hide();
+		//mACSBridgeA1.Show();
+		//mACSBridgeA2.Show();
+		//mACSBridgeB1.Show();
+		//mACSBridgeB2.Show();
+		System::Log("Number of falling objects: %d", mFallingObjects.GetNumObjects());
+
+		Vector pos;		
+		for(int i = 0; i < mFallingObjects.GetNumObjects(); i++)
+		{
+			GameObject *obj = mFallingObjects.GetObject(i);
+			if (obj->GetType() == ACTOR_PERSON)
+			{
+				Person pers = (Person*)mFallingObjects.GetObject(i);
+				//if (pers.GetRole() == ROLE_SQUAD)
+				{
+					pers.Injure(INJUREREASON_DROWN);
+					//pos = mDrowningSpawn;
+					//pos.x += -100.0f + ((float)Math::rand()/(float)Math::RANDMAX)*200.0f;
+					//pos.y += -100.0f + ((float)Math::rand()/(float)Math::RANDMAX)*200.0f;
+					//if (Game::FindFreePosition(&pers, pos, 300.0f))
+					//{
+					//	pers.Injure(INJUREREASON_DROWN);
+					//	pers.SetPosition(pos);
+					//}
+					//else
+					//{
+					//	pers.Kill(INJUREREASON_DROWN);
+					//	pers.Hide();
+					//	System::Log("?M13 script: No free position found for falling person");
+					//}
+				}
+				//else
+				//{
+				//	for (int j = 0; j < MAX_DROWNING_CIVIL; j++)
+				//	{
+				//		if (mCivilsCouldFall[j].GetID() == pers.GetID())
+				//		{
+				//			pers.Hide();							
+				//			mDrowningCivils[j].SetLife(pers.GetLife());
+				//			mDrowningCivils[j].SetHealth(pers.GetHealth());
+				//			// should not count as injured because is replaced by drowning person
+				//			pers.SetLife(1000.0f);
+				//			pers.SetHealth(1000.0f);
+				//			mDrowningCivils[j].Injure(INJUREREASON_DROWN);
+				//			mDrowningCivils[j].Show();
+				//		}
+				//	}
+				//}
+			}
+			if (obj->GetType() == ACTOR_VEHICLE)
+			{				
+				Vehicle vehi = (Vehicle*)mFallingObjects.GetObject(i);
+				bool found = false;
+				System::Log("falling name: %s", vehi.GetName());
+				for (int j = 0; j < ACS_SUNK_CAR_COUNT; j++)
+				{
+					// it's one of the 
+					if (mCarsCouldFall[j].GetID() == vehi.GetID())
+					{						
+						vehi.Hide();
+						if (mCarsCouldFall[j].HasEnclosedPerson())
+						{
+							mCarsCouldFall[j].RemoveEnclosedPerson();
+							mACSSunkCars[j].SetEnclosedPerson(mDrowningCivils[j].GetName());							
+							System::Log("M13: Assigned drowning civil to new car");
+						}
+							
+						mACSSunkCars[j].Show();
+						mACSSunkCarBubbles[j].Show();
+						found = true;
+					}
+				}
+				// it's a squad or empty car or one the cars
+				// which have been lifted by the crane
+				if (!found)
+				{
+					vehi.Hide();
+					vehi.Destroy();
+				}
+			}
+		}
+		for (int i = 0; i < mRoadPartList.GetNumObjects(); i++)
+			mRoadPartList.GetObject(i)->EnablePhysics();
+		mBridgeCollapsed = true;
+
+		Mission::StartSingleTimer("HintDrowning", HINT_DROWNING_TIME);
+		Mission::StopTimer("HintCarsInWater");
+		Mission::StartSingleTimer("HintCarsInWater", HINT_CARSINWATER_TIME);
+	}
+
+	void RunCutscene()
+	{
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		Camera::StartTransition("CutScene1", 2.0f);
+		Audio::SetMusicLevel(0.2f);
+		Audio::PlaySample(NAME_SOUND_BRIDGECOLLAPSE);
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (Mission::IsCutSceneRunning() && mCSPhaseNr == 0)
+			CutSceneFirstPhase();
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Collider1, Actor *Collider2)
+	{
+		//return MCC_IGNORE_CONTINUE;
+		return MCC_HALT_CONTINUE; 
+	}
+	
+	void CheckVehiclesUnderWater()
+	{
+		int vehiclesUnderWater = 0;
+		GameObjectList list;
+		Game::CollectObstaclesOnVirtualObject("WaterArea", list);
+		int vehiclesUnderWaterWithEnclosedPersons = 0;
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->GetType() == ACTOR_VEHICLE)
+			{
+				Vehicle vehi = (Vehicle*)obj;
+				if (vehi.GetVehicleType() == VT_NOSQUAD && vehi.IsInsideWater())
+				{
+					vehiclesUnderWater++;
+					if (vehi.HasEnclosedPerson())
+						vehiclesUnderWaterWithEnclosedPersons++;
+				}
+			}
+		}
+		//System::Log("Number of Vehicles in water:%d", vehiclesUnderWater);
+		//char nb = 48 + mVehiclesUnderWater;
+		//Mission::RemoveObjective("M13_CAR_TO_SAVE_" + nb);
+		if (mVehiclesUnderWaterWithEnclosedPersons == 0)
+			Mission::RemoveObjective("M13_CAR_TO_SAVE");
+		else if (mVehiclesUnderWaterWithEnclosedPersons == 1)
+			Mission::RemoveObjective("M13_CAR_TO_SAVE_1");
+		else if (mVehiclesUnderWaterWithEnclosedPersons == 2)
+			Mission::RemoveObjective("M13_CAR_TO_SAVE_2");
+		else if (mVehiclesUnderWaterWithEnclosedPersons == 3)
+			Mission::RemoveObjective("M13_CAR_TO_SAVE_3");
+		else if (mVehiclesUnderWaterWithEnclosedPersons > 3)
+			Mission::RemoveObjective("M13_CAR_TO_SAVE");
+		if (vehiclesUnderWaterWithEnclosedPersons > 0 && mVehiclesUnderWaterWithEnclosedPersons == 0)
+		{
+			Mission::PlayComment("SUPERV_M13_OBJ08");
+		}
+		if (vehiclesUnderWaterWithEnclosedPersons == 0)
+		{
+			if (mVehiclesUnderWaterWithEnclosedPersons > 0)
+			{
+				Mission::AddObjective("M13_CAR_TO_SAVE");
+				Mission::SetObjectiveAccomplished("M13_CAR_TO_SAVE", true);
+				Mission::PlayComment("SUPERV_M13_OBJ04");
+			}
+		}
+		else
+		{
+			if (vehiclesUnderWaterWithEnclosedPersons == 1)
+				Mission::AddObjective("M13_CAR_TO_SAVE_1");
+			if (vehiclesUnderWaterWithEnclosedPersons == 2)
+				Mission::AddObjective("M13_CAR_TO_SAVE_2");
+			if (vehiclesUnderWaterWithEnclosedPersons == 3)
+				Mission::AddObjective("M13_CAR_TO_SAVE_3");
+			if (vehiclesUnderWaterWithEnclosedPersons > 3)
+				Mission::AddObjective("M13_CAR_TO_SAVE");
+		}
+		mVehiclesUnderWaterWithEnclosedPersons = vehiclesUnderWaterWithEnclosedPersons;
+	}
+
+	void OnTimer(const char *Timer, float Time)
+	{
+		switch(Timer)
+		{
+			//case "CrackSound":
+			//{
+			//	Mission::StopTimer("CrackSound");
+			//	float r = 5.0f + (float)Math::rand()/(float)Math::RANDMAX*(CRACKSOUND_MAX_DELAY - 5.0f);
+			//	Mission::StartSingleTimer("CrackSound", r);
+			//	System::Log("crack sound interval %d", (int)r);
+			//	int nr = (Math::rand()*MAX_CRACKSOUNDS)/(Math::RANDMAX + 1);
+			//	if (nr == 0)
+			//		Audio::PlaySample(mCrackSounds1);
+			//	else if (nr == 1)
+			//		Audio::PlaySample(mCrackSounds2);
+			//	else if (nr == 2)
+			//		Audio::PlaySample(mCrackSounds3);
+			//	break;
+			//}
+			case "CrackSound1":
+			{
+				if (!mCutsceneTimerStarted)
+					Audio::PlaySample(NAME_SOUND_BRIDGEWARNING1);
+				break;
+			}
+			case "CrackSound2":
+			{
+				if (!mCutsceneTimerStarted)
+					Audio::PlaySample(NAME_SOUND_BRIDGEWARNING2);
+				break;
+			}
+			case "CrackSound3":
+			{
+				if (!mCutsceneTimerStarted)
+					Audio::PlaySample(NAME_SOUND_BRIDGEWARNING3);
+				break;
+			}
+			case "HintBridge":
+			{
+				Mission::PlayHint("HINT_M13_BRIDGE");
+				Audio::SetMusicLevel(0.1f);
+				break;
+			}
+			case "HintBridge1":
+			{
+				if (!mCutsceneTimerStarted)
+				{
+					Mission::PlayHint("HINT_M13_BRIDGEWARNING1");					
+				}
+				break;
+			}
+			case "HintBridge2":
+			{
+				if (!mCutsceneTimerStarted)
+				{
+					Mission::PlayHint("HINT_M13_BRIDGEWARNING2");					
+				}
+				break;
+			}
+			case "HintBridge3":
+			{
+				if (!mCutsceneTimerStarted)
+				{
+					Mission::PlayHint("HINT_M13_BRIDGEWARNING3");					
+				}
+				break;
+			}
+			case "Cutscene":
+			{
+				RunCutscene();
+				break;
+			}
+			case "CheckMissionState":
+			{
+				CheckVehiclesUnderWater();
+				int burning = Mission::GetCounter("Burning Houses") + Mission::GetCounter("Burning Objects");
+				if (burning == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::SetObjectiveAccomplished("EXTINGUISH_FIRES", true);
+						Mission::PlayComment("SUPERV_OBJ_NOMOREFIRES");
+						mAlreadyFiresExt = true;
+					}
+				}
+				else
+				{
+					if (burning > HINT_BURNING_NUMBER)
+					{
+						if (!mHintBurning)
+						{
+							Mission::PlayHint("HINT_M13_BURNING");
+							mHintBurning = true;
+							Audio::SetMusicLevel(0.4f);
+						}
+					}
+
+					if (Mission::IsObjectiveAccomplished("EXTINGUISH_FIRES"))
+					{
+						Mission::RemoveObjective("EXTINGUISH_FIRES");
+						Mission::AddObjective("EXTINGUISH_FIRES");
+						if (mAlreadyFiresExt)
+						{
+							Mission::PlayComment("SUPERV_OBJ_FIRESAGAIN");
+						}
+					}
+				}
+				if (Mission::GetCounter("Injured Persons") == 0)
+				{
+					if (!Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", true);
+						Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+						mAlreadyInjuredSaved = true;
+					}
+				}
+				else
+				{
+					if (Mission::IsObjectiveAccomplished("TRANSPORT_INJURED"))
+					{
+						Mission::SetObjectiveAccomplished("TRANSPORT_INJURED", false);
+						if (mAlreadyInjuredSaved)
+						{
+							Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+						}
+					}
+					if (Mission::GetCounter("Dead Civils") >= HINT_VICTIMS_NUMBER)
+					{
+						if (!mHintVictims)
+						{
+							Mission::PlayHint("HINT_M13_MANY_VICTIMS");
+							mHintVictims = true;
+							Audio::SetMusicLevel(0.4f);
+						}
+					}
+				}
+				if (Mission::GetCounter("Drowning") == 0 && Mission::IsObjectiveAccomplished("M13_CAR_TO_SAVE"))
+				{
+					if (!Mission::IsObjectiveAccomplished("RESCUE_DROWNING_PERSONS"))
+					{
+						Mission::SetObjectiveAccomplished("RESCUE_DROWNING_PERSONS", true);
+						Mission::PlayComment("SUPERV_M13_OBJ03");
+						mAlreadyDrowningSaved = true;
+					}
+				}
+				else if (Mission::GetCounter("Drowning") > 0)
+				{
+					if (Mission::IsObjectiveAccomplished("RESCUE_DROWNING_PERSONS"))
+					{
+						Mission::SetObjectiveAccomplished("RESCUE_DROWNING_PERSONS", false);
+						if (mAlreadyDrowningSaved)
+						{
+							//Mission::PlayComment("COM_M13_DROWNING_AGAIN");
+						}
+					}
+				}
+				break;
+			}
+			case "HintDrowning":
+			{
+				System::Log("drowning: %d", Mission::GetCounter("Drowning") + mVehiclesUnderWaterWithEnclosedPersons);
+				if (Mission::GetCounter("Drowning") + mVehiclesUnderWaterWithEnclosedPersons >= HINT_DROWNING_NUMBER)
+					Mission::PlayHint("HINT_M13_DROWNING");
+				break;
+			}
+			case "HintCarsInWater":
+			{
+				if (mVehiclesUnderWaterWithEnclosedPersons >= HINT_CARSINWATER_NUMBER)
+				{
+					Mission::PlayHint("HINT_M13_CARS_NOT_SAVED");
+				}
+				break;
+			}
+			case "CutsceneEnd":
+			{
+				CutSceneEnding();
+				break;
+			}
+			case "cs_particles_splash1":
+			{
+				for (int i = 0; i < mCSEmitterSplash1Count; i++)
+				{
+					mCSEmitterSplash1[i].Show();
+					mCSEmitterSplash1[i].StartParticleEffect();
+				}
+				break;
+			}
+			case "cs_particles_splash2":
+			{
+				for (int i = 0; i < mCSEmitterSplash2Count; i++)
+				{
+					mCSEmitterSplash2[i].Show();
+					mCSEmitterSplash2[i].StartParticleEffect();
+				}
+				break;
+			}
+			case "cs_particles_splash3":
+			{
+				for (int i = 0; i < mCSEmitterSplash3Count; i++)
+				{
+					mCSEmitterSplash3[i].Show();
+					mCSEmitterSplash3[i].StartParticleEffect();
+				}
+				break;
+			}
+			case "cs_particles_splash4":
+			{
+				for (int i = 0; i < mCSEmitterSplash4Count; i++)
+				{
+					mCSEmitterSplash4[i].Show();
+					mCSEmitterSplash4[i].StartParticleEffect();
+				}
+				break;
+			}
+		}
+	}
+	
+	void UpdateCutScene()
+	{
+	}
+
+	void OnTrigger(const char *Trigger, Actor *Collider)
+	{
+	}
+	
+	//MoveCollCheck OnCheckMoveCollision(GameObject *Obj, Actor *act)
+	//{
+	//	return MCC_HALT_CONTINUE;
+	//}
+
+	void OnPostCommand(const char *Cmd, GameObject *Caller, Actor *Target)
+	{
+		switch(Cmd)
+		{
+			case "LiftWithCrane":
+				{
+					if (Target->HasName("fgrr_signal")
+						&& ((Target->GetPosition() - mSunkCars[2].GetPosition()).GetLen() < 200.0f
+						|| (Target->GetPosition() - mSunkCars[3].GetPosition()).GetLen() < 200.0f))
+					{
+						// test if crane has to move after command LiftWithCrane						
+						if (Caller->GetNumActions() == 3)
+						{
+							Caller->ClearActions();
+							Caller->PushActionDeinstall(ACTION_NEWLIST);
+							Caller->PushActionMove(ACTION_APPEND, mCraneTargetPos);
+							Caller->PushActionLiftWithCrane(ACTION_APPEND, Target);
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch(Action)
+		{
+			case "EActionLiftPerson":
+			case "EActionPickUp":
+				Actor target = Game::GetActor(Data->Parameters[0].iValue);
+				if (target.HasName(NAME_DROWNING1) || target.HasName(NAME_DROWNING2))
+				{
+					GameObject obj(&target);
+					obj.SetObjectPath(NULL);
+				}
+				break;
+			case "EActionInstall":
+			{
+				Vehicle vc(Data->Owner);
+				if (vc.IsValid() && vc.GetVehicleType() == VT_THW_FGRB_BLF)
+				{
+					mCutsceneTimerStarted = true;
+					Mission::StartSingleTimer("Cutscene", CUTSCENE_TIME);
+				}
+				break;
+			}
+			case "EActionDive":
+			{
+				for (int i = 0; i < SUNK_CAR_COUNT; i++)
+				{					
+					if (mSunkCars[i].IsValid() || Data->Parameters[0].iValue == mSunkCars[i].GetID())
+					{
+						mSunkCarBubbles[i].Hide();
+						break;
+					}
+				}
+				for (int i = 0; i < ACS_SUNK_CAR_COUNT; i++)
+				{
+					if (mACSSunkCars[i].IsValid() || Data->Parameters[0].iValue == mACSSunkCars[i].GetID())
+					{
+						mACSSunkCarBubbles[i].Hide();
+						break;
+					}
+				}
+				break;
+			}
+			case "DropWithCrane":
+			{				
+				break;
+			}
+			case "EActionPull":
+			{
+				if (Data->Parameters[0].iValue == mDebris[0].GetID())
+				{
+					mWorker[0].ClearFlag(OF_BLOCKED);
+				}
+				if (Data->Parameters[0].iValue == mDebris[1].GetID())
+				{
+					mWorker[1].ClearFlag(OF_BLOCKED);
+				}
+				break;
+			}
+		}
+		return ACTION_CONTINUE;
+	}
+	
+	ActionCallbackResult OnPreAction(const char *Action, ActionCallback* Data)
+	{
+		return ACTION_CONTINUE;
+	}	
+
+	ActionCallbackResult OnAbortAction(const char *Action, ActionCallback* Data)
+	{		
+		return ACTION_CONTINUE;
+	}	
+		
+	PathFinishedAction OnPathFinished(const char *PathName, GameObject *Obj)
+	{		
+		return PATH_DEFAULT;
+	}
+	
+	void OnCollision(GameObject *Collider1, GameObject *Collider2)
+	{
+		if (!Mission::IsCutSceneRunning())
+			return;
+	}
+	
+	void Update()
+	{		
+	}
+	
+	MissionState GetMissionState()
+	{
+		if (Mission::IsCutSceneRunning())
+			MISSION_RUNNING;
+		if (Mission::GetCounter("Dead Civils") > MAX_DEAD_CIVILIANS)
+		{
+			mFailedTooManyDeadCivils = true;			
+			System::Log("Mission failed! - MAX_DEAD_CIVILIANS");
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+		if (mBridgeCollapsed && mVehiclesUnderWaterWithEnclosedPersons > MAX_VEHICLES_FALL_IN_WATER)
+		{
+			mFailedTooManyFallingVehiclesWithEnclosedPersons = true;
+			System::Log("Mission failed! - MAX_VEHICLES_FALL_IN_WATER");
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+		if (Mission::GetCounter("Burning Objects") + Mission::GetCounter("Burning Houses") > MAX_BURNING_OBJECTS)
+		{
+			mFailedTooManyBurningObjects = true;
+			System::Log("Mission failed! - MAX_BURNING_HOUSES");
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::IsDefaultLogicNegative())
+		{
+			System::Log("Mission failed! - IsDefaultLogicNegative");
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished()) //  && mBridgeCollapsed)
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+			
+		return MISSION_RUNNING;
+	}
+	
+	const char *GetFailReason()
+	{
+		if (mFailedTooManyDeadCivils || mFailedTooManyFallingVehiclesWithEnclosedPersons)
+			return "TOO_MANY_DIED";
+		if (mFailedTooManyBurningObjects)
+			return "TOO_MANY_FIRES";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailedTooManyDeadCivils)
+			return "SUPERV_M13_FAIL01";
+		if (mFailedTooManyFallingVehiclesWithEnclosedPersons)
+			return "SUPERV_M13_FAIL02";
+		if (mFailedTooManyBurningObjects)
+			return "SUPERV_M13_FAIL03";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M13_RES01";
+		if (scoring->Efficiency < 0.6f)
+			return "SUPERV_M13_RES02";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		Serializer->Write(mBridgeA1);
+		Serializer->Write(mBridgeA2);
+		Serializer->Write(mBridgeA3);
+		Serializer->Write(mBridgeB1);
+		Serializer->Write(mBridgeB2);
+		Serializer->Write(mBridgeB3);
+		Serializer->Write(mCSBridgeA1);
+		Serializer->Write(mCSBridgeA2);
+		Serializer->Write(mCSBridgeA3);
+		Serializer->Write(mCSBridgeB1);
+		Serializer->Write(mCSBridgeB2);
+		Serializer->Write(mCSBridgeB3);
+		Serializer->Write(mACSBridgeA1);
+		Serializer->Write(mACSBridgeA2);
+		Serializer->Write(mACSBridgeB1);
+		Serializer->Write(mACSBridgeB2);
+		Serializer->Write(mCSInvisiblePillar);
+		Serializer->Write(mCSEmitterCrack1Count);
+		for (int i = 0; i < mCSEmitterCrack1Count; i++)
+			Serializer->Write(mCSEmitterCrack1[i]);
+		Serializer->Write(mCSEmitterCrack2Count);
+		for (int i = 0; i < mCSEmitterCrack2Count; i++)
+			Serializer->Write(mCSEmitterCrack2[i]);
+		Serializer->Write(mCSEmitterSplashCount);
+		for (int i = 0; i < mCSEmitterSplashCount; i++)
+			Serializer->Write(mCSEmitterSplash[i]);
+		Serializer->Write(mCSEmitterSplash1Count);
+		for (int i = 0; i < mCSEmitterSplash1Count; i++)
+			Serializer->Write(mCSEmitterSplash1[i]);
+		Serializer->Write(mCSEmitterSplash2Count);
+		for (int i = 0; i < mCSEmitterSplash2Count; i++)
+			Serializer->Write(mCSEmitterSplash2[i]);
+		Serializer->Write(mCSEmitterSplash3Count);
+		for (int i = 0; i < mCSEmitterSplash3Count; i++)
+			Serializer->Write(mCSEmitterSplash3[i]);
+		Serializer->Write(mCSEmitterSplash4Count);
+		for (int i = 0; i < mCSEmitterSplash4Count; i++)
+			Serializer->Write(mCSEmitterSplash4[i]);
+		Serializer->Write(mCrashDebrisCount);
+		for (int i = 0; i < mCrashDebrisCount; i++)
+			Serializer->Write(mCrashDebris[i]);
+		Serializer->Write(mCSPhaseNr);
+		Serializer->Write(mDrowningSpawn);
+		Serializer->Write(mBridgeCollapsed);
+		Serializer->Write(mHintVictims);
+		Serializer->Write(mFallingObjects);
+		Serializer->Write(mVehiclesUnderWater);
+		Serializer->Write(mAlreadyFiresExt);
+		Serializer->Write(mAlreadyInjuredSaved);
+		Serializer->Write(mAlreadyDrowningSaved);
+		Serializer->Write(mCarsEmptyCount);
+		Serializer->Write(mCarsCouldFallCount);
+		//Serializer->Write(mCivilsCouldFallCount);
+		Serializer->Write(mDrowningCivilsCount);
+		for (int i = 0; i < mCarsCouldFallCount; i++)
+			Serializer->Write(mCarsCouldFall[i]);
+		//for (int i = 0; i < mCivilsCouldFallCount)
+		//	Serializer->Write(mCivilsCouldFall[i]);
+		for (int i = 0; i < mCarsEmptyCount; i++)
+			Serializer->Write(mCarsEmpty[i]);
+		for (int i = 0; i < ACS_SUNK_CAR_COUNT; i++)
+		{
+			Serializer->Write(mACSSunkCars[i]);
+			Serializer->Write(mACSSunkCarBubbles[i]);
+		}
+		for (int i = 0; i < SUNK_CAR_COUNT; i++)
+		{
+			Serializer->Write(mSunkCars[i]);
+			Serializer->Write(mSunkCarBubbles[i]);
+		}
+		for (int i = 0; i < WORKER_COUNT; i++)
+			Serializer->Write(mWorker[i]);
+		for (int i = 0; i < mDrowningCivilsCount; i++)
+			Serializer->Write(mDrowningCivils[i]);
+		Serializer->Write(mVehiclesUnderWaterWithEnclosedPersons);
+		Serializer->Write(mVehiclesFellInWater);
+		Serializer->Write(mPersonsFellInWater);
+		Serializer->Write(mCables);
+		Serializer->Write(mFailedTooManyDeadCivils);
+		Serializer->Write(mFailedTooManyFallingVehiclesWithEnclosedPersons);
+		Serializer->Write(mFailedTooManyBurningObjects);
+		Serializer->Write(mCutsceneTimerStarted);
+		Serializer->Write(mHintBurning);
+		Serializer->Write(mRoadPartList);
+		Serializer->Write(mCraneTargetPos);
+		Serializer->Write(mBridgeBarricadeList);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		Serializer->Read(mBridgeA1);
+		Serializer->Read(mBridgeA2);
+		Serializer->Read(mBridgeA3);
+		Serializer->Read(mBridgeB1);
+		Serializer->Read(mBridgeB2);
+		Serializer->Read(mBridgeB3);
+		Serializer->Read(mCSBridgeA1);
+		Serializer->Read(mCSBridgeA2);
+		Serializer->Read(mCSBridgeA3);
+		Serializer->Read(mCSBridgeB1);
+		Serializer->Read(mCSBridgeB2);
+		Serializer->Read(mCSBridgeB3);
+
+		mCSBridgeA1.Show();
+		mCSBridgeA2.Show();
+		mCSBridgeA3.Show();
+		mCSBridgeB1.Show();
+		mCSBridgeB2.Show();
+		mCSBridgeB3.Show();
+		mCSBridgeA1.SetPosition(&mBridgeA1);
+		mCSBridgeA1.SetRotation(&mBridgeA1);
+		mCSBridgeA2.SetPosition(&mBridgeA2);
+		mCSBridgeA2.SetRotation(&mBridgeA2);
+		mCSBridgeA3.SetPosition(&mBridgeA3);
+		mCSBridgeA3.SetRotation(&mBridgeA3);
+		mCSBridgeB1.SetPosition(&mBridgeB1);
+		mCSBridgeB1.SetRotation(&mBridgeB1);
+		mCSBridgeB2.SetPosition(&mBridgeB2);
+		mCSBridgeB2.SetRotation(&mBridgeB2);
+		mCSBridgeB3.SetPosition(&mBridgeB3);
+		mCSBridgeB3.SetRotation(&mBridgeB3);
+		mCSBridgeA1.Hide();
+		mCSBridgeA2.Hide();
+		mCSBridgeA3.Hide();
+		mCSBridgeB1.Hide();
+		mCSBridgeB2.Hide();
+		mCSBridgeB3.Hide();
+
+		Serializer->Read(mACSBridgeA1);
+		Serializer->Read(mACSBridgeA2);
+		Serializer->Read(mACSBridgeB1);
+		Serializer->Read(mACSBridgeB2);
+		Serializer->Read(mCSInvisiblePillar);
+		Serializer->Read(mCSEmitterCrack1Count);
+		for (int i = 0; i < mCSEmitterCrack1Count; i++)
+			Serializer->Read(mCSEmitterCrack1[i]);
+		Serializer->Read(mCSEmitterCrack2Count);
+		for (int i = 0; i < mCSEmitterCrack2Count; i++)
+			Serializer->Read(mCSEmitterCrack2[i]);
+		Serializer->Read(mCSEmitterSplashCount);
+		for (int i = 0; i < mCSEmitterSplashCount; i++)
+			Serializer->Read(mCSEmitterSplash[i]);
+		Serializer->Read(mCSEmitterSplash1Count);
+		for (int i = 0; i < mCSEmitterSplash1Count; i++)
+			Serializer->Read(mCSEmitterSplash1[i]);
+		Serializer->Read(mCSEmitterSplash2Count);
+		for (int i = 0; i < mCSEmitterSplash2Count; i++)
+			Serializer->Read(mCSEmitterSplash2[i]);
+		Serializer->Read(mCSEmitterSplash3Count);
+		for (int i = 0; i < mCSEmitterSplash3Count; i++)
+			Serializer->Read(mCSEmitterSplash3[i]);
+		Serializer->Read(mCSEmitterSplash4Count);
+		for (int i = 0; i < mCSEmitterSplash4Count; i++)
+			Serializer->Read(mCSEmitterSplash4[i]);
+		Serializer->Read(mCrashDebrisCount);
+		for (int i = 0; i < mCrashDebrisCount; i++)
+			Serializer->Read(mCrashDebris[i]);
+		Serializer->Read(mCSPhaseNr);
+		Serializer->Read(mDrowningSpawn);
+		mBridgeCollapsed = Serializer->ReadBool();
+		mHintVictims = Serializer->ReadBool();
+		Serializer->Read(mFallingObjects);
+		Serializer->Read(mVehiclesUnderWater);
+		mAlreadyFiresExt = Serializer->ReadBool();
+		mAlreadyInjuredSaved = Serializer->ReadBool();
+		mAlreadyDrowningSaved = Serializer->ReadBool();
+		Serializer->Read(mCarsEmptyCount);
+		Serializer->Read(mCarsCouldFallCount);
+		//Serializer->Read(mCivilsCouldFallCount);
+		Serializer->Read(mDrowningCivilsCount);
+		for (int i = 0; i < mCarsCouldFallCount; i++)
+			Serializer->Read(mCarsCouldFall[i]);
+		//for (int i = 0; i < mCivilsCouldFallCount)
+		//	Serializer->Read(mCivilsCouldFall[i]);
+		for (int i = 0; i < mCarsEmptyCount; i++)
+			Serializer->Read(mCarsEmpty[i]);
+		for (int i = 0; i < ACS_SUNK_CAR_COUNT; i++)
+		{
+			Serializer->Read(mACSSunkCars[i]);
+			Serializer->Read(mACSSunkCarBubbles[i]);
+		}
+		for (int i = 0; i < SUNK_CAR_COUNT; i++)
+		{
+			Serializer->Read(mSunkCars[i]);
+			Serializer->Read(mSunkCarBubbles[i]);
+		}
+		for (int i = 0; i < WORKER_COUNT; i++)
+			Serializer->Read(mWorker[i]);
+		for (int i = 0; i < mDrowningCivilsCount; i++)
+			Serializer->Read(mDrowningCivils[i]);
+		Serializer->Read(mVehiclesUnderWaterWithEnclosedPersons);
+		Serializer->Read(mVehiclesFellInWater);
+		Serializer->Read(mPersonsFellInWater);
+		Serializer->Read(mCables);
+		mFailedTooManyDeadCivils = Serializer->ReadBool();
+		mFailedTooManyFallingVehiclesWithEnclosedPersons = Serializer->ReadBool();
+		mFailedTooManyBurningObjects = Serializer->ReadBool();
+		mCutsceneTimerStarted = Serializer->ReadBool();
+		mHintBurning = Serializer->ReadBool();
+		Serializer->Read(mRoadPartList);
+		Serializer->Read(mCraneTargetPos);
+		Serializer->Read(mBridgeBarricadeList);
+
+		return true;
+	}
+};

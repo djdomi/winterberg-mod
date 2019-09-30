@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<dialog version="1" id="Taikailmo" x=150 y=150 width="550" height="300">
+
+	<stylesheet file="base:UI/Game/def_templates.xml" />
+	<stylesheet file="base:UI/Game/MainMenu/mainmenu_templates.xml"/>
+
+    <box id="fmslist" x="10" y="10" width="530" height="280">
+	<statictext id="ilmoitus" x="0" y="0" width="530" height="280" color="111111:ff" texthalign="center" textvalign="center" font="base:Fonts/small" singleline="false"/>
+    </box>
+    <staticbitmap id="bg" x="0" y="0" width="550" height="300" image="mod:ui/Game/Wemdlg/lst.dds"/>
+
+
+</dialog>

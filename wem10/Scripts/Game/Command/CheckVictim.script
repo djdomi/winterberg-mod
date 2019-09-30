@@ -1,0 +1,88 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script CheckVictim
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+object CheckVictim : CommandScript
+{	
+	CheckVictim()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetPriority(1000);
+		SetPossibleExists(CPE_INJURED_PERSON);
+		SetPossibleEquipment(EQUIP_NONE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->IsEquipped() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		Person p(Caller);
+		Person t(Target);
+		if (Target->HasNamePrefix("leiche"))
+			return true;
+		if(p.IsValid() && t.IsValid() && t.IsDead() && !t.IsCarried() && t.GetRole()!=ROLE_ANIMAL && !t.IsRescueDog() && !t.IsDrowning())
+		{
+			if (p.GetEnteredCarID() != -1 && p.GetEnteredCarTargetID() != t.GetEnteredHouseID())
+				return false;
+			if (p.GetEnteredCarID() == -1 && t.GetEnteredHouseID() != -1 && t.GetEnteredHouseID() != p.GetEnteredHouseID() && !t.IsInHouseWithGroundEntrance())
+				return false;
+			if (!t.IsVictim() && !t.IsFlagSet(FLAG_SOSI))
+				return false;
+				
+			return true;
+		}
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Caller);
+		Person t(Target);
+		if (p.GetEnteredCarID() == -1)
+		{
+			Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_TOUCHPERSON);
+			Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		}
+		else
+		{
+			Person pt(Target);
+			if (pt.GetEnteredHouseID() == p.GetEnteredCarTargetID())
+			{
+				Caller->PushActionEnterHouse(ACTION_NEWLIST, pt.GetEnteredHouseID());
+				Caller->PushActionMove(ACTION_APPEND, Target, TARGET_TOUCHPERSON);
+				Caller->PushActionTurnTo(ACTION_APPEND, Target);
+			}
+			else
+				Caller->PushActionTurnTo(ACTION_NEWLIST, Target);
+		}
+		Caller->PushActionCheckVictim(ACTION_APPEND, &t, 5.f); 
+		if (t.HasCommand("crime"))
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"WDMsg",Target,1,false);
+		else
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"WDMsg",Target,0,false);
+	}
+};
+
+const int FLAG_FUNK=OF_HAS_FIREAXE * 2;
+const int FLAG_SOSI=OF_HAS_FIREAXE * 4;
+const int FLAG_TL=OF_HAS_FIREAXE * 8;
+const int FLAG_NA=OF_HAS_FIREAXE * 16;

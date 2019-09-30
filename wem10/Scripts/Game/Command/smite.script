@@ -1,0 +1,112 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script smite
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Die Verwendung in anderen Mods ist gestattet, solange dieser
+// Kommentar erhalten bleibt
+
+// Manuelle Einsatzauslösung
+// Baustelle 3.11.15
+
+int ggv=1;
+
+object smitex : CommandScript
+{
+
+   smitex()
+   {
+      // SetValidTargets(ACTOR_OPEN_HOUSE|ACTOR_FLOOR|ACTOR_VEHICLE|ACTOR_PERSON);
+      SetIcon("ekgm");   // Bitte nen Blitz oder sowas 8-)
+      SetCursor("ekgm");
+	SetPriority(2000);
+   }
+
+   bool CheckPossible(GameObject *Caller)
+   {
+		return Input::LCtrlPressed();
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	if (Caller->GetID()==Target->GetID())
+		return false;
+	else
+		return true;
+   }
+
+	
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObject flash=Game::CreateObject("mod:Prototypes/Objects/Particles/lightning02.e4p","eschock");
+	flash.SetPosition(Game::GetCommandPos());
+	flash.PushActionWait(ACTION_NEWLIST,2.0);
+	flash.PushActionDeleteOwner(ACTION_APPEND);
+	switch (Target->GetType())
+	{
+		case ACTOR_OPEN_HOUSE:
+		case ACTOR_HOUSE:
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"hata_feuer",Target,0,false);
+			System::Log("Smite FEUER !");	
+			break;
+		case ACTOR_VEHICLE:
+			Vehicle v(Target);
+			if (v.HasCommand("gefahrgut"))
+				v.PushActionExecuteCommand(ACTION_NEWLIST,"setggv",&v,v.GetUserData()+1,false);
+			else
+			{
+				v.PushActionExecuteCommand(ACTION_NEWLIST,"setggv",&v,1,false);
+				ggv++;
+			}
+			break;
+		case ACTOR_PERSON:
+			Caller->PushActionExecuteCommand(ACTION_INSERT,"hata_mednot",Target,0,false);
+			break;
+		default:
+			break;
+	}
+   }
+};
+
+object vaporize : CommandScript
+{
+
+   vaporize()
+   {
+      SetValidTargets(ACTOR_OPEN_HOUSE|ACTOR_HOUSE|ACTOR_FLOOR|ACTOR_VEHICLE);
+      SetIcon("heal");   // Bitte nen Blitz oder sowas 8-)
+      SetCursor("heal");
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObjectList ol(Target->GetName());
+	int n=ol.GetNumObjects();
+	if (n>0)
+		for (int i=n-1;i>=0;i--)
+			ol.GetObject(i)->PushActionDeleteOwner(ACTION_NEWLIST);
+   }
+};

@@ -1,0 +1,251 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script WarningLights
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+// const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+ 
+ const char DUMMY_HASWARNINGLIGHTS[] = "DUMMYHasWarningLights";
+ 
+
+ object VCmdWarningLights : CommandScript
+ {
+ 	VCmdWarningLights()
+ 	{
+		SetCursor("warning");
+		SetIcon("warning");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Caller);
+		if (childID==0)
+			if (v.HasCommand(DUMMY_HASWARNINGLIGHTS))
+				childID=2;
+			else
+ 				childID=1;
+
+		switch(childID)
+		{
+			case 2:
+	 			v.EnableBlinker(BLT_NONE);
+ 				v.RemoveCommand(DUMMY_HASWARNINGLIGHTS);
+				break;
+ 			case 1:
+	 			v.EnableBlinker(BLT_BOTH);
+				v.AssignCommand(DUMMY_HASWARNINGLIGHTS);
+				break;
+		}
+ 	}	
+ };
+ 
+ object DUMMYHasWarningLights : CommandScript
+ {
+ 	DUMMYHasWarningLights()
+ 	{
+		SetGroupID(20);
+ 	}
+ 
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return false;
+	}
+
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };
+
+ const char IMG[] = "LightOn";
+ 
+ const char DUMMY_HASUMFELD[] = "DUMMYIR";
+ 
+ 
+ object IRLeuchte : CommandScript
+ {
+ 	IRLeuchte()
+ 	{
+ 		SetIcon(IMG);
+ 		SetCursor(IMG);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			Vehicle v(Caller);
+		else 
+			Vehicle v(Target);
+
+		int door_act=childID/10;
+		childID=childID%10;
+
+		switch (door_act)
+		{
+			case 1:
+				v.PlayAnimOpenDoor("stretcher",1.0);
+				break;
+			case 2:
+				v.PlayAnimCloseDoor("stretcher",1.0);
+				break;
+		}
+
+		switch (childID)
+		{
+			case 0:
+ 
+ 				if (v.HasCommand(DUMMY_HASUMFELD))
+ 				{
+ 					v.EnableTrafficLight(TLT_NONE);
+ 					v.RemoveCommand(DUMMY_HASUMFELD);
+ 				} else {
+ 					v.EnableTrafficLight(TLT_RED);
+ 					v.AssignCommand(DUMMY_HASUMFELD);
+		 		}
+				break;
+			case 1:
+				v.EnableTrafficLight(TLT_RED);
+				v.AssignCommand(DUMMY_HASUMFELD);
+				break;
+			case 2:
+				v.EnableTrafficLight(TLT_NONE);
+				v.RemoveCommand(DUMMY_HASUMFELD);
+				break;
+		}
+ 	}	
+ };
+ 
+
+ object triblitz: CommandScript
+ {
+ 	triblitz()
+ 	{
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		bool ok=Caller->IsValid();
+		// if (ok)
+		//	ok=Caller->HasChild("triblitz");
+ 		return ok;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+  		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+		if (Caller->GetType() == ACTOR_VEHICLE)
+ 			Vehicle v(Caller);
+		else 
+			Vehicle v(Target);
+		if (!childID)
+			if (v.HasCommand(DUMMY_HASUMFELD))
+				childID=2;
+			else
+				childID=1;
+
+		switch (childID)
+		{
+			case 1:
+				v.EnableTrafficLight(TLT_YELLOW);
+				v.AssignCommand(DUMMY_HASUMFELD);
+				v.PushActionExecuteCommand(ACTION_INSERT,"WT_SoSi",&v,7,false);
+				break;
+			case 2:
+				v.EnableTrafficLight(TLT_NONE);
+				v.RemoveCommand(DUMMY_HASUMFELD);
+				v.PushActionExecuteCommand(ACTION_INSERT,"WT_SoSi",&v,2,false);
+				break;
+		}
+ 	}	
+ };
+ 
+ // 1.1
+ object DUMMYIR : CommandScript
+ {
+ 	DUMMYIR()
+ 	{
+		SetGroupID(20);
+ 	}
+ 
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return false;
+	}
+
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+ };

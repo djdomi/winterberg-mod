@@ -1,0 +1,283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Diese Datei definiert die zur Verfügung stehenden Fahrzeuge und ähnliches.
+-->
+<Einstellungen Ver="37" xmlns="http://schemas.winterberg-mod.com/FMSScheme/2007">
+  
+  <!-- Fahrzeuge aufgeteilt nach HiOrg(Spalte) und Wehr(Überschrift) -->
+  <HiOrgs xmlns="">
+    <HiOrg xmlns="" Name="Rettungsdienst">
+      <Wehr Name="NEF">
+        <Fahrzeug ID="1" Enabled="true" Short="8-82-1  Winterberg" Long="NEF Winterberg" Ruf="Florian Sauerland 8-82-1" Type="NA" />
+        <Fahrzeug ID="26" Enabled="true" Short="7-82-1  Olsberg" Long="NEF Olsberg" Ruf="Florian Sauerland 7-82-1" Type="NA" />
+        <Fahrzeug ID="65" Enabled="true" Short="4-82-1  Fredeburg" Long="NEF Bad Fredeburg" Ruf="Florian Sauerland 4-82-1" Type="NA" />
+        <Fahrzeug ID="21" Enabled="true" Short="RK SI 4-82-1  Berleburg" Long="NEF Bad Berleburg" Ruf="Rotkreuz Siegen 4-82-1" Type="NA" />
+        <Fahrzeug ID="86" Enabled="true" Short="2-82-1  Meschede" Long="NEF Meschede" Ruf="Florian Sauerland 2-82-1" Type="NA" />
+        <Fahrzeug ID="60" Enabled="true" Short="6-82-1  Marsberg" Long="NEF Marsberg" Ruf="Florian Sauerland 6-82-1" Type="NA" />
+	<Fahrzeug ID="91" Enabled="true" Short="3-82-1  Sundern" Long="NEF Sundern" Ruf="Florian Sauerland 3-82-1" Type="NA" />
+        <Fahrzeug ID="94" Enabled="true" Short="1-82-1  Arnsberg" Long="NEF AIM Arnsberg" Ruf="Florian Sauerland 1-82-1" Type="NA" />
+        <Fahrzeug ID="144" Enabled="true" Short="Kindernotarzt" Long="Kindernotarzt" Ruf="" Type="NA" />
+      </Wehr>
+      <Wehr Name="RTW">
+        <Fahrzeug ID="2" Enabled="true" Short="8-83-1  Winterberg" Long="RTW Winterberg" Ruf="Florian Sauerland 8-83-1" Type="RD"/>
+	<Fahrzeug ID="108" Enabled="true" Short="8-83-2  Winterberg" Long="RTW Winterberg 2" Ruf="Florian Sauerland 8-83-2" Type="RD"/>
+        <Fahrzeug ID="14" Enabled="true" Short="11-83-1  Medebach" Long="RTW Medebach" Ruf="Florian Sauerland 11-83-1" Type="RD"/>
+        <Fahrzeug ID="23" Enabled="true" Short="7-83-1  Olsberg" Long="RTW Olsberg" Ruf="Florian Sauerland 7-83-1" Type="RD"/>
+        <Fahrzeug ID="24" Enabled="true" Short="4-83-1  Fredeburg" Long="RTW Bad Fredeburg" Ruf="Florian Sauerland 4-83-1" Type="RD"/>
+        <Fahrzeug ID="22" Enabled="true" Short="RK SI 4-83-1  Berleburg" Long="RTW Bad Berleburg" Ruf="Rotkreuz Siegen 4-83-1" Type="RD"/>
+        <Fahrzeug ID="25" Enabled="true" Short="RK KB 91/83  Korbach" Long="RTW Korbach" Ruf="Rotkreuz Korbach 91/83" Type="RD"/>
+        <Fahrzeug ID="66" Enabled="true" Short="5-83-1  Brilon" Long="RTW Brilon" Ruf="Florian Sauerland 5-83-1" Type="RD"/>
+        <Fahrzeug ID="90" Enabled="true" Short="5-83-2  Brilon" Long="RTW Brilon 2" Ruf="Florian Sauerland 5-83-2" Type="RD"/>
+        <Fahrzeug ID="67" Enabled="true" Short="6-83-1  Marsberg" Long="RTW Marsberg" Ruf="Florian Sauerland 6-83-1" Type="RD"/>
+        <Fahrzeug ID="89" Enabled="true" Short="2-83-1  Meschede" Long="RTW Meschede" Ruf="Florian Sauerland 2-83-1" Type="RD"/>
+        <Fahrzeug ID="93" Enabled="true" Short="10-83-1  Eslohe" Long="RTW Eslohe" Ruf="Florian Sauerland 10-83-1" Type="RD"/>
+        <Fahrzeug ID="92" Enabled="true" Short="3-83-1  Sundern" Long="RTW Sundern" Ruf="Florian Sauerland 3-83-1" Type="RD"/>
+        <Fahrzeug ID="58" Enabled="true" Short="1-83-1  Neheim" Long="RTW Neheim" Ruf="Florian Sauerland 1-83-1" Type="RD"/>
+        <Fahrzeug ID="85" Enabled="true" Short="1-83-11  Hagelstein" Long="RTW Hagelstein" Ruf="Florian Sauerland 1-83-11" Type="RD"/>
+        <Fahrzeug ID="88" Enabled="true" Short="1-83-12  Hagelstein" Long="RTW Hagelstein 2" Ruf="Florian Sauerland 1-83-12" Type="RD"/>
+      </Wehr>
+      <Wehr Name="KTW">
+        <Fahrzeug ID="27" Enabled="true" Short="8-85-1 Winterberg" Long="KTW Winterberg" Ruf="Florian Sauerland 8-85-1" Type="RD"/>
+        <Fahrzeug ID="105" Enabled="true" Bedarf="True" Short="KrKW BW" Long="Krankenkraftwagen Bundeswehr" Ruf="" Type="RD"/>
+      </Wehr>
+      <Wehr Name="RTH">
+        <Fahrzeug ID="12" Enabled="true" Bedarf="True" Short="Christoph 25  Siegen" Long="RTH Siegen" Ruf="Christoph 25" Type="RD"/>
+        <Fahrzeug ID="48" Enabled="true" Bedarf="True" Short="Christoph 07  Kassel" Long="RTH Kassel" Ruf="Christoph 7" Type="RD"/>
+        <Fahrzeug ID="87" Enabled="true" Bedarf="True" Short="Christoph 08  Lünen" Long="RTH Lünen" Ruf="Christoph 8" Type="RD"/>
+      </Wehr>
+      <Wehr Name="Sekundärverlegung">
+        <Fahrzeug ID="73" Enabled="true" Short="ITH 1" Long="ITH 1" Ruf="" Type="RD"/>
+        <Fahrzeug ID="74" Enabled="true" Short="ITH 2" Long="ITH 2" Ruf="" Type="RD"/>
+        <Fahrzeug ID="83" Enabled="true" Short="SAR 41" Long="SAR 41" Ruf="" Type="RD"/>
+      </Wehr>
+      <Wehr Name="LNA">
+        <Fahrzeug ID="32" Enabled="true" Short="Leitender Notarzt HSK" Long="Leitender Notarzt Hochsauerlandkreis" Ruf="Florian Sauerland 1-80-1" Type="RD"/>
+      </Wehr>
+      <Wehr Name="SEG">
+        <Fahrzeug ID="35" Enabled="true" Short="SEG Rettung Sanitäter" Long="DRK Winterberg SEG Rettung - Sanität" Ruf="Rotkreuz Sauerland 8-85-1" Type="RD"/>
+        <Fahrzeug ID="36" Enabled="true" Short="SEG Rettung Notarzt" Long="DRK Winterberg SEG Rettung - Arzt" Ruf="Rotkreuz Sauerland 8-85-2" Type="RD"/>
+        <Fahrzeug ID="37" Enabled="true" Short="SEG Rettung IVECO LKW" Long="DRK Olsberg SEG Rettung - Truck" Ruf="Rotkreuz Sauerland 7-74-1" Type="RD"/>
+      </Wehr>
+      <!-- <Fahrzeug ID="" Enabled="true" Short="" Long="" Ruf="" Type="RD"/> -->
+    </HiOrg>
+    
+    <HiOrg xmlns="" Name="Feuerwehr">
+      <Wehr Name="LZ I Winterberg">
+        <Fahrzeug ID="40" Enabled="true" Short="8-11-1  ELW 1" Long="ELW 1 Winterberg" Ruf="Florian Sauerland 8-11-1" Type="FW"/>
+        <Fahrzeug ID="3" Enabled="true" Short="8-43-1  HLF 20/16" Long="HLF 20/16 Winterberg" Ruf="Florian Sauerland 8-43-1" Type="FW"/>
+        <Fahrzeug ID="5" Enabled="true" Short="8-44-2  LF 16/12" Long="LF 16/12 Winterberg" Ruf="Florian Sauerland 8-44-2" Type="FW"/>
+        <Fahrzeug ID="6" Enabled="true" Short="8-33-1  DLK 23/12" Long="DLK 23/12 Winterberg" Ruf="Florian Sauerland 8-33-1" Type="FW"/>
+        <Fahrzeug ID="39" Enabled="true" Short="8-74-1  GW-L" Long="GW-Logistik Winterberg" Ruf="Florian Sauerland 8-74-1" Type="FW"/>
+        <Fahrzeug ID="15" Enabled="true" Short="8-92-1  GW-AS" Long="GW-Atmeschutz Winterberg" Ruf="Florian Sauerland 8-92-1" Type="FW"/>
+
+        <Fahrzeug Type="spacer3" />
+        <Fahrzeug ID="45" Enabled="true" Short="8-48-3  TSF-W Altastenberg" Long="TSF-W Winterberg-Altastenberg" Ruf="Florian Sauerland 8-48-3" Type="FW"/>
+        <Fahrzeug ID="42" Enabled="true" Short="8-47-1  TSF Elkeringhausen" Long="TSF Winterberg-Elkeringhausen" Ruf="Florian Sauerland 8-47-1" Type="FW"/>
+      </Wehr>
+      <Wehr Name="LZ II Niedersfeld">
+        <Fahrzeug ID="49" Enabled="true" Short="8-10-1  KDOW" Long="KDOW Winterberg-Niedersfeld" Ruf="Florian Sauerland 8-10-1" Type="FW"/>
+        <Fahrzeug ID="51" Enabled="true" Short="8-44-1  LF 16" Long="LF 16 Winterberg-Niedersfeld" Ruf="Florian Sauerland 8-44-1" Type="FW"/>
+        <Fahrzeug ID="4" Enabled="true" Short="8-23-1  TLF 16/25" Long="TLF 16/25 Winterberg-Niedersfeld" Ruf="Florian Sauerland 8-23-1" Type="FW"/>
+
+        <Fahrzeug Type="spacer3" />
+        <Fahrzeug ID="28" Enabled="true" Short="8-48-1  TSF-W Grönebach" Long="TSF-W Winterberg-Grönebach" Ruf="Florian Sauerland 8-48-1" Type="FW"/>
+        <Fahrzeug ID="54" Enabled="true" Short="8-47-5  TSF Hildfeld" Long="TSF Winterberg-Hildfeld" Ruf="Florian Sauerland 8-47-5" Type="FW"/>
+      </Wehr>
+      <Wehr Name="LZ III Siedlinghausen">
+        <Fahrzeug ID="52" Enabled="true" Short="8-10-2  KDOW" Long="KDOW Winterberg-Siedlinghausen" Ruf="Florian Sauerland 8-10-2" Type="FW"/>
+        <Fahrzeug ID="38" Enabled="true" Short="8-42-1  LF 8/6" Long="LF 8/6 Winterberg-Siedlinghausen" Ruf="Florian Sauerland 8-42-1" Type="FW"/>
+        <Fahrzeug ID="31" Enabled="true" Short="8-21-1  TLF 8/18" Long="TLF 8/18 Winterberg-Siedlinghausen" Ruf="Florian Sauerland 8-21-1" Type="FW"/>
+
+        <Fahrzeug Type="spacer3" />
+        <Fahrzeug ID="43" Enabled="true" Short="8-47-2  TSF Altenfeld" Long="TSF Winterberg-Altenfeld" Ruf="Florian Sauerland 8-47-2" Type="FW"/>
+        <Fahrzeug ID="55" Enabled="true" Short="8-47-3  TSF Silbach" Long="TSF Winterberg-Silbach" Ruf="Florian Sauerland 8-47-3" Type="FW"/>
+      </Wehr>
+      <Wehr Name="LZ IV Züschen">
+        <Fahrzeug ID="53" Enabled="true" Short="8-10-3  KDOW" Long="KDOW Winterberg-Züschen" Ruf="Florian Sauerland 8-10-3" Type="FW"/>
+        <Fahrzeug ID="19" Enabled="true" Short="8-42-2  LF 8/6" Long="LF 8/6 Winterberg-Züschen" Ruf="Florian Sauerland 8-42-2" Type="FW"/>
+        <Fahrzeug ID="30" Enabled="true" Short="8-21-2  TLF 8/18" Long="TLF 8/18 Winterberg-Züschen" Ruf="Florian Sauerland 8-21-2" Type="FW"/>
+
+        <Fahrzeug Type="spacer3" />
+        <Fahrzeug ID="29" Enabled="true" Short="8-48-2  TSF-W Langewiese" Long="TSF-W Winterberg-Langewiese" Ruf="Florian Sauerland 8-48-2" Type="FW"/>
+        <Fahrzeug ID="47" Enabled="true" Short="8-48-4  TSF-W Neuastenberg" Long="TSF-W Winterberg-Neuastenberg" Ruf="Florian Sauerland 8-48-4" Type="FW"/>
+      </Wehr>
+
+      <Wehr Name="Feuerwehr extern">
+        <Fahrzeug ID="62" Enabled="true" Bedarf="True" Short="1-12-1 ELW 2 Arnsberg" Long="ELW 2 des Hochsauerlandkreises (Arnsberg)" Ruf="Florian Sauerland 1-12-1" Type="FW"/>
+        <Fahrzeug ID="41" Enabled="true" Bedarf="True" Short="4-94-1 Dekon-P Schmallenberg" Long="Dekon Schmallenberg" Ruf="Florian Sauerland 4-94-1" Type="FW"/>
+        <Fahrzeug ID="81" Enabled="true" Bedarf="True" Short="5-64-1 Kreisschirrmeisterei" Long="Kreisschirrmeisterei" Ruf="Florian Sauerland 5-64-1" Type="FW"/>
+        <Fahrzeug ID="46" Enabled="true" Bedarf="True" Short="7-33-1 DLK Olsberg" Long="DLK Olsberg" Ruf="Florian Sauerland 7-33-1" Type="FW"/>
+        <Fahrzeug ID="20" Enabled="true" Bedarf="True" Short="Fl SI 4-29-1 GTLF Bad Berleburg" Long="GTLF Bad Berleburg" Ruf="Florian Siegen 4-29-1" Type="FW"/>
+		
+        <Fahrzeug ID="82" Enabled="true" Bedarf="True" Short="Kreisbrandmeister" Long="Kreisbrandmeister" Ruf="" Type="FW"/>
+        <Fahrzeug ID="98" Enabled="true" Bedarf="True" Short="DLK Metz" Long="DLK Metz" Ruf="Florian Sauerland 8-33-1" Type="FW"/>
+	<Fahrzeug ID="99" Enabled="true" Short="Flugfeldlöschfahrzeug" Long="Flugfeldlöschfahrzeug" Ruf="" Type="FW"/>
+      </Wehr>
+    </HiOrg>
+    
+    <HiOrg xmlns="" Name="POL">
+      <Wehr Name="Polizei">
+        <Fahrzeug ID="7" Enabled="true" Short="Streife" Long="Streife 1" Ruf="Sorpe 12/35" Type="POL"/>
+        <Fahrzeug ID="8" Enabled="true" Short="Streife" Long="Streife 2" Ruf="Sorpe 12/36" Type="POL"/>
+        <Fahrzeug ID="9" Enabled="true" Short="Streife" Long="Streife 3" Ruf="" Type="POL"/>
+        <Fahrzeug Type="spacer3" />
+        <Fahrzeug ID="113" Enabled="true" Short="Zivilstreife" Long="Zivilstreife 1" Ruf="" Type="POL"/>
+        <Fahrzeug ID="114" Enabled="true" Short="Zivilstreife" Long="Zivilstreife 2" Ruf="" Type="POL"/>
+        <Fahrzeug ID="115" Enabled="true" Short="Zivilstreife" Long="Zivilstreife 3" Ruf="" Type="POL"/>
+        <Fahrzeug Type="spacer3" />
+        <Fahrzeug ID="56" Enabled="true" Short="Kripo" Long="Kripo" Ruf="" Type="POL"/>
+        <Fahrzeug Type="spacer3" />	
+        <Fahrzeug ID="10" Enabled="true" Short="MTW" Long="MTW" Ruf="" Type="POL"/>
+	<Fahrzeug ID="111" Enabled="true" Short="Externer MTW" Long="Externer MTW" Ruf="" Type="POL"/>
+        <Fahrzeug ID="68" Enabled="false" Short="Wasserwerfer" Long="Wasserwerfer" Ruf="" Type="POL"/>
+        <Fahrzeug ID="61" Enabled="false" Short="Fluchtfahrzeug" Long="Fluchtfahrzeug" Ruf="" Type="POL" DelVec="true"/>
+
+        <Fahrzeug Type="spacer2" />
+        <Fahrzeug ID="70" Enabled="true" Short="SEK MTW" Long="SEK MTW" Ruf="" Type="POL"/>
+        <Fahrzeug ID="69" Enabled="true" Short="SEK PKW" Long="SEK PKW" Ruf="" Type="POL"/>
+
+        <Fahrzeug Type="spacer2" />
+        <Fahrzeug ID="71" Enabled="true" Short="BePo EL" Long="BePo Einsatzleitung" Ruf="" Type="POL"/>
+        <Fahrzeug ID="72" Enabled="true" Short="BePo MTW" Long="BePo MTW" Ruf="" Type="POL"/>
+      </Wehr>
+    </HiOrg>
+    
+    <HiOrg xmlns="" Name="Misc">
+      <Wehr Name="Andere">
+        <Fahrzeug ID="95" Enabled="true" Short="Rettungshunde Meschede" Long="Rettungshundestaffel Meschede" Ruf="" Type="TEC"/>
+        <Fahrzeug ID="33" Enabled="true" Short="Notfallmanager DB" Long="Notfallmanager Deutsche Bahn" Ruf="Florian Sauerland 5-18-1" Type="TEC"/>
+        <Fahrzeug ID="16" Enabled="true" Short="Kran" Long="Kran THW Meschede" Ruf="Heros Meschede 54/47" Type="TEC"/>
+        <Fahrzeug ID="34" Enabled="true" Short="Kampfmittelräumdienst" Long="Kampfmittelräumdienst" Ruf="" Type="TEC"/>
+        <Fahrzeug ID="13" Enabled="true" Short="Techniker Siemens" Long="Techniker Siemens" Ruf="" Type="TEC"/>
+
+        <Fahrzeug ID="57" Enabled="true" Short="Wasserwerke" Long="Wasserwerke" Ruf="" Type="TEC" DelVec="true"/>
+        <Fahrzeug ID="11" Enabled="true" Short="ASF ADAC" Long="Abschleppfahrzeug" Ruf="" Type="TEC"/>
+	<Fahrzeug Type="spacer3" />
+	<Fahrzeug ID="101" Enabled="true" Short="Witch DOC" Long="Witch DOC" Ruf="" Type="NA"/>
+	<Fahrzeug ID="110" Enabled="true" Short="Museums TLF Winterberg" Long="Museums TLF Winterberg" Ruf="" Type="FW"/>
+	<Fahrzeug ID="112" Enabled="true" Short="RW Unimog Winterberg" Long="RW Unimog Winterberg" Ruf="" Type="FW"/>
+	<Fahrzeug ID="78" Enabled="true" Short="STW Public Viewing" Long="STW Public Viewing" Ruf="" Type="POL"/>
+      </Wehr>     
+    </HiOrg>
+
+<HiOrg xmlns="" Name="BFW1">
+      <Wehr Name="BFW Wache 1">
+        <Fahrzeug ID="127" Enabled="true" Short="1-11-1 ELW 1" Long="ELW 1 Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="121" Enabled="true" Short="1-43-1 HLF 20/16" Long="HLF 20/16 Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="125" Enabled="true" Short="1-44-1 LF 16/12" Long="LF 16/12 Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="123" Enabled="true" Short="1-33-1 DLK 23/12" Long="DLK 23/12 Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="117" Enabled="true" Short="1-24-1 GTLF 1" Long="GTLF Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="120" Enabled="true" Short="1-49-1 SLF 1" Long="SLF 1 Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="126" Enabled="true" Short="1-92-1 GW Atemschutz" Long="GW Atemschutz Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="118" Enabled="true" Short="1-51-1 RW 1" Long="RW 1 Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="119" Enabled="true" Short="1-59-1 GW-L" Long="GW-L Berufsfeuerwehr Wache 1" Ruf="" Type="FW"/>
+        <Fahrzeug ID="128" Enabled="true" Short="2-12-1 Technische Einsatzleitung BW" Long="Technische Einsatzleitung Berufsfeuerwehr Wache 1" Ruf="Florian Sauerland 2-12-1" Type="FW"/>
+      </Wehr> 
+
+      <Wehr Name="BFW Wache 2">
+	<Fahrzeug ID="136" Enabled="true" Short="2-11-1 ELW 2" Long="ELW 2 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+        <Fahrzeug ID="122" Enabled="true" Short="2-43-1 HLF 20/16" Long="HLF 20/16 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+        <Fahrzeug ID="134" Enabled="true" Short="2-44-1 TLF 16/12" Long="TLF 16/12 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+        <Fahrzeug ID="124" Enabled="true" Short="2-33-1 DLK 23/12" Long="DLK 23/12 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+        <Fahrzeug ID="129" Enabled="true" Short="2-24-1 TroTLF 2" Long="TroTLF 2 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+        <Fahrzeug ID="130" Enabled="true" Short="2-49-1 SLF 2" Long="SLF 2 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+        <Fahrzeug ID="135" Enabled="true" Short="2-92-1 GW Atemschutz" Long="GW Atemschutz Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+	<Fahrzeug ID="142" Enabled="true" Short="2-26-1 FLF 1 SIMBA 8x8" Long="Flugfeldlöschfahrzeug 1 SIMBA 8x8 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+	<Fahrzeug ID="143" Enabled="true" Short="2-26-2 FLF 2 SIMBA 8x8" Long="Flugfeldlöschfahrzeug 2 SIMBA 8x8 Berufsfeuerwehr Wache 2" Ruf="" Type="FW"/>
+      </Wehr>     
+    </HiOrg>
+  </HiOrgs>
+  
+  <!-- Alarmierungsschleifen mit den zugehörigen FZIDS -->
+  <!-- Multiple lässt blinken -->
+  <Schleifen xmlns="">
+    <Schleife xmlns="" ID="9001" Name="Notarzt 8-82-1" Multiple="false" FZ="1" />
+    <Schleife xmlns="" ID="9026" Name="Notarzt 7-82-1" Multiple="false" FZ="26" />
+    <Schleife xmlns="" ID="9021" Name="Notarzt Bad Berleburg" Multiple="false" FZ="21" />
+    <Schleife xmlns="" ID="9002" Name="RTW 8-83-1" Multiple="false" FZ="2" />
+    <Schleife xmlns="" ID="9108" Name="RTW 8-83-2" Multiple="false" FZ="108" />
+    <Schleife xmlns="" ID="9014" Name="RTW 11-83-1" Multiple="false" FZ="14" />
+    <Schleife xmlns="" ID="9023" Name="RTW 7-83-1" Multiple="false" FZ="23" />
+    <Schleife xmlns="" ID="9024" Name="RTW 4-83-1" Multiple="false" FZ="24" />
+    <Schleife xmlns="" ID="9027" Name="KTW 8-85-1" Multiple="false" FZ="27" />
+    <Schleife xmlns="" ID="9025" Name="Rotkreuz Korbach 91/83" Multiple="false" FZ="25" />
+    <Schleife xmlns="" ID="9022" Name="RTW Bad Berleburg" Multiple="false" FZ="22" />
+    <Schleife xmlns="" ID="9012" Name="Christoph 25" Multiple="false" FZ="12" />
+    <Schleife xmlns="" ID="556"  Name="Löschgruppe Züschen" Multiple="true" FZ="53 19 30" />
+    <Schleife xmlns="" ID="551"  Name="GTLF Feuerwehr Bad Berleburg" Multiple="false" FZ="20" />
+    <Schleife xmlns="" ID="557"  Name="Löschgruppe Grönebach" Multiple="true" FZ="28" />
+    <Schleife xmlns="" ID="553"  Name="Löschgruppe Langewiese" Multiple="true" FZ="29" />
+    <Schleife xmlns="" ID="9015" Name="Gerätewagen-Messtechnik" Multiple="false" FZ="15" />
+    <Schleife xmlns="" ID="903" Name="Gerätewagen-Logistik" Multiple="false" FZ="39" />
+    <Schleife xmlns="" ID="9013" Name="Service-Techniker der Fa. Siemens" Multiple="false" FZ="13" />
+    <Schleife xmlns="" ID="9016" Name="Kran des THW" Multiple="false" FZ="16" />
+    <Schleife xmlns="" ID="500"  Name="Feuerwehr Winterberg" Multiple="true" FZ="40 3 6 5" />
+    <Schleife xmlns="" ID="5009" Name="Firstresponder Winterberg" Multiple="false" FZ="40" />    
+    <Schleife xmlns="" ID="559"  Name="Löschgruppe Siedlinghausen" Multiple="true" FZ="52 38 31" />
+    <Schleife xmlns="" ID="9006" Name="Drehleiter Winterberg" Multiple="true" FZ="6 3" />
+    <Schleife xmlns="" ID="5004" Name="Wasserrettung Winterberg" Multiple="false" FZ="5" />
+    <Schleife xmlns="" ID="5001" Name="Löschzug Winterberg - Brandeinsatz" Multiple="true" FZ="40 3 5 6 15" />
+    <Schleife xmlns="" ID="5002" Name="Löschzug Winterberg - Technische Hilfeleistung" Multiple="true" FZ="40 3 5 39" />
+    <Schleife xmlns="" ID="9032" Name="LNA Hochsauerland" Multiple="false" FZ="32" />
+    <Schleife xmlns="" ID="9033" Name="DB Notfallmanager" Multiple="false" FZ="33" />
+    <Schleife xmlns="" ID="580"  Name="Kampfmittelräumdienst" Multiple="false" FZ="34" />
+    <Schleife xmlns="" ID="579"  Name="SEG Rettung" Multiple="false" FZ="35 36 37" />
+    <Schleife xmlns="" ID="5003" Name="Löschzug Winterberg - Gefahrgut" Multiple="true" FZ="40 3 15" />
+    <Schleife xmlns="" ID="5653" Name="Dekon-FZ FW Schmallenberg" Multiple="false" FZ="41" />
+    <Schleife xmlns="" ID="562"  Name="Löschgruppe Elkeringhausen" Multiple="true" FZ="42 15" />
+    <Schleife xmlns="" ID="5621" Name="Löschgruppe Elkeringhausen - Brandeinsatz" Multiple="true" FZ="42 15" />
+    <Schleife xmlns="" ID="5622"  Name="Löschgruppe Elkeringhausen - Technische Hilfeleistung" Multiple="true" FZ="42" />
+    <Schleife xmlns="" ID="567"  Name="Löschgruppe Altenfeld" Multiple="true" FZ="43" />
+    <Schleife xmlns="" ID="568"  Name="Löschgruppe Silbach" Multiple="true" FZ="44" />
+    <Schleife xmlns="" ID="561"  Name="Löschgruppe Altastenberg" Multiple="true" FZ="45" />
+    <Schleife xmlns="" ID="5611"  Name="Löschgruppe Altastenberg" Multiple="true" FZ="45 15" />
+    <Schleife xmlns="" ID="570"  Name="Löschgruppe Neuastenberg" Multiple="true" FZ="47" />
+    <Schleife xmlns="" ID="5701"  Name="Löschgruppe Neuastenberg - Brandeinsatz" Multiple="true" FZ="47 15" />
+    <Schleife xmlns="" ID="9046" Name="Drehleiter Olsberg" Multiple="true" FZ="46" />
+    <Schleife xmlns="" ID="9048" Name="Christoph 7" Multiple="false" FZ="48" />
+    <Schleife xmlns="" ID="563"  Name="Löschzug Niedersfeld" Multiple="true" FZ="49 51 4" />
+    <Schleife xmlns="" ID="558"  Name="Löschgruppe Hildfeld" Multiple="true" FZ="54" />
+    <Schleife xmlns="" ID="5997" Name="Kripo" Multiple="false" FZ="56" />
+    <Schleife xmlns="" ID="9057" Name="Wasserwerk" Multiple="false" FZ="57" />
+    <Schleife xmlns="" ID="9058"   Name="RTW Neheim" Multiple="false" FZ="58" />
+    <Schleife xmlns="" ID="9062" Name="Fernmeldedienst Arnsberg" Multiple="false" FZ="62" />
+    <Schleife xmlns="" ID="9065" Name="NEF Fredeburg" Multiple="false" FZ="65" />
+    <Schleife xmlns="" ID="9066" Name="RTW Brilon" Multiple="false" FZ="66" />
+    <Schleife xmlns="" ID="9090"   Name="RTW Brilon 2" Multiple="false" FZ="66" />
+    <Schleife xmlns="" ID="9067"   Name="RTW Marsberg" Multiple="false" FZ="67" />
+    <Schleife xmlns="" ID="9060"   Name="NEF Marsberg" Multiple="false" FZ="67" />
+    <Schleife xmlns="" ID="581"  Name="SEK" Multiple="false" FZ="70 69" />
+    <Schleife xmlns="" ID="8073" Name="ITH, Sekundärverlegung KH Winterberg" Multiple="true" FZ="73 74" />
+    <Schleife xmlns="" ID="9073" Name="SAR 41" Multiple="false" FZ="83" />
+    <Schleife xmlns="" ID="9075" Name="Traumateam Ringfunk - Kliniknotfall" Multiple="false" FZ="61" />
+    <Schleife xmlns="" ID="599"  Name="KatS-Alarm Hochsauerland" Multiple="false" FZ="61" />
+    <Schleife xmlns="" ID="9054" Name="Dekon FW Schmallenberg" Multiple="false" FZ="41" />
+    <Schleife xmlns="" ID="5998" Name="Funktionsprobe Sirenensteueranlagen" Multiple="true" FZ="40 3 5 6 39 15 45 42 49 51 4 28 54 52 38 31 43 55 53 19 30 29 47 62 41 81 46 20 82 98" />
+    <Schleife xmlns="" ID="5999" Name="Ende der Überprüfung" Multiple="true" FZ="40 3 5 6 39 15 45 42 49 51 4 28 54 52 38 31 43 55 53 19 30 29 47 62 41 81 46 20 82 98" />
+    <Schleife xmlns="" ID="9079" Name="Rufbereitschaft Leitstelle" Multiple="false" FZ="61" />
+    
+    <Schleife xmlns="" ID="572"  Name="Kreisschirrmeisterei Brilon" Multiple="false" FZ="61" />
+    <Schleife xmlns="" ID="9085" Name="RTW Hagelstein" Multiple="false" FZ="85" />
+    <Schleife xmlns="" ID="9086" Name="NEF Meschede" Multiple="false" FZ="86" />
+    <Schleife xmlns="" ID="9087" Name="Christoph 8" Multiple="false" FZ="87" />
+    <Schleife xmlns="" ID="9089" Name="RTW Meschede" Multiple="false" FZ="89" />
+    <Schleife xmlns="" ID="9091" Name="NEF Sundern" Multiple="false" FZ="91" />
+    <Schleife xmlns="" ID="9092" Name="RTW Sundern" Multiple="false" FZ="92" />
+    <Schleife xmlns="" ID="9093" Name="RTW Eslohe" Multiple="false" FZ="93" />
+    <Schleife xmlns="" ID="9094" Name="NEF der AIM Arnsberg" Multiple="false" FZ="94" />
+    <Schleife xmlns="" ID="9088" Name="RTW Hagelstein 2" Multiple="false" FZ="88" />
+    <Schleife xmlns="" ID="9095" Name="Rettungshunde Meschede" Multiple="false" FZ="95" />
+	
+    <Schleife xmlns="" ID="578" Name="FLF" Multiple="false" FZ="99" />
+    <Schleife xmlns="" ID="9105" Name="BW KrKW" Multiple="false" FZ="105" />
+    <Schleife xmlns="" ID="9144" Name="Kindernotarzt" Multiple="false" FZ="144" />
+
+    <Schleife xmlns="" ID="9128" Name="Technische Einsatzleitung Berufsfeuerwehr" Multiple="true" FZ="128" />
+    <Schleife xmlns="" ID="501" Name="Berufsfeuerwehr Wache 1" Multiple="true" FZ="127 121 125 123 117 120 126 118 119" />
+    <Schleife xmlns="" ID="502" Name="Berufsfeuerwehr Wache 2" Multiple="true" FZ="136 122 134 124 129 130 135 142 143" />
+  </Schleifen>
+  
+  <BMAs xmlns="">
+ </BMAs> 
+
+</Einstellungen>

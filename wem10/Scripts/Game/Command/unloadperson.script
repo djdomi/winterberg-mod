@@ -1,0 +1,98 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script unloadperson
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+object UnloadPerson : CommandScript
+{
+
+	UnloadPerson()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetDoubleClickable(true);
+		SetGroupID(CGROUP_CARRY_PERSON);
+		SetPriority(500);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		return p.IsCarryingPerson();
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid())
+			return false;
+		
+		Person p(Caller);
+		Person t = p.GetCarried();
+
+		if(!p.IsValid() || !t.IsValid() || p.GetEnteredCarID() != -1)
+			return false;
+
+		// nicht im Wasser (Taucher)
+		if (p.IsInsideWater())
+			return false;
+
+		if(p.GetID()== Target->GetID() || Target->GetID()== t.GetID())
+			return true;
+		
+				
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Caller);
+		bool rettung=false;
+		ActionInsertMode doit=ACTION_NEWLIST;
+		if (childID>0)
+			doit=ACTION_APPEND;
+		if (childID==2)
+			Person p(Target);
+
+		switch (p.GetPersonType())
+		{
+			case PT_FIREFIGHTER_NORMAL:
+			case PT_FIREFIGHTER_ABC:
+			case PT_FIREFIGHTER_MASK:
+				VehicleList vl(Caller->GetName());
+				Vehicle v=vl.GetVehicle(0);
+				rettung=true;
+				break;
+		}
+		if (p.IsCarryingPerson())
+		{
+			p.PushActionUnloadPerson(doit);
+			if (rettung)
+			{
+				if (childID==1)
+				{
+					Vector pos=p.GetPosition();
+					pos.x+=75;
+					pos.y+=75;
+					Game::FindFreePosition(&p,pos,150.0);
+					p.PushActionMove(ACTION_APPEND,pos,true);
+				}
+				p.PushActionExecuteCommand(ACTION_APPEND,"UnloadPerson",Target,1,false);
+			}
+		} else 
+			if (rettung)
+				p.PushActionMove(ACTION_APPEND,&v,TARGET_REARDOOR);
+	}
+};

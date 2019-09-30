@@ -1,0 +1,1948 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 3
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+// win conditions:
+// * Beide Gangster abtransportiert (verletzt und/oder festgenommen)
+// * Alle verletzten Personen abtransportiert
+// * Alle Brände gelöscht
+// fail conditions:
+// * Geisel tot
+// * Zu viele Opfer (mehr als 2 tote zivil oder mehr als 8 verletzte Personen)
+// * Brände außer Kontrolle (3 Gebäude brennen gleichzeitig)
+// * Zielperson entkommen (min.1 Gangster entkommen)
+// * Einsatzvorbereitungen nicht rechtzeitig abgeschlossen (nach countdown noch einsatzkraft in triggergebiet)
+
+/* TODO
+	Cutscene (DG): Hubi fliegt zweimal durch das Bild, weil das Kreisen mit der FlyTo-Action
+	komisch aussieht. Er fliegt leider nicht richtig, wenn man ihn normal auf einem Pfad bewegt.
+*/
+
+enum
+{
+	TIME_WEATHER = 10,	// internal timer
+	TIME_COUNTDOWN_ARREST = 240,
+	TIME_HINT_COUNTDOWN_START = 2,
+	TIME_HINT_COUNTDOWN_AT_2MIN = TIME_COUNTDOWN_ARREST - 120,
+	TIME_SV_AT_3MIN = TIME_COUNTDOWN_ARREST - 180,
+	TIME_HIDE_HELPTEXTS = 15,
+
+	MAX_INJURED_PERSONS = 8,
+	MAX_DEAD_CIVILS = 2,	// hint uses 2 so change hint if you change this
+	MAX_BURNING_HOUSES = 3,
+
+	MAX_HINTS = 15,		// numer of hints - don't change
+	MAX_DEALERS = 2,	// don't change
+
+	MAX_CS_FLEEING = 7,	
+};
+
+// states for cutscenes
+enum CS_STATE
+{
+	CS_NOT_STARTED = 0,
+	CS_START_TRANSITION,
+	CS_RUNNING,
+	CS_END_TRANSITION,
+	CS_FINISHED,
+};
+
+// states for dealers
+enum DEALER_STATE
+{
+	DS_START = 0,
+	DS_HIDE,
+	DS_HOSTAGE_WAIT_NEGOTIATE,
+	DS_HOSTAGE_WAIT_UNITS_LEAVE,
+	DS_BARRICADE,
+	DS_FLEE_TO_CAR,
+	DS_FLEE_BY_CAR,
+	DS_FLEE_BY_FOOT,
+	DS_LEAVE_CAR,
+};
+
+const char TIMER_WEATHER[] = "TimerWeather";
+const char TIMER_HINT_COUNTDOWN_START[] = "hint_start";
+const char TIMER_HINT_COUNTDOWN_AT_2MIN[] = "hint_2min";
+const char TIMER_SV_AT_3MIN[] = "sv_3min";
+const char OBJECTIVE_TRANSPORT_INJURED[] = "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]	= "EXTINGUISH_FIRES";
+const char OBJECTIVE_PREPARE_ARREST[]	= "M03_PREPARE_ARREST";
+const char OBJECTIVE_RETREAT[]			= "M03_RETREAT";
+const char OBJECTIVE_ARREST_GANGSTERS[] = "M03_ARREST_GANGSTERS";
+const char NAME_DEALER1[]				= "dealer1";
+const char NAME_DEALER2[]				= "dealer2";
+const char NAME_VMAN[]					= "vman";
+const char NAME_DEALERCASE[]			= "cs_dealercase";
+const char NAME_UNDERCOVERCASE[]		= "cs_undercovercase";
+const char NAME_HIDEOUT[]				= "hideout";
+const char NAME_PATH_HIDE[]				= "dealer_hide";
+const char NAME_PATH_CAR[]				= "dealer_car";
+const char NAME_HELI[]					= "cs_tvheli";
+const char NAME_HELI1[]					= "cs_tvheli1";
+const char NAME_HELI2[]					= "cs_tvheli2";
+const char NAME_PATH_GANGSTER_CAR[]		= "cs_gangster_car";
+const char NAME_PATH_UNDERCOVER_CAR[]	= "cs_undercover_car";
+const char NAME_PATH_GANGSTER1[]		= "cs_meeting_gangster1";
+const char NAME_PATH_GANGSTER2[]		= "cs_meeting_gangster2";
+const char NAME_PATH_UNDERCOVER[]		= "cs_meeting_undercover";
+const char NAME_PATH_CAR_FLEE[]			= "dealer_car_flee";
+const char NAME_PATH_FOOT_FLEE[]		= "dealer_foot_flee";
+const char NAME_PATH_CIVIL_HIDE[]		= "civil_hide";
+const char NAME_DEALERCAR[]				= "dealercar";
+const char NAME_UNDERCOVERCAR[]			= "undercovercar";
+const char NAME_TRIGGER_MEETING[]		= "meeting";
+const char NAME_TRIGGER_FLEE[]			= "flee";
+const char NAME_CS_CAM1[]				= "cs1";
+const char NAME_CS_CAM2[]				= "cs2";
+const char NAME_CS_CAM3[]				= "cs3";
+const char NAME_CS_FLEEING01[]			= "fleeing01";
+const char NAME_CS_FLEEING02[]			= "fleeing02";
+const char NAME_CS_FLEEING03[]			= "fleeing03";
+const char NAME_CS_FLEEING04[]			= "fleeing04";
+const char NAME_CS_FLEEING05[]			= "fleeing05";
+const char NAME_CS_FLEEING06[]			= "fleeing06";
+const char NAME_CS_FLEEING07[]			= "fleeing07";
+
+const char NAME_COUNTER_INJURED_SQUADS[] = "Injured Squads";
+const char NAME_COUNTER_BURNING_OBJECTS[] = "Burning Objects";
+const char NAME_COUNTER_BURNING_HOUSES[] = "Burning Houses";
+
+const char TIMER_PATH_PROBLEM[]	= "TimerPathProblem";
+const char TIMER_CS_CASEOPEN[] = "CaseOpen";
+const float TIME_CS_CASEOPEN = 6.0f;
+const char TIMER_CS_HINTHURRY[] = "HintHurry";
+const float TIME_CS_HINTHURRY = 3.0f;
+const char TIMER_CS_CASECLOSE[] = "CaseClose";
+const float TIME_CS_CASECLOSE = 3.0f;
+const char TIMER_CS_FINISHCASECLOSE[] = "FinishCaseClose";
+const float TIME_CS_FINISHCASECLOSE = 2.0f;
+const char TIMER_CS_CASEDELIVERY[] = "CaseDelivery";
+const float TIME_CS_CASEDELIVERY = 2.0f;
+const char TIMER_CS_SHOOTING[] = "Shooting";
+const float TIME_CS_SHOOTING = 7.0f;
+const char TIMER_CS_CHANGEANIM[] = "ChangeAnim";
+const float TIME_CS_CHANGEANIM = 1.0f;
+const char TIMER_CS_UNDERCOVER_INJURED[] = "InjureUndercover";
+const char TIMER_CS_HIDEHINTS[] = "HideHints";
+const float TIME_CS_HIDEHINTS = 3.0f;
+const char TIMER_CS_ZOOM[] = "ZoomTransition";
+const float TIME_CS_ZOOM = 4.0f;
+const char TIMER_CS_CLOSEUNDERCOVERDOOR[] = "closeundercoverdoor";
+const float TIME_CS_CLOSEUNDERCOVERDOOR = 0.5f;
+const char TIMER_CS_HELI[] = "cs_heli";
+const float TIME_CS_HELI = 6.0f;
+const char TIMER_CS_CLOSEDEALERDOOR[] = "closedealerdoor";
+const float TIME_CS_CLOSEDEALERDOOR = 0.5f;
+const char TIMER_CS_DEALERSGETOUT[] = "dealersgetout";
+const float TIME_CS_DEALERSGETOUT = 1.0f;
+const char TIMER_CS_UNDERCOVERGETSOUT[] = "undercovergetsout";
+const float TIME_CS_UNDERCOVERGETSOUT = 1.0f;
+const float TIME_PATH_PROBLEM	= 4.0f;			// Nach wievielen Sekunden soll erneut überprüft werden, ob das Auto feststeckt
+const char TIMER_HOSTAGE_INJURED[] = "hostageinjured";
+const float TIME_HOSTAGE_INJURED = 3.0f;
+const char TIMER_CS_END[] = "cutsceneending";
+const float TIME_CS_END = 5.0f;
+const char TIMER_CS_HINT5[] = "cs_hint5";
+const float TIME_CS_HINT5 = 0.2f;
+const char TIMER_CS_HINT6[] = "cs_hint6";
+const float TIME_CS_HINT6 = 2.0f;
+const char TIMER_CS_HINT7[] = "cs_hint7";
+const float TIME_CS_HINT7 = 2.0f;
+const char TIMER_CS_COMMENT[] = "cs_comment";
+const float TIME_CS_COMMENT = 1.0f;
+const char TIMER_HELI_SOUND[] = "cs_heli_sound";
+const float TIME_HELI_SOUND = 0.1f;
+
+object Mission03 : MissionScript
+{
+	int				mHintCounter[MAX_HINTS];
+	float			mFogIntensity;
+	bool			mFailNotPrepared;
+	bool			mFailTooManyBurningHouses;
+	bool			mFailTooManyVictims;
+	bool			mFailHostageDied;
+	bool			mFailDealerEscaped;
+
+	Person			mDealers[MAX_DEALERS];
+	bool			mDealerSilenced[MAX_DEALERS];	// ausser gefecht
+	bool			mDealerAway[MAX_DEALERS];	// abtransportiert
+	Person			mVMan;
+	OpenHouse		mHideOut;
+	Vehicle			mDealerCar, mUndercoverCar, mHeli;
+	Vector			mDealerCarStartPos;
+	Vector			mDealerCarLastPos;
+	bool			mTryToMoveByRF;
+	Path			mHidePath;
+	Path			mPathToCar;
+	Path			mPathCivilHide;
+	DEALER_STATE	mDealerState;
+	Person			mHostage;
+	bool			mHasHostage;
+	bool			mDriving;
+
+	GameObjectList	mMeetingTriggerLights;
+	int				mCountNrSW;
+	int				mCountNrShooters;
+	int				mCountNrScouts;
+	
+	CS_STATE		mStateCs;
+	Vehicle			mCSGangsterCar, mCSUndercoverCar;
+	Path			mCSGangsterPath1, mCSGangsterPath2, mCSUndercoverPath,
+					mCSGangsterCarPath, mCSUndercoverCarPath, mCSHeliPath1, mCSHeliPath2;
+	bool			mCutscenePlayed;
+	GameObject		mCSDealerCase, mCSUndercoverCase;
+	Person			mFleeing[MAX_CS_FLEEING];
+	int				mHeliVolume;
+	
+	PersonList 		mHostageList;
+	int				mInjuredHostageDies;
+	
+	bool			mFirstNegotiation;
+
+	Mission03()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		for (int i=0; i < MAX_DEALERS; ++i)
+		{
+			mDealerSilenced[i] = false;
+			mDealerAway[i] = false;
+		}
+		mFailNotPrepared = false;
+		mFailTooManyBurningHouses = false;
+		mFailTooManyVictims = false;
+		mStateCs = CS_NOT_STARTED;
+		mDealerState = DS_START;
+		System::Log("M03: set mDealerState = DS_START");
+		mDriving = false;
+		mFailHostageDied = false;
+		mFailDealerEscaped = false;
+		mCountNrSW = 0;
+		mCountNrShooters = 0;
+		mCountNrScouts = 0;
+		mTryToMoveByRF = false;
+		mCutscenePlayed = false;
+		mInjuredHostageDies = 0;
+		mFirstNegotiation = true;
+	}
+	
+	~Mission03()
+	{
+	
+	}
+	
+	void Start()
+	{
+		System::Log("MISSION03 - START");
+
+		Game::CreateAreaLightsAroundTrigger(NAME_TRIGGER_MEETING, "al_meeting", 400.f);
+
+		mMeetingTriggerLights = Game::GetGameObjects("al_meeting");
+		SwitchAreaLights(&mMeetingTriggerLights, false);
+
+		GameObjectList listPersons = Game::GetGameObjects(TYPE_PERSON);
+		Game::ExecuteCommand("wem_init",listPersons.GetObject(0));
+
+		for(int i=0; i<listPersons.GetNumObjects(); i++)
+		{
+			Person *p = (Person*)listPersons.GetObject(i);
+			if (p->HasName(NAME_DEALER1))
+			{
+				mDealers[0] = p;
+				mDealers[0].Hide();
+			}
+			else if (p->HasName(NAME_DEALER2))
+			{
+				mDealers[1] = p;
+				mDealers[1].Hide();
+			}
+			else if (p->HasName(NAME_VMAN))
+			{
+				mVMan = p;
+				mVMan.Hide();
+			}
+			else if (p->HasName(NAME_CS_FLEEING01))
+			{
+				mFleeing[0] = p;
+			}
+			else if (p->HasName(NAME_CS_FLEEING02))
+			{
+				mFleeing[1] = p;
+			}
+			else if (p->HasName(NAME_CS_FLEEING03))
+			{
+				mFleeing[2] = p;
+			}
+			else if (p->HasName(NAME_CS_FLEEING04))
+			{
+				mFleeing[3] = p;
+			}
+			else if (p->HasName(NAME_CS_FLEEING05))
+			{
+				mFleeing[4] = p;
+			}
+			else if (p->HasName(NAME_CS_FLEEING06))
+			{
+				mFleeing[5] = p;
+			}
+			else if (p->HasName(NAME_CS_FLEEING07))
+			{
+				mFleeing[6] = p;
+			}
+		}
+
+		VehicleList carList1(NAME_DEALERCAR);
+		if (carList1.GetNumVehicles())
+		{
+			mDealerCar = carList1.GetVehicle(0);
+			mDealerCar.Hide();
+		}
+
+		VehicleList carList2(NAME_UNDERCOVERCAR);
+		if (carList2.GetNumVehicles())
+		{
+			mUndercoverCar = carList2.GetVehicle(0);
+			mUndercoverCar.Hide();
+		}
+
+		VehicleList carList3(NAME_HELI);
+		if (carList3.GetNumVehicles())
+		{
+			mHeli = carList3.GetVehicle(0);
+			mHeliVolume = 0.0f;
+			Audio::SetVolume(mHeli.GetHeliSound(), mHeliVolume);
+			mHeli.Hide();
+		}
+
+		GameObjectList oList1(NAME_DEALERCASE);
+		if (oList1.GetNumObjects())
+		{
+			mCSDealerCase = oList1.GetObject(0);
+			mCSDealerCase.Hide();
+		}
+
+		GameObjectList oList2(NAME_UNDERCOVERCASE);
+		if (oList2.GetNumObjects())
+		{
+			mCSUndercoverCase = oList2.GetObject(0);
+			mCSUndercoverCase.Hide();
+		}
+
+		OpenHouseList ohList1(NAME_HIDEOUT);
+		if (ohList1.GetNumOpenHouses())
+			mHideOut = ohList1.GetOpenHouse(0);
+
+		PathList pathList1(NAME_PATH_HIDE);
+		if (pathList1.GetNumPaths())
+		{
+			mHidePath = pathList1.GetPath(0);
+			mHidePath.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList2(NAME_PATH_CAR);
+		if (pathList2.GetNumPaths())
+		{
+			mPathToCar = pathList2.GetPath(0);
+			mPathToCar.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList3(NAME_PATH_CIVIL_HIDE);
+		if (pathList3.GetNumPaths())
+		{
+			mPathCivilHide = pathList3.GetPath(0);
+			mPathCivilHide.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList4(NAME_PATH_UNDERCOVER_CAR);
+		if (pathList4.GetNumPaths())
+		{
+			mCSUndercoverCarPath = pathList4.GetPath(0);
+			mCSUndercoverCarPath.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList5(NAME_PATH_GANGSTER_CAR);
+		if (pathList5.GetNumPaths())
+		{
+			mCSGangsterCarPath = pathList5.GetPath(0);
+			mCSGangsterCarPath.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList6(NAME_PATH_GANGSTER1);
+		if (pathList6.GetNumPaths())
+		{
+			mCSGangsterPath1 = pathList6.GetPath(0);
+			mCSGangsterPath1.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList7(NAME_PATH_GANGSTER2);
+		if (pathList7.GetNumPaths())
+		{
+			mCSGangsterPath2 = pathList7.GetPath(0);
+			mCSGangsterPath2.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList8(NAME_PATH_UNDERCOVER);
+		if (pathList8.GetNumPaths())
+		{
+			mCSUndercoverPath = pathList8.GetPath(0);
+			mCSUndercoverPath.SetOnFinishDeleteObject(false);
+		}
+
+		PathList pathList9(NAME_HELI1);
+		if (pathList9.GetNumPaths())
+		{
+			mCSHeliPath1 = pathList9.GetPath(0);
+			mCSHeliPath1.SetOnFinishDeleteObject(false);
+		}
+		PathList pathList9(NAME_HELI2);
+		if (pathList9.GetNumPaths())
+		{
+			mCSHeliPath2 = pathList9.GetPath(0);
+			mCSHeliPath2.SetOnFinishDeleteObject(false);
+		}
+		
+		CheckForValidObjects();
+
+		Mission::StartIntervalTimer(TIMER_WEATHER, TIME_WEATHER);
+		Weather::SetFogVisible(true);	// TODO: check if this can be done within editor
+		Weather::SetFogIntensity(00);	// TODO: check if this can be done within editor
+		mFogIntensity = Weather::GetFogIntensity();
+
+		Mission::AddObjective(OBJECTIVE_PREPARE_ARREST);
+		Mission::SetObjectiveAccomplished(OBJECTIVE_PREPARE_ARREST, false);
+		Mission::StartCountDown(TIME_COUNTDOWN_ARREST);
+		Mission::SetCountDownColor(1.0f, 0.0f, 0.0f);
+
+		Mission::StartSingleTimer(TIMER_HINT_COUNTDOWN_START, TIME_HINT_COUNTDOWN_START);
+		Mission::StartSingleTimer(TIMER_HINT_COUNTDOWN_AT_2MIN, TIME_HINT_COUNTDOWN_AT_2MIN);
+		Mission::StartSingleTimer(TIMER_SV_AT_3MIN, TIME_SV_AT_3MIN);
+
+		Vector v = mDealers[0].GetPosition();
+
+		Audio::PlaySoundtrack("3", 0.0f);
+	}
+
+	void CheckForValidObjects()
+	{
+		for (int i = 0; i < MAX_DEALERS; ++i)
+			if (!mDealers[i].IsValid())
+				System::Log("M03: dealer %d is missing", i);
+				
+		if (!mVMan.IsValid())
+			System::Log("M03: vman is missing");
+		if (!mDealerCar.IsValid())
+			System::Log("M03: dealercar is missing");
+		if (!mHideOut.IsValid())
+			System::Log("M03: hideout is missing");
+		if (!mHidePath.IsValid())
+			System::Log("M03: path dealer_hide is missing");
+		if (!mPathToCar.IsValid())
+			System::Log("M03: path dealer_car is missing");
+		if (!mPathCivilHide.IsValid())
+			System::Log("M03: path civil_hide is missing");
+	}
+
+	void SwitchAreaLights(GameObjectList *lights_, bool enable_)
+	{
+		for (int i=0; i<lights_->GetNumObjects(); ++i)
+		{
+			if (enable_)
+				lights_->GetObject(i)->Show();
+			else
+				lights_->GetObject(i)->Hide();
+		}
+	}
+
+	bool CanGangstersUseCar()
+	{
+		if (!mDealerCar.IsValid() || mDealerCar.IsSmoking() || mDealerCar.IsDestroyed() || mDealerCar.IsUplifted() || mDealerCar.IsUplifting())
+			return false;
+
+		Vector currentPos = mDealerCar.GetPosition();
+		if ((int)currentPos.x != (int)mDealerCarStartPos.x || (int)currentPos.y != (int)mDealerCarStartPos.y || (int)currentPos.z != (int)mDealerCarStartPos.z)
+			return false;
+
+		return true;
+	}
+
+	bool CanPersonStillFlee(Person * gangster_)
+	{
+		if (gangster_->IsDead() || gangster_->IsArrested() || gangster_->IsInjured())
+			return false;
+
+		return true;
+	}
+
+	bool AreGangstersInCar()
+	{
+		for (int i=0; i < MAX_DEALERS; ++i)
+		{
+			if (	CanPersonStillFlee(&(mDealers[i])) 
+				&&	mDealers[i].GetEnteredCarID() != mDealerCar.GetID())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void Update()
+	{
+		// cutscene
+		UpdateCutscene();
+
+		// dealers
+		UpdateDealers();
+
+		if (Mission::HasObjective(OBJECTIVE_PREPARE_ARREST))	// before cutscene?
+		{
+			bool inTrigger = Game::IsSquadInTrigger(NAME_TRIGGER_MEETING);
+			if (	!Mission::HasObjective(OBJECTIVE_RETREAT)
+				&&	inTrigger)
+			{
+				Mission::AddObjective(OBJECTIVE_RETREAT);
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RETREAT, false);
+				SwitchAreaLights(&mMeetingTriggerLights, true);
+				Mission::PlayComment("SUPERV_M03_OBJ03");
+			} else 
+			if (inTrigger && Mission::IsObjectiveAccomplished(OBJECTIVE_RETREAT))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RETREAT, false);
+				SwitchAreaLights(&mMeetingTriggerLights, true);
+				Mission::PlayComment("SUPERV_M03_OBJ03");
+			} else 
+			if (!inTrigger && !Mission::IsObjectiveAccomplished(OBJECTIVE_RETREAT))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RETREAT, true);
+				SwitchAreaLights(&mMeetingTriggerLights, false);
+				Mission::PlayComment("SUPERV_M03_OBJ04");
+			}
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action, ActionCallback* Data)
+	{
+		switch (Action)
+		{
+			case "EActionNegotiate":
+			{
+				if(mFirstNegotiation && Data->Parameters[0].iValue == mHideOut.GetID())
+				{
+					Game::ShowHelpTextWindow("M03_HELP_HALTGANGSTERS", TIME_HIDE_HELPTEXTS);
+					Mission::StartSingleTimer("TIMER_HELP_3", 25.0f);
+					mFirstNegotiation = false;
+				}
+				
+				System::Log("EActionNegotiate");								
+				if (	Data->Parameters[0].iValue == mDealers[0].GetID() 
+					||	Data->Parameters[0].iValue == mDealers[1].GetID() 
+					||	Data->Parameters[0].iValue == mHideOut.GetID())
+				{
+					if (	mDealerState == DS_HOSTAGE_WAIT_NEGOTIATE
+						||	mDealerState == DS_HOSTAGE_WAIT_UNITS_LEAVE)
+					{
+						mDealerState = DS_HOSTAGE_WAIT_UNITS_LEAVE;
+						System::Log("M03: set mDealerState = DS_HOSTAGE_WAIT_UNITS_LEAVE");
+						// dealer verlangen abzug der Einheiten
+						ShowHint(14);
+						SwitchAreaLights(&mMeetingTriggerLights, true);
+					}
+					else if (mDealerState == DS_BARRICADE)
+					{
+						// dealer schimpfen
+						ShowHint(13);
+					}
+				}
+			}
+			break;
+		}
+	}
+
+	void UpdateDealers()
+	{
+		for (int i=0; i<MAX_DEALERS; ++i)
+		{
+			if(mDealers[i].IsValid() && (mDealers[i].IsInjured() || mDealers[i].IsDead()))
+			{
+				mDealerSilenced[i] = true;
+			}
+		}
+
+		switch (mDealerState)
+		{
+			case DS_HIDE:
+			{
+				if (	mDealers[0].HasArrived(NAME_PATH_HIDE)
+					||	mDealers[1].HasArrived(NAME_PATH_HIDE))
+				{
+					mHideOut.SetFlag(OF_USABLE_WITH_MEGAPHONE);
+					mHostageList = mHideOut.GetNonSquadPersonsInside();
+					//System::Log("NumPersons in hostagelist: %d", mHostageList.GetNumPersons());
+					for (int i =0; i < mHostageList.GetNumPersons(); i++)
+					{
+						if (	mHostageList.GetPerson(i)->GetID() != mDealers[0].GetID()
+						&&	mHostageList.GetPerson(i)->GetID() != mDealers[1].GetID())
+						{
+							//System::Log("valid id for hostage");
+							if (mHasHostage)
+							{
+								//System::Log("push in corner");
+								// andere personen sollen sich in eine Ecke drängen.
+								mHostageList.GetPerson(i)->SetObjectPath(NAME_PATH_CIVIL_HIDE);
+								mHostageList.GetPerson(i)->SetBehaviour(BEHAVIOUR_CIVILIAN_HOSTAGE);
+								mHostageList.GetPerson(i)->PushIgnoreEnergy();
+								//mHostageList.GetPerson(i)->SetAnimation("hostage_kneel");
+							}
+							else
+							{
+								System::Log("M03: got a hostage");
+								mHostage = mHostageList.GetPerson(i);
+								mHostage.SetBehaviour(BEHAVIOUR_CIVILIAN_HOSTAGE);
+								mHasHostage = true;
+							}
+						}
+					}
+
+					// found hostage?
+					if (mHasHostage)
+					{
+						for (int i=0; i<MAX_DEALERS; ++i)
+						{
+							mDealers[i].SetBehaviour(BEHAVIOUR_GANGSTER_GUARDHOSTAGE);
+							mDealers[i].SetShootAtPsychologist(true);
+						}
+						mDealerState = DS_HOSTAGE_WAIT_NEGOTIATE;
+						System::Log("M03: set mDealerState = DS_HOSTAGE_WAIT_NEGOTIATE");
+					}
+					else
+					{
+						for (int i=0; i<MAX_DEALERS; ++i)
+						{
+							mDealers[i].SetShootAtPsychologist(true);
+							mDealers[i].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+							mDealers[i].PushActionTurnTo(ACTION_NEWLIST, mHideOut.GetEntrancePosition(true));
+						}
+						mDealerState = DS_BARRICADE;
+						System::Log("M03: set mDealerState = DS_BARRICADE");
+					}
+				}
+			}
+			break;
+			case DS_HOSTAGE_WAIT_UNITS_LEAVE:
+			{
+				// wenn einheiten weg sind flüchten
+				bool inTrigger = Game::IsSquadInTrigger(NAME_TRIGGER_MEETING);
+				if (!inTrigger)
+				{
+					ShowHint(10);
+					SwitchAreaLights(&mMeetingTriggerLights, false);
+
+					for (int i=0; i<MAX_DEALERS; ++i)
+					{
+						mDealers[i].ClearActions();
+					}
+
+					if (mHasHostage)
+					{
+						System::Log("M03: has hostage - arrest it");
+						mDealers[0].PushActionArrest(ACTION_NEWLIST, &mHostage);
+					}
+					else
+					{
+						System::Log("M03: no hostage");
+					}
+
+					for (int i=0; i<MAX_DEALERS; ++i)
+					{
+						mDealers[i].SetObjectPath(NAME_PATH_CAR);
+						mDealers[i].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+					}
+
+					Audio::SetMusicLevel(0.4f);
+					mDealerState = DS_FLEE_TO_CAR;
+					System::Log("M03: set mDealerState = DS_FLEE_TO_CAR");					
+				}
+			}
+			break;
+			
+			case DS_FLEE_TO_CAR:
+			{
+				const float DIST_ARRIVED_CAR = 350.f;	// relativ hoch, damit geisel danach nicht vom Auto überfahren wird
+				if ((mDealers[0].HasArrived(NAME_PATH_CAR, DIST_ARRIVED_CAR) || !CanPersonStillFlee(&(mDealers[0])))
+					&&	(mDealers[1].HasArrived(NAME_PATH_CAR, DIST_ARRIVED_CAR) || !CanPersonStillFlee(&(mDealers[1])))
+					)
+				{
+					for (int i=0; i<MAX_DEALERS; ++i)
+						mDealers[i].ClearActions();
+					if (mDealers[0].GetArrestedID() >= 0)
+					{
+						mDealers[0].PushActionRelease(ACTION_NEWLIST);
+						mDealers[0].PushActionWait(ACTION_APPEND, 0.0f);
+						mHostage.ClearActions();
+						mHostage.SetBehaviour(BEHAVIOUR_CIVILIAN_NORMAL);
+					}
+
+					if(CanGangstersUseCar())
+					{
+						ShowHint(12);
+						mDealerState = DS_FLEE_BY_CAR;
+						System::Log("M03: set mDealerState = DS_FLEE_BY_CAR");
+
+						mDealerCar.SetMaxPassengers(MAX_DEALERS+1, true);
+						mDealerCar.SetVehicleRole(VT_GANGSTER_GETAWAY);
+						mDealerCar.SetCommandable(false);
+						mDealerCar.PushActionWait(ACTION_NEWLIST, 0.0f);
+						mDealerCar.AddRifleToGetawayCar();
+						mDealerCar.SetAutoShoot(false);
+					
+						for(int i=0; i<MAX_DEALERS; ++i)
+						{
+							if (CanPersonStillFlee(&(mDealers[i])))
+							{
+								mDealers[i].SetFleeing(false, false);
+								mDealers[i].PushActionMove(ACTION_APPEND, &mDealerCar, TARGET_PASSENGERDOOR);
+								mDealers[i].PushActionEnterCar(ACTION_APPEND, &mDealerCar);
+							}
+						}
+						
+						mHasHostage = false;
+					}
+					else
+					{
+						for (int i=0; i<MAX_DEALERS; ++i)
+						{
+							mDealers[i].SetEscapePath(NAME_PATH_FOOT_FLEE);
+							mDealers[i].SetFleeing(true, false);
+						}
+						
+						mHasHostage = false;
+						mDealerState = DS_FLEE_BY_FOOT;
+						System::Log("M03: set mDealerState = DS_FLEE_BY_FOOT");
+					}
+				}
+			}
+			break;
+			
+			case DS_FLEE_BY_CAR:
+			{
+				if (!mDriving && AreGangstersInCar())
+				{
+					mDealerCar.SetObjectPath(NAME_PATH_CAR_FLEE);
+
+					// Dealers lost the hostage when entering car. This can happen, as dealers need to release
+					// the hostage for a moment to enter the car and squads can attack that moment.
+					if (mHasHostage && mHostage.GetEnteredCarID() != mDealerCar.GetID())
+						mHasHostage = false;
+
+					mDriving = true;
+				}
+				else if (mDriving)
+				{
+					if(mDealerCar.IsDestroyed())
+					{
+						mDriving = false;
+						for(int i = 0; i < MAX_DEALERS; ++i)
+						{
+							if(!mDealers[i].IsValid())		// Person was deleted by car explosion
+								mDealerSilenced[i] = true;
+						}
+						// hostage dead will be caught by usual hostage check
+					}
+
+					if(mDealerCar.WasStoppedByRoadblock())
+					{
+						StartEscapeOnFoot();
+					}
+
+					// check starten ob man feststeckt
+					if(!Mission::TimerIsStarted(TIMER_PATH_PROBLEM))
+					{
+						if(!mDealerCar.IsMoving())
+						{
+							float z;
+							mDealerCarLastPos = mDealerCar.GetPosition();
+							Mission::StartSingleTimer(TIMER_PATH_PROBLEM, TIME_PATH_PROBLEM);
+						}
+						else
+						{
+							mTryToMoveByRF = false;
+						}
+					}
+				}
+				else
+				{
+					bool dealerNeedAction = false;
+					for(int i = 0; i < MAX_DEALERS; ++i)
+					{
+						if (CanPersonStillFlee(&(mDealers[i])) && mDealers[i].GetEnteredCarID() != mDealerCar.GetID() && !mDealers[i].HasAnyAction())
+							dealerNeedAction = true;
+					}
+					
+					if (dealerNeedAction)
+					{
+						mDealerState = DS_FLEE_TO_CAR;
+						System::Log("M03: set mDealerState = DS_FLEE_TO_CAR");
+					}
+				}
+			}
+			break;
+			
+			case DS_LEAVE_CAR:
+			{
+				bool allFleeing = true;
+				for(int i = 0; i < MAX_DEALERS; ++i)
+				{
+					if(mDealers[i].GetEnteredCarID() != mDealerCar.GetID() && !mDealerSilenced[i] && !mDealers[i].HasAnyAction())
+					{
+						if (mDealers[i].GetArrestedID() >= 0)
+						{
+							mDealers[i].PushActionRelease(ACTION_APPEND);
+							mHasHostage = false;
+						}
+						mDealers[i].SetEscapePath(NAME_PATH_FOOT_FLEE);	
+						mDealers[i].SetFleeing(true, false);
+						mDealers[i].PushActionWait(ACTION_NEWLIST, 0.3f);
+					}
+					if (!mDealers[i].IsFleeing())
+						allFleeing = false;
+				}
+
+				if (allFleeing)
+				{
+					mDealerState = DS_FLEE_BY_FOOT;
+					System::Log("M03: set mDealerState = DS_FLEE_BY_FOOT");
+				}
+			}
+			break;
+		}
+
+		// kill hostage if units try to enter house
+		if (mHasHostage && (mDealerState == DS_HOSTAGE_WAIT_NEGOTIATE ||mDealerState == DS_HOSTAGE_WAIT_UNITS_LEAVE))
+		{
+			if (mHideOut.NumSquadPersonsInside() > 0)
+			{
+				for (int i=0; i<MAX_DEALERS; ++i)
+				{
+					if (!mDealers[i].IsCurrentAction("EActionShoot"))
+					{
+						mDealers[i].PushActionShoot(ACTION_NEWLIST, &mHostage);
+					}
+				}
+			}
+
+			if (mHostage.IsInjured())	// hostage dies immediatly
+			{
+				mHostage.Kill(INJUREREASON_SHOT);
+			}
+		}
+	}
+
+	void StartEscapeOnFoot()
+	{
+		System::Log("M3: StartEscapeOnFoot()");
+		mDriving = false;
+		mDealerCar.RemoveObjectPath();
+		mDealerCar.PushActionWait(ACTION_NEWLIST, 0.1f);
+//		Mission::StopTimer(TIMER_PATH_GETAWAY);
+
+		if (mHasHostage && mHostage.GetEnteredCarID() == mDealerCar.GetID())
+		{
+			mHostage.PushActionLeaveCar(ACTION_NEWLIST, &mDealerCar);
+		}
+
+		for(int i = 0; i < MAX_DEALERS; ++i)
+		{
+			if(mDealers[i].GetEnteredCarID() == mDealerCar.GetID() && !mDealerSilenced[i])
+			{
+				mDealers[i].SetFleeing(false, false);
+				mDealers[i].PushActionLeaveCar(ACTION_APPEND, &mDealerCar);
+				mDealers[i].SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+				System::Log("Dealer %i will attack squads", i);
+			}
+		}
+		mDealerState = DS_LEAVE_CAR;
+		System::Log("M03: set mDealerState = DS_LEAVE_CAR");
+	}
+
+	void OnCountDownEnded()
+	{
+		if (!Mission::IsObjectiveAccomplished(OBJECTIVE_RETREAT))
+		{
+			mFailNotPrepared = true;
+			return;
+		}
+
+		Mission::AddObjective(OBJECTIVE_ARREST_GANGSTERS);
+		Mission::RemoveObjective(OBJECTIVE_PREPARE_ARREST);
+		Mission::RemoveObjective(OBJECTIVE_RETREAT);
+		StartCutscene();
+	}
+
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_HELI_SOUND:
+			{
+				mHeliVolume += 0.05f;
+				if (mHeliVolume <= 1.0f)
+					Audio::SetVolume(mHeli.GetHeliSound(), mHeliVolume);
+			}
+			break;
+			case TIMER_CS_COMMENT:
+			{
+				Mission::PlayComment("SUPERV_M03_OBJ05");
+			}
+			break;
+
+			case TIMER_CS_HINT5:
+			{
+				ShowHint(5);
+			}
+			break;
+
+			case TIMER_CS_HINT6:
+			{
+				ShowHint(6);
+			}
+			break;
+
+			case TIMER_CS_HINT7:
+			{
+				ShowHint(7);
+			}
+			break;
+
+			case TIMER_HOSTAGE_INJURED:
+			{
+				System::Log("M03: hostage injured - timer finished");
+				mInjuredHostageDies = 2;
+			}
+			break;
+						
+			case TIMER_WEATHER:
+			{
+				float fogIntensity = Weather::GetFogIntensity();
+				fogIntensity -= 1.f/30.f * mFogIntensity;
+				Weather::SetFogIntensity(fogIntensity);
+			}
+			break;
+
+			case TIMER_HINT_COUNTDOWN_START:
+			{
+				ShowHint(0);
+			}
+			break;
+
+			case TIMER_HINT_COUNTDOWN_AT_2MIN:
+			{
+				ShowHint(1);
+				System::Log("change music");
+				Audio::SetMusicLevel(0.1f);	
+			}
+			break;
+
+			case TIMER_SV_AT_3MIN:
+			{
+				Mission::PlayComment("SUPERV_M03_THREEMINUTES");
+			}
+			break;
+
+			case TIMER_PATH_PROBLEM:
+			{
+				if(!mDealerCar.IsMoving())
+				{
+					Vector pos = mDealerCar.GetPosition();
+					
+					if(Math::dist(pos.x, pos.y, mDealerCarLastPos.x, mDealerCarLastPos.y) < 50.f)		// Weniger als einen Meter vorangekommen
+					{
+						if(!mDealerCar.HasObjectPath(NULL))
+						{
+							System::Log("M03: TIMER_PATH_PROBLEM car has no ObjectPath!");
+							StartEscapeOnFoot();
+						}
+						else
+						{
+							mDealerCar.GetDestination(pos.x, pos.y, pos.z);
+							if(!mDealerCar.CheckCollision(pos) && !mTryToMoveByRF)
+							{
+								// Versuchen via Routefinder zum nächsten Pfadpunkt zugelangen
+								System::Log("M03: Try to reach destination point by FindPath.");
+								//mDealerCar.PushActionMove(ACTION_NEWLIST, pos, true);
+								mDealerCar.PushActionRedirectCar(ACTION_NEWLIST, true, true);
+								mTryToMoveByRF = true;
+							}
+							else
+							{
+								// Keine Chance mehr durchzukommen - aussteigen.
+								mTryToMoveByRF = false;
+								StartEscapeOnFoot();
+							}
+						}
+					}
+				}
+				else
+				{
+					mTryToMoveByRF = false;
+				}
+			}
+			break;
+			case TIMER_CS_DEALERSGETOUT:
+			{
+				mDealers[0].Show();
+				mDealers[0].SetEquipment(EQUIP_DEALERCASE);
+				mDealers[0].SetObjectPath(NAME_PATH_GANGSTER1, 2.0f);
+				mDealers[1].Show();
+				//mDealers[1].SetEquipment(EQUIP_PISTOL);
+				mDealers[1].SetObjectPath(NAME_PATH_GANGSTER2, 2.0f);
+				ShowHint(2);
+				Mission::StartSingleTimer(TIMER_CS_CLOSEDEALERDOOR, TIME_CS_CLOSEDEALERDOOR);
+			}
+			break;
+			case TIMER_CS_UNDERCOVERGETSOUT:
+			{
+				mVMan.Show();
+				mVMan.SetEquipment(EQUIP_DEALERCASE);
+				mVMan.ClearActions();
+				mVMan.SetObjectPath(NAME_PATH_UNDERCOVER, 2.0f);
+				Mission::StartSingleTimer(TIMER_CS_ZOOM, TIME_CS_ZOOM);
+				Mission::StartSingleTimer(TIMER_CS_CLOSEUNDERCOVERDOOR, TIME_CS_CLOSEUNDERCOVERDOOR);
+				break;
+			}
+			break;
+			case TIMER_CS_CLOSEDEALERDOOR:
+			{
+				mDealerCar.PlayAnimCloseDoor(DAT_PERSON, 1.0f, NULL);
+			}
+			break;
+			case TIMER_CS_CLOSEUNDERCOVERDOOR:
+			{
+				mUndercoverCar.PlayAnimCloseDoor(DAT_PERSON, 1.0f, NULL);
+			}
+			break;
+			case TIMER_CS_HELI:
+			{
+				mHeli.Show();
+				mHeli.PushActionFlyTo(ACTION_NEWLIST, &mCSHeliPath1, mCSHeliPath1.GetPointID(0), mCSHeliPath1.GetPointID(1));
+				mHeli.PushActionFlyTo(ACTION_APPEND, &mCSHeliPath2, mCSHeliPath2.GetPointID(0), mCSHeliPath2.GetPointID(1));
+				mHeli.PushActionWait(ACTION_APPEND, 3.0f);
+				mHeli.PushActionTurnTo(ACTION_APPEND, mCSHeliPath2.GetPoint(2), 20.0f);
+			}
+			break;
+			case TIMER_CS_HINTHURRY:
+			{
+				ShowHint(3);
+				Mission::StartSingleTimer(TIMER_CS_HELI, TIME_CS_HELI);
+			}
+			break;
+			case TIMER_CS_CASEOPEN:
+			{				
+				Mission::StartSingleTimer(TIMER_CS_CASECLOSE, TIME_CS_CASECLOSE);
+				mCSDealerCase.Show();
+				mDealers[0].SetAnimation("case_open");
+				if (!mDealers[0].SetObjectToEquipmentLocation(mCSDealerCase))
+					System::Log("SetObjectToEquipmentLocation failed!");
+				mDealers[0].SetEquipment(EQUIP_NONE);
+				mCSDealerCase.SetAnimation("dealerbag_show");
+				//mDealers[0].PushInterruptAnim(ACTION_INSERT, "dealerbag_show", 3.0f);
+				mCSUndercoverCase.Show();
+				mDealers[0].SetAnimation("case_open");
+				if (!mVMan.SetObjectToEquipmentLocation(mCSUndercoverCase))
+					System::Log("SetObjectToEquipmentLocation failed!");
+				mVMan.SetEquipment(EQUIP_NONE);
+				mCSUndercoverCase.SetAnimation("dealerbag_show");
+				//mVMan.PushInterruptAnim(ACTION_INSERT, "dealerbag_show", 3.0f);
+			}
+			break;
+			case TIMER_CS_CASECLOSE:
+			{
+				Camera::StartTransition(NAME_CS_CAM3, 20.f);
+				Mission::StartSingleTimer(TIMER_CS_FINISHCASECLOSE, TIME_CS_FINISHCASECLOSE);
+				mDealers[0].SetAnimation("case_close");
+				//mDealers[0].PushActionInterruptAnim(ACTION_INSERT, "dealerbag_close");
+				mCSDealerCase.SetAnimation("dealerbag_close");
+				mVMan.SetAnimation("case_close");
+				//mVMan.PushActionInterruptAnim(ACTION_INSERT, "dealerbag_close");
+				mCSUndercoverCase.SetAnimation("dealerbag_close");
+				//mHeli.Show();
+				//mHeli.PushActionFlyTo(ACTION_NEWLIST, &mCSHeliPath, mCSHeliPath.GetPointID(0), mCSHeliPath.GetPointID(1));
+				//mHeli.PushActionTurnTo(ACTION_APPEND, mCSHeliPath.GetPoint(2), 20.0f);
+				ShowHint(4);
+			}
+			break;
+			case TIMER_CS_FINISHCASECLOSE:
+			{
+				mDealers[0].SetEquipment(EQUIP_DEALERCASE);
+				mVMan.SetEquipment(EQUIP_DEALERCASE);
+				mCSDealerCase.Hide();
+				mCSUndercoverCase.Hide();
+				mDealers[0].SetAnimation("idle10_m");
+				mVMan.SetAnimation("idle10_m");
+				Mission::StartSingleTimer(TIMER_CS_CASEDELIVERY, TIME_CS_CASEDELIVERY);
+			}
+			break;
+			case TIMER_CS_CASEDELIVERY:
+			{
+				mDealers[0].SetEquipment(EQUIP_DEALERCASE);
+				mVMan.SetEquipment(EQUIP_DEALERCASE);
+				mDealers[0].SetAnimation("case_give");
+				mVMan.SetAnimation("case_give");
+				Mission::StartSingleTimer(TIMER_CS_CHANGEANIM, TIME_CS_CHANGEANIM);
+				//ShowHint(5);
+				Mission::StartSingleTimer(TIMER_CS_HINT5, TIME_CS_HINT5);
+				Mission::StartIntervalTimer(TIMER_HELI_SOUND, TIME_HELI_SOUND);
+			}
+			break;
+			case TIMER_CS_CHANGEANIM:
+			{
+				mDealers[0].SetAnimation("idle10_m");
+				mVMan.SetAnimation("idle10_m");
+				mVMan.SetNeverResort(true);
+				Mission::StartSingleTimer(TIMER_CS_SHOOTING, TIME_CS_SHOOTING);
+				Mission::StartSingleTimer(TIMER_CS_HINT6, TIME_CS_HINT6);
+			}
+			break;
+			case TIMER_CS_SHOOTING:
+			{
+				//mCSDealerCase.Show();
+				if (!mDealers[0].SetObjectToEquipmentLocation(mCSDealerCase, false))
+					System::Log("SetObjectToEquipmentLocation failed!");
+				mDealers[0].SetEquipment(EQUIP_NONE);				
+				//mCSDealerCase.EnablePhysicsSimulation();
+				//mCSDealerCase.UnfreezePhysics();
+				//mCSUndercoverCase.Show();
+				if (!mVMan.SetObjectToEquipmentLocation(mCSUndercoverCase, false))
+					System::Log("SetObjectToEquipmentLocation failed!");
+				mVMan.SetEquipment(EQUIP_NONE);
+				//mCSUndercoverCase.EnablePhysicsSimulation();
+				//mCSUndercoverCase.UnfreezePhysics();
+				for (int i = 0; i < MAX_DEALERS; i++)
+				{
+					mDealers[i].SetEquipment(EQUIP_PISTOL);
+					mDealers[i].PushActionShoot(ACTION_INSERT, &mVMan);
+				}
+				for (int i = 0; i < MAX_CS_FLEEING; i++)
+				{
+					if (mFleeing[i].IsValid())
+						mFleeing[i].SetFleeing(true, false);
+				}
+				Mission::StartSingleTimer(TIMER_CS_UNDERCOVER_INJURED, 3.0f);
+			}
+			break;
+			case TIMER_CS_UNDERCOVER_INJURED:
+			{
+				mVMan.Injure(INJUREREASON_SHOT);				
+				Mission::StartSingleTimer(TIMER_CS_HINT7, TIME_CS_HINT7);
+				CutsceneUndercoverInjured();
+			}
+			break;
+			case TIMER_CS_ZOOM:
+			{
+				Camera::StartTransition(NAME_CS_CAM2, 15.f);
+			}
+			break;
+			case TIMER_CS_HIDEHINTS:
+			{
+				ScriptInterface::CloseTutorialInstruction();
+			}
+			break;
+			case TIMER_CS_END:
+			{
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+			}
+			break;
+			
+			case "TIMER_HELP_1" :
+			{
+				Game::ShowHelpTextWindow("M03_HELP_SW", TIME_HIDE_HELPTEXTS);
+				Mission::StartSingleTimer("TIMER_HELP_2", 25.0f);
+			}
+			break;
+			
+			case "TIMER_HELP_2" :
+			{
+				Game::ShowHelpTextWindow("M03_HELP_COUNTDOWN", TIME_HIDE_HELPTEXTS);
+				Mission::StartSingleTimer("TIMER_HELP_4", 25.0f);
+			}
+			break;
+			
+			case "TIMER_HELP_3" :	// moved - played now after M03_HELP_HALTGANGSTERS
+			{
+				Game::ShowHelpTextWindow("M03_HELP_ARREST", TIME_HIDE_HELPTEXTS);
+			}
+			break;
+			
+			case "TIMER_HELP_4" :
+			{
+				Game::ShowHelpTextWindow("M03_HELP_POSITIONING", TIME_HIDE_HELPTEXTS);
+				Mission::StartSingleTimer("TIMER_HELP_5", 25.0f);
+			}
+			break;
+			
+			case "TIMER_HELP_5" :
+			{
+				Game::ShowHelpTextWindow("M03_HELP_MTW", TIME_HIDE_HELPTEXTS);
+			}
+			break;
+			
+			case "TIMER_HELP_6" :
+			{
+				Game::ShowHelpTextWindow("M03_HELP_POLICECAR", TIME_HIDE_HELPTEXTS);
+				Mission::StartSingleTimer("TIMER_HELP_7", 20.0f);
+			}
+			break;
+			
+			case "TIMER_HELP_7" :
+			{
+				Game::ShowHelpTextWindow("M03_HELP_SCOUT", TIME_HIDE_HELPTEXTS);
+			}
+			break;
+		}
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M03: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch (hintId_)
+		{
+			case 0:
+				//Hint "countdown läuft"
+				Mission::PlayHint("HINT_M03_COUNTDOWN_START");
+				Mission::StartSingleTimer("TIMER_HELP_1", 20.0f);
+				break;
+			case 1:
+				//Hint "countdown noch 2 min_"
+				Mission::PlayHint("HINT_M03_COUNTDOWN_AT_2MIN");
+				break;
+			case 2:
+				//Hint "show fängt an"
+				Mission::StopTimer(TIMER_CS_HIDEHINTS);
+				ScriptInterface::ShowTutorialInstruction("HINT_M03_SHOW_STARTS", -1);
+				Mission::StartSingleTimer(TIMER_CS_HIDEHINTS, TIME_CS_HIDEHINTS + 2.0f);
+				break;
+			case 3:
+				//Hint "gib denen das Geld"
+				Mission::StopTimer(TIMER_CS_HIDEHINTS);
+				ScriptInterface::ShowTutorialInstruction("HINT_M03_HAND_OVER_MONEY", -1);
+				Mission::StartSingleTimer(TIMER_CS_HIDEHINTS, TIME_CS_HIDEHINTS);
+				break;
+			case 4:
+				//Hint "noch nicht zugreifen"
+				Mission::StopTimer(TIMER_CS_HIDEHINTS);
+				ScriptInterface::ShowTutorialInstruction("HINT_M03_WAIT", -1);
+				Mission::StartSingleTimer(TIMER_CS_HIDEHINTS, TIME_CS_HIDEHINTS);
+				break;
+			case 5:
+				//Hint "jetzt tauschen sie die Koffer"
+				Mission::StopTimer(TIMER_CS_HIDEHINTS);
+				ScriptInterface::ShowTutorialInstruction("HINT_M03_SWAP_BAGS", -1);
+				Mission::StartSingleTimer(TIMER_CS_HIDEHINTS, TIME_CS_HIDEHINTS);
+				break;
+			case 6:
+				//Hint "Wo kommt dieser Hubschrauber her?"
+				Mission::StopTimer(TIMER_CS_HIDEHINTS);
+				ScriptInterface::ShowTutorialInstruction("HINT_M03_HELI", -1);
+				//Mission::StartSingleTimer(TIMER_CS_HIDEHINTS, TIME_CS_HIDEHINTS);
+				break;
+			case 7:
+				//Hint "Einsatzkraf verletzt"
+				Mission::StopTimer(TIMER_CS_HIDEHINTS);
+				ScriptInterface::ShowTutorialInstruction("HINT_M03_UNIT_INJURED", -1);
+				Mission::StartSingleTimer(TIMER_CS_HIDEHINTS, TIME_CS_HIDEHINTS);
+				break;
+			case 8:
+				//Hint "Einsatzkraft unter Beschuss"
+				Mission::PlayHint("HINT_M03_UNIT_UNDER_ATTACK");
+				break;
+			case 9:
+				//Hint "Zielpersonen verlassen Gebäude"
+				Mission::PlayHint("HINT_M03_TARGET_LEAVES_BUILDING");
+				break;
+			case 10:
+				//Hint "Zielpersonen verlassen Gebäude mit Geisel"
+				Mission::PlayHint("HINT_M03_TARGET_WITH_HOSTAGE_LEAVES_BUILDING");
+				break;
+			case 11:
+				//Hint "zielperson aufhalten"
+				Mission::PlayHint("HINT_M03_STOP_TARGET");
+				break;
+			case 12:
+				//Hint "Setzt Strassensperren ein"
+				Mission::PlayHint("HINT_M03_USE_ROADBLOCKS");
+				break;
+			case 13:
+				// Gangster: "kommt und holt uns"
+				Mission::PlayHint("HINT_M03_COME_GET_US");
+				break;
+			case 14:
+				// Gangster: "zieht euch zurück"
+				Mission::PlayHint("HINT_M03_RETREAT");
+				break;
+		}
+	}
+
+	void StartCutscene()
+	{
+		if (mStateCs != CS_NOT_STARTED)
+			return;
+
+		mStateCs = CS_START_TRANSITION;
+
+		Mission::StartCutScene(false);
+		Camera::StartTransition(NAME_CS_CAM1, 3.f);		
+		Mission::ShowBlackBars();
+		Game::ShowHelpTextWindow("");
+		Audio::SetMusicLevel(0.2f);
+	}
+
+	void UpdateCutscene()
+	{
+		switch (mStateCs)
+		{
+			case CS_RUNNING:
+			{
+				// TODO: das ist nur zum testen hier drin, wird wahrscheinlich mit timern gemacht
+			}
+			break;
+		}
+	}
+
+	void RunCutscene()
+	{		
+		mDealerCar.Show();
+		mDealerCar.SetObjectPath(NAME_PATH_GANGSTER_CAR);
+		mUndercoverCar.SetObjectPath(NAME_PATH_UNDERCOVER_CAR);
+		mUndercoverCar.Show();
+	}
+
+	void CutsceneUndercoverInjured()
+	{		
+		for (int i=0; i<MAX_DEALERS; ++i)
+		{
+			mDealers[i].SetObjectPath(NAME_PATH_HIDE);
+			mDealers[i].SetFleeing(true, false);
+			mDealers[i].SetEquipment(EQUIP_PISTOL);	// TODO: kann sein zu dem zeitpunkt haben sie die waffen schon durch die cutscene
+		}
+
+		Audio::SetMusicLevel(0.3f);
+		mStateCs = CS_END_TRANSITION;
+		mDealerState = DS_HIDE;
+		System::Log("M03: set mDealerState = DS_HIDE");
+		mCutscenePlayed = true;
+		mDealerCar.SetFlag(OF_TRANSPORTABLE);
+		mDealerCar.SetParking(true);
+		mDealerCarStartPos = mDealerCar.GetPosition();		
+		
+		// set all persons in house as hostages to prevent flight logic		
+		PersonList hostageList = mHideOut.GetNonSquadPersonsInside();
+		for (int i =0; i < hostageList.GetNumPersons(); i++)
+		{
+			if (	hostageList.GetPerson(i)->GetID() != mDealers[0].GetID()
+			&&	hostageList.GetPerson(i)->GetID() != mDealers[1].GetID())
+			{
+				hostageList.GetPerson(i)->SetBehaviour(BEHAVIOUR_CIVILIAN_HOSTAGE);			
+			}
+		}
+		
+		Mission::StartSingleTimer("TIMER_HELP_6", 5.0f);
+		Mission::StartSingleTimer(TIMER_CS_END, TIME_CS_END);
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (mStateCs == CS_START_TRANSITION)
+		{
+			mStateCs = CS_RUNNING;
+			RunCutscene();
+		}
+		else if (mStateCs == CS_END_TRANSITION)
+		{
+			mStateCs = CS_FINISHED;			
+			Mission::StartSingleTimer(TIMER_CS_COMMENT, TIME_CS_COMMENT);			
+			Game::SetDefaultMessageGroup("after");
+		}
+	}
+
+	void OnSquadArrived(Person *squad_)
+	{
+		if (squad_->HasCommand("GetFlashgrenade"))
+		{
+			++mCountNrShooters;
+		}
+		if (squad_->HasCommand("ScoutHouse"))
+		{
+			++mCountNrScouts;
+		}
+	}
+
+	void OnSquadVehicleArrived(Vehicle *vehicle_)
+	{
+		if (vehicle_->GetVehicleType() == VT_POLICE_SW)
+		{
+			++mCountNrSW;
+		}
+	}
+
+	void OnMissionLeft(GameObject *obj_)
+	{
+		if(obj_->GetType() == ACTOR_PERSON)
+		{
+			Person person(obj_);
+			System::Log("Mission 3 left %s",person.GetPrototypeName());
+
+			// if(person.GetRole() == ROLE_GANGSTER)
+			if (person.HasName(NAME_DEALER1) || person.HasName(NAME_DEALER2))
+			{
+				for(int i = 0; i < MAX_DEALERS; ++i)
+				{
+					if(mDealers[i].GetID() == person.GetID())
+					{
+						mDealerSilenced[i] = true;		// OnMissionLeft is only called if gangster leaves level along with squads
+						mDealerAway[i] = true;
+						break;
+					}
+				}
+			}
+			else if (person.GetRole() == ROLE_SQUAD)
+			{
+				if (person.HasCommand("GetFlashgrenade"))
+					--mCountNrShooters;
+				if (person.HasCommand("ScoutHouse"))
+					--mCountNrScouts;
+			}
+		}
+		else if (obj_->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(obj_);
+			if (v.GetVehicleType() == VT_POLICE_SW)
+			{
+				--mCountNrSW;
+			}
+		}
+	}
+
+	PathFinishedAction OnPathFinished(const char *Path_, GameObject *Caller_)
+	{
+		if(Path_ == NAME_PATH_CIVIL_HIDE)
+		{
+			Caller_->SetAnimation("hostage_kneel");
+			Person p(Caller_);
+			p.PopIgnoreEnergy();
+		}
+		
+		if (mStateCs == CS_RUNNING)
+		{			
+			if (Caller_->GetID() == mDealerCar.GetID())
+			{
+				System::Log("Gangsters get out");
+				mDealerCar.PlayAnimOpenDoor(DAT_PERSON, 1.0f, NULL);
+				Mission::StartSingleTimer(TIMER_CS_DEALERSGETOUT, TIME_CS_DEALERSGETOUT);
+			}
+			else if (Caller_->GetID() == mUndercoverCar.GetID())
+			{
+				System::Log("Undercover gets out");
+				mUndercoverCar.PlayAnimOpenDoor(DAT_PERSON, 1.0f, NULL);
+				Mission::StartSingleTimer(TIMER_CS_UNDERCOVERGETSOUT, TIME_CS_UNDERCOVERGETSOUT);
+			}
+			else if (Caller_->GetID() == mDealers[0].GetID())
+			{				
+				//mDealers[0].SetAnimation("talkto");				
+			}
+			else if (Caller_->GetID() == mDealers[1].GetID())
+			{
+				mDealers[1].SetAnimation("idle10_m");
+			}
+			else if (Caller_->GetID() == mVMan.GetID())
+			{
+				//mVMan.SetAnimation("talkto");
+				Mission::StartSingleTimer(TIMER_CS_CASEOPEN, TIME_CS_CASEOPEN);
+				Mission::StartSingleTimer(TIMER_CS_HINTHURRY, TIME_CS_HINTHURRY);				
+			}
+		}
+		else
+		{
+			switch(Caller_->GetType())
+			{
+				case ACTOR_VEHICLE:
+				{
+					if(Caller_->GetID() == mDealerCar.GetID())
+					{
+						if (mDealerState == DS_FLEE_BY_CAR)
+						{
+							mFailDealerEscaped = true;
+						}
+					}
+				}
+				break;
+			}
+		}
+
+		return PATH_DEFAULT;
+	}
+
+	bool OnHalt(Person *source_, GameObject *receiver_)
+	{
+		if(mDealerCar.GetID() == receiver_->GetID())
+			return false;
+		
+		for(int i = 0; i < MAX_DEALERS; ++i)
+		{
+			if(mDealers[i].GetID() == receiver_->GetID())
+				return false;		// ignore halting of Gangsters by police
+		}
+		
+		return true;
+	}
+
+	bool OnRedirectVehicle(Person *redirector_, Vehicle *vehicle_)
+	{
+		if(vehicle_->GetID() == mDealerCar.GetID())
+			return false;		// ignore redirection of dealercar
+		return true;
+	}
+
+	void OnTrigger(const char *Trigger_, Actor *Collider_)
+	{
+		switch (Trigger_)
+		{
+			case NAME_TRIGGER_FLEE:
+			{
+				if (!mHintCounter[11] 
+					&& (	Collider_->HasName(NAME_DEALER1) 
+						||	Collider_->HasName(NAME_DEALER2) 
+						||	Collider_->HasName(NAME_DEALERCAR))
+						)
+				{
+					ShowHint(11);
+				}
+			}
+			break;
+		}
+	}
+
+	bool OnHit(GameObject *shooter_, GameObject *hitObject_, Vector *hitPoint_)
+	{
+		switch(hitObject_->GetType())
+		{
+			case ACTOR_PERSON:
+			{
+				Person p(hitObject_);
+				if (	p.GetRole() == ROLE_SQUAD 
+					&&	p.GetID() != mVMan.GetID()
+					&&	!mHintCounter[8])
+				{
+					ShowHint(8);
+				}
+			}
+			break;
+		}
+
+		return true;
+	}
+
+	MoveCollCheck OnCheckMoveCollision(GameObject *Collider1_, Actor *Collider2_)
+	{
+		if (mStateCs == CS_RUNNING)
+		{
+			if (Collider1_->GetID() == mDealerCar.GetID() || Collider1_->GetID() == mUndercoverCar.GetID())
+				return MCC_IGNORE_CONTINUE;
+			if (Collider1_->GetID() == mDealers[0].GetID() || Collider1_->GetID() == mDealers[1].GetID() || Collider1_->GetID() == mVMan.GetID())
+				return MCC_IGNORE_CONTINUE;
+			if (Collider2_->GetID() == mDealers[0].GetID() || Collider2_->GetID() == mDealers[1].GetID() || Collider2_->GetID() == mVMan.GetID())
+				return MCC_IGNORE_CONTINUE;
+		}
+
+		if(Collider1_ &&  Collider1_->GetType() == ACTOR_VEHICLE && Collider2_	&&	Collider2_->GetType() == ACTOR_PERSON  && Collider1_->GetOBBCollision())
+		{
+			if(Collider1_->GetID() == mDealerCar.GetID())
+			{
+				Person p(Collider2_);
+	
+				if(p.IsValid() && p.GetRole() != ROLE_GANGSTER)
+				{
+					return MCC_IGNORE_CONTINUE;
+				}
+			}
+		}
+		return MCC_HALT_CONTINUE; 
+	}
+
+	MissionState GetMissionState()
+	{
+		if (Mission::GetCounter(NAME_COUNTER_BURNING_OBJECTS)+Mission::GetCounter(NAME_COUNTER_BURNING_HOUSES) > 0)
+		{
+			if (!Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE))
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRE1");
+			}
+		}
+		else 
+		{
+			if(		Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+			}
+		}
+
+		if (Mission::GetCounter("Injured Persons") + Mission::GetCounter("Dead Persons") == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED");
+			}
+		}
+		else
+		{
+			if (!Mission::HasObjective(OBJECTIVE_TRANSPORT_INJURED))
+				Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+		bool allDealersCatched = true;
+		for(int i = 0; i < MAX_DEALERS; ++i)
+		{
+			if (mDealers[i].GetRole()!=ROLE_GANGSTER)
+			{	
+				mDealerAway[i]=true;
+				mDealerSilenced[i]=true;
+			}
+
+			if (!mDealerAway[i])
+				allDealersCatched = false;
+			
+//			if (!mDealerSilenced[i] && !mDealers[i].IsArrested())
+//				allDealersCatched = false;
+
+			if (	!mDealerSilenced[i] 
+				&&  (mDealers[i].GetEnteredCarID() == -1)
+				&&  (!mDealers[i].IsValid() || (mCutscenePlayed && !mDealers[i].IsInsideMap())))
+				mFailDealerEscaped = true;
+		}
+		if (allDealersCatched)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_ARREST_GANGSTERS))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_ARREST_GANGSTERS, true);
+			}
+		}
+		else if (Mission::IsObjectiveAccomplished(OBJECTIVE_ARREST_GANGSTERS))
+		{
+			Mission::SetObjectiveAccomplished(OBJECTIVE_ARREST_GANGSTERS, false);
+		}
+
+		if (	Mission::GetCounter("Person injuries") > MAX_INJURED_PERSONS
+			||	Mission::GetCounter("Civil deaths") > MAX_DEAD_CIVILS)
+		{
+			mFailTooManyVictims = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Burning Houses") > MAX_BURNING_HOUSES)
+		{
+			mFailTooManyBurningHouses = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (mFailNotPrepared)
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (mFailDealerEscaped)
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (mHasHostage && (!mHostage.IsValid() || mHostage.IsDead()))
+		{
+			mFailHostageDied = true;
+			System::Log("M03: hostage died");
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (mInjuredHostageDies == 0)
+		{
+			int injured = false;		
+			for (int i =0; i < mHostageList.GetNumPersons(); i++)
+			{
+				if (mHostageList.GetPerson(i)->GetID() != mDealers[0].GetID()
+				&&	mHostageList.GetPerson(i)->GetID() != mDealers[1].GetID())			
+				{
+					if (mHostageList.GetPerson(i)->IsValid()
+						&&	mHostageList.GetPerson(i)->IsInjured())
+					{
+						injured = true;
+					}
+				}
+			}
+			if (injured)
+			{
+				System::Log("M03: hostage injured - start timer");
+				mInjuredHostageDies = 1;
+				Mission::StartSingleTimer(TIMER_HOSTAGE_INJURED, TIME_HOSTAGE_INJURED);
+			}
+		}
+		else if (mInjuredHostageDies == 2)
+		{
+			System::Log("M03: injured long enough ");
+			mFailHostageDied = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;		
+		}
+
+		if (Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mFailNotPrepared)
+		{
+			return "M03_NOT_PREPARED";
+		}
+		else if (mFailTooManyBurningHouses)
+		{
+			return "TOO_MANY_FIRES";
+		}
+		else if (mFailTooManyVictims)
+		{
+			return "TOO_MANY_DIED";
+		}
+		else if (mFailHostageDied)
+		{
+			return "M03_HOSTAGE_DIED";
+		}
+		else if (mFailDealerEscaped)
+		{
+			return "M03_DEALER_ESCAPED";
+		}
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailHostageDied)
+			return "SUPERV_M03_FAIL01";
+		if (mFailTooManyVictims)
+			return "SUPERV_M03_FAIL02";
+		if (mFailTooManyBurningHouses)
+			return "SUPERV_M03_FAIL03";
+		if (mFailDealerEscaped)
+			return "SUPERV_M03_FAIL04";
+		if (mFailNotPrepared)
+			return "SUPERV_M03_FAIL05";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M03_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f
+			&& Mission::GetCounter(NAME_COUNTER_INJURED_SQUADS) >= 2)
+			return "SUPERV_M03_RES02";
+		if (scoring->Efficiency < 0.6f
+			&& Mission::GetCounter(NAME_COUNTER_BURNING_OBJECTS) + Mission::GetCounter(NAME_COUNTER_BURNING_HOUSES) > 0)
+			return "SUPERV_M03_RES03";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		float rating = 1.0f;
+
+		return rating;
+	}
+
+	
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for (int i = 0; i < MAX_HINTS; i++)
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mFogIntensity);
+		serializer_->Write(mFailNotPrepared);
+		serializer_->Write(mFailTooManyBurningHouses);
+		serializer_->Write(mFailTooManyVictims);
+		serializer_->Write(mFailHostageDied);
+		serializer_->Write(mFailDealerEscaped);
+
+		for (int i=0; i < MAX_DEALERS; ++i)
+		{
+			serializer_->Write(mDealers[i]);
+			serializer_->Write(mDealerSilenced[i]);
+			serializer_->Write(mDealerAway[i]);
+		}
+		serializer_->Write(mVMan);
+		serializer_->Write(mHideOut);
+		serializer_->Write(mDealerCar);
+		serializer_->Write(mUndercoverCar);
+		serializer_->Write(mHeli);
+		serializer_->Write(mDealerCarStartPos);
+		serializer_->Write(mDealerCarLastPos);
+		serializer_->Write(mTryToMoveByRF);
+		serializer_->Write(mHidePath);
+		serializer_->Write(mPathToCar);
+		serializer_->Write(mPathCivilHide);
+		serializer_->Write((int)mDealerState);
+		serializer_->Write(mHostage);
+		serializer_->Write(mHasHostage);
+		serializer_->Write(mDriving);
+
+		serializer_->Write(mMeetingTriggerLights);
+		serializer_->Write(mCountNrSW);
+		serializer_->Write(mCountNrShooters);
+		serializer_->Write(mCountNrScouts);
+	
+		serializer_->Write((int)mStateCs);
+
+		serializer_->Write(mCSGangsterCar);
+		serializer_->Write(mCSUndercoverCar);
+		serializer_->Write(mCSGangsterPath1);
+		serializer_->Write(mCSGangsterPath2);
+		serializer_->Write(mCSUndercoverPath);
+		serializer_->Write(mCSGangsterCarPath);
+		serializer_->Write(mCSUndercoverCarPath);
+		serializer_->Write(mCSHeliPath1);
+		serializer_->Write(mCSHeliPath2);
+		serializer_->Write(mCutscenePlayed);
+		serializer_->Write(mCSDealerCase);
+		serializer_->Write(mCSUndercoverCase);
+	
+		for ( int i=0; i < MAX_CS_FLEEING; i++ )
+		{
+			serializer_->Write(mFleeing[i]);
+		}
+
+		serializer_->Write(mHostageList);
+		serializer_->Write(mInjuredHostageDies);
+		serializer_->Write(mFirstNegotiation);
+		serializer_->Write(mHeliVolume);
+		
+		return true;
+	}
+	
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int dummy;
+		int Version;
+		serializer_->Read(Version);
+
+		for (int i = 0; i < MAX_HINTS; i++)
+			serializer_->Read(mHintCounter[i]);
+
+		serializer_->Read(mFogIntensity);
+		mFailNotPrepared = serializer_->ReadBool();
+		mFailTooManyBurningHouses = serializer_->ReadBool();
+		mFailTooManyVictims = serializer_->ReadBool();
+		mFailHostageDied = serializer_->ReadBool();
+		mFailDealerEscaped = serializer_->ReadBool();
+
+		for (int i=0; i<MAX_DEALERS; ++i)
+		{
+			serializer_->Read(mDealers[i]);
+			mDealerSilenced[i] = serializer_->ReadBool();
+			mDealerAway[i] = serializer_->ReadBool();
+		}
+
+		serializer_->Read(mVMan);
+		serializer_->Read(mHideOut);
+		serializer_->Read(mDealerCar);
+		serializer_->Read(mUndercoverCar);
+		serializer_->Read(mHeli);
+		serializer_->Read(mDealerCarStartPos);
+		serializer_->Read(mDealerCarLastPos);
+		mTryToMoveByRF = serializer_->ReadBool();
+		serializer_->Read(mHidePath);
+		serializer_->Read(mPathToCar);
+		serializer_->Read(mPathCivilHide);
+		serializer_->Read(dummy);
+		mDealerState = (DEALER_STATE)dummy;
+		serializer_->Read(mHostage);
+		mHasHostage = serializer_->ReadBool();
+		mDriving = serializer_->ReadBool();
+	
+		serializer_->Read(mMeetingTriggerLights);
+		serializer_->Read(mCountNrSW);
+		serializer_->Read(mCountNrShooters);
+		serializer_->Read(mCountNrScouts);
+
+		serializer_->Read(dummy);
+		mStateCs = (CS_STATE)dummy;
+
+		serializer_->Read(mCSGangsterCar);
+		serializer_->Read(mCSUndercoverCar);
+		serializer_->Read(mCSGangsterPath1);
+		serializer_->Read(mCSGangsterPath2);
+		serializer_->Read(mCSUndercoverPath);
+		serializer_->Read(mCSGangsterCarPath);
+		serializer_->Read(mCSUndercoverCarPath);
+		serializer_->Read(mCSHeliPath1);
+		serializer_->Read(mCSHeliPath2);
+		mCutscenePlayed = serializer_->ReadBool();
+		serializer_->Read(mCSDealerCase);
+		serializer_->Read(mCSUndercoverCase);
+
+		for ( int i=0; i < MAX_CS_FLEEING; i++ )
+		{
+			serializer_->Read(mFleeing[i]);
+		}
+
+		serializer_->Read(mHostageList);
+		serializer_->Read(mInjuredHostageDies);
+		serializer_->Read(mFirstNegotiation);
+		serializer_->Read(mHeliVolume);
+
+		CheckForValidObjects();
+
+		return true;
+	}
+};

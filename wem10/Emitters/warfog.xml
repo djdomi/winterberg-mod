@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<effect version="0.1">
+  <layer>
+    <birthrate value="1000.000000" />
+    <priority value="0.000000" />
+    <radius x="2000.000000" y="2000.000000" z="600.000000" />
+    <speed start="100.000000" end="100.000000" variation="1.000000" />
+    <direction worldspace="0" x="0.000000" y="0.000000" z="1.000000" vx="0.000000" vy="0.000000" vz="0.000000" />
+    <gravity x="0.000000" y="0.000000" z="0.000000" />
+    <distort value="0" />
+    <distortion sx="0.000000" sy="0.000000" sz="0.000000" ex="0.000000" ey="0.000000" ez="0.000000" />
+    <size start="100.000000" startvariation="0.000000" end="100.000000" endvariation="0.000000" />
+    <lifetime time="5.100000" variation="0.500000" />
+    <startcolor r="255" g="255" b="255" a="255" />
+    <endcolor r="0" g="0" b="0" a="0" />
+    <maxparticles count="2000" />
+    <blending mode="0" />
+    <Shape Shape="1" />
+    <Collision Collision="0" />
+    <TexName TexName="mod:Emitters/default.dds" />
+    <Type Type="1" />
+    <Enabled Enabled="0" />
+    <delay time="0.000000" />
+    <invisible computealways="1" stayalive="0.000000" />
+    <center x="0.000000" y="0.000000" z="0.000000" />
+    <colorRed numValues="2" scale="255.000000" v0="1.000000" v1="0.000000" />
+    <colorGreen numValues="2" scale="255.000000" v0="1.000000" v1="0.000000" />
+    <colorBlue numValues="2" scale="255.000000" v0="1.000000" v1="0.000000" />
+    <colorAlpha numValues="5" scale="255.000000" v0="0.638095" v1="0.200000" v2="0.300000" v3="0.300000" v4="0.657143" />
+    <alignment type="3" />
+    <newsize numValues="2" scale="1000.000000" v0="1.000000" v1="1.000000" />
+    <newspeed numValues="2" scale="500.000000" v0="0.000000" v1="0.000000" />
+    <flipTex u="0" v="0" />
+    <detail value="1" />
+    <haze enabled="0" />
+  </layer>
+</effect>

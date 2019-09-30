@@ -1,0 +1,920 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 12
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+/* TODO
+- Sounds und Musiken
+*/
+
+enum
+{
+	MAX_HINTS = 8,				// maximale Anzahl Hints
+	HINT0_MAX_PERSONS = 3,			// Anzahl Toter für hint 0
+	HINT1_MAX_BURNING_OBJECTS = 30,		// Anzahl brennender Objekte für hint 1
+	TIME_HINT2 = 4 * 60,			// Zeit für hint 2 (Ertrinkende)
+	TIME_HINT3 = 8 * 60,			// Zeit für hint 3 (Bohrturm)
+	MAX_DEAD_PERSONS = 5,			// maximale Anzahl Tote bis zum Abbruch
+	MAX_BURNING_OBJECTS = 80,		// maximale Anzahl brennender Objekte bis zum Abbruch
+};
+
+const char NAME_PIPELINE1[]			= "pipeline1";
+const char NAME_SWITCH_PIPELINE1[]	= "switch1";
+const char NAME_PIPELINE2[]			= "pipeline2";
+const char NAME_SWITCH_PIPELINE2[]	= "switch2";
+const char NAME_PIPELINE3[]			= "pipeline3";
+const char NAME_SWITCH_PIPELINE3[]	= "switch3";
+const char NAME_SWITCH_OIL_RIG[]	= "switch oil";
+const char NAME_PANIC_PEOPLE[]		= "panic";
+const char NAME_JUMP_POS[]			= "jumppos";
+const char NAME_JUMP_TARGETPOS[]	= "jumptargetpos";
+const char NAME_FLAME_EFFECT[]		= "flame";
+const char NAME_OIL_EFFECT[]		= "oil";
+const char NAME_FO_EXPLOSION[]		= "Exploding";
+const char NAME_FO_BURNING[]		= "Burning";
+const char NAME_REBURN[]			= "burn";
+const char NAME_AREA_BURN[]			= "area burn";
+const char NAME_EXPLODING_TANK[]	= "explode tank";
+const char NAME_LOCATION_OIL[]		= "oil off";
+const char NAME_LOCATION_TANK[]		= "tank";
+const char NAME_AREA_CONTAM0[]		= "area contam0";
+const char NAME_AREA_CONTAM1[]		= "area contam1";
+const char NAME_EFFECT_CONTAM0[]	= "effect contam0";
+const char NAME_EFFECT_CONTAM1[]	= "effect contam1";
+const char NONE[]					= "none";
+
+const char NAME_SOUND_FOUNTAIN[]	= "mod:Audio/FX/misc/mission_oil_fountain_loop.wav";
+const char NAME_SOUND_FLAMES[]		= "mod:Audio/FX/misc/mission_flame.wav";
+
+const char COUNTER_CIVIL_DEATHS[]	= "Civil deaths";
+const char COUNTER_PERSON_DEATHS[]	= "Person deaths";
+const char COUNTER_INJURED_PERSONS[]= "Injured Persons";
+const char COUNTER_DEAD_PERSONS[]	= "Dead Persons";
+const char COUNTER_BURNING_OBJECTS[]= "Burning Objects";
+const char COUNTER_BURNING_HOUSES[]	= "Burning Houses";
+const char COUNTER_BURNT_OBJECTS[]	= "Burnt Objects";
+const char COUNTER_DROWNING[]		= "Drowning";
+const char COUNTER_CONTAMINATED_PERSONS[] = "Contaminated Persons";
+
+const char OBJECTIVE_TRANSPORT_INJURED[]	= "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]		= "EXTINGUISH_FIRES";
+const char OBJECTIVE_DECONTAMINATE_PERSONS[]= "DECONTAMINATE_PERSONS";
+const char OBJECTIVE_RESCUE_DROWNING[]		= "RESCUE_DROWNING_PERSONS";
+const char HINT_TREAT_INJURED[]				= "HINT_M12_TREAT_INJURED";
+const char HINT_FIRE_OUT_OF_CONTROL[]		= "HINT_M12_FIRE_OUT_OF_CONTROL";
+const char HINT_PERSONS_DROWNING[]			= "HINT_M12_PERSONS_DROWNING";
+const char HINT_TURN_OFF_OIL_RIG[]			= "HINT_M12_TURN_OFF_OIL_RIG";
+const char HINT_TURN_OFF_PIPELINES[]		= "HINT_M12_TURN_OFF_PIPELINES";
+const char HINT_ONLY_HELIS_BOATS[]			= "HINT_M12_ONLY_HELIS_BOATS";
+const char HINT_PIPELINE_OFF[]				= "HINT_M12_PIPELINE_OFF";
+const char HINT_CONTAMINATION[]				= "HINT_M12_CONTAMINATION";
+
+const char TIMER_HINT2[]			= "Hint2";
+const char TIMER_HINT3[]			= "Hint3";
+const char TIMER_NAME_OIL_EFFECT[]	= "oileffect";
+const float TIMER_TIME_OIL_EFFECT = 0.25f;
+const char TIMER_NAME_REBURN[]		= "treburn";
+const float TIMER_TIME_REBURN		= 5.f;
+const char TIMER_NAME_CONTAM[]		= "tcontam";
+const float TIMER_TIME_CONTAM		= 2.f;
+const char TIMER_NAME_ENDCS[]		= "endcs";
+const float TIMER_TIME_ENDCS		= 1.5f;
+const char TIMER_NAME_UPDATE_PANIC[]= "tpanic";
+const float TIMER_TIME_UPDATE_PANIC	= 1.7f;
+const char TIMER_NAME_UPDATE_HINTS[]= "thints";
+const float TIMER_TIME_UPDATE_HINTS	= 0.7f;
+
+object Mission12 : MissionScript
+{
+	int	mHintCounter[MAX_HINTS];
+	bool mOilRigTurnedOff;
+	bool mTooManyDied;
+	bool mFireOutOfControl;
+	GameObjectList mPipeline1;
+	GameObjectList mPipeline2;
+	GameObjectList mPipeline3;
+	GameObject mSwitch1;
+	GameObject mSwitch2;
+	GameObject mSwitch3;
+	bool mSwitch1Pressed;
+	bool mSwitch2Pressed;
+	bool mSwitch3Pressed;
+	GameObject mSwitchOilRig;
+	GameObjectList mPanicPeople;
+	ActorList mJumpPosList;
+	ActorList mJumpTargetPosList;
+	int mNumPanicLeft;
+	GameObject mFlameEffect;
+	GameObject mOilEffect[2];
+	float mEffectStrength;
+	GameObject mReburn;
+	GameObject mExplodingTank;
+	bool mExplodingTankCutscene;
+	bool mOilOffCutscene;
+	GameObjectList mEffectContam0;
+	GameObject mEffectContam1;
+	bool mIsContaminating0;
+	bool mIsContaminating1;
+	int mSoundFountainID;
+	int mSoundFlamesID;
+
+	Mission12()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mOilRigTurnedOff = false;
+		mSwitch1Pressed = false;
+		mSwitch2Pressed = false;
+		mSwitch3Pressed = false;
+		mTooManyDied = false;
+		mFireOutOfControl = false;
+		mExplodingTankCutscene = false;
+		mOilOffCutscene = false;
+		mIsContaminating0 = false;
+		mIsContaminating1 = false;
+		mNumPanicLeft = 0;
+		mEffectStrength = 1.f;
+	}
+
+	~Mission12()
+	{
+	}
+
+	void Start()
+	{
+		System::Log("M12 Start");
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		int pipenr = 0;
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_SWITCH_PIPELINE1))
+			{
+				mSwitch1 = *obj;
+				mSwitch1.EnableSpecialLights(true);
+			}
+			else if (obj->HasName(NAME_SWITCH_PIPELINE2))
+			{
+				mSwitch2 = *obj;
+				mSwitch2.EnableSpecialLights(true);
+			}
+			else if (obj->HasName(NAME_SWITCH_PIPELINE3))
+			{
+				mSwitch3 = *obj;
+				mSwitch3.EnableSpecialLights(true);
+			}
+			else if (obj->HasName(NAME_SWITCH_OIL_RIG))
+			{
+				mSwitchOilRig = *obj;
+				mSwitchOilRig.EnableSpecialLights(true);
+				mSwitchOilRig.SetFlag(OF_USABLE);
+			}
+			else if (obj->HasName(NAME_FLAME_EFFECT))
+			{
+				mFlameEffect = *obj;
+				mSoundFlamesID = Audio::PlaySample3D(NAME_SOUND_FLAMES, mFlameEffect.GetPosition(), true);
+				System::Log("M12 Sound flames id: %d", mSoundFlamesID);
+			}
+			else if (obj->HasName(NAME_OIL_EFFECT))
+			{
+				if (mOilEffect[0].IsValid())
+					mOilEffect[1] = *obj;
+				else
+				{
+					mOilEffect[0] = *obj;
+					mSoundFountainID = Audio::PlaySample3D(NAME_SOUND_FOUNTAIN, mOilEffect[0].GetPosition(), true);
+					System::Log("M12 Sound foutain id: %d", mSoundFountainID);
+				}
+			}
+			else if (obj->HasName(NAME_REBURN))
+				mReburn = *obj;
+			else if (obj->HasName(NAME_EXPLODING_TANK))
+				mExplodingTank = *obj;
+			else if (obj->HasName(NAME_EFFECT_CONTAM1))
+			{
+				mEffectContam1 = *obj;
+				mEffectContam1.StopParticleEffect();
+			}
+		}
+		mPanicPeople = Game::GetGameObjects(NAME_PANIC_PEOPLE);
+		mNumPanicLeft = mPanicPeople.GetNumObjects();
+		System::Log("M12: Found %d panic people %s.",mPanicPeople.GetNumObjects(),NAME_PANIC_PEOPLE);
+		mJumpPosList = Game::GetActors(NAME_JUMP_POS);
+		System::Log("M12: Found %d jump positions ",mJumpPosList.GetNumActors());
+		mJumpTargetPosList = Game::GetActors(NAME_JUMP_TARGETPOS);
+		System::Log("M12: Found %d jump target positions ",mJumpTargetPosList.GetNumActors());
+		mPipeline1 = Game::GetGameObjects(NAME_PIPELINE1);
+		for(int i = 0; i < mPipeline1.GetNumObjects(); i++)
+		{
+			FireObject fo = mPipeline1.GetObject(i)->GetFireChild(NAME_FO_BURNING);
+			fo.SetActive(false);
+		}
+		mPipeline2 = Game::GetGameObjects(NAME_PIPELINE2);
+		for(int i = 0; i < mPipeline2.GetNumObjects(); i++)
+		{
+			FireObject fo = mPipeline2.GetObject(i)->GetFireChild(NAME_FO_BURNING);
+			fo.SetActive(false);
+		}
+		mPipeline3 = Game::GetGameObjects(NAME_PIPELINE3);
+		for(int i = 0; i < mPipeline3.GetNumObjects(); i++)
+		{
+			FireObject fo = mPipeline3.GetObject(i)->GetFireChild(NAME_FO_BURNING);
+			fo.SetActive(false);
+		}
+		mEffectContam0 = Game::GetGameObjects(NAME_EFFECT_CONTAM0);
+		for(int i = 0; i < mEffectContam0.GetNumObjects(); i++)
+		{
+			mEffectContam0.GetObject(i)->StopParticleEffect();
+		}
+		System::Log("M12: Found %d pieces for pipeline1 ",mPipeline1.GetNumObjects());
+		System::Log("M12: Found %d pieces for pipeline2 ",mPipeline2.GetNumObjects());
+		System::Log("M12: Found %d pieces for pipeline3 ",mPipeline3.GetNumObjects());
+
+		if (!mSwitchOilRig.IsValid())
+			System::Log("M12 switch for oil rig is missing");
+		if (!mSwitch1.IsValid())
+			System::Log("M12 switch1 is missing");
+		if (!mSwitch2.IsValid())
+			System::Log("M12 switch2 is missing");
+		if (!mSwitch3.IsValid())
+			System::Log("M12 switch3 is missing");
+
+		if (!mFlameEffect.IsValid())
+			System::Log("M12 FlameEffect is missing");
+		if (!mOilEffect[0].IsValid())
+			System::Log("M12 OilEffect is missing");
+		if (!mOilEffect[1].IsValid())
+			System::Log("M12 OilEffect is missing");
+		if (!mReburn.IsValid())
+			System::Log("M12 Reburn is missing");
+		if (!mExplodingTank.IsValid())
+			System::Log("M12 ExplodingTank is missing");
+		//if (!mEffectContam0.IsValid())
+		//	System::Log("M12 effect for contam 0 is missing");
+		if (!mEffectContam1.IsValid())
+			System::Log("M12 effect for contam 1 is missing");
+
+		Mission::StartIntervalTimer(TIMER_NAME_REBURN, TIMER_TIME_REBURN);
+		Mission::StartSingleTimer(TIMER_HINT2, TIME_HINT2);
+		Mission::StartSingleTimer(TIMER_HINT3, TIME_HINT3);
+		Mission::StartIntervalTimer(TIMER_NAME_CONTAM, TIMER_TIME_CONTAM);
+		Mission::StartIntervalTimer(TIMER_NAME_UPDATE_PANIC, TIMER_TIME_UPDATE_PANIC);
+
+		Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+		Mission::AddObjective(OBJECTIVE_RESCUE_DROWNING);
+
+		Audio::PlaySoundtrack("12", 0.0f);
+
+		// uncomment for debugging tank cutscene
+		//for (int j = 0; j < mExplodingTank.GetNumFireChilds(); j++)
+		//{
+		//	//mExplodingTank.GetFireChild(j).Burn();
+		//	mExplodingTank.GetFireChild(j).SetTemperature(mExplodingTank.GetFireChild(j).GetMaxMaterialTemperature()*0.95f);
+		//}
+	}
+
+	bool StartJump(Person &p)
+	{
+		float minDist = 1e30f;
+		float px,py,pz,vx,vy,vz;
+		Vector ppos, vpos;
+		Vector jpos, tpos;
+		bool foundjumppos = false;
+		bool foundtargetpos = false;
+		ppos = p.GetPosition();
+
+		System::Log("M12: Jumptest started.");
+		for (int i=0; i<mJumpPosList.GetNumActors(); i++)
+		{
+			Actor* place = mJumpPosList.GetActor(i);
+			vpos = place->GetPosition();
+			vpos.z = Game::GetFloorHeight(vpos.x, vpos.y);
+			Game::FindAvailablePosition(&p, vpos);
+			float dist = Math::dist(ppos.x,ppos.y,vpos.x,vpos.y);
+			if (dist < minDist) 
+			{
+				jpos = vpos;
+				minDist = dist;
+				foundjumppos = true;
+			}
+		}
+		if (!foundjumppos)
+		{
+			System::Log("M12: Cant jump into water, no jump position found!");
+			return false;
+		}
+		minDist = 1e30f;
+		for (int i=0; i<mJumpTargetPosList.GetNumActors(); i++)
+		{
+			Actor* place = mJumpTargetPosList.GetActor(i);
+			vpos = place->GetPosition();
+			vpos.z = Game::GetFloorHeight(vpos.x, vpos.y) - 10.f;
+			float dist = Math::dist(jpos.x,jpos.y,vpos.x,vpos.y);
+			if (dist < minDist) 
+			{
+				tpos = vpos;
+				minDist = dist;
+				foundtargetpos = true;
+			}
+		}
+		if (foundtargetpos)
+		{
+			System::Log("M12: jump started!");
+			p.PushIgnoreEnergy();
+			p.ClearReceivedEnergies();
+			p.SetFleeing(true);
+			p.PushActionMove(ACTION_NEWLIST, jpos);
+			p.PushActionTurnTo(ACTION_APPEND,tpos);
+			p.PushActionJump(ACTION_APPEND,tpos);
+			p.SetObjectPath(NULL);
+			p.SetStandardPath(NONE);
+			p.SetEscapePath(NONE);
+		} 
+		else
+			System::Log("M12: Cant jump into water, no free position found!");
+		return foundtargetpos;
+	}
+
+	ActionCallbackResult OnPostAction(const char *Action_, ActionCallback* Data_)
+	{
+		switch(Action_)
+		{
+			case "EActionUse":
+				{
+					if(!mSwitch1Pressed && Data_->Parameters[0].iValue == mSwitch1.GetID())
+					{
+						mSwitch1Pressed = true;
+						mSwitch1.EnableSpecialLights(false);
+						mSwitch1.ClearFlag(OF_USABLE);
+						for(int i = 0; i < mPipeline1.GetNumObjects(); i++)
+						{
+							GameObject *o = mPipeline1.GetObject(i);
+							if (o && o->IsValid())
+							{
+								FireObject explosion = o->GetFireChild(NAME_FO_EXPLOSION);
+								FireObject burning = o->GetFireChild(NAME_FO_BURNING);
+								explosion.SetActive(false);
+								burning.SetActive(true);
+							}
+						}
+						ShowHint(6);
+						System::Log("%s pressed", mSwitch1.GetName());
+					}
+					else if(!mSwitch2Pressed && Data_->Parameters[0].iValue == mSwitch2.GetID())
+					{
+						mSwitch2Pressed = true;
+						mSwitch2.EnableSpecialLights(false);
+						mSwitch2.ClearFlag(OF_USABLE);
+						for(int i = 0; i < mPipeline2.GetNumObjects(); i++)
+						{
+							GameObject *o = mPipeline2.GetObject(i);
+							if (o && o->IsValid())
+							{
+								FireObject explosion = o->GetFireChild(NAME_FO_EXPLOSION);
+								FireObject burning = o->GetFireChild(NAME_FO_BURNING);
+								explosion.SetActive(false);
+								burning.SetActive(true);
+							}
+						}
+						ShowHint(6);
+						System::Log("%s pressed ", mSwitch2.GetName());
+					}
+					else if(!mSwitch3Pressed && Data_->Parameters[0].iValue == mSwitch3.GetID())
+					{
+						mSwitch3Pressed = true;
+						mSwitch3.EnableSpecialLights(false);
+						mSwitch3.ClearFlag(OF_USABLE);
+						for(int i = 0; i < mPipeline3.GetNumObjects(); i++)
+						{
+							GameObject *o = mPipeline3.GetObject(i);
+							if (o && o->IsValid())
+							{
+								FireObject explosion = o->GetFireChild(NAME_FO_EXPLOSION);
+								FireObject burning = o->GetFireChild(NAME_FO_BURNING);
+								explosion.SetActive(false);
+								burning.SetActive(true);
+							}
+						}
+						ShowHint(6);
+						System::Log("%s pressed  ", mSwitch3.GetName());
+					}
+					else if(!mOilRigTurnedOff && Data_->Parameters[0].iValue == mSwitchOilRig.GetID())
+					{
+						mSwitchOilRig.EnableSpecialLights(false);
+						mSwitchOilRig.ClearFlag(OF_USABLE);
+						Mission::StartCutScene();
+						Mission::ShowBlackBars(0.5f);
+						Camera::StartTransition(NAME_LOCATION_OIL, 3.f);
+						Mission::StopTimer(TIMER_NAME_REBURN);
+						mOilRigTurnedOff = true;
+						mOilOffCutscene = true;
+						System::Log("%s pressed   ", mSwitchOilRig.GetName());
+						Audio::SetMusicLevel(0.1f);
+					}
+				}
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void OnSquadVehicleArrived(Vehicle *Vehicle_)
+	{
+		if (mHintCounter[5] == 0)
+			ShowHint(5);
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_HINT2:
+				if (mHintCounter[2] == 0 && Mission::GetCounter(COUNTER_DROWNING) > 0)
+					ShowHint(2);
+				break;
+			case TIMER_HINT3:
+				if (mHintCounter[3] == 0 && !mOilRigTurnedOff)
+					ShowHint(3);
+				break;
+			case TIMER_NAME_OIL_EFFECT:
+				{
+					if (mEffectStrength > 0.f)
+					{
+						mFlameEffect.SetParticleEffectStrength(mEffectStrength);
+						mOilEffect[0].SetParticleEffectStrength(mEffectStrength);
+						mOilEffect[1].SetParticleEffectStrength(mEffectStrength);
+						mEffectStrength -= 0.1f;
+						//Vector pos = mOilEffect[0].GetPosition();
+						//pos.x -= 1200.0f*(1.0f - mEffectStrength);
+						//Audio::UpdatePos(mSoundFountainID, pos, true);
+						Audio::SetVolume(mSoundFountainID, mEffectStrength);
+					}
+					else
+					{
+						mFlameEffect.SetParticleEffectStrength(0.f);
+						mOilEffect[0].SetParticleEffectStrength(0.f);
+						mOilEffect[1].SetParticleEffectStrength(0.f);
+						Mission::StopTimer(TIMER_NAME_OIL_EFFECT);
+						Mission::StartSingleTimer(TIMER_NAME_ENDCS, TIMER_TIME_ENDCS);
+						Audio::StopSample(mSoundFountainID);
+						Audio::StopSample(mSoundFlamesID);
+						mOilOffCutscene = false;
+					}
+				}
+				break;
+			case TIMER_NAME_REBURN:
+				{
+					/*GameObjectList list;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_BURN, list, ACTOR_OBJECT);
+					if (list.GetNumBurningObjects() == 0)
+					{
+						if (mReburn.GetBurningStatus() == OBS_FULLBURNED)
+						{
+							FireObject o = mReburn.GetFireChild(0);
+							o.Restart();
+						}
+						mReburn.Burn();
+					}*/
+					if (!mOilRigTurnedOff && !mReburn.IsBurning())
+					{
+						if (mReburn.GetBurningStatus() == OBS_FULLBURNED)
+						{
+							FireObject o = mReburn.GetFireChild(0);
+							o.Restart();
+						}
+						mReburn.Burn();						
+					}
+				}
+				break;
+			case TIMER_NAME_CONTAM:
+				{
+					GameObjectList list;
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_CONTAM0, list, ACTOR_OBJECT);
+					if (list.GetNumBurningObjects() == 0)
+					{
+						if (mIsContaminating0)
+						{
+							mIsContaminating0 = false;
+							for(int i = 0; i < mEffectContam0.GetNumObjects(); i++)
+							{
+								mEffectContam0.GetObject(i)->StopParticleEffect();
+							}
+						}
+					}
+					else
+					{
+						if (!mIsContaminating0)
+						{
+							mIsContaminating0 = true;
+							for(int i = 0; i < mEffectContam0.GetNumObjects(); i++)
+							{
+								mEffectContam0.GetObject(i)->StartParticleEffect();
+							}
+							ShowHint(7);
+						}
+						if (mIsContaminating0)
+						{
+							Game::CollectObstaclesOnVirtualObject(NAME_AREA_CONTAM0, list, ACTOR_PERSON);
+							for(int i = 0; i < list.GetNumObjects(); i++)
+							{
+								Person p(list.GetObject(i));
+								if (p.IsValid() && !p.IsHidden() && !p.IsContaminated())
+									p.ExposeContamination(CONTAMINATION_CHEMICAL);
+							}
+						}
+					}
+					Game::CollectObstaclesOnVirtualObject(NAME_AREA_CONTAM1, list, ACTOR_OBJECT);
+					if (list.GetNumBurningObjects() == 0)
+					{
+						if (mIsContaminating1)
+						{
+							mIsContaminating1 = false;
+							mEffectContam1.StopParticleEffect();
+						}
+					}
+					else
+					{
+						if (!mIsContaminating1)
+						{
+							mIsContaminating1 = true;
+							mEffectContam1.StartParticleEffect();
+						}
+						if (mIsContaminating1)
+						{
+							Game::CollectObstaclesOnVirtualObject(NAME_AREA_CONTAM1, list, ACTOR_PERSON);
+							for(int i = 0; i < list.GetNumObjects(); i++)
+							{
+								Person p(list.GetObject(i));
+								if (p.IsValid() && !p.IsHidden() && !p.IsContaminated())
+									p.ExposeContamination(CONTAMINATION_CHEMICAL);
+							}
+						}
+					}
+				}
+				break;
+			case TIMER_NAME_ENDCS:
+				Mission::HideBlackBars();
+				Mission::EndCutScene(true, 4.f);				
+				break;
+
+			case TIMER_NAME_UPDATE_PANIC:
+				{
+					if (mNumPanicLeft > 0)
+					{
+						for(int i=0; i<mPanicPeople.GetNumObjects(); i++)
+						{
+							Person p(mPanicPeople.GetObject(i));
+							if (p.IsValid() && p.IsResorting() && !p.IsDrowning())
+							{
+								bool jumpok = (p.HasObjectPath(NULL) && !p.IsCurrentAction("EActionTurnTo") && !p.IsCurrentAction("EActionJump") && !p.IsCurrentAction("EActionFindPath"));
+								if (jumpok) 
+								{
+									if (StartJump(p))
+										mNumPanicLeft--;
+								}
+							}
+						}
+					}
+					else
+						Mission::StopTimer(TIMER_NAME_UPDATE_PANIC);
+				}
+				break;
+
+			case TIMER_NAME_UPDATE_HINTS:
+				{
+					if (mHintCounter[0] == 0 && Mission::GetCounter(COUNTER_CIVIL_DEATHS) >= HINT0_MAX_PERSONS && Mission::GetCounter(COUNTER_INJURED_PERSONS) > 0)
+						ShowHint(0);
+					if (mHintCounter[1] == 0 && Mission::GetCounter(COUNTER_BURNING_OBJECTS) >= HINT1_MAX_BURNING_OBJECTS)
+						ShowHint(1);
+					if (mHintCounter[4] == 0 && !mSwitch1Pressed && !mSwitch2Pressed && !mSwitch3Pressed)
+					{
+						if (mPipeline1.GetNumBurningObjects() > 0 || mPipeline2.GetNumBurningObjects() > 0 || mPipeline3.GetNumBurningObjects() > 0)
+							ShowHint(4);
+					}
+					if (mHintCounter[0] > 0 && mHintCounter[1] > 0 && mHintCounter[4] > 0)
+						Mission::StopTimer(TIMER_NAME_UPDATE_HINTS);
+				}
+				break;
+		}
+	}
+
+	bool OnExplode(GameObject *obj)
+	{
+		if (obj->GetID() == mExplodingTank.GetID())
+		{
+			if (!mExplodingTankCutscene)
+			{
+				if (!Mission::IsCutSceneRunning())
+				{
+					mExplodingTankCutscene = true;
+					Mission::StartCutScene();
+					Mission::ShowBlackBars(0.8f);
+					Camera::StartTransition(NAME_LOCATION_TANK, 3.f);
+					Audio::SetMusicLevel(0.1f);
+					return false;
+				}
+				else
+					return true;
+			}
+			else
+				return false;
+		}
+		return true;
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if (Mission::IsCutSceneRunning())
+		{
+			if (mExplodingTankCutscene)
+			{
+				mExplodingTankCutscene = false;
+				Mission::StartSingleTimer(TIMER_NAME_ENDCS, TIMER_TIME_ENDCS);
+			}
+			else if (mOilOffCutscene)
+			{
+				Mission::StartIntervalTimer(TIMER_NAME_OIL_EFFECT, TIMER_TIME_OIL_EFFECT);				
+			}
+		}
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M12: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+		case 0:
+			Mission::PlayHint(HINT_TREAT_INJURED);
+			Audio::SetMusicLevel(0.3f);
+			break;
+		case 1:
+			Mission::PlayHint(HINT_FIRE_OUT_OF_CONTROL);
+			Audio::SetMusicLevel(0.3f);
+			break;
+		case 2:
+			Mission::PlayHint(HINT_PERSONS_DROWNING);
+			Audio::SetMusicLevel(0.3f);
+			break;
+		case 3:
+			Mission::PlayHint(HINT_TURN_OFF_OIL_RIG);
+			break;
+		case 4:
+			Mission::PlayHint(HINT_TURN_OFF_PIPELINES);
+			break;
+		case 5:
+			Mission::PlayHint(HINT_ONLY_HELIS_BOATS);
+			break;
+		case 6:
+			Mission::PlayHint(HINT_PIPELINE_OFF);
+			break;
+		case 7:
+			Mission::PlayHint(HINT_CONTAMINATION);
+			break;
+		}
+	}
+
+	MissionState GetMissionState()
+	{
+		if ( Mission::GetCounter(COUNTER_BURNING_OBJECTS) > 0 || Mission::GetCounter(COUNTER_BURNING_HOUSES) > 0)
+		{
+			if ( !Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE) )
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_M12_OBJ05");
+			}
+		}
+		else 
+		{			
+			if(		Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED2");
+				Audio::SetMusicLevel(0.0f);
+			}
+		}
+
+		if (Mission::GetCounter(COUNTER_INJURED_PERSONS) + Mission::GetCounter(COUNTER_DEAD_PERSONS) == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_ALLVICTIMSSAVED");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_M12_OBJ04");
+			}
+		}
+
+		if (Mission::GetCounter(COUNTER_DROWNING) == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_RESCUE_DROWNING))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RESCUE_DROWNING, true);
+				Mission::PlayComment("SUPERV_M12_OBJ03");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_RESCUE_DROWNING))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_RESCUE_DROWNING, false);
+				Mission::PlayComment("SUPERV_M12_OBJ06");
+			}
+		}
+
+		if (Mission::GetCounter(COUNTER_CONTAMINATED_PERSONS) == 0)
+		{
+			if (Mission::HasObjective(OBJECTIVE_DECONTAMINATE_PERSONS) &&
+				!Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE_PERSONS))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE_PERSONS, true);
+				//Mission::PlayComment("SUPERV_M17_OBJ03");
+			}
+		}
+		else
+		{
+			if ( !Mission::HasObjective(OBJECTIVE_DECONTAMINATE_PERSONS) )
+				Mission::AddObjective(OBJECTIVE_DECONTAMINATE_PERSONS);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE_PERSONS))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE_PERSONS, false);
+				//Mission::PlayComment("SUPERV_M17_OBJ07");
+			}
+		}
+
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter(COUNTER_PERSON_DEATHS) > MAX_DEAD_PERSONS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::GetCounter(COUNTER_BURNING_OBJECTS) + Mission::GetCounter(COUNTER_BURNT_OBJECTS) > MAX_BURNING_OBJECTS )
+		{
+			mFireOutOfControl = true;
+			Audio::SetMusicLevel(0.5f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M12_FAIL01";
+		if (mFireOutOfControl)
+			return "SUPERV_M12_FAIL02";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M12_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f
+			&& scoring->ThingsResult < 0.5f)
+			return "SUPERV_M12_RES02";
+		if (scoring->Efficiency < 0.6f)
+			return "SUPERV_M12_RES03";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		return 1.0f;
+	}
+
+	bool SerializeTo(ScriptSerializer *serializer_)
+	{
+		const int Version = 0x0100;
+		serializer_->Write(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Write(mHintCounter[i]);
+
+		serializer_->Write(mOilRigTurnedOff);
+		serializer_->Write(mTooManyDied);
+		serializer_->Write(mFireOutOfControl);
+		serializer_->Write(mPipeline1);
+		serializer_->Write(mPipeline2);
+		serializer_->Write(mPipeline3);
+		serializer_->Write(mSwitch1);
+		serializer_->Write(mSwitch2);
+		serializer_->Write(mSwitch3);
+		serializer_->Write(mSwitch1Pressed);
+		serializer_->Write(mSwitch2Pressed);
+		serializer_->Write(mSwitch3Pressed);
+		serializer_->Write(mSwitchOilRig);
+		serializer_->Write(mPanicPeople);
+		serializer_->Write(mJumpPosList);
+		serializer_->Write(mJumpTargetPosList);
+		serializer_->Write(mNumPanicLeft);
+		serializer_->Write(mFlameEffect);
+		serializer_->Write(mOilEffect[0]);
+		serializer_->Write(mOilEffect[1]);
+		serializer_->Write(mEffectStrength);
+		serializer_->Write(mReburn);
+		serializer_->Write(mExplodingTank);
+		serializer_->Write(mExplodingTankCutscene);
+		serializer_->Write(mOilOffCutscene);
+		serializer_->Write(mEffectContam0);
+		serializer_->Write(mEffectContam1);
+		serializer_->Write(mIsContaminating0);
+		serializer_->Write(mIsContaminating1);
+		serializer_->Write(mSoundFountainID);
+		serializer_->Write(mSoundFlamesID);
+
+		return true;
+	}
+
+	bool SerializeFrom(ScriptSerializer *serializer_)
+	{
+		int Version;
+		serializer_->Read(Version);
+
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			serializer_->Read(mHintCounter[i]);
+
+		mOilRigTurnedOff = serializer_->ReadBool();
+		mTooManyDied = serializer_->ReadBool();
+		mFireOutOfControl = serializer_->ReadBool();
+		serializer_->Read(mPipeline1);
+		serializer_->Read(mPipeline2);
+		serializer_->Read(mPipeline3);
+		serializer_->Read(mSwitch1);
+		serializer_->Read(mSwitch2);
+		serializer_->Read(mSwitch3);
+		mSwitch1Pressed = serializer_->ReadBool();
+		mSwitch2Pressed = serializer_->ReadBool();
+		mSwitch3Pressed = serializer_->ReadBool();
+		serializer_->Read(mSwitchOilRig);
+		serializer_->Read(mPanicPeople);
+		serializer_->Read(mJumpPosList);
+		serializer_->Read(mJumpTargetPosList);
+		serializer_->Read(mNumPanicLeft);
+		serializer_->Read(mFlameEffect);
+		serializer_->Read(mOilEffect[0]);
+		serializer_->Read(mOilEffect[1]);
+		serializer_->Read(mEffectStrength);
+		serializer_->Read(mReburn);
+		serializer_->Read(mExplodingTank);
+		mExplodingTankCutscene = serializer_->ReadBool();
+		mOilOffCutscene = serializer_->ReadBool();
+		serializer_->Read(mEffectContam0);
+		serializer_->Read(mEffectContam1);
+		mIsContaminating0 = serializer_->ReadBool();
+		mIsContaminating1 = serializer_->ReadBool();
+		serializer_->Read(mSoundFountainID);
+		serializer_->Read(mSoundFlamesID);
+
+		return true;
+	}
+
+};

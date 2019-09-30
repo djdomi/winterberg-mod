@@ -1,0 +1,723 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 4
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+// win conditions:
+// *	Alle Verletzten wurden abtransportiert
+// *	Alle Braende sind geloescht
+// fail conditions:
+// *	Zu viele Opfer (ca. 4)
+// *	Situation ausser Kontrolle (ca. 6 explodierte Fahrzeuge)
+
+/* TODO
+	Kommentar-ID's Vorgesetzter festlegen (edit)
+	Bosskommentare Auswertung (fehlt noch callback)
+	Bosskommentare Abbruch (fehlt noch callback)
+*/
+
+enum
+{
+	TIME_SPARKS_START = 300,	// sec. until sparks at truck start sparkling
+	TIME_NEXT_SPARK = 10,		// sec. until next spark effect is played
+	TIME_BURNOIL = 2,		// sec. after last sparkle until oil starts burning
+	NUMBER_SPARKS = 3,		// number of sparks before fire starts
+
+	TIME_HINT_TIRE = 240,		// sec. until hint for tire
+	TIME_CS1_DURATION = 3,		// sec. duration of cutscene 1
+	TIME_CS2_DURATION = 3,		// sec. duration of cutscene 2
+
+	MAX_DEAD_HINT = 2,		// nr of dead for which hint "need support" is played
+	MAX_DEAD_PERSONS = 4,		// fail when nr reached
+	MAX_BURNT_VEHICLES = 6,		// fail when nr reached
+
+	MAX_HINTS = 3,			// numer of hints - don't change
+};
+
+const char NAME_TRUCK1[]		= "truck1";
+const char NAME_TRUCK2[]		= "truck2";
+const char NAME_RACER1[]		= "racer1";
+const char NAME_RACER2[]		= "racer2";
+const char NAME_TIRE[]			= "tire1";
+const char NAME_CIVIL_TIRE[]	= "tired1";
+const char NAME_FO_OIL[]		= "oil";
+const char NAME_SPARK[]			= "spark1";
+const char NAME_SPARK2[]		= "spark2";
+const char NAME_OILSPLASH[]		= "oilsplash";
+const char NAME_CS1_CAM[]		= "cs1";
+const char NAME_CS2_CAM[]		= "cs2";
+const char NAME_PARKED_TRUCKS[]	= "p";
+const char NAME_ROOF[]			= "roof";
+const char NAME_TRIGGER_INSIDE[]= "inside";
+const char NAME_AMBIENT1[]		= "inside01";
+const char NAME_AMBIENT2[]		= "inside02";
+
+const char OBJECTIVE_TRANSPORT_INJURED[] = "TRANSPORT_INJURED";
+const char OBJECTIVE_EXTINGUISH_FIRE[]	= "EXTINGUISH_FIRES";
+const char TIMER_HINT_TIRE[]			= "HintTire";
+const char TIMER_SPARKS_START[]			= "StartSparks";
+const char TIMER_NEXT_SPARK[]			= "NextSpark";
+const char TIMER_CS1_DURATION[]			= "tcs1";
+const char TIMER_CS2_DURATION[]			= "tcs2";
+const char TIMER_BURNOIL[]				= "toil";
+
+// states for cutscenes
+enum CS_STATE
+{
+	CS_NOT_STARTED = 0,
+	CS_START_TRANSITION,
+	CS_RUNNING,
+	CS_END_TRANSITION,
+	CS_FINISHED,
+};
+
+object Mission04 : MissionScript
+{
+	Vehicle		mTruck1;	// the destroyed one
+	Vehicle		mTruck2;
+	GameObject	mTire;
+	FireObject	mOil;
+	GameObject	mSparkEmitter;
+	GameObject	mSparkEmitter2;
+	GameObject	mOilsplashEmitter;
+
+	GameObjectList	mParked;
+	int			mCountDeadRacers;
+	int			mCountSparks;
+	bool		mHasOilBurnStarted;
+	CS_STATE	mStateCs1;
+	CS_STATE	mStateCs2;
+	Vector		mOldCamPos;
+	float		mOldCamYaw, mOldCamPitch, mOldCamRoll;
+	int			mHintCounter[MAX_HINTS];
+	bool		mTooManyDied;
+	bool		mFireOutOfControl;
+	GameObject	mRoof;
+	
+	Mission04()
+	{
+		mTooManyDied = false;
+		mFireOutOfControl = false;
+		mCountDeadRacers = 0;
+		mCountSparks = 0;
+		mHasOilBurnStarted = false;
+		mStateCs1 = CS_NOT_STARTED;
+		mStateCs2 = CS_NOT_STARTED;
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+	}
+	
+	~Mission04()
+	{
+	
+	}
+	
+	void Start()
+	{
+		System::Log("MISSION04 - START");
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->HasName(NAME_TRUCK1))
+				mTruck1 = (Vehicle*)obj;
+			else if (obj->HasName(NAME_TRUCK2))
+				mTruck2 = (Vehicle*)obj;
+			else if ( obj->HasName(NAME_TIRE))
+				mTire = obj;
+			else if ( obj->HasName(NAME_SPARK))
+			{
+				mSparkEmitter = obj;
+				mSparkEmitter.StopParticleEffect();
+			}
+			else if ( obj->HasName(NAME_SPARK2))
+			{
+				mSparkEmitter2 = obj;
+				mSparkEmitter2.StopParticleEffect();
+			}
+			else if ( obj->HasName(NAME_OILSPLASH))
+			{
+				mOilsplashEmitter = obj;
+			}
+			else if ( obj->HasName(NAME_ROOF))
+			{
+				mRoof = obj;
+			}
+		}
+
+		FireObjectList listFo(NAME_FO_OIL);
+		if ( listFo.GetNumFireObjects() )
+			mOil = *listFo.GetFireObject(0);
+
+		mParked = Game::GetGameObjects(NAME_PARKED_TRUCKS);
+
+		CreateRoof();
+
+		CheckForValidObjects();
+
+		Mission::AddObjective(OBJECTIVE_TRANSPORT_INJURED);
+		Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+
+		Mission::StartSingleTimer(TIMER_SPARKS_START, TIME_SPARKS_START);
+		Mission::StartSingleTimer(TIMER_HINT_TIRE, TIME_HINT_TIRE);
+
+		Vector pos = mRoof.GetPosition();
+		//System::Log("roof pos: %d %d %d", (int)(pos.x * 100.0f), (int)(pos.y*100.0f), (int)(pos.z * 100.0f));
+		//float rot[9];
+		//mRoof.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8] );
+
+		Audio::PlaySoundtrack("4", 0.0f);
+		// uncomment for debugging cutscene
+		//StartBurnOil();
+
+		Game::SetAmbientSoundVolumeByName(NAME_AMBIENT1, 1.0);
+		Game::SetAmbientSoundVolumeByName(NAME_AMBIENT2, 0.0);
+	}
+
+	void CreateRoof()
+	{
+		mRoof = Game::CreateObject("mod:Prototypes/Objects/Missionspec/stadion01_roof.e4p", NAME_ROOF);
+		mRoof.SetPosition( Vector(-897.84f, -259.66f, 1638.22f) );
+		mRoof.SetRotation(1.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f);
+	}
+
+	void CheckForValidObjects()
+	{
+		if (!mTruck1.IsValid())			System::Log("M04: truck1 is missing");
+		if (!mTruck2.IsValid())			System::Log("M04: truck2 is missing");
+		if (!mTire.IsValid())			System::Log("M04: tire1 is missing");
+		if (!mOil.IsValid())			System::Log("M04: oil is missing"); 
+		if (!mSparkEmitter.IsValid())	System::Log("M04: sparkemitter is missing"); 
+		if (!mSparkEmitter2.IsValid())	System::Log("M04: sparkemitter2 is missing"); 
+		if (!mOilsplashEmitter.IsValid())	System::Log("M04: oilsplash is missing"); 
+
+		for ( int p=0; p < mParked.GetNumObjects(); p++)
+		{
+			GameObject *obj = mParked.GetObject(p);
+			if ( !obj->IsValid() )
+			{
+				System::Log("M04: parked truck is invalied");
+			}
+		}
+		if (!mRoof.IsValid())			System::Log("M04: roof is missing");
+	}
+	
+	void Update()
+	{
+		if(mHintCounter[0] == 0 && Mission::GetCounter("Civil deaths") >= MAX_DEAD_HINT)
+		{
+			ShowHint(0);
+		}
+
+		if (	AreSquadsInStation() 
+			||	(mStateCs1 > CS_NOT_STARTED && mStateCs1 < CS_FINISHED)
+			||	(mStateCs2 > CS_NOT_STARTED && mStateCs2 < CS_FINISHED)
+			)
+		{
+			mRoof.Hide();
+		}
+		else
+		{
+			mRoof.Show();
+		}
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_SPARKS_START:
+			{
+				// start sparks (interval timer)
+				if ( !mHasOilBurnStarted )
+				{
+					ShowHint(2);
+					mCountSparks = 1;
+					mSparkEmitter.StartParticleEffect();
+
+					Mission::StartIntervalTimer(TIMER_NEXT_SPARK, TIME_NEXT_SPARK);
+				}
+			}
+			break;
+			
+			case TIMER_HINT_TIRE:
+			{
+				if(mTire.HasBlockedPerson())
+				{
+					ShowHint(1);
+				}
+			}
+			break;
+
+			case TIMER_NEXT_SPARK:
+			{
+				mCountSparks++;
+				if ( !mHasOilBurnStarted )
+				{
+					if ( mCountSparks < NUMBER_SPARKS )
+					{
+						mSparkEmitter.StartParticleEffect();
+						System::Log("Start spark");
+					}
+					else
+					{
+						Mission::StopTimer(TIMER_NEXT_SPARK);
+						Mission::StartSingleTimer(TIMER_BURNOIL, TIME_BURNOIL);
+						mSparkEmitter2.StartParticleEffect();
+					}
+				}				
+			}
+			break;
+
+			case TIMER_BURNOIL:
+			{
+				StartBurnOil();
+			}
+			break;
+
+			case TIMER_CS1_DURATION:
+			{
+				Camera::StartTransition(mOldCamPos, mOldCamYaw, mOldCamPitch, mOldCamRoll, 3.f);
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+				mStateCs1 = CS_END_TRANSITION;
+			}
+			break;
+
+			case TIMER_CS2_DURATION:
+			{
+				Camera::StartTransition(mOldCamPos, mOldCamYaw, mOldCamPitch, mOldCamRoll, 3.f);
+				Mission::HideBlackBars();
+				Mission::EndCutScene();
+				mStateCs2 = CS_END_TRANSITION;
+			}
+			break;
+		}
+	}
+
+	ActionCallbackResult OnPreAction(const char *action_, ActionCallback* data_)
+	{
+		switch (action_)
+		{
+			case "EActionLoadUp":
+			{
+				if ( data_->Parameters[0].iValue == mTruck1.GetID() )
+				{
+					StartBurnOil();
+				}
+			}
+			break;
+		}
+	}
+
+	ActionCallbackResult OnPostAction(const char *action_, ActionCallback* data_)
+	{
+		switch (action_)
+		{
+			case "EActionLoadUp":
+			{
+				if ( data_->Parameters[0].iValue == mTruck1.GetID() )
+				{
+					StartBurnOil();
+				}
+			}
+			break;
+
+			case "EActionEnterCar":
+			case "EActionPutInCar":
+			{
+
+				if (Mission::GetCounter("Injured Persons") > 0)
+				{
+					//System::Log("Persons injured: %d", Mission::GetCounter("Injured Persons"));
+					//System::Log("Persons not on transport: %d", Game::GetNumInjuredPersonNotOnTransport());
+					if (Game::GetNumInjuredPersonNotOnTransport() == 0)
+					{
+						// start sparks (interval timer)
+						if ( !mHasOilBurnStarted && mHintCounter[2] == 0)
+						{
+							ShowHint(2);
+							mCountSparks = 1;
+							mSparkEmitter.StartParticleEffect();
+
+							Mission::StopTimer(TIMER_SPARKS_START);
+							Mission::StartIntervalTimer(TIMER_NEXT_SPARK, TIME_NEXT_SPARK);
+						}
+					}
+				}
+			}
+			break;
+		}
+
+		return ACTION_CONTINUE;
+	}
+
+	bool OnExplode( GameObject *obj_ )
+	{
+		if ( !obj_ )
+			return true;
+
+		if (	mStateCs1 < CS_RUNNING 
+			&&	mTruck1.GetID() == obj_->GetID() )
+		{
+			RunCutscene1();
+			return false;
+		}
+
+		//if ( mStateCs2 < CS_RUNNING )
+		//{
+		//	for ( int p=0; p < mParked.GetNumObjects(); p++)
+		//	{
+		//		GameObject *parked = mParked.GetObject(p);
+		//		if ( parked->GetID() == obj_->GetID() )
+		//		{
+		//			RunCutscene2();
+		//			return false;
+		//		}
+		//	}
+		//}
+
+		if ( mTruck1.GetID() == obj_->GetID() && mTruck1.HasEnclosedPerson() )
+			++mCountDeadRacers;
+		if ( mTruck2.GetID() == obj_->GetID() && mTruck2.HasEnclosedPerson() )
+			++mCountDeadRacers;
+
+		return true;
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if ( mStateCs1 == CS_START_TRANSITION )
+		{
+			mStateCs1 = CS_RUNNING;
+			Mission::StartSingleTimer(TIMER_CS1_DURATION, TIME_CS1_DURATION);
+		}
+		else if ( mStateCs1 == CS_END_TRANSITION )
+		{
+			mStateCs1 = CS_FINISHED;
+			// Audio::SetMusicLevel(0.3f);
+			Game::SetAmbientSoundVolumeByName(NAME_AMBIENT1, 0.0);
+			Game::SetAmbientSoundVolumeByName(NAME_AMBIENT2, 1.0);
+		}
+		else if ( mStateCs2 == CS_START_TRANSITION )
+		{
+			mStateCs2 = CS_RUNNING;
+			Mission::StartSingleTimer(TIMER_CS2_DURATION, TIME_CS2_DURATION);
+		}
+		else if ( mStateCs2 == CS_END_TRANSITION )
+		{
+			mStateCs2 = CS_FINISHED;
+			Game::SetAmbientSoundVolumeByName(NAME_AMBIENT1, 0.0);
+			Game::SetAmbientSoundVolumeByName(NAME_AMBIENT2, 1.0);
+		}
+	}
+
+	void StartBurnOil()
+	{
+		if ( !mHasOilBurnStarted )
+		{
+			mOilsplashEmitter.StopParticleEffect();
+			Mission::StopTimer(TIMER_SPARKS_START);
+			Mission::StopTimer(TIMER_NEXT_SPARK);
+			mSparkEmitter.StopParticleEffect();
+			mSparkEmitter2.StopParticleEffect();
+			mOil.Burn();
+			mHasOilBurnStarted = true;
+		}
+	}
+
+	void RunCutscene1()
+	{
+		if ( mStateCs1 != CS_NOT_STARTED )
+			return;
+
+		if (	mStateCs2 >= CS_START_TRANSITION
+			&&	mStateCs2 <= CS_END_TRANSITION )
+			return;
+
+		mStateCs1 = CS_START_TRANSITION;
+
+		Audio::SetMusicLevel(0.2f);
+		Mission::StartCutScene();
+		mOldCamPos = Camera::Get();
+		Camera::GetRotation(mOldCamYaw, mOldCamPitch, mOldCamRoll);
+		Camera::StartTransition(NAME_CS1_CAM, 3.f);
+		Mission::ShowBlackBars();
+	}
+
+	void RunCutscene2()
+	{
+		if ( mStateCs2 != CS_NOT_STARTED )
+			return;
+
+		if (	mStateCs1 >= CS_START_TRANSITION
+			&&	mStateCs1 <= CS_END_TRANSITION )
+			return;
+
+		mStateCs2 = CS_START_TRANSITION;
+
+		Mission::StartCutScene();
+		mOldCamPos = Camera::Get();
+		Camera::GetRotation(mOldCamYaw, mOldCamPitch, mOldCamRoll);
+		Camera::StartTransition(NAME_CS2_CAM, 3.f);
+		Mission::ShowBlackBars();
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M04: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				//Hint "Benötigen Verstärkung (2 Zivilpersonen gestorben)"
+				Audio::SetMusicLevel(0.4f);
+				Mission::PlayHint("HINT_M04_TOO_MANY_DEAD");
+				break;
+			case 1:
+				//Hint "Verletzter unter Reifen (nach 5 Minuten reifen nicht angehoben)"
+				Mission::PlayHint("HINT_M04_INJURED_TIRE");
+				break;
+			case 2:
+				//Hint "Kurzschluss - Brandgefahr (wenn Funken aus Wrack anfangen zu sprühen)"
+				Audio::SetMusicLevel(0.1f);
+				Mission::PlayHint("HINT_M04_SHORT_CIRCUIT");
+				break;
+		}
+	}
+
+	bool AreSquadsInStation()
+	// Prüft, ob sich noch Squads im stadion sind
+	{
+		return Game::IsSquadInTrigger(NAME_TRIGGER_INSIDE);
+	}
+
+	void OnSquadArrived(Person *squad_)
+	{
+		if (squad_->HasCommand("MoveTo"))
+		{
+			System::Log("M4: Assigned command EnterStation.");
+			squad_->AssignCommand("M4EnterStation");
+		}
+	}
+
+	void OnSquadVehicleArrived(Vehicle *Vehicle_)
+	{
+		if (Vehicle_->HasCommand("MoveTo"))
+		{
+			System::Log("M4: Assigned command EnterStation.");
+			Vehicle_->AssignCommand("M4EnterStation");
+		}
+	}
+	
+	MissionState GetMissionState()
+	{
+		if ( Mission::GetCounter("Burning Objects")+Mission::GetCounter("Burning Houses") > 0 )
+		{
+			if ( !Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE) )
+			{
+                                Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+                                Mission::PlayComment("SUPERV_OBJ_FIRE2");
+                        }
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRESAGAIN");
+			}
+		}
+		else 
+		{
+			if(		Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Audio::SetMusicLevel(0.5f);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+				Game::SetAmbientSoundVolumeByName(NAME_AMBIENT1, 1.0);
+				Game::SetAmbientSoundVolumeByName(NAME_AMBIENT2, 0.0);
+			}
+		}
+
+		if (Mission::GetCounter("Injured Persons") + Mission::GetCounter("Dead Persons") == 0)
+		{
+			if (!Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, true);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS_TRANSPORTED2");
+			}
+		}
+		else
+		{
+			if (Mission::IsObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_TRANSPORT_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if (Mission::GetCounter("Person deaths") + mCountDeadRacers >= MAX_DEAD_PERSONS)
+		{
+			mTooManyDied = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::GetCounter("Burnt Vehicles") >= MAX_BURNT_VEHICLES )
+		{
+			mFireOutOfControl = true;
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+	
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if (mTooManyDied)
+			return "TOO_MANY_DIED";
+		if (mFireOutOfControl)
+			return "TOO_MANY_FIRES";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mTooManyDied)
+			return "SUPERV_M04_FAIL01";
+		if (mFireOutOfControl)
+			return "SUPERV_M04_FAIL02";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M04_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f
+			&& scoring->PersonResult <= 0.5f)
+			return "SUPERV_M04_RES02";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f
+			&& scoring->ThingsResult <= 0.5f)
+			return "SUPERV_M04_RES03";
+		if (scoring->Efficiency < 0.6f)
+			return "SUPERV_M04_RES04";
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	float GetRating()
+	{
+		float rating = 1.0f;
+
+		rating -= (double)mCountDeadRacers * 0.166f;
+
+		System::Log("rating: %f", (double)rating);
+
+		return rating;
+	}
+
+	
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		Serializer->Write(mTruck1);
+		Serializer->Write(mTruck2);
+		Serializer->Write(mTire);
+		Serializer->Write(mOil);
+		Serializer->Write(mSparkEmitter);
+		Serializer->Write(mSparkEmitter2);
+		Serializer->Write(mOilsplashEmitter);
+
+		Serializer->Write(mParked);
+
+		Serializer->Write(mCountDeadRacers);
+		Serializer->Write(mCountSparks);
+		Serializer->Write(mHasOilBurnStarted);
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			Serializer->Write(mHintCounter[i]);
+
+		Serializer->Write(mOldCamPos);
+		Serializer->Write(mOldCamYaw);
+		Serializer->Write(mOldCamPitch);
+		Serializer->Write(mOldCamRoll);
+		Serializer->Write((int)mStateCs1);
+		Serializer->Write((int)mStateCs2);
+		Serializer->Write(mTooManyDied);
+		Serializer->Write(mFireOutOfControl);
+		Serializer->Write(mRoof);
+
+		return true;
+	}
+	
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		Serializer->Read(mTruck1);
+		Serializer->Read(mTruck2);
+		Serializer->Read(mTire);
+		Serializer->Read(mOil);
+		Serializer->Read(mSparkEmitter);
+		Serializer->Read(mSparkEmitter2);
+		Serializer->Read(mOilsplashEmitter);
+
+		Serializer->Read(mParked);
+
+		Serializer->Read(mCountDeadRacers);
+		Serializer->Read(mCountSparks);
+		mHasOilBurnStarted = Serializer->ReadBool();
+		for ( int i = 0; i < MAX_HINTS; i++ )
+			Serializer->Read(mHintCounter[i]);
+
+		Serializer->Read(mOldCamPos);
+		Serializer->Read(mOldCamYaw);
+		Serializer->Read(mOldCamPitch);
+		Serializer->Read(mOldCamRoll);
+
+		int dummy;
+		Serializer->Read(dummy);
+		mStateCs1 = dummy;
+		Serializer->Read(dummy);
+		mStateCs2 = dummy;
+
+		mTooManyDied = Serializer->ReadBool();
+		mFireOutOfControl = Serializer->ReadBool();
+
+		Serializer->Read(mRoof);
+
+		CheckForValidObjects();
+
+		return true;
+	}
+};

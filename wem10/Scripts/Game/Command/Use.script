@@ -1,0 +1,46 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script Use
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+object UseSchranke : CommandScript
+{
+	UseSchranke()
+	{
+		SetValidTargets(ACTOR_OBJECT);
+		SetIcon("Use");
+		SetCursor("Use");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		char * fz[1];
+		GameObject obj(Target);
+		if (!obj.IsValid()) 
+			return false;
+
+		return obj.HasNamePrefix("schranke");
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObject obj(Target);
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_USE);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"torsteuerung",Target,5,false);
+	}
+};

@@ -1,0 +1,369 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script wm2010
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+
+
+
+
+
+
+
+
+
+
+object feuerwerk : CommandScript
+{
+
+   feuerwerk()
+   {
+      SetIcon("heal");   // Bitte nen Blitz oder sowas 8-)
+      SetCursor("heal");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	GameObjectList ol("firework_wm");
+	for (int i=0;i<ol.GetNumObjects();i++)
+		ol.GetObject(i)->StartParticleEffect();
+   }
+};
+
+object fanfinder : CommandScript
+{
+
+   fanfinder()
+   {
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+	
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	char *name="                         ";
+	Game::GetGameString("WIB_SPENDERNAME",name,25);
+	PersonList pl(name);	
+	// System::Log("Fan suchen %s . ",name);
+	if (pl.GetNumPersons()>0)
+	{
+		Person o(pl.GetPerson(0));
+		o.Select();
+		o.SetCommandable(true);
+		o.SetSelectable(true);
+		o.AssignCommand("MoveTo");
+		o.AssignCommand("EnterCar");
+		o.AssignCommand("EnterHouse");
+		o.AssignCommand("eh");
+		o.AssignCommand("GetExtinguisher");
+		o.AssignCommand("GetAxe");
+		o.AssignCommand("Extinguish");
+		o.AssignCommand("Cool");
+		o.AssignCommand("UseAxe");
+		o.AssignCommand("Use");
+		o.AssignCommand("SendPeople");
+		o.AssignCommand("winkamal");
+		o.AssignCommand("fahne_schwenken");
+		o.AssignCommand("fan_drink");
+		o.AssignCommand("fan_rockem");
+		o.RemoveObjectPath();
+		o.PushActionWait(ACTION_NEWLIST,1.0);
+		o.SetRole(ROLE_SQUAD);
+		o.SetBehaviour(BEHAVIOUR_SQUAD_FIREFIGHTER);
+		Caller->Deselect();
+		Vector to=o.GetPosition();
+		Vector from=to; from.x=to.x;from.z=900;from.y=to.y-1000;
+		Camera::Set(from);
+		Camera::LookAt(from,to);
+		char *buf="                                                                                                                                                  ";
+		snprintf(buf,135,"Schau mal wer da auf der Fanmeile feiert . Es ist %s ! Huhuuuuu %s ! Winkamal !",o.GetName(), o.GetName());
+		Game::ShowHelpTextWindow(buf);
+	}
+   }
+};
+
+object winkamal : CommandScript
+{
+
+   winkamal()
+   {
+	SetIcon("winke");   // Bitte nen Blitz oder sowas 8-)
+	SetCursor("winke");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+	
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Person p(Caller);
+	if (p.IsEquipped())
+		p.RemoveEquipment();
+	p.RemoveObjectInRightHand();
+	p.PushActionTurnTo(ACTION_NEWLIST,Camera::Get());
+	p.PushActionSwitchAnim(ACTION_APPEND,"wavehelp");
+   }
+};
+
+object fahne_schwenken : CommandScript
+{
+
+   fahne_schwenken()
+   {
+	SetIcon("wavin");   // Bitte nen Blitz oder sowas 8-)
+	SetCursor("wavin");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+	
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Person p(Caller);
+	if (p.IsEquipped())
+		p.RemoveEquipment();
+	p.PlaceObjectInRightHand("Signs/Deutschlandflagge_klein.v3o");
+	p.PushActionSwitchAnim(ACTION_APPEND,"waveflag");
+   }
+};
+
+object fan_drink : CommandScript
+{
+
+   fan_drink()
+   {
+	SetIcon("drink");   // Bitte nen Blitz oder sowas 8-)
+	SetCursor("drink");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+	
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Person p(Caller);
+	if (p.IsEquipped())
+		p.RemoveEquipment();
+	p.RemoveObjectInRightHand();
+	p.SetEquipment(EQUIP_BOTTLE);
+	// p.PlaceObjectInRightHand("Equipment/bottle.v3o");	
+	p.PushActionSwitchAnim(ACTION_APPEND,"drink");
+   }
+};
+
+object fan_rockem : CommandScript
+{
+
+   fan_rockem()
+   {
+	SetIcon("rockin");   // Bitte nen Blitz oder sowas 8-)
+	SetCursor("rockin");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+	
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Person p(Caller);
+	if (p.IsEquipped())
+		p.RemoveEquipment();
+	p.RemoveObjectInRightHand();
+	p.PushActionSwitchAnim(ACTION_APPEND,"demonstrate");
+   }
+};
+
+int fanx=0;
+
+object fango : CommandScript
+{
+
+   fango()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	fanx++;
+	Person p(Caller);
+	Path pfad(Target);
+	// System::Log("FanGo fuer Fan %u : %s",fanx,p.GetName());
+	Vector hier=p.GetPosition();
+	p.Show();
+	Game::FindFreePosition(&p,hier,250.0);
+	p.SetPosition(hier);
+	p.SetRole(ROLE_CIVILIAN);
+	p.SetBehaviour(BEHAVIOUR_CIVILIAN_NORMAL);
+	// p.PushActionMove(ACTION_NEWLIST,pfad.GetStartPosition());
+	p.PushActionUsePath(ACTION_APPEND,&pfad,true,3.2,false);
+   }
+};
+
+object faninit : CommandScript
+{
+
+   faninit()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	bool goon=true;
+	PathList pl("wm_pv");
+	if (pl.GetNumPaths()>0) {
+		System::Log("Fan Init start");
+		pl.GetPath(0)->SetOnFinishDeleteObject(false);
+		pl.GetPath(0)->SetPathType(PATH_PINGPONG);
+		PathList ol=pl;
+		float wait=0;
+		for (int i=1;goon;i++)
+		{
+			char *buf="         ";
+			snprintf(buf,9,"WIBFAN%u",100+i);
+			char * name="                         ";
+			Game::GetGameString(buf,name,25);
+			// System::Log("FanInit : Fan %s<",buf);
+			goon=(StrCompare("ende",name)!=0) && (i<100);
+			if (goon)
+			{
+				char *buf="              ";
+				snprintf(buf,14,"WIBFANPROTO%u",100+i);
+				char * proto="                        ";
+				Game::GetGameString(buf,proto,25);
+				char *protopfad="                                                                                ";
+				snprintf(protopfad,80,"mod:Prototypes/Persons/Civil/%s",proto); 
+				Person p=Game::CreatePerson(protopfad,name);
+				p.Hide();
+				p.SetRole(ROLE_SQUAD);
+				Vector hier=ol.GetPath(0)->GetStartPosition();
+				p.SetPosition(hier);
+				wait=wait+3+rand()%5*2.5;
+				p.PushActionWait(ACTION_NEWLIST,wait);
+				p.PushActionExecuteCommand(ACTION_APPEND,"fango",pl.GetPath(0),0,false);
+			} else {
+				char *buf="                                                                                               ";
+				snprintf(buf,85,"%u Spender bummeln durch die Stadt. Besuch uns doch auch!",i-1 );
+				Game::ShowHelpTextWindow(buf);
+			}
+		}
+	}
+   }
+};
+
+int ndmask=524288;
+int stmask=ndmask*2;
+int nfmask=stmask*2;
+int folgemask=nfmask*2;
+
+object wem_event : CommandScript
+{
+
+   wem_event()
+   {
+	SetIcon("rockin");
+	SetRestrictions(RESTRICT_SELFEXECUTE);
+   }
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+	return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int code)
+   {
+	GameObject metronom(Target);
+     	if (code>=0) {
+		Game::ShowObjects(m1);
+		Game::ShowObjects(m2);
+		Game::ShowObjects(m3);
+		ActorList al("markt");
+		if (al.GetNumActors()>0)
+			al.GetActor(0)->SetVirtualObjectTerrain("No vehicles");
+		ActorList al("markt2");
+		if (al.GetNumActors()>0)
+			al.GetActor(0)->SetVirtualObjectTerrain("No vehicles");
+		ActorList al("markt3");
+		if (al.GetNumActors()>0)
+			al.GetActor(0)->SetVirtualObjectTerrain("No vehicles");
+		Game::SetAmbientSoundVolumeByName("wm_markt",3);
+		Game::SetAmbientSoundVolumeByName("wm_markt1",3);
+		Game::SetAmbientSoundVolumeByName("wm_markt2",3);
+		Game::SetAmbientSoundVolumeByName("wm_markt3",3);
+		Game::SetAmbientSoundVolumeByName("wm_markt4",3);
+		Game::SetAmbientSoundVolumeByName("konzert",7);
+		if (code<1) {
+			GameObjectList ol("wm_pol1");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),112+nfmask,false); // Fußstreife platzieren
+			GameObjectList ol("wm_pol2");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),113+nfmask,false); // Fußstreife platzieren
+			GameObjectList ol("wm_tlf");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),305+nfmask,false);
+			GameObjectList ol("wm_rw");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),306+nfmask,false);
+			GameObjectList ol("wm_seg");
+			ol.GetObject(0)->AssignCommand("lst_estelle");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),672+nfmask,false); // Fußstreife platzieren
+			GameObjectList ol("wm_ktw");
+			ol.GetObject(0)->AssignCommand("lst_estelle");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),670+nfmask,false); // SanD
+			GameObjectList ol("wm_rtw");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),108610+nfmask,false); // SanD
+			GameObjectList ol("wm_doc");
+			metronom.PushActionExecuteCommand(ACTION_INSERT,"rufe_winterberg",ol.GetObject(0),901+nfmask,false); // SanD
+		}
+	}
+	metronom.PushActionExecuteCommand(ACTION_INSERT,"faninit",Target,0,false); 
+   }
+};
+
+GameObjectList m1;
+GameObjectList m2;
+GameObjectList m3;
+
+object plug_init : CommandScript
+{
+
+   plug_init()
+   {
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int code)
+   {
+	System::Log("PlugIn Init %u",code);
+	Caller->PushActionExecuteCommand(ACTION_INSERT,"wem_event",Caller,code,false);
+   }
+};

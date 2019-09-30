@@ -1,0 +1,1732 @@
+// ## 
+// ## WEM4 Scripting
+// ## WEM4 9 Taikapalo
+// ## 
+// ## Script 17
+// ## 
+// ## Release 03.05.2014
+// ## 
+// ## created by WitchDoctor
+
+
+
+/* TODO:
+	Objectives:
+	* EXTINGUISH_FIRES
+	* M17_PLACE_INJURED
+	* M17_DECONTAMINATE
+	* M17_SECURE_DOCUMENTS
+	Failed:
+	* TOO_MANY_DIED
+	* M17_LACKING_UNITS
+
+	kontamininierung indoor-forscher verhindern (editierung)
+	"schaltkasten aktiv" lichter einschalten
+*/
+
+const float BEAR_HEALTH = 2400.f;
+const float CS2_SPEED = 0.3f;
+const float CS1_SPEED = 0.4f;
+const float TIME_CRASH_PLATEAU_VEHICLE = 1.0f; // zeit für plateauabbruch nach aufnehmen des verletzten bei Fahrzeugen
+const float TIME_CRASH_PLATEAU_ENGINEER = 20.0f; // zeit für plateauabbruch nach aufnehmen des verletzten durch Ingenieur
+
+enum
+{
+	MAX_DEAD_CIVILS = 4,
+	MAX_INJURED_PERSONS = 15,
+	MAX_HINTS = 11,	// number of hints - don't change
+
+	HINT_MAX_DEAD = 3,
+	HINT_MAX_INJURED = 10,
+	HINT_MIN_CONTAMINATED_HINT = 4,			// wenn noch min. soviele contamanierte, dann hint ausgeben
+	TIME_HINT_FASTER_DECONTAMINATE = 1200,	// zeit fuer hint "schneller decontmanieren" 
+	TIME_CRASH_PLATEAU = 2,					// zeit für plateauabbruch nach aufnehmen des verletzten	
+
+	TIME_CS1_DURATION = 3,		// sec. duration of cutscene 1 (gebäude)
+	TIME_CS2_DURATION = 8,		// sec. duration of cutscene 2 (plateau)
+	TIME_CS2_EMITTER2 = 1,		// start second wave of particle effects (all called "emitPlateau2")
+	TIME_CS2_EMITTER3 = 1,		// start third wave of particle effects (all called "emitPlateau3")
+	TIME_CS2_EMITTER4 = 2,		// start fourth wave of particle effects (all called "emitPlateau4")
+	TIME_CS2_SPLIT = 2,
+};
+
+const char OBJECTIVE_EXTINGUISH_FIRE[]	= "EXTINGUISH_FIRES";
+const char OBJECTIVE_PLACE_INJURED[]	= "M17_PLACE_INJURED";
+const char OBJECTIVE_DECONTAMINATE[]	= "M17_DECONTAMINATE";
+const char OBJECTIVE_SECURE_DOCUMENTS[] = "M17_SECURE_DOCUMENTS";
+const char NAME_PLATEAU1[]				= "plateau1";
+const char NAME_PLATEAU2[]				= "plateau2";
+const char NAME_EMITTER_PLATEAU1[]		= "emitPlateau1";
+const char NAME_EMITTER_PLATEAU2[]		= "emitPlateau2";
+const char NAME_EMITTER_PLATEAU3[]		= "emitPlateau3";
+const char NAME_EMITTER_PLATEAU4[]		= "emitPlateau4";
+const char NAME_EMITTER_HOUSE[]			= "emitHouse";
+const char NAME_HOUSE_SCIENTIST[]		= "houseScientist";
+const char NAME_CONTANIMATED_OBJ[]		= "radiate";
+const char NAME_BEAR[]					= "bear";
+const char NAME_CS1_CAM[]				= "cs1";
+const char NAME_CS2_CAM[]				= "cs2";
+const char NAME_CS3_CAM[]				= "cs3";
+const char NAME_RADIOACTIVE[]			= "radioactiv";
+const char NAME_TRIGGER_DOME[]			= "triggerDome";
+const char NAME_TRIGGER_TRASH[]			= "triggerTrash";
+const char NAME_TRIGGER_RADIOACTIVE[]	= "triggerRadioactive";
+const char NAME_TRIGGER_PLATEAU[]		= "triggerPlateau";
+const char NAME_TRIGGER_PLATEAU2[]		= "triggerPlateau2";
+const char NAME_TRIGGER_PLATEAU3[]		= "triggerPlateau3";
+const char NAME_TRIGGER_PLATEAU_HINT[]	= "triggerPlateauHint";
+const char NAME_TRIGGER_BLOCKERS[]		= "triggerBlockers";	// blockieren generator
+const char NAME_TRIGGER_KEY_DEBRIS[]	= "triggerKeyDebris";
+const char NAME_TRIGGER_DANGERHOUSE[]	= "triggerDangerHouse";
+const char NAME_TRIGGER_HOUSE_INJURE[]	= "triggerHouseInjure";
+const char NAME_STAY_OUT[]				= "stayout";
+const char NAME_KEY_DEBRIS[] 			= "keyDebris";
+const char NAME_DANGER_DEBRIS[] 		= "dangerDebris";
+const char NAME_CEILING_DEBRIS[]		= "ceilingDebris";
+const char NAME_GENERATOR[] 			= "generator";
+const char NAME_GENERATOR_SWITCH[]		= "generatorSwitch";
+const char NAME_BLOCK_GENERATOR[]		= "blockGenerator";
+const char NAME_DOOR_CONTROL[] 			= "doorControl";
+const char NAME_LAB[] 					= "lab";
+const char NAME_LAB_SCIENTIST[]			= "labScientist";
+const char NAME_INJURED_PLATEAU[]		= "injuredPlateau";
+const char NAME_BLOCK_INJURED[]			= "bi";
+const char NAME_ICE1[]					= "ice01";
+const char NAME_ICE2[]					= "ice02";
+const char NAME_ICE3[]					= "ice03";
+const char NAME_ICE4[]					= "ice04";
+const char NAME_ICE5[]					= "ice05";
+const char NAME_ICE6[]					= "ice06";
+const char NAME_ICE7[]					= "ice07";
+const char NAME_ICE_PATH1[]				= "icepath01";
+const char NAME_ICE_PATH2[]				= "icepath02";
+const char NAME_ICE_PATH3[]				= "icepath03";
+const char NAME_ICE_PATH4[]				= "icepath04";
+const char NAME_ICE_PATH5[]				= "icepath05";
+const char NAME_ICE_PATH6[]				= "icepath06";
+const char NAME_ICE_PATH7[]				= "icepath07";
+const char NAME_ICE_CRACK[]				= "icecrack";
+const char NAME_ICE_EDGE[]				= "iceedge";
+const char NAME_DOOR_BLOCKER[]			= "door";
+const char NAME_SOUND_PLATEAU_FALL[]	= "mod:Audio/FX/destruction/mission_ice_breakdown.wav";
+const char NAME_SOUND_PLATEAU_BREAK[]	= "mod:Audio/FX/destruction/mission_ice_crash.wav";
+const char NAME_SOUND_CEILING_BREAK[]	= "mod:Audio/FX/destruction/mission_building_breakdown2.wav";
+const char NAME_SKIDMARK_FIRE[]			= "skidmark_fir";
+const char NAME_SKIDMARK_POLICE[]		= "skidmark_pol";
+const char NAME_SKIDMARK_AMBULANCE[]	= "akidmark_amb";
+const char NAME_SKIDMARK_TECHNICANS[]	= "skidmark_tec";
+const char TIMER_HINT_FASTER_DECONT[]	= "decont";
+const char TIMER_CRASH_PLATEAU[]		= "crash";
+const char TIMER_CS1_INJURE[]			= "tcs1inj";
+const float TIME_CS1_INJURE				= 1.0f;
+const char TIMER_CS1_FREEZE[]			= "tcs1freeze";
+const float TIME_CS1_FREEZE				= 2.5f;
+const char TIMER_CS1_DURATION[]			= "tcs1";
+const char TIMER_CS2_DURATION[]			= "tcs2";
+const char TIMER_CS2_EMITTER2[]			= "tcs2emitter";
+const char TIMER_CS2_EMITTER3[]			= "tcs3emitter";
+const char TIMER_CS2_EMITTER4[]			= "tcs4emitter";
+const char TIMER_CS2_SOUND1[]			= "tcs2sound1";
+const float TIME_CS2_SOUND1				= 0.1f;
+const char TIMER_CS2_SOUND2[]			= "tcs2sound2";
+const float TIME_CS2_SOUND2				= 2.7f;
+const char TIMER_CS2_RETARD[]			= "tcs2retard";
+const float TIME_CS2_RETARD				= 0.2f;
+const char TIMER_CS2_SPLIT[]			= "tcs2split";
+const char TIMER_NAME_CS_GENERATOR[]	= "tcsGenerator";
+const char TIMER_TIME_CS_GENERATOR		= 4.5f;
+
+const char NAME_COUNTER_DEAD_PERSONS[]		= "Dead Persons";
+const char NAME_COUNTER_INJURED_PERSONS[]	= "Injured Persons";
+
+enum UnitsNeeded
+{
+	UN_DECONT = 0,
+	UN_DOCTOR,
+	UN_PARAMEDICS,
+	UN_FIREMAN,
+	UN_BULLDOZER,
+	UN_SALVAGE,
+	UN_SHOOTERS,
+	UN_ENGINEER,
+	UN_RESCUEDOG,
+	UN_RESCUEDOGLEADER,
+
+	UN_VEHICLE_FIRE,
+	UN_VEHICLE_POLICE,
+	UN_VEHICLE_AMBULANCE,
+	UN_VEHICLE_TECHNICANS,
+
+	UN_MAX,
+};
+
+// states for cutscenes
+enum CS_STATE
+{
+	CS_NOT_STARTED = 0,
+	CS_START_TRANSITION,
+	CS_RUNNING,
+	CS_END_TRANSITION,
+	CS_FINISHED,
+};
+
+object Mission17 : MissionScript
+{
+	int				mHintCounter[MAX_HINTS];
+
+	PersonList		mPersonSquads;
+	VehicleList		mVehicleSquads;
+	GameObjectList	mRadioactives;
+	PersonList		mBears;
+
+	Actor			mStayOut;
+	Actor			mDoorBlocker;
+	GameObjectList	mEmitterHouse;
+	GameObjectList	mKeyDebris;
+	GameObjectList	mDangerDebris;
+	GameObjectList	mCeilingDebris;
+	PersonList		mHouseScientists;
+	GameObject		mGenerator;
+	GameObject		mGeneratorSwitch;
+	GameObjectList	mBlockGenerator;
+	GameObject		mDoorControl;
+	OpenHouse		mLab;
+	PersonList		mLabScientists;
+	Person			mInjuredPlateau;
+	GameObjectList	mBlockInjured;
+
+	GameObject		mPlateau1;
+	GameObject		mPlateau2;
+	GameObjectList	mObjectsOnPlateau;
+	GameObjectList	mPersonsOnPlateau;
+	GameObjectList	mEmitterPlateau1;
+	GameObjectList	mEmitterPlateau2;
+	GameObjectList	mEmitterPlateau3;
+	GameObjectList	mEmitterPlateau4;
+	GameObjectList  mDecalIceCrack;
+	GameObjectList  mIceEdges;
+
+	bool			mIsGeneratorRepaired;
+	bool			mIsKeyDebrisRemoved;
+
+	bool			mFailTooManyVictims;
+	bool			mFailLackingUnits;
+	bool			mNeededUnits[UN_MAX];
+
+	CS_STATE		mStateCs1;	// einsturz gebäude
+	CS_STATE		mStateCs2;	// abbruch plateau
+	CS_STATE		mStateCs3;  // Generator
+	Vector			mOldCamPos;
+	float			mOldCamYaw, mOldCamPitch, mOldCamRoll;
+
+	int mBearsDead;
+	int mPersonsKilledOnPlateau;
+
+	GameObject		mSkidmarkFire;
+	GameObject		mSkidmarkPolice;
+	GameObject		mSkidmarkAmbulance;
+	GameObject		mSkidmarkTechnicans;
+
+	Mission17()
+	{
+		for(int i = 0; i < MAX_HINTS; ++i)
+		{
+			mHintCounter[i] = 0;
+		}
+		mIsKeyDebrisRemoved = false;
+		mIsGeneratorRepaired = false;
+		mFailTooManyVictims = false;
+		mFailLackingUnits = false;
+		mStateCs1 = CS_NOT_STARTED;
+		mStateCs2 = CS_NOT_STARTED;
+		mStateCs3 = CS_NOT_STARTED;
+		mBearsDead = 0;
+	}
+	
+	void Start()
+	{
+		System::Log("MISSION17 - START");
+
+		GameObjectList list = Game::GetGameObjects();
+		Game::ExecuteCommand("wem_init",list.GetObject(0));
+		for(int i=0; i<list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+
+			if ( obj->HasName(NAME_GENERATOR) )
+			{
+				mGenerator = obj;
+				mGenerator.ClearFlag(OF_USABLE);
+			}
+			else if ( obj->HasName(NAME_GENERATOR_SWITCH) )
+			{
+				mGeneratorSwitch = obj;
+				mGeneratorSwitch.EnableSpecialLights(true);
+				mGeneratorSwitch.ClearFlag(OF_USABLE);
+				mGeneratorSwitch.SetFlag(OF_BLOCKED);
+			}
+			else if ( obj->HasName(NAME_DOOR_CONTROL) )
+			{
+				mDoorControl = obj;
+			}
+			else if ( obj->HasName(NAME_PLATEAU1) )
+			{
+				mPlateau1 = obj;
+			}
+			else if ( obj->HasName(NAME_PLATEAU2) )
+			{
+				mPlateau2 = obj;
+			}
+			else if ( obj->HasName(NAME_ICE1) )
+			{
+				obj->SetObjectPath(NAME_ICE_PATH1);
+			}
+			else if ( obj->HasName(NAME_ICE2) )
+			{
+				obj->SetObjectPath(NAME_ICE_PATH2);
+			}
+			else if ( obj->HasName(NAME_ICE3) )
+			{
+				obj->SetObjectPath(NAME_ICE_PATH3);
+			}
+			else if ( obj->HasName(NAME_ICE4) )
+			{
+				obj->SetObjectPath(NAME_ICE_PATH4);
+			}
+			else if ( obj->HasName(NAME_ICE5) )
+			{
+				obj->SetObjectPath(NAME_ICE_PATH5);
+			}
+			else if ( obj->HasName(NAME_ICE6) )
+			{
+				obj->SetObjectPath(NAME_ICE_PATH6);
+			}
+			else if ( obj->HasName(NAME_ICE7) )
+			{
+				obj->SetObjectPath(NAME_ICE_PATH7);
+			}
+			else if ( obj->HasName(NAME_SKIDMARK_FIRE) )
+			{
+				mSkidmarkFire = obj;
+			}
+			else if ( obj->HasName(NAME_SKIDMARK_POLICE) )
+			{
+				mSkidmarkPolice = obj;
+			}
+			else if ( obj->HasName(NAME_SKIDMARK_AMBULANCE) )
+			{
+				mSkidmarkAmbulance = obj;
+			}
+			else if ( obj->HasName(NAME_SKIDMARK_TECHNICANS) )
+			{
+				mSkidmarkTechnicans = obj;
+			}
+
+			if ( obj->GetType() == ACTOR_PERSON )
+			{
+				Person *p = (Person*)(obj);
+				if ( p->HasName(NAME_INJURED_PLATEAU) )
+					mInjuredPlateau = p;
+			}
+		}
+
+		ActorList actors = Game::GetActors(NAME_STAY_OUT);
+		if ( actors.GetNumActors() )
+			mStayOut = *actors.GetActor(0);
+
+		ActorList actors2 = Game::GetActors(NAME_DOOR_BLOCKER);
+		if ( actors2.GetNumActors() )
+			mDoorBlocker = *actors2.GetActor(0);
+
+		mPersonSquads = PersonList(ROLE_SQUAD);
+		mVehicleSquads = VehicleList(VT_THW_FGRR_BKF, VT_AMBULANCE_TRANSEVAC);
+
+		mRadioactives = GameObjectList(NAME_RADIOACTIVE);
+		for ( int i=0; i < mRadioactives.GetNumObjects(); i++ )
+		{
+			mRadioactives.GetObject(i)->SetContaminationArea( CONTAMINATION_ATOMIC, 500.f );
+		}
+
+		mDecalIceCrack = GameObjectList(NAME_ICE_CRACK);
+		mIceEdges = GameObjectList(NAME_ICE_EDGE);
+
+		mBears = PersonList(NAME_BEAR);
+		for ( int i=0; i<mBears.GetNumPersons(); i++)
+		{
+			mBears.GetPerson(i)->SetMaxHealth(BEAR_HEALTH);
+			mBears.GetPerson(i)->SetHealth(BEAR_HEALTH);
+		}
+
+		mKeyDebris = GameObjectList(NAME_KEY_DEBRIS);
+		mDangerDebris = GameObjectList(NAME_DANGER_DEBRIS);
+		for (int i = 0; i < mDangerDebris.GetNumObjects(); i++)
+		{
+			mDangerDebris.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_NOEXTERNALBODIES);
+		}
+		mCeilingDebris = GameObjectList(NAME_CEILING_DEBRIS);
+		mBlockGenerator = GameObjectList(NAME_BLOCK_GENERATOR);
+		mLabScientists = PersonList(NAME_LAB_SCIENTIST);
+		mHouseScientists = PersonList(NAME_HOUSE_SCIENTIST);
+		for ( int i=0; i<mHouseScientists.GetNumPersons(); i++)
+		{
+			mHouseScientists.GetPerson(i)->SetFlag(OF_BLOCKED);
+		}
+
+		OpenHouseList ohList1(NAME_LAB);
+		if ( ohList1.GetNumOpenHouses() )
+		{
+			mLab = ohList1.GetOpenHouse(0);
+			mLab.ClearFlag(OF_ACCESSIBLE);
+		}
+
+		mEmitterPlateau1 = GameObjectList(NAME_EMITTER_PLATEAU1);
+		for ( int i = 0; i < mEmitterPlateau1.GetNumObjects(); i++)
+			mEmitterPlateau1.GetObject(i)->StopParticleEffect();
+		mEmitterPlateau2 = GameObjectList(NAME_EMITTER_PLATEAU2);
+		for ( int i = 0; i < mEmitterPlateau2.GetNumObjects(); i++)
+			mEmitterPlateau2.GetObject(i)->StopParticleEffect();
+		mEmitterPlateau3 = GameObjectList(NAME_EMITTER_PLATEAU3);
+		for ( int i = 0; i < mEmitterPlateau3.GetNumObjects(); i++)
+			mEmitterPlateau3.GetObject(i)->StopParticleEffect();
+		mEmitterPlateau4 = GameObjectList(NAME_EMITTER_PLATEAU4);
+		for ( int i = 0; i < mEmitterPlateau4.GetNumObjects(); i++)
+			mEmitterPlateau4.GetObject(i)->StopParticleEffect();
+		mEmitterHouse = GameObjectList(NAME_EMITTER_HOUSE);
+		for ( int i = 0; i < mEmitterHouse.GetNumObjects(); i++)
+			mEmitterHouse.GetObject(i)->StopParticleEffect();
+
+		// HACK: bis transevac da ist stehen fahrzeuge zu begin im level. 
+		//for ( int i=0; i < mVehicleSquads.GetNumVehicles(); i++ )
+		//{
+		//	mVehicleSquads.GetVehicle(i)->SetMaxPassengers(6);
+		//	mVehicleSquads.GetVehicle(i)->SetMaxTransports(4);
+		//}
+
+		mBlockInjured = GameObjectList(NAME_BLOCK_INJURED);
+
+		mPersonsKilledOnPlateau = 0;
+
+		CheckForValidObjects();
+		HasUnits(mNeededUnits);
+		HideSkidmarks(mNeededUnits);
+
+		Game::DeactivateTrigger(NAME_TRIGGER_PLATEAU3);
+
+		Mission::AddObjective(OBJECTIVE_PLACE_INJURED);
+		Mission::SetObjectiveAccomplished(OBJECTIVE_PLACE_INJURED, false);
+		Mission::AddObjective(OBJECTIVE_DECONTAMINATE);
+		Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE, false);
+		Mission::AddObjective(OBJECTIVE_SECURE_DOCUMENTS);
+		Mission::SetObjectiveAccomplished(OBJECTIVE_SECURE_DOCUMENTS, false);
+
+		Mission::StartSingleTimer(TIMER_HINT_FASTER_DECONT, TIME_HINT_FASTER_DECONTAMINATE );
+
+		Audio::PlaySoundtrack("17", 0.0f);
+		Game::SetAmbientSoundVolumeByName(NAME_GENERATOR, 0.0);
+		//Mission::StartSingleTimer(TIMER_CRASH_PLATEAU, TIME_CRASH_PLATEAU);
+	}
+
+	void CheckForValidObjects()
+	{
+		if ( !mRadioactives.GetNumObjects() )	System::Log("M17: missing radioactives");
+		if ( !mBears.GetNumPersons() )			System::Log("M17: missing bears");
+		if ( !mKeyDebris.GetNumObjects() )		System::Log("M17: missing key debris");
+		if ( !mDangerDebris.GetNumObjects())	System::Log("M17: missing danger debris");
+		if ( !mCeilingDebris.GetNumObjects())	System::Log("M17: missing ceiling debris");
+		if ( !mGenerator.IsValid() )			System::Log("M17: missing generator");
+		if ( !mGeneratorSwitch.IsValid() )		System::Log("M17: missing generatorSwitch");
+		if ( !mBlockGenerator.GetNumObjects())	System::Log("M17: missing block debris for generator");
+		if ( !mDoorControl.IsValid())			System::Log("M17: missing doorControl");
+		if ( !mLab.IsValid())					System::Log("M17: missing lab");
+		if ( !mLabScientists.GetNumPersons())	System::Log("M17: missing lab scientists");
+		if ( !mInjuredPlateau.IsValid() )		System::Log("M17: missing injured on plateau");
+		if ( !mBlockInjured.GetNumObjects())	System::Log("M17: missing blocking debris(bi)");
+		if ( !mEmitterPlateau1.GetNumObjects())	System::Log("M17: missing emitPlateau1 emitters");
+		if ( !mEmitterPlateau2.GetNumObjects())	System::Log("M17: missing emitPlateau2 emitters");
+		if ( !mEmitterPlateau3.GetNumObjects())	System::Log("M17: missing emitPlateau3 emitters");
+		if ( !mEmitterPlateau4.GetNumObjects())	System::Log("M17: missing emitPlateau4 emitters");
+		if ( !mHouseScientists.GetNumPersons())	System::Log("M17: missing house scientists");
+		if ( !mStayOut.IsValid() )				System::Log("M17: missing stayout");
+
+		if ( !mSkidmarkFire.IsValid() )			System::Log("M17: missing SkidmarkFire");
+		if ( !mSkidmarkPolice.IsValid() )		System::Log("M17: missing SkidmarkPolice");
+		if ( !mSkidmarkAmbulance.IsValid() )	System::Log("M17: missing SkidmarkAmbulance");
+		if ( !mSkidmarkTechnicans.IsValid() )	System::Log("M17: missing SkidmarkTechnicans");
+	}
+
+	void HasUnits(bool *units_)
+	{
+		for ( int i=0; i < UN_MAX; i++ )
+		{
+			units_[i] = false;
+		}
+
+        bool hasABC = false;
+		for ( int i=0; i < mPersonSquads.GetNumPersons(); i++ )
+		{
+			if ( !mPersonSquads.GetPerson(i)->IsInjured() )
+			{
+				if ( mPersonSquads.GetPerson(i)->GetBehaviour() == BEHAVIOUR_SQUAD_FIREFIGHTER )
+				{
+					units_[UN_FIREMAN] = true;
+				}
+				if ( mPersonSquads.GetPerson(i)->IsEngineer() )
+				{
+					units_[UN_ENGINEER] = true;
+				}
+				//if ( mPersonSquads.GetPerson(i)->GetPersonType() == PT_SHARPSHOOTER )
+				//{
+				//	units_[UN_SHOOTERS] = true;
+				//}
+				if ( mPersonSquads.GetPerson(i)->IsDoctor() )
+				{
+					units_[UN_DOCTOR] = true;
+				}
+				if ( mPersonSquads.GetPerson(i)->IsParamedicTeam() )
+				{
+					units_[UN_PARAMEDICS] = true;
+				}
+				if ( mPersonSquads.GetPerson(i)->IsFireFighterABC() )
+				{
+					hasABC = true;
+				}
+			}
+		}
+		for ( int i=0; i < mVehicleSquads.GetNumVehicles(); i++ )
+		{
+			if ( !mVehicleSquads.GetVehicle(i)->IsDestroyed() )
+			{
+				// bergefahrzeug
+				if ( mVehicleSquads.GetVehicle(i)->GetVehicleType() == VT_THW_FGRR_BKF )	
+				{
+					units_[UN_SALVAGE] = true;
+				}
+				// bulldozer
+				else if ( mVehicleSquads.GetVehicle(i)->GetVehicleType() == VT_THW_FGRR_RL )
+				{
+					units_[UN_BULLDOZER] = true;
+				}
+				// dekontaminierungsfahrzeug
+				else if ( mVehicleSquads.GetVehicle(i)->GetVehicleType() == VT_FIREFIGHTERS_DEKONP )
+				{
+					units_[UN_DECONT] = true;
+				}
+
+				if ( mVehicleSquads.GetVehicle(i)->IsFirefighter() )
+				{
+					units_[UN_VEHICLE_FIRE] = true;
+				}
+				else if (  mVehicleSquads.GetVehicle(i)->IsAmbulance() 
+						&& mVehicleSquads.GetVehicle(i)->GetVehicleType() != VT_AMBULANCE_TRANSEVAC )
+				{
+					units_[UN_VEHICLE_AMBULANCE] = true;
+				}
+				else if ( mVehicleSquads.GetVehicle(i)->IsThw() )
+				{
+					units_[UN_VEHICLE_TECHNICANS] = true;
+				}
+				else if ( mVehicleSquads.GetVehicle(i)->IsPolice() )
+				{
+					units_[UN_VEHICLE_POLICE] = true;
+				}
+			}
+		}
+		if ( !hasABC )
+		{
+			units_[UN_DECONT] = false;
+		}
+
+		//System::Log("M17: Unit UN_DECONT:%d", units_[UN_DECONT] ? 1:0);
+		//System::Log("M17: Unit UN_HEALERS:%d", units_[UN_HEALERS] ? 1:0);
+		//System::Log("M17: Unit UN_FIREMAN:%d", units_[UN_FIREMAN] ? 1:0);
+		//System::Log("M17: Unit UN_BULLDOZER:%d", units_[UN_BULLDOZER] ? 1:0);
+		//System::Log("M17: Unit UN_SALVAGE:%d", units_[UN_SALVAGE] ? 1:0);
+		//System::Log("M17: Unit UN_SHOOTERS:%d", units_[UN_SHOOTERS] ? 1:0);
+		//System::Log("M17: Unit UN_ENGINEER:%d", units_[UN_ENGINEER] ? 1:0);
+	}
+
+	void HideSkidmarks(bool *units_)
+	{
+		if ( !units_ )
+			return;
+
+		if ( !units_[UN_VEHICLE_FIRE] )
+		{
+			mSkidmarkFire.Hide();
+		}
+		if ( !units_[UN_VEHICLE_AMBULANCE] )
+		{
+			mSkidmarkAmbulance.Hide();
+		}
+		if ( !units_[UN_VEHICLE_TECHNICANS] )
+		{
+			mSkidmarkTechnicans.Hide();
+		}
+		if ( !units_[UN_VEHICLE_POLICE] )
+		{
+			mSkidmarkPolice.Hide();
+		}
+	}
+
+	bool IsLackingUnit()
+	{
+		bool availableUnits[UN_MAX];
+		HasUnits(availableUnits);
+
+		if ( mNeededUnits[UN_DECONT] && !availableUnits[UN_DECONT] 
+			&&	Mission::GetCounter("Contaminated Persons") > 0 )
+		{
+			System::Log("M17: UN_DECONT");
+			return true;
+		}
+
+		if ( (mNeededUnits[UN_DOCTOR] && mNeededUnits[UN_PARAMEDICS])
+			&& (!availableUnits[UN_PARAMEDICS] || !availableUnits[UN_DOCTOR])
+			&&	Mission::GetCounter(NAME_COUNTER_INJURED_PERSONS)-GetNumInjuredInTransports() > 0 )
+		{
+			System::Log("M17: UN_HEALERS");
+			return true;
+		}
+
+		if ( mNeededUnits[UN_SHOOTERS] && !availableUnits[UN_SHOOTERS] )
+		{
+			bool hasBears = false;
+			for ( int i=0; i<mBears.GetNumPersons(); ++i)
+			{
+				if (	mBears.GetPerson(i)->IsValid()
+					&&	!mBears.GetPerson(i)->IsInjured() )
+				{
+					hasBears = true;
+					break;
+				}
+			}
+
+			if ( hasBears && Game::IsCivilianInTrigger(NAME_TRIGGER_TRASH, ACTOR_PERSON, true) )
+			{
+				System::Log("M17: UN_SHOOTERS");
+				return true;
+			}
+		}
+
+		if ( mNeededUnits[UN_ENGINEER] && !availableUnits[UN_ENGINEER] 
+			&& (!mIsGeneratorRepaired || mStateCs2 == CS_NOT_STARTED))
+		{
+			System::Log("M17: UN_ENGINEER");
+			return true;
+		}
+
+		if ( mNeededUnits[UN_BULLDOZER] && !availableUnits[UN_BULLDOZER] )
+		{
+			System::Log("M17: UN_BULLDOZER");
+			return true;
+		}
+
+		for ( int i=0; i<mBlockInjured.GetNumObjects(); i++ )
+		{
+			if ( mBlockInjured.GetObject(i)->HasBlockedPerson() )
+			{
+				bool unitMissing = false;
+				bool canRemoveBlock = false;
+				if ( mBlockInjured.GetObject(i)->IsFlagSet(OF_PULLABLE) )
+				{
+					if ( availableUnits[UN_FIREMAN] )
+						canRemoveBlock = true;
+					else if ( mNeededUnits[UN_FIREMAN] )
+						unitMissing = true;
+				}
+				if ( mBlockInjured.GetObject(i)->IsFlagSet(OF_RECOVERABLE) )
+				{
+					if ( availableUnits[UN_SALVAGE] )
+						canRemoveBlock = true;
+					else if ( mNeededUnits[UN_SALVAGE] )
+						unitMissing = true;
+				}
+				//if ( mBlockInjured.GetObject(i)->IsFlagSet(OF_CARRYABLE_BY_BULLDOZER) )
+				//{
+				//	if ( availableUnits[UN_BULLDOZER] )
+				//		canRemoveBlock = true;
+				//	else if ( mNeededUnits[UN_BULLDOZER] )
+				//		unitMissing = true;
+				//}
+				if ( unitMissing && !canRemoveBlock )
+				{
+					System::Log("M17: UN_FIREMAN | UN_SALVAGE | UN_BULLDOZER");
+					return true;
+				}
+			}
+			//if ( mNeededUnits[UN_RESCUEDOGLEADER] && (!availableUnits[UN_RESCUEDOGLEADER] || !availableUnits[UN_RESCUEDOG]) )
+			//{
+			//	System::Log("M17: UN_BULLDOZER");
+			//	return true;
+			//}
+
+		}
+
+		return false;
+	}
+
+	int GetNumInjuredInTransports()
+	{
+		int injured = 0;
+		for ( int i=0; i < mVehicleSquads.GetNumVehicles(); i++ )
+		{
+			if ( mVehicleSquads.GetVehicle(i)->GetNumTransported() )
+			{
+				PersonList transported = mVehicleSquads.GetVehicle(i)->GetTransports();
+				for ( int t=0; t < transported.GetNumPersons(); t++ )
+				{
+					if (	transported.GetPerson(t)->IsInjured() 
+						&&	!transported.GetPerson(t)->IsContaminated() )
+					{
+						++injured;
+					}
+				}
+			}
+		}
+		return injured;
+	}
+
+	// house
+	void RunCutscene1()
+	{
+		if ( mStateCs1 != CS_NOT_STARTED )
+			return;
+
+		if (	mStateCs2 >= CS_START_TRANSITION
+			&&	mStateCs2 <= CS_END_TRANSITION )
+			return;
+
+		mStateCs1 = CS_START_TRANSITION;
+
+		Audio::SetMusicLevel(0.4f);
+		Mission::StartCutScene();
+		mOldCamPos = Camera::Get();
+		Camera::GetRotation(mOldCamYaw, mOldCamPitch, mOldCamRoll);
+		Camera::StartTransition(NAME_CS1_CAM, 3.f);
+		Mission::ShowBlackBars();
+	}
+
+	// prevent persons running on plateau while cs running
+	void StopPersonsAroundPlateau()
+	{
+		GameObjectList areaPlateau;
+		if ( Game::CollectObstaclesOnTrigger(NAME_TRIGGER_PLATEAU_HINT, areaPlateau, ACTOR_VEHICLE|ACTOR_PERSON) )
+		{
+			for ( int i=0; i < areaPlateau.GetNumObjects(); i++ )
+			{
+				areaPlateau.GetObject(i)->ClearActions();
+			}
+		}
+	}
+
+	// plateau
+	void RunCutscene2()
+	{
+		if ( mStateCs2 != CS_NOT_STARTED )
+			return;
+
+		if (	mStateCs1 >= CS_START_TRANSITION
+			&&	mStateCs1 <= CS_END_TRANSITION )
+			return;
+
+		mStateCs2 = CS_START_TRANSITION;
+
+		StopPersonsAroundPlateau();
+
+		Audio::SetMusicLevel(0.5f);
+		Mission::StartCutScene();
+		mOldCamPos = Camera::Get();
+		Camera::GetRotation(mOldCamYaw, mOldCamPitch, mOldCamRoll);
+		Camera::StartTransition(NAME_CS2_CAM, 3.f);
+		Mission::ShowBlackBars();
+	}
+
+	void OnCameraTransitionFinished()
+	{
+		if ( mStateCs1 == CS_START_TRANSITION )
+		{
+			mStateCs1 = CS_RUNNING;
+			Mission::StartSingleTimer(TIMER_CS1_INJURE, TIME_CS1_INJURE);
+			Mission::StartSingleTimer(TIMER_CS1_DURATION, TIME_CS1_DURATION);
+			Mission::StartSingleTimer(TIMER_CS1_FREEZE, TIME_CS1_FREEZE);
+			Game::SetGameSpeed(CS1_SPEED);
+			for ( int i=0; i < mCeilingDebris.GetNumObjects(); i++ )
+			{
+				mCeilingDebris.GetObject(i)->EnablePhysicsSimulation();
+				mCeilingDebris.GetObject(i)->UnfreezePhysics();
+				mCeilingDebris.GetObject(i)->ClearFlag(OF_RECOVERABLE);
+			}
+			Audio::PlaySample(NAME_SOUND_CEILING_BREAK);
+			for ( int i = 0; i < mEmitterHouse.GetNumObjects(); i++)
+			{
+				Vector pos = mEmitterHouse.GetObject(i)->GetPosition();
+				pos.z -= 30.0f;
+				mEmitterHouse.GetObject(i)->SetPosition(pos);
+				mEmitterHouse.GetObject(i)->StartParticleEffect();
+			}
+		}
+		else if ( mStateCs1 == CS_END_TRANSITION )
+		{
+			mStateCs1 = CS_FINISHED;
+		}
+		else if ( mStateCs2 == CS_START_TRANSITION )
+		{
+			mStateCs2 = CS_RUNNING;
+			if (Game::CollectObstaclesOnTrigger(NAME_TRIGGER_PLATEAU, mObjectsOnPlateau, ACTOR_VEHICLE|ACTOR_PERSON|ACTOR_OBJECT))
+			{
+				for ( int i=0; i < mObjectsOnPlateau.GetNumObjects(); i++ )
+				{
+					if (mObjectsOnPlateau.GetObject(i)->GetType() != ACTOR_OBJECT)
+					{
+						mObjectsOnPlateau.GetObject(i)->SetSelectable(false);
+						mObjectsOnPlateau.GetObject(i)->EnablePhysicsSimulation();
+						mObjectsOnPlateau.GetObject(i)->UnfreezePhysics();
+						Vector force = mPlateau1.GetPosition() - mObjectsOnPlateau.GetObject(i)->GetPosition();
+						force.z = 0.0f;
+						force = force.GetNormal()*5000.0f;
+						mObjectsOnPlateau.GetObject(i)->ApplyForce(0, mObjectsOnPlateau.GetObject(i)->GetPosition(), force);
+						if (mObjectsOnPlateau.GetObject(i)->GetType() == ACTOR_PERSON)
+						{
+							//mObjectsOnPlateau.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_ALL | PHYSIC_COLLISION_USECATEGORIES);
+							Person p = mObjectsOnPlateau.GetObject(i);
+							p.Kill();
+							p.SetSelectable(false);
+							mPersonsKilledOnPlateau++;
+						}
+						if (mObjectsOnPlateau.GetObject(i)->GetType() == ACTOR_VEHICLE)
+						{
+							Vector pos = mObjectsOnPlateau.GetObject(i)->GetPosition();
+							pos.z += 100.0f;
+							mObjectsOnPlateau.GetObject(i)->ApplyForce(0, pos, force*0.03f*mObjectsOnPlateau.GetObject(i)->GetPhysicsMass());
+						}
+					}
+				}
+			}
+			Game::CollectObstaclesOnTrigger(NAME_TRIGGER_PLATEAU, mPersonsOnPlateau, ACTOR_PERSON);
+			for ( int i=0; i < mPersonsOnPlateau.GetNumObjects(); i++ )
+			{
+				if (mObjectsOnPlateau.GetObject(i)->GetType() == ACTOR_PERSON)
+				{
+					//mObjectsOnPlateau.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_ALL | PHYSIC_COLLISION_USECATEGORIES);
+					Person p = mObjectsOnPlateau.GetObject(i);
+					p.ClearActions();
+					p.Kill();
+					p.SetSelectable(false);
+				}
+			}
+			System::Log("plateau: %d", mPersonsKilledOnPlateau);
+			System::Log("plateau after: %d", mPersonsOnPlateau.GetNumObjects());
+			Game::SetGameSpeed(CS2_SPEED);
+			for ( int i = 0; i < mEmitterPlateau1.GetNumObjects(); i++)
+				mEmitterPlateau1.GetObject(i)->StartParticleEffect();			
+			mPlateau1.EnablePhysicsSimulation();
+			mPlateau1.SetCollisionMode(PHYSIC_COLLISION_NOWORLD);// | PHYSIC_COLLISION_NOEXTERNALBODIES);			
+			mPlateau2.EnablePhysicsSimulation();
+			mPlateau2.SetCollisionMode(PHYSIC_COLLISION_NOWORLD);// | PHYSIC_COLLISION_NOEXTERNALBODIES);
+
+			for (int i = 0; i < mDecalIceCrack.GetNumObjects(); i++)
+			{
+				mDecalIceCrack.GetObject(i)->Hide();
+			}
+
+			for (int i = 0; i < mIceEdges.GetNumObjects(); i++)
+			{
+				mIceEdges.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_NONE);
+			}
+
+			Vector pos, force;
+			pos = mPlateau1.GetPosition();
+			pos.z += 2000.0f;
+			force.x = 60000.0f;
+			force.y = -100000.0f;
+			force.z = 0.0f;
+			mPlateau1.ApplyForce(0, pos, force);
+			pos = mPlateau2.GetPosition();
+			pos.z += 2000.0f;
+			force.y += 100000.0f;
+			mPlateau2.ApplyForce(0, pos, force);
+
+			StopPersonsAroundPlateau();
+			Mission::StartSingleTimer(TIMER_CS2_RETARD, TIME_CS2_RETARD*CS2_SPEED, true);
+			Mission::StartSingleTimer(TIMER_CS2_DURATION, TIME_CS2_DURATION*CS2_SPEED);
+			Mission::StartSingleTimer(TIMER_CS2_EMITTER2, TIME_CS2_EMITTER2*CS2_SPEED );
+			Mission::StartSingleTimer(TIMER_CS2_EMITTER3, TIME_CS2_EMITTER3*CS2_SPEED );
+			Mission::StartSingleTimer(TIMER_CS2_EMITTER4, TIME_CS2_EMITTER4*CS2_SPEED );
+			Mission::StartSingleTimer(TIMER_CS2_SOUND1, TIME_CS2_SOUND1*CS2_SPEED );
+			Mission::StartSingleTimer(TIMER_CS2_SOUND2, TIME_CS2_SOUND2*CS2_SPEED );
+			Mission::StartSingleTimer(TIMER_CS2_SPLIT , TIME_CS2_SPLIT*CS2_SPEED );
+		}
+		else if ( mStateCs2 == CS_END_TRANSITION )
+		{
+			mStateCs2 = CS_FINISHED;
+		}
+		else if (mStateCs3 == CS_START_TRANSITION)
+		{
+			mStateCs3 = CS_FINISHED;
+			ShowHint(2);
+			Mission::StartSingleTimer(TIMER_NAME_CS_GENERATOR, TIMER_TIME_CS_GENERATOR);
+		}
+	}
+
+	void OnTimer(const char* timer_, float time_)
+	{
+		switch(timer_)
+		{
+			case TIMER_CS2_RETARD:
+			{
+				System::Log("Slow down plateau fall.");
+				Vector pos = mPlateau1.GetPosition();
+				Vector force(0, 0, 100000);
+				mPlateau1.ApplyForce(0, pos, force);
+				pos = mPlateau2.GetPosition();
+				force.Set(0, 0, 400000);
+				mPlateau2.ApplyForce(0, pos, force);				
+			}
+			break;
+			case TIMER_NAME_CS_GENERATOR:
+				ScriptInterface::CloseTutorialInstruction();				
+				Mission::EndCutScene(true, 3.0f);
+				Mission::HideBlackBars();
+				break;
+			case TIMER_HINT_FASTER_DECONT:
+			{
+				if ( Mission::GetCounter("Contaminated Persons") >= HINT_MIN_CONTAMINATED_HINT )
+				{
+					ShowHint(10);
+				}
+			}
+			break;
+			case TIMER_CS1_FREEZE:
+				for ( int i=0; i < mCeilingDebris.GetNumObjects(); i++ )
+				{
+					mCeilingDebris.GetObject(i)->FreezePhysics();
+					mCeilingDebris.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_NONE);
+				}
+				break;
+			case TIMER_CS1_INJURE:
+			{
+				GameObjectList toInjure;
+				if ( Game::CollectObstaclesOnTrigger(NAME_TRIGGER_HOUSE_INJURE, toInjure, ACTOR_VEHICLE|ACTOR_PERSON)  )
+				{
+					for ( int i=0; i < toInjure.GetNumObjects(); i++ )
+					{
+						if ( toInjure.GetObject(i)->GetType() == ACTOR_VEHICLE )
+						{
+							Vehicle v = (Vehicle*)(toInjure.GetObject(i));
+							v.SetEnergy(v.GetEnergy());
+						}
+						else if ( toInjure.GetObject(i)->GetType() == ACTOR_PERSON )
+						{
+							Person p = (Person*)(toInjure.GetObject(i));
+							if ( !p.IsInjured() )
+							{								
+								p.EnablePhysicsSimulation();
+								p.Injure(INJUREREASON_ENERGY, 250.0f);//p.GetMaxLife() * 0.25f);
+							}
+							else
+							{
+								p.Kill();
+							}
+						}
+					}
+				}
+			}
+			break;
+			case TIMER_CS1_DURATION:
+			{
+				//Camera::StartTransition(mOldCamPos, mOldCamYaw, mOldCamPitch, mOldCamRoll, 3.f);
+				Mission::HideBlackBars();
+				Mission::EndCutScene(true, 3.0f);
+				mStateCs1 = CS_END_TRANSITION;
+				//for ( int i = 0; i < mEmitterHouse.GetNumObjects(); i++)
+				//	mEmitterHouse.GetObject(i)->StopParticleEffect();
+			}
+			break;
+
+			case TIMER_CS2_DURATION:
+			{
+				//Camera::StartTransition(mOldCamPos, mOldCamYaw, mOldCamPitch, mOldCamRoll, 3.f);
+				Mission::HideBlackBars();
+				Mission::EndCutScene(true, 3.0f);
+				for (int i = 0; i < mIceEdges.GetNumObjects(); i++)
+				{
+					//mIceEdges.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_ALL);
+				}
+				//mPlateau1.Hide();
+				//mPlateau2.Hide();
+				for ( int i=0; i < mObjectsOnPlateau.GetNumObjects(); i++ )
+				{
+					if (/*   mObjectsOnPlateau.GetObject(i)->GetType() == ACTOR_PERSON
+						|| */mObjectsOnPlateau.GetObject(i)->GetType() == ACTOR_VEHICLE )
+					{
+						mObjectsOnPlateau.GetObject(i)->PushActionWait(ACTION_NEWLIST, 3.0f);
+						mObjectsOnPlateau.GetObject(i)->PushActionDeleteOwner(ACTION_APPEND);
+					}
+				}
+				//Game::CollectObstaclesOnTrigger(NAME_TRIGGER_PLATEAU3, mPersonsOnPlateau, ACTOR_PERSON);
+				System::Log("Persons to disappear: %d", mPersonsOnPlateau.GetNumObjects());
+				for ( int i=0; i < mPersonsOnPlateau.GetNumObjects(); i++ )
+				{
+					if (mPersonsOnPlateau.GetObject(i)->GetType() == ACTOR_PERSON)
+					{
+						mPersonsOnPlateau.GetObject(i)->PushActionDisappear(ACTION_NEWLIST, 5.0f, 0.0f, true);
+					}
+				}
+				for ( int i = 0; i < mEmitterPlateau1.GetNumObjects(); i++)
+					mEmitterPlateau1.GetObject(i)->StopParticleEffect();
+				mEmitterPlateau2 = GameObjectList(NAME_EMITTER_PLATEAU1);
+				for ( int i = 0; i < mEmitterPlateau2.GetNumObjects(); i++)
+					mEmitterPlateau2.GetObject(i)->StopParticleEffect();
+
+				mStateCs2 = CS_END_TRANSITION;
+			}
+			break;
+			
+			case TIMER_CS2_EMITTER2:
+			{
+				//mPlateau1.UnfreezePhysics();
+				mPlateau1.SetPhysicsVelocity(0.0f, 0.0f, 0.0f);
+				for ( int i = 0; i < mEmitterPlateau2.GetNumObjects(); i++)
+					mEmitterPlateau2.GetObject(i)->StartParticleEffect();
+			}
+			break;
+
+			case TIMER_CS2_EMITTER3:
+			{
+				for ( int i = 0; i < mEmitterPlateau3.GetNumObjects(); i++)
+					mEmitterPlateau3.GetObject(i)->StartParticleEffect();
+			}
+			break;
+
+			case TIMER_CS2_EMITTER4:
+			{				
+				for (int i = 0; i < mEmitterPlateau4.GetNumObjects(); i++)
+					mEmitterPlateau4.GetObject(i)->StartParticleEffect();
+			}
+			break;
+
+			case TIMER_CS2_SOUND1:
+			{
+				Audio::PlaySample(NAME_SOUND_PLATEAU_BREAK);
+			}
+			break;
+
+			case TIMER_CS2_SOUND2:
+			{
+				Audio::PlaySample(NAME_SOUND_PLATEAU_FALL);
+			}
+			break;
+
+			case TIMER_CS2_SPLIT:
+			{
+				Vector pos = mPlateau1.GetPosition();
+				Vector force( 0, 0, 1000 );
+				//mPlateau1.ApplyForce(0, pos, force);
+				//mPlateau1.FreezePhysics();
+				//mPlateau1.UnfreezePhysics();
+				//mPlateau1.SetPhysicsVelocity(0.0f, 0.0f, 0.0f);
+				pos = mPlateau2.GetPosition();
+				force.Set( 5000, 5000, 1000 );
+				mPlateau2.ApplyForce(0, pos, force);
+			}
+			break;
+
+			case TIMER_CRASH_PLATEAU:
+			{
+				RunCutscene2();
+			}
+			break;
+		}
+	}
+
+	void Update()
+	{
+		if ( !mHintCounter[0] && mGeneratorSwitch.IsFlagSet(OF_BLOCKED)
+			&& Game::IsSquadInTrigger(NAME_TRIGGER_DOME, ACTOR_PERSON ) )
+		{
+			ShowHint(0);
+		}
+		if ( !mHintCounter[3] && (mBearsDead < mBears.GetNumPersons())
+			&& Game::IsSquadInTrigger(NAME_TRIGGER_TRASH, ACTOR_PERSON ) )
+		{
+			ShowHint(3);
+		}
+		if ( !mHintCounter[5] && Game::IsSquadInTrigger(NAME_TRIGGER_RADIOACTIVE, ACTOR_PERSON ) )
+		{
+			ShowHint(5);
+		}
+		if ( !mHintCounter[8] && Game::IsSquadInTrigger(NAME_TRIGGER_PLATEAU_HINT, ACTOR_PERSON|ACTOR_VEHICLE ) )
+		{
+			ShowHint(8);
+		}
+		if ( !mHintCounter[6] && Game::IsSquadInTrigger(NAME_TRIGGER_DANGERHOUSE, ACTOR_PERSON|ACTOR_VEHICLE ) )
+		{
+			ShowHint(6);
+		}
+
+		if ( !mHintCounter[9] && (Mission::GetCounter("Dead Civils") >= HINT_MAX_DEAD)) 
+								//||Mission::GetCounter(NAME_COUNTER_INJURED_PERSONS)-GetNumInjuredInTransports() >= HINT_MAX_INJURED ) )
+		{
+			ShowHint(9);
+		}
+
+		// check if generator is blocked by debris
+		if ( !mIsGeneratorRepaired )
+		{
+			bool blocked = false;
+			
+			for ( int k=0; k<mBlockGenerator.GetNumObjects(); k++ )
+			{
+				if (	mBlockGenerator.GetObject(k)->IsValid() 
+					&&	Game::IsInTrigger(NAME_TRIGGER_BLOCKERS, mBlockGenerator.GetObject(k)->GetPosition()) )
+				{
+					blocked = true;
+					break;
+				}
+			}
+			if ( !blocked && mGeneratorSwitch.IsFlagSet(OF_BLOCKED) )
+			{
+				System::Log("M17: generator is now usable");
+				mGeneratorSwitch.ClearFlag(OF_BLOCKED);
+				mGeneratorSwitch.SetFlag(OF_USABLE);
+			}
+		}
+
+		// check if key pieces of debris are removed
+		if ( !mIsKeyDebrisRemoved )
+		{
+			int removed = true;
+			for ( int i=0; i<mKeyDebris.GetNumObjects(); i++)
+			{
+				if (	mKeyDebris.GetObject(i)->IsValid() 
+					&&	Game::IsInTrigger(NAME_TRIGGER_KEY_DEBRIS, mKeyDebris.GetObject(i)->GetPosition()) )
+				{
+					removed = false;
+					break;
+				}
+			}
+			// also need to remove ceiling if house is already crashed
+			if ( mStateCs1 != CS_NOT_STARTED )
+			{
+				for ( int i=0; i<mCeilingDebris.GetNumObjects(); i++)
+				{
+					if (	mCeilingDebris.GetObject(i)->IsValid() 
+						&&	Game::IsInTrigger(NAME_TRIGGER_KEY_DEBRIS, mCeilingDebris.GetObject(i)->GetPosition()) )
+					{
+						removed = false;
+						break;
+					}
+				}
+			}
+			if ( removed )
+			{
+				mIsKeyDebrisRemoved = true;
+				for ( int i=0; i<mHouseScientists.GetNumPersons(); i++)
+				{
+					mHouseScientists.GetPerson(i)->ClearFlag(OF_BLOCKED);
+				}
+				ShowHint(7);
+				mStayOut.SetVirtualObjectTerrain("freely accessible");
+			}
+		}
+
+		// check if plateau should break
+		if ( mStateCs2 == CS_NOT_STARTED )
+		{
+			if ( Game::IsSquadInTrigger(NAME_TRIGGER_PLATEAU2, ACTOR_VEHICLE) )
+			{
+				if (!Mission::TimerIsStarted(TIMER_CRASH_PLATEAU))
+					Mission::StartSingleTimer(TIMER_CRASH_PLATEAU, TIME_CRASH_PLATEAU_VEHICLE);
+			}
+			int nrSquadsInTrigger = 0;
+			for ( int i=0; i < mPersonSquads.GetNumPersons(); i++ )
+			{
+				if (	mPersonSquads.GetPerson(i)->IsValid()
+					&&	Game::IsInTrigger(NAME_TRIGGER_PLATEAU2, mPersonSquads.GetPerson(i)->GetPosition()) )
+				{
+					++nrSquadsInTrigger;
+					if ( mPersonSquads.GetPerson(i)->IsParamedicTeam() )
+					{
+						++nrSquadsInTrigger;
+					}
+				}
+			}
+			if ( nrSquadsInTrigger > 0 )
+			{
+				if (!Mission::TimerIsStarted(TIMER_CRASH_PLATEAU))
+					Mission::StartSingleTimer(TIMER_CRASH_PLATEAU, TIME_CRASH_PLATEAU);
+			}
+		}
+	}
+
+	// Hack to avoid debris flying around when using the crane on stacked debris
+	void SetRecoverableFlagForDebris( bool set_, int pickedUpID_ )
+	{
+		System::Log("SetRecoverableFlagForDebris: %d", set_ ? 1: 0 );
+		for ( int i=0; i < mBlockGenerator.GetNumObjects(); i++ )
+		{
+			if ( mBlockGenerator.GetObject(i)->GetID() != pickedUpID_ )
+			{
+				if ( set_ )
+					mBlockGenerator.GetObject(i)->SetFlag(OF_RECOVERABLE);
+				else
+					mBlockGenerator.GetObject(i)->ClearFlag(OF_RECOVERABLE);
+			}
+		}
+
+		for ( int i=0; i < mKeyDebris.GetNumObjects(); i++ )
+		{
+			if ( mKeyDebris.GetObject(i)->GetID() != pickedUpID_ )
+			{
+				if ( set_ )
+					mKeyDebris.GetObject(i)->SetFlag(OF_RECOVERABLE);
+				else
+					mKeyDebris.GetObject(i)->ClearFlag(OF_RECOVERABLE);
+			}
+		}
+
+		//if (mStateCs1 == CS_NOT_STARTED)
+		//{
+			for ( int i=0; i < mDangerDebris.GetNumObjects(); i++ )
+			{
+				if ( mDangerDebris.GetObject(i)->GetID() != pickedUpID_ )
+				{
+					if ( set_ )
+						mDangerDebris.GetObject(i)->SetFlag(OF_RECOVERABLE);
+					else
+						mDangerDebris.GetObject(i)->ClearFlag(OF_RECOVERABLE);
+				}
+			}
+		//}
+
+		if (mStateCs1 == CS_NOT_STARTED)
+		{
+			for ( int i=0; i < mCeilingDebris.GetNumObjects(); i++ )
+			{
+				if ( mCeilingDebris.GetObject(i)->GetID() != pickedUpID_ )
+				{
+					if ( set_ )
+						mCeilingDebris.GetObject(i)->SetFlag(OF_RECOVERABLE);
+					else
+						mCeilingDebris.GetObject(i)->ClearFlag(OF_RECOVERABLE);
+				}
+			}
+		}
+	}
+
+	void OnPersonKilled(Person *person)
+	{
+		if (person->GetRole() == ROLE_ANIMAL)
+		{
+			mBearsDead++;			
+		}
+	}
+
+	void OnActionTag(const char* Tag)
+	{
+		switch(Tag)
+		{
+			case "fgrr_debris_touched":
+			{
+				System::Log("Start cutscene 1");
+				RunCutscene1();
+				//SetRecoverableFlagForDebris( true, data_->Parameters[0].iValue );
+				break;
+			}
+		}
+	}
+
+
+	ActionCallbackResult OnPreAction(const char *action_, ActionCallback* data_)
+	{
+		switch (action_)
+		{
+			case "EActionUse":
+			{
+				int id = data_->Parameters[0].iValue;
+				if(id == mGeneratorSwitch.GetID())
+				{
+					float *time = reinterpret_cast<float*>(data_->Parameters[2].pValue);
+					*time = (float) 6.f;
+				}
+			}
+			break;
+
+			case "EActionLiftWithCrane":
+			{
+				SetRecoverableFlagForDebris( false, data_->Parameters[0].iValue );
+			}
+			break;
+			case "EActionDropWithCrane":
+			{
+				SetRecoverableFlagForDebris( false, data_->Parameters[0].iValue );
+			}
+			break;
+			case "EActionFistFight":
+			{
+				if (data_->Owner->GetType() == ACTOR_PERSON)
+				{
+					Person p(data_->Owner);
+					if ( p.IsPolarBear() )
+					{
+						float *selfHurtFactor = reinterpret_cast<float*>(data_->Parameters[1].pValue);
+						*selfHurtFactor = 0.0f;
+						if (!mHintCounter[4])
+							ShowHint(4);
+					}
+				}
+			}
+			break;
+			case "EActionLiftWithRope":
+			{
+				if ( data_->Parameters[0].iValue == mInjuredPlateau.GetID() 
+					&&	!Mission::TimerIsStarted(TIMER_CRASH_PLATEAU)
+					)
+				{
+					Mission::StartSingleTimer(TIMER_CRASH_PLATEAU, TIME_CRASH_PLATEAU_ENGINEER);
+				}
+			}
+			break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	ActionCallbackResult OnAbortAction(const char *action_, ActionCallback* data_)
+	{
+		switch (action_)
+		{
+			case "EActionFistFight":
+			{
+				if (data_->Owner->GetType() == ACTOR_PERSON)
+				{
+					Actor a = Game::GetActor(data_->Parameters[0].iValue);
+					GameObject target(&a);
+					int drawn = data_->Parameters[2].iValue;
+					System::Log("fist fight drawn %d", drawn);
+					if (drawn == 1)
+						data_->Owner->SetEquipment(EQUIP_PISTOL);
+					else if (drawn == 2)
+						data_->Owner->SetEquipment(EQUIP_RIFLE);
+					else if (drawn == 3)
+						target.SetEquipment(EQUIP_PISTOL);
+					else if (drawn == 4)
+						target.SetEquipment(EQUIP_RIFLE);
+				}
+			}
+			break;
+			case "EActionLiftWithCrane":
+			case "EActionDropWithCrane":
+			{
+				SetRecoverableFlagForDebris( true, data_->Parameters[0].iValue );
+			}
+			break;
+		}
+		return ACTION_CONTINUE;;
+	}
+
+	ActionCallbackResult OnPostAction(const char *action_, ActionCallback* data_)
+	{
+		switch (action_)
+		{
+			case "EActionFistFight":
+			{
+				if (data_->Owner->GetType() == ACTOR_PERSON)
+				{
+					Actor a = Game::GetActor(data_->Parameters[0].iValue);
+					GameObject target(&a);
+					int drawn = data_->Parameters[2].iValue;
+					System::Log("fist fight drawn %d", drawn);
+					if (drawn == 1)
+						data_->Owner->SetEquipment(EQUIP_PISTOL);
+					else if (drawn == 2)
+						data_->Owner->SetEquipment(EQUIP_RIFLE);
+					else if (drawn == 3)
+						target.SetEquipment(EQUIP_PISTOL);
+					else if (drawn == 4)
+						target.SetEquipment(EQUIP_RIFLE);
+				}
+			}
+			break;
+			case "EActionEnterHouse":
+			{
+				if( !Mission::IsObjectiveAccomplished(OBJECTIVE_SECURE_DOCUMENTS))
+				{
+					if ( data_->Parameters[0].iValue == mLab.GetID() )
+					{
+						Mission::SetObjectiveAccomplished(OBJECTIVE_SECURE_DOCUMENTS, true);
+						Mission::PlayComment("SUPERV_M17_OBJ04");
+						Vector doorPos = mLab.GetEntrancePosition(false, 200.f);
+						for ( int i=0; i < mLabScientists.GetNumPersons(); i++ )
+						{
+							mLabScientists.GetPerson(i)->PushActionMove(ACTION_NEWLIST, doorPos);
+						}
+					}
+				}
+			}
+			break;
+			case "EActionLiftWithCrane":
+			{
+				SetRecoverableFlagForDebris( true, data_->Parameters[0].iValue );
+				if ( mStateCs1 == CS_NOT_STARTED )
+				{
+					for ( int i=0; i<mDangerDebris.GetNumObjects(); i++ )
+					{
+						if ( mDangerDebris.GetObject(i)->GetID() == data_->Parameters[0].iValue )
+						{
+							//int *manipulate = reinterpret_cast<int*>(data_->Parameters[1].pValue);
+							//*manipulate = 1;
+							//mObjectTaken = mDangerDebris->GetID();
+							RunCutscene1();
+							SetRecoverableFlagForDebris( true, data_->Parameters[0].iValue );
+						}
+					}
+				}
+			}
+			break;
+			case "EActionDropWithCrane":
+				SetRecoverableFlagForDebris( true, data_->Parameters[0].iValue );
+				for (int i = 0; i < mDangerDebris.GetNumObjects(); i++)
+				{
+					if ( mDangerDebris.GetObject(i)->GetID() == data_->Parameters[0].iValue )
+						mDangerDebris.GetObject(i)->SetCollisionMode(PHYSIC_COLLISION_ALL);
+				}				
+			break;
+			case "EActionUse":
+			{
+				if ( data_->Parameters[0].iValue == mGeneratorSwitch.GetID() )
+				{
+					mGenerator.SetAnimation("rotate");
+					mGeneratorSwitch.EnableSpecialLights(false);
+					mDoorControl.EnableBrakeLights(true);
+					mIsGeneratorRepaired = true;
+					Game::SetAmbientSoundVolumeByName(NAME_GENERATOR, 1.0);
+					ShowHint(1);
+				}
+				else if ( data_->Parameters[0].iValue == mDoorControl.GetID() )
+				{
+					if ( !mIsGeneratorRepaired )
+					{
+						Mission::StartCutScene();
+						mStateCs3 = CS_START_TRANSITION;
+						Camera::StartTransition(NAME_CS3_CAM, 3.f);
+						Mission::ShowBlackBars();						
+					}
+					else
+					{
+						mLab.SetFlag(OF_ACCESSIBLE);
+						mLab.OpenDoor(mLab.GetEntranceDoorID());
+						mDoorBlocker.SetVirtualObjectTerrain("freely accessible");
+						mDoorControl.EnableBrakeLights(false);
+						mDoorControl.EnableSpecialLights(true);
+					}
+				}
+			}
+			break;
+		}
+		return ACTION_CONTINUE;
+	}
+
+	void ShowHint(int hintId_)
+	{
+		System::Log("M17: Hint %i shown.", hintId_);
+		++mHintCounter[hintId_];
+
+		switch ( hintId_ )
+		{
+			case 0:
+				Mission::PlayHint("HINT_M17_NEED_GENERATOR");
+				break;
+			case 1:
+				Mission::PlayHint("HINT_M17_GOT_ENERGY");
+				break;
+			case 2:
+				ScriptInterface::ShowTutorialInstruction("HINT_M17_USE_CONTROL_BOX");
+				break;
+			case 3:
+				Mission::PlayHint("HINT_M17_POLARBEAR_WARNING");
+				break;
+			case 4:
+				Audio::SetMusicLevel(0.2f);
+				Mission::PlayHint("HINT_M17_POLARBEAR_ATTACKS");
+				break;
+			case 5:
+				Mission::PlayHint("HINT_M17_RADIOACTIVE_BIN");
+				break;
+			case 6:
+				Mission::PlayHint("HINT_M17_DANGER_COLLAPSE");
+				break;
+			case 7:
+				Mission::PlayHint("HINT_M17_FREE_PERSONS");
+				break;
+			case 8:
+				Mission::PlayHint("HINT_M17_UNSTABLE_AREA");
+				break;
+			case 9:
+				Audio::SetMusicLevel(0.1f);
+				Mission::PlayHint("HINT_M17_FASTER");
+				break;
+			case 10:
+				Mission::PlayHint("HINT_M17_DECONTAMINATE");
+				break;
+		}
+	}
+
+
+	MissionState GetMissionState()
+	{
+		if (Mission::IsCutSceneRunning())
+			return MISSION_RUNNING;
+		if ( Mission::GetCounter("Burning Objects")+Mission::GetCounter("Burning Houses") > 0 )
+		{
+			if ( !Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE) )
+				Mission::AddObjective(OBJECTIVE_EXTINGUISH_FIRE);
+
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, false);
+				Mission::PlayComment("SUPERV_OBJ_FIRE1");
+			}
+		}
+		else 
+		{
+			if(		Mission::HasObjective(OBJECTIVE_EXTINGUISH_FIRE)
+				&&	!Mission::IsObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_EXTINGUISH_FIRE, true);
+				Mission::PlayComment("SUPERV_OBJ_EXTINGUISHED");
+			}
+		}
+
+		if ( Mission::GetCounter("Contaminated Persons") > 0 )
+		{
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE, false);
+				Mission::PlayComment("SUPERV_M17_OBJ07");
+			}
+		}
+		else
+		{
+			if(	!Mission::IsObjectiveAccomplished(OBJECTIVE_DECONTAMINATE))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_DECONTAMINATE, true);
+				Mission::PlayComment("SUPERV_M17_OBJ03");
+			}
+		}
+
+		if ( Mission::GetCounter(NAME_COUNTER_INJURED_PERSONS)-GetNumInjuredInTransports() > 0 )
+		{
+			if(Mission::IsObjectiveAccomplished(OBJECTIVE_PLACE_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_PLACE_INJURED, false);
+				Mission::PlayComment("SUPERV_OBJ_VICTIMS");
+			}
+		}
+		else
+		{
+			if(	!Mission::IsObjectiveAccomplished(OBJECTIVE_PLACE_INJURED))
+			{
+				Mission::SetObjectiveAccomplished(OBJECTIVE_PLACE_INJURED, true);
+				Mission::PlayComment("SUPERV_M17_OBJ01");
+			}
+		}
+
+		if (	Mission::GetCounter("Civil deaths") > MAX_DEAD_CIVILS
+			||	Mission::GetCounter("Person injuries") > MAX_INJURED_PERSONS )
+		{
+			Audio::SetMusicLevel(0.6f);
+			mFailTooManyVictims = true;
+			return MISSION_FAILED;
+		}
+
+		if ( IsLackingUnit() )
+		{
+			Audio::SetMusicLevel(0.6f);
+			mFailLackingUnits = true;
+			return MISSION_FAILED;
+		}
+
+		if(Mission::IsDefaultLogicNegative())
+		{
+			Audio::SetMusicLevel(0.6f);
+			return MISSION_FAILED;
+		}
+
+		if ( Mission::IsDefaultLogicPositive() && Mission::AllObjectivesAccomplished() )
+		{
+			Audio::SetMusicLevel(0.7f);
+			return MISSION_SUCCEEDED;
+		}
+
+		return MISSION_RUNNING;
+	}
+
+	const char *GetFailReason()
+	{
+		if ( mFailTooManyVictims )
+			return "TOO_MANY_DIED";
+		if ( mFailLackingUnits )
+			return "M17_LACKING_UNITS";
+		return "UNKNOWN";
+	}
+
+	const char *GetFailComment()
+	{
+		if (mFailTooManyVictims || mFailLackingUnits)
+			return "SUPERV_M17_FAIL01";
+
+		return "UNKNOWN";
+	}
+
+	const char *GetSuccessComment(Mission::MissionScoring *scoring)
+	{
+		if (scoring->Efficiency >= 0.9f)
+			return "SUPERV_M17_RES01";
+		if (scoring->Efficiency < 0.9f && scoring->Efficiency >= 0.6f && mPersonsKilledOnPlateau >= 1)
+			return "SUPERV_M17_RES02";
+		if (scoring->Efficiency < 0.6f
+			&& Mission::GetCounter(NAME_COUNTER_INJURED_PERSONS) > 10
+			&& Mission::GetCounter(NAME_COUNTER_DEAD_PERSONS) > 3)
+			return "SUPERV_M17_RES03";
+
+		return Mission::GetDefaultCommentForEfficiency(scoring->Efficiency);
+	}
+
+	bool SerializeTo(ScriptSerializer *Serializer)
+	{
+		const int Version = 0x0100;
+		Serializer->Write(Version);
+
+		for ( int i=0; i<MAX_HINTS; i++ )
+			Serializer->Write(mHintCounter[i]);
+
+		Serializer->Write(mPersonSquads);
+		Serializer->Write(mVehicleSquads);
+		Serializer->Write(mRadioactives);
+		Serializer->Write(mBears);
+
+		Serializer->Write(mStayOut);
+		Serializer->Write(mDoorBlocker);
+		Serializer->Write(mEmitterHouse);
+		Serializer->Write(mKeyDebris);
+		Serializer->Write(mDangerDebris);
+		Serializer->Write(mCeilingDebris);
+		Serializer->Write(mHouseScientists);
+		Serializer->Write(mGenerator);
+		Serializer->Write(mGeneratorSwitch);
+		Serializer->Write(mBlockGenerator);
+		Serializer->Write(mDoorControl);
+		Serializer->Write(mLab);
+		Serializer->Write(mLabScientists);
+		Serializer->Write(mInjuredPlateau);
+		Serializer->Write(mBlockInjured);
+
+		Serializer->Write(mPlateau1);
+		Serializer->Write(mPlateau2);
+		Serializer->Write(mObjectsOnPlateau);
+		Serializer->Write(mPersonsOnPlateau);
+		Serializer->Write(mEmitterPlateau1);
+		Serializer->Write(mEmitterPlateau2);
+		Serializer->Write(mEmitterPlateau3);
+		Serializer->Write(mEmitterPlateau4);
+		Serializer->Write(mDecalIceCrack);
+		Serializer->Write(mIceEdges);
+
+		Serializer->Write(mIsGeneratorRepaired);
+		Serializer->Write(mIsKeyDebrisRemoved);
+
+		Serializer->Write(mFailTooManyVictims);
+		Serializer->Write(mFailLackingUnits);
+		for ( int i=0; i<UN_MAX; i++ )
+			Serializer->Write(mNeededUnits[i]);
+
+		Serializer->Write((int)mStateCs1);
+		Serializer->Write((int)mStateCs2);
+		Serializer->Write((int)mStateCs3);
+		Serializer->Write(mOldCamPos);
+		Serializer->Write(mOldCamYaw);
+		Serializer->Write(mOldCamPitch);
+		Serializer->Write(mOldCamRoll);
+
+		Serializer->Write(mBearsDead);
+
+		Serializer->Write(mSkidmarkFire);
+		Serializer->Write(mSkidmarkPolice);
+		Serializer->Write(mSkidmarkAmbulance);
+		Serializer->Write(mSkidmarkTechnicans);
+		Serializer->Write(mPersonsKilledOnPlateau);
+
+		return true;
+	}
+	
+	bool SerializeFrom(ScriptSerializer *Serializer)
+	{
+		int Version;
+		Serializer->Read(Version);
+
+		for ( int i=0; i<MAX_HINTS; i++ )
+			Serializer->Read(mHintCounter[i]);
+
+		Serializer->Read(mPersonSquads);
+		Serializer->Read(mVehicleSquads);
+		Serializer->Read(mRadioactives);
+		Serializer->Read(mBears);
+
+		Serializer->Read(mStayOut);
+		Serializer->Read(mDoorBlocker);
+		Serializer->Read(mEmitterHouse);
+		Serializer->Read(mKeyDebris);
+		Serializer->Read(mDangerDebris);
+		Serializer->Read(mCeilingDebris);
+		Serializer->Read(mHouseScientists);
+		Serializer->Read(mGenerator);
+		Serializer->Read(mGeneratorSwitch);
+		Serializer->Read(mBlockGenerator);
+		Serializer->Read(mDoorControl);
+		Serializer->Read(mLab);
+		Serializer->Read(mLabScientists);
+		Serializer->Read(mInjuredPlateau);
+		Serializer->Read(mBlockInjured);
+
+		Serializer->Read(mPlateau1);
+		Serializer->Read(mPlateau2);
+		Serializer->Read(mObjectsOnPlateau);
+		Serializer->Read(mPersonsOnPlateau);
+		Serializer->Read(mEmitterPlateau1);
+		Serializer->Read(mEmitterPlateau2);
+		Serializer->Read(mEmitterPlateau3);
+		Serializer->Read(mEmitterPlateau4);
+		Serializer->Read(mDecalIceCrack);
+		Serializer->Read(mIceEdges);
+
+		mIsGeneratorRepaired = Serializer->ReadBool();
+		mIsKeyDebrisRemoved = Serializer->ReadBool();
+
+		mFailTooManyVictims = Serializer->ReadBool();
+		mFailLackingUnits = Serializer->ReadBool();
+		for ( int i=0; i<UN_MAX; i++ )
+			mNeededUnits[i] = Serializer->ReadBool();
+
+		int dummy;
+		Serializer->Read(dummy);
+		mStateCs1 = (CS_STATE)dummy;
+		Serializer->Read(dummy);
+		mStateCs2 = (CS_STATE)dummy;
+		Serializer->Read(dummy);
+		mStateCs3 = (CS_STATE)dummy;
+		Serializer->Read(mOldCamPos);
+		Serializer->Read(mOldCamYaw);
+		Serializer->Read(mOldCamPitch);
+		Serializer->Read(mOldCamRoll);
+
+		Serializer->Read(mBearsDead);
+
+		Serializer->Read(mSkidmarkFire);
+		Serializer->Read(mSkidmarkPolice);
+		Serializer->Read(mSkidmarkAmbulance);
+		Serializer->Read(mSkidmarkTechnicans);
+		Serializer->Read(mPersonsKilledOnPlateau);
+
+		return true;
+	}
+};
